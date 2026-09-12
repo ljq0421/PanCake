@@ -88,6 +88,7 @@ public partial class PancakeWorkstation
         Control source;
         Texture2D texture;
         string name;
+        Func<Control>? previewFactory = null;
         Func<bool> valid;
         Func<bool> commit;
         bool Hit(Control control) => control.IsVisibleInTree() && control.GetGlobalRect().HasPoint(globalPoint);
@@ -102,6 +103,7 @@ public partial class PancakeWorkstation
             var machine = Machine;
             long generation = machine.Runtime.Generation;
             source = _canvas; name = "当前煎饼";
+            previewFactory = () => _canvas.CreateFoodPreview(new Vector2(150, 120));
             texture = machine.Runtime.State switch {
                 PancakeState.Bagged => _art.FinishedPancake,
                 PancakeState.Folded => _art.FoldedPancake,
@@ -126,6 +128,7 @@ public partial class PancakeWorkstation
         {
             long generation = fryer.Runtime.Generation;
             source = _fryerVisual; name = $"当前整批油条（{fryer.Runtime.Quantity} 根）";
+            previewFactory = () => _fryerVisual.CreateBatchFoodPreview(new Vector2(150, 120));
             texture = fryer.Runtime.State == FryerState.Burnt ? _art.BurntYoutiao
                 : fryer.Runtime.State == FryerState.Loaded ? _art.RawYoutiao : _art.Ingredient(StableIds.Ingredients.Youtiao);
             valid = () => ReferenceEquals(FryerMachine, fryer) && fryer.Runtime.Generation == generation
@@ -142,7 +145,7 @@ public partial class PancakeWorkstation
             _rawYoutiaoInput.Cancel();
             foreach (var gesture in _stockGestures) gesture.Cancel();
             _drag.BeginDrag(source, TrashPayload, name, Colors.White,
-                new DragVisualSpec(texture, new Vector2(150, 120)), MouseButton.Right);
+                new DragVisualSpec(texture, new Vector2(150, 120), previewFactory), MouseButton.Right);
         }
         if (prepareOnly) { _beginHeldTrash = Begin; return true; }
         Begin();

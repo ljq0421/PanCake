@@ -235,7 +235,17 @@ public partial class WuhanDayScreen : Control
     {
         if(!CanInteract||Workstation.Busy("bowl")||!_ingredients.IsUnlimited(id))return;
         bool ok=id==StableIds.Ingredients.WuhanBaseSeasoning?_bowl.TryAddBaseSeasoning():_bowl.TryAddTopping(id);
-        if(ok){_ingredients.TryConsume(id);Workstation.PlayIngredient(id);Feedback("配料已经加入。",false);}else Feedback("先把熟面和基础调味放进碗里。",true);Render();
+        if(ok){_ingredients.TryConsume(id);Workstation.PlayIngredient(id);Feedback("配料已经加入。",false);}
+        else
+        {
+            string message = _bowl.Toppings.Contains(id) ? "这份配料已经加入了。"
+                : id == StableIds.Ingredients.WuhanBraisedBeef ? "先把热干面搅拌完成，再加入牛肉。"
+                : id == StableIds.Ingredients.WuhanBaseSeasoning && _bowl.State is not (NoodleBowlState.Empty or NoodleBowlState.Noodles) ? "基础调味已经加入了。"
+                : _bowl.State is NoodleBowlState.Mixing or NoodleBowlState.Ready ? "辣油和葱花需要在开始拌面前加入。"
+                : "先把熟面和基础调味放进碗里。";
+            Feedback(message,true);
+        }
+        Render();
     }
     internal bool DeliverToCustomer(string customerId, ProductKind kind)
     {
@@ -373,5 +383,5 @@ public partial class WuhanDayScreen : Control
         if(_committed||_controller.CurrentConfig?.CityId!=StableIds.Cities.Wuhan)return;_committed=true;CloseBusinessDetails();_paymentFeedback.Clear();Workstation.CancelAnimations();try{DayCommitResult commit=_save.CommitDay(result,_controller.CurrentPlan!,_controller.CurrentConfig!);string stars=result.Day==12?$"\n武汉评级 {new string('★',commit.EarnedStars)}{new string('☆',3-commit.EarnedStars)}":"";_resultText.Text=$"[center][font_size=28]武汉 Day {result.Day} 打烊[/font_size]\n\n[font_size=42]今日总收入 ¥{result.TotalRevenue}[/font_size]\n永久金币增加 ¥{commit.PermanentCoinGain}\n\n完成 {result.CompletedCustomers} 位 · 流失 {result.LostCustomers} 位\n满意度 {result.Satisfaction:0}% · Perfect {result.PerfectOrders} 单{stars}[/center]";_unlock.Text=commit.NewChapterCompletion?"武汉 · 过早之城已经点亮！获得两件早餐收藏与章节徽章。西安章节已开放。":_controller.CurrentConfig.CompletionUnlocks.Count>0?"新的武汉设备升级已经开放。":"成绩已写入武汉经营手账。";}catch(IOException e){_resultText.Text=$"保存失败：{e.Message}";_unlock.Text="本次结果已回退。";}_blocker.Visible=true;_results.Visible=true;
     }
     private static string Subtitle(int day)=>day switch{1=>"初到武汉",4=>"豆皮开锅",6=>"双线熟练",7=>"牛肉与上班族",8=>"完整早餐",9=>"带走大单",12=>"最终挑战",_=>"过早高峰"};
-    private static string Tutorial(int day)=>day switch{1=>"拖面入锅，漏勺亮起后向上提篮并拖到空碗。点击调味，划动至酱料拌匀，再拖给顾客。",4=>"拖浆入锅并点鸡蛋，皮边金黄翘起后上划翻面。\n拖馅铺开；铲刀亮起后按住锅面，沿辅助线切一横三竖，8 块自动入盘。",6=>"热干面与豆皮搭配出餐；豆皮一次拖拽按顾客所需数量交付",7=>"上班族耐心只有 34 秒，牛肉配方已经加入",8=>"熟客和游客加入：短耐心不一定是最高价值订单",_=>string.Empty};
+    private static string Tutorial(int day)=>day switch{1=>"拖面入锅，漏勺亮起后向上提篮并拖到空碗。点击调味，划动至酱料拌匀，再拖给顾客。",4=>"拖浆入锅并点鸡蛋，皮边金黄翘起后上划翻面。\n拖馅铺开；铲刀亮起后按住锅面，沿辅助线切一横三竖，8 块自动入盘。",6=>"热干面与豆皮搭配出餐；豆皮一次拖拽按顾客所需数量交付",7=>"上班族耐心只有 34 秒；牛肉要等热干面搅拌完成后再加入",8=>"熟客和游客加入：短耐心不一定是最高价值订单",_=>string.Empty};
 }

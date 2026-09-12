@@ -103,7 +103,7 @@ public partial class PancakeWorkstation
         foreach ((string id, Label hint) in _firstUseHints)
         {
             IngredientStockSlotView slot = _ingredientSlots[id];
-            slot.ConfigureRefillTeaching(NeedsTeaching($"refill:{id}"));
+            slot.ConfigureRefillTeaching(!IsTianjinWorkbench && NeedsTeaching($"refill:{id}"));
             hint.Visible = slot.Visible && NeedsTeaching($"take:{id}")
                 && slot.AttentionState is WorkstationSlotAttentionState.Actionable or WorkstationSlotAttentionState.Required
                 && Inventory.GetStatus(id) is IngredientStockStatus.Normal;
@@ -128,7 +128,7 @@ public partial class PancakeWorkstation
         }
         if (SoyMilkTray is { IsRefilling: false, IsTaking: false } soy && soy.Quantity < soy.Capacity)
         {
-            if (NeedsTeaching("refill:soy_milk")) _soyStatus.Text = "长按补货";
+            if (!IsTianjinWorkbench && NeedsTeaching("refill:soy_milk")) _soyStatus.Text = "长按补货";
             else if (soy.Quantity <= 2) _soyStatus.Text = soy.Quantity == 0 ? "已用完" : "余量不足";
             _soyStatus.Visible = !string.IsNullOrEmpty(_soyStatus.Text);
         }

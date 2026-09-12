@@ -17,6 +17,13 @@ public partial class OrderBubbleView : PanelContainer
 {
     private const float MainHeight = 54;
     private const float SideHeight = 44;
+    private static int WuhanToppingOrder(string ingredient) => ingredient switch
+    {
+        StableIds.Ingredients.WuhanChiliOil => 0,
+        StableIds.Ingredients.WuhanScallion => 1,
+        StableIds.Ingredients.WuhanBraisedBeef => 2,
+        _ => 3,
+    };
     private VBoxContainer _content = null!;
     private VBoxContainer _rows = null!;
     private readonly List<(int Line, int Portion, PanelContainer Region, Label? Quantity)> _regions = new();
@@ -105,7 +112,9 @@ public partial class OrderBubbleView : PanelContainer
                         if (xr.HasJuice) icons.AddChild(Icon(_xian.Texture("加汁订单小图标"), new Vector2(32, 40), "OrderJuice"));
                     }
                     else if (recipes.TryGetValue(line.DefinitionId, out RecipeData? recipe))
-                        foreach (string ingredient in recipe.ExtraIngredients)
+                        foreach (string ingredient in line.ProductKind == ProductKind.HotDryNoodles
+                            ? recipe.ExtraIngredients.OrderBy(WuhanToppingOrder)
+                            : recipe.ExtraIngredients.AsEnumerable())
                         {
                             Texture2D texture = _wuhan is null ? _shared.Ingredient(ingredient) : _wuhan.Ingredient(ingredient);
                             TextureRect topping = Icon(texture, new Vector2(44, 40), $"OrderIngredientIcon_{ingredient}");
@@ -214,6 +223,7 @@ public partial class OrderBubbleView : PanelContainer
             _trimmed[texture] = trimmed;
         }
         TextureRect icon = TianjinUi.Texture(trimmed, size);
+        FoodInk.Apply(icon, order: true);
         icon.Name = name;
         icon.MouseFilter = MouseFilterEnum.Ignore;
         icon.SizeFlagsVertical = SizeFlags.ShrinkCenter;

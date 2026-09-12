@@ -20,7 +20,7 @@ public partial class WuhanAnimationSelfTest : Node
             TestBasketReadySound();
             if (!OS.GetCmdlineUserArgs().Contains("--basket-ready-sound"))
             {
-                TestTransfer(); TestClickFlow(); TestAutomatic(); TestDoupi(); TestEgg(); TestSupply(); TestLifecycle(); TestCookingPresentation();
+                TestTransfer(); TestClickFlow(); TestBeefTiming(); TestAutomatic(); TestDoupi(); TestEgg(); TestSupply(); TestLifecycle(); TestCookingPresentation();
             }
         }
         catch (Exception e) { _failed++; GD.PushError(e.ToString()); }
@@ -207,6 +207,31 @@ public partial class WuhanAnimationSelfTest : Node
             Check(!cue.Playing, "重新营业不遗留提示音");
             DisposeDay(f);
         }
+    }
+    private void TestBeefTiming()
+    {
+        foreach (bool reduced in new[] { false, true })
+        {
+            ProjectSettings.SetSetting("accessibility/reduce_motion", reduced);
+            var f = NewDay(); var s = f.Screen; var view = s.Workstation;
+            s.Bowl.TryAddNoodles(NoodleQuality.Optimal); s.Bowl.TryAddBaseSeasoning();
+            Click(view, view.IngredientCenter(3));
+            Check(!s.Bowl.Toppings.Contains(StableIds.Ingredients.WuhanBraisedBeef) && !view.Busy("bowl"),
+                $"reduce_motion={reduced}: 提前点击牛肉无加料和成功动画");
+            s.Bowl.AddMixDistance(100);
+            Click(view, view.IngredientCenter(3));
+            Check(s.Bowl.State == NoodleBowlState.Mixing && !view.Busy("bowl"), "搅拌中点击牛肉不推进状态或播动画");
+            s.Bowl.AddMixDistance(325);
+            Click(view, view.IngredientCenter(3));
+            Check(s.Bowl.Toppings.Contains(StableIds.Ingredients.WuhanBraisedBeef) && view.Busy("bowl")
+                && !view.CanDeliver(ProductKind.HotDryNoodles), "拌匀后点击牛肉加料，动画期间不能提前交付");
+            s._Process(.5);
+            Check(s.Bowl.State == NoodleBowlState.Ready && view.CanDeliver(ProductKind.HotDryNoodles), "加牛肉动画结束即可出餐");
+            Click(view, view.IngredientCenter(3));
+            Check(s.Bowl.Toppings.Count == 1 && !view.Busy("bowl"), "重复点击牛肉不重播成功动画");
+            DisposeDay(f);
+        }
+        ProjectSettings.SetSetting("accessibility/reduce_motion", false);
     }
     private void TestCookingPresentation()
     {

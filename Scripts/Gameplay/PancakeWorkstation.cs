@@ -250,13 +250,13 @@ public partial class PancakeWorkstation : Control
             gesture.Progress = slot.RenderHoldProgress;
             gesture.Tap = () =>
             {
-                if (!Inventory.HasAvailable(id)) Inform($"{name}已经用完，长按补货。", false);
+                if (!Inventory.HasAvailable(id)) Inform($"{name}已经用完。", false);
                 else if (input is Button tapButton) tapButton.EmitSignal(Button.SignalName.Pressed);
             };
             if (input is DragItem dragItem)
                 gesture.Drag = () =>
                 {
-                    if (!Inventory.HasAvailable(id)) Inform($"{name}已经用完，长按补货。", false);
+                    if (!Inventory.HasAvailable(id)) Inform($"{name}已经用完。", false);
                     else dragItem.TryBeginDrag();
                 };
         }
@@ -307,8 +307,8 @@ public partial class PancakeWorkstation : Control
             soyGesture.CanInteract = () => _initialized && CanInteract && !_drag.IsDragging && IsVisibleInTree();
             soyGesture.CanRefill = () => CanInteract && SoyMilkTray is { IsTaking: false, IsRefilling: false } soy && soy.Quantity < soy.Capacity;
             soyGesture.Refill = RefillSoyMilk;
-            soyGesture.Drag = () => { if (SoyMilkTray?.Quantity == 0) Inform("豆浆已经用完，长按补货。", false); else _soyCup.TryBeginDrag(); };
-            soyGesture.Tap = () => { if (SoyMilkTray?.Quantity == 0) Inform("豆浆已经用完，长按补货。", false); };
+            soyGesture.Drag = () => { if (SoyMilkTray?.Quantity == 0) Inform("豆浆已经用完。", false); else _soyCup.TryBeginDrag(); };
+            soyGesture.Tap = () => { if (SoyMilkTray?.Quantity == 0) Inform("豆浆已经用完。", false); };
             soyGesture.Progress = progress =>
             {
                 if (SoyMilkTray?.IsRefilling == true || _soyHoldProgress is null) return;
@@ -811,6 +811,7 @@ public partial class PancakeWorkstation : Control
             int quantity = Inventory.GetQuantity(id);
             int capacity = Inventory.GetCapacity(id);
             IngredientStockStatus status = Inventory.GetStatus(id);
+            if (IsTianjinWorkbench) slot.ConfigureRefillTeaching(false);
             slot.RenderStock(quantity, capacity, status, Inventory.GetRefillProgress(id), CanInteract, Inventory.IsUnlimited(id));
             slot.SetAttention(ResolveIngredientAttention(id, status, state, requiredToppings));
             if (status is IngredientStockStatus.Low or IngredientStockStatus.Empty)
@@ -821,7 +822,7 @@ public partial class PancakeWorkstation : Control
                         ? $"{IngredientName(id)}已经用完，{(IsTianjinWorkbench ? "长按" : "点击 + ")}补货。"
                         : IsTianjinWorkbench ? $"{IngredientName(id)}快用完了，长按补货。"
                         : $"{IngredientName(id)}只剩 {quantity} 份，可以点击 + 补货。";
-                    if (_tutorialMemory && !NeedsTeaching($"refill:{id}"))
+                    if (IsTianjinWorkbench || _tutorialMemory && !NeedsTeaching($"refill:{id}"))
                         message = status == IngredientStockStatus.Empty ? $"{IngredientName(id)}已用完。" : $"{IngredientName(id)}余量不足。";
                     Inform(message, false);
                 }
@@ -912,7 +913,7 @@ public partial class PancakeWorkstation : Control
                 ? SoyMilkTray.IsRefilling ? "补货中" : SoyMilkTray.IsTaking ? "取杯中" : string.Empty
                 : SoyMilkTray.IsRefilling ? $"豆浆 {SoyMilkTray.RefillProgress:P0}" : SoyMilkTray.IsTaking ? "豆浆 · 取杯中" : $"豆浆 ×{SoyMilkTray.Quantity}";
             if (IsTianjinWorkbench && SoyMilkTray.Quantity <= 2 && !SoyMilkTray.IsRefilling && !SoyMilkTray.IsTaking)
-                _soyStatus.Text = "长按补货";
+                _soyStatus.Text = SoyMilkTray.Quantity == 0 ? "已用完" : "余量不足";
             _soyStatus.Visible = !IsTianjinWorkbench || !string.IsNullOrEmpty(_soyStatus.Text);
             _soyRefill.Text = SoyMilkTray.IsRefilling ? "…" : "+";
             _soyRefill.Visible = !IsTianjinWorkbench && (SoyMilkTray.Quantity < SoyMilkTray.Capacity || SoyMilkTray.IsRefilling);

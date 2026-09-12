@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://lthaitcspayg"]
 
 [ext_resource type="Script" uid="uid://bem3g720e4oa7" path="res://Scripts/Gameplay/WuhanDayScreen.cs" id="1"]
-[ext_resource type="Texture2D" path="res://resource/art/Wuhan/武汉-热干面-v1.png" id="2_3027d"]
+[ext_resource type="Texture2D" uid="uid://334142ufmtlm" path="res://resource/art/Wuhan/武汉-热干面-v1.png" id="2_3027d"]
 [ext_resource type="Script" uid="uid://crlqrj5cucv88" path="res://Scripts/Interaction/DragService.cs" id="3_p1fpg"]
 [ext_resource type="Texture2D" uid="uid://l46r51x58hug" path="res://resource/art/TianJin/金币图标.png" id="4_s7cqp"]
 [ext_resource type="Script" uid="uid://cyw6mdd60r1k0" path="res://Scripts/Interaction/DropZone.cs" id="5_m3qug"]
@@ -1734,6 +1734,11 @@ theme_override_styles/focus = SubResource("StyleBoxEmpty_8enr8")
 flat = true
 metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CoinTrayView|_collect")
 
+[node name="TrashZone" type="PanelContainer" parent="WuhanWorkstation" unique_id=2061986761]
+z_index = 75
+layout_mode = 0
+script = ExtResource("5_m3qug")
+
 [node name="@Node@348" type="Node" parent="." unique_id=178073584]
 script = ExtResource("14_77nn7")
 metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|<CollectionFeedback>k__BackingField")
@@ -1924,8 +1929,3 @@ theme = SubResource("Theme_o3bxv")
 ok_button_text = "打烊并返回"
 dialog_text = "本日收入和成绩不会保存。"
 metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_abandon")
-
-[node name="TrashZone" type="PanelContainer" parent="WuhanWorkstation"]
-z_index = 75
-layout_mode = 0
-script = ExtResource("5_m3qug")

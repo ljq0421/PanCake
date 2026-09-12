@@ -13,6 +13,7 @@ public partial class PancakeCanvas : Control
     private TianjinArtCatalog? _art;
     private int _stoveLevel = 1;
     private float _batterDropProgress = 1.0f;
+    private bool _foodOnly;
 
     [Export] public float DisplayScale { get; set; } = 1.0f;
     [Export] public Vector2 DisplayOffset { get; set; } = Vector2.Zero;
@@ -42,9 +43,9 @@ public partial class PancakeCanvas : Control
     {
         if (_art is null) return;
         (Vector2 stoveCenter, float stoveSize) = GetStoveGeometry();
-        if (EmbeddedSurface is null)
+        if (EmbeddedSurface is null && !_foodOnly)
             DrawCentered(_art.Stove(_stoveLevel), stoveCenter, new Vector2(stoveSize, stoveSize));
-        else stoveCenter = EmbeddedSurface.Value.GetCenter();
+        else if (EmbeddedSurface is Rect2 embedded) stoveCenter = embedded.GetCenter();
 
         if (_runtime is null || _runtime.State == PancakeState.Empty) return;
 
@@ -107,7 +108,42 @@ public partial class PancakeCanvas : Control
         if (runtime.Quality == PancakeQuality.Burnt || runtime.State == PancakeState.Burnt)
             DrawCentered(_art.PancakeBurntOverlay, surface.GetCenter(), surface.Size * 1.03f);
 
-        DrawStateIndicator(surface, runtime.State);
+        if (!_foodOnly) DrawStateIndicator(surface, runtime.State);
+    }
+
+    // Draw the same food layers and perspective as the stove, frozen at pickup.
+    public Control CreateFoodPreview(Vector2 displaySize)
+    {
+        var preview = new Control { CustomMinimumSize = displaySize, MouseFilter = MouseFilterEnum.Ignore };
+        if (_runtime is null || _art is null) return preview;
+        var snapshot = new PancakeRuntime
+        {
+            State = _runtime.State, Quality = _runtime.Quality,
+            SpreadCoverage = _runtime.SpreadCoverage, SauceCoverage = _runtime.SauceCoverage,
+            HasEgg = _runtime.HasEgg, HasSauce = _runtime.HasSauce,
+            InternalYoutiaoQuality = _runtime.InternalYoutiaoQuality,
+        };
+        foreach (string ingredient in _runtime.ExtraIngredients) snapshot.AddIngredient(ingredient);
+        Rect2 bounds = GetSurfaceRect();
+        if (snapshot.State is PancakeState.Folded or PancakeState.Bagged)
+        {
+            Vector2 center = EmbeddedSurface?.GetCenter() ?? GetStoveGeometry().Center;
+            Vector2 size = snapshot.State == PancakeState.Folded ? new(260, 220) : new(250, 210);
+            bounds = new Rect2(center + new Vector2(0, -12) - size / 2, size);
+        }
+        bounds = bounds.Grow(8);
+        float scale = Mathf.Min(displaySize.X / bounds.Size.X, displaySize.Y / bounds.Size.Y);
+        var food = new PancakeCanvas
+        {
+            Name = "DraggedPancakeFood", Size = Size, DisplayScale = DisplayScale, DisplayOffset = DisplayOffset,
+            UseTableContact = UseTableContact, EmbeddedSurface = EmbeddedSurface,
+            BatterDropProgress = BatterDropProgress, _foodOnly = true,
+            MouseFilter = MouseFilterEnum.Ignore, Scale = Vector2.One * scale,
+            Position = displaySize / 2 - bounds.GetCenter() * scale,
+        };
+        food.Bind(snapshot, _art, _stoveLevel);
+        preview.AddChild(food);
+        return preview;
     }
 
     public Rect2 GetSurfaceRect()

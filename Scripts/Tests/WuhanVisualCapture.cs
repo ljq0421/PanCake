@@ -256,7 +256,7 @@ public partial class WuhanVisualCapture : Node
             Require(day.Cooker.TryTransferTo(0,day.Bowl),"noodles reach bowl fixture");
             view.PlayBasket(0,NoodleBasketState.Drained,NoodleQuality.Optimal);
             Step(.55);await Shot("02-basket-return");Step(.15);
-            for(int ingredient=0;ingredient<WuhanWorkstationView.IngredientIds.Length;ingredient++)
+            for(int ingredient=0;ingredient<3;ingredient++)
             {
                 string id=WuhanWorkstationView.IngredientIds[ingredient];
                 Click(view.IngredientCenter(ingredient));
@@ -273,6 +273,9 @@ public partial class WuhanVisualCapture : Node
             for(int i=0;i<5;i++)Move(center+new Vector2(i%2==0?60:-60,0),true);
             Button(center,false);
             Require(day.Bowl.State==NoodleBowlState.Ready&&!view.IsMixing,"viewport bowl drag completes mixing");
+            Click(view.IngredientCenter(3));
+            Require(day.Bowl.Toppings.Contains(StableIds.Ingredients.WuhanBraisedBeef), "beef is added after mixing through viewport input");
+            Step(.5);
             Click(view.DoupiEggCenter);Require(day.Doupi.State==DoupiState.SkinCooking,"viewport pan adds egg");
             DoupiGriddleLevelData griddle=catalog.DoupiGriddlesByLevel[level];
             day.Doupi.Tick(griddle.StageSeconds/Math.Max(.01,griddle.SpeedMultiplier)+.001);
@@ -423,7 +426,7 @@ public partial class WuhanVisualCapture : Node
             Step(.18);day.BasketAction(0);Step(.30);await Shot("06-pouring-midway");Step(.14);await Shot("07-noodles-landing");Step(.25);
             if(day.Bowl.State!=NoodleBowlState.Noodles)throw new InvalidOperationException("Capture: noodles did not enter bowl");
             await Shot("08-bowl-noodles");
-            foreach(int ingredient in new[]{0,2,3})
+            foreach(int ingredient in new[]{0,2})
             {
                 Click(day.Workstation.IngredientCenter(ingredient));Step(.21);await Shot($"09-ingredient-{ingredient}-pouring");Step(.30);
             }
@@ -434,6 +437,7 @@ public partial class WuhanVisualCapture : Node
             if(day.Bowl.State!=NoodleBowlState.Ready)throw new InvalidOperationException("Capture: mixing did not complete");
             Vector2 release = day.Workstation.GetGlobalTransformWithCanvas() * center;
             GetViewport().PushInput(new InputEventMouseButton { ButtonIndex=MouseButton.Left, Pressed=false, Position=release }, true);
+            Click(day.Workstation.IngredientCenter(3)); Step(.21); await Shot("12b-beef-after-mixing"); Step(.30);
             await Deliver(ProductKind.HotDryNoodles,"13-noodles-delivery");
             day.PourDoupiBatter();Step(.17);await Shot("14-batter-spreading");Step(.25);
             day.AddDoupiEgg();Step(.17);await Shot("15a-egg-cracking");

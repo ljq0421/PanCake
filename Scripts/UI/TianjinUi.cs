@@ -121,7 +121,7 @@ public static class TianjinUi
 
     public static TextureRect Texture(Texture2D texture, Vector2 minimumSize, TextureRect.StretchModeEnum stretch = TextureRect.StretchModeEnum.KeepAspectCentered)
     {
-        return new TextureRect
+        var visual = new TextureRect
         {
             Texture = texture,
             CustomMinimumSize = minimumSize,
@@ -129,6 +129,8 @@ public static class TianjinUi
             StretchMode = stretch,
             MouseFilter = Control.MouseFilterEnum.Ignore,
         };
+        FoodInk.Apply(visual);
+        return visual;
     }
 
     public static void FullRect(Control control, float left = 0, float top = 0, float right = 0, float bottom = 0)

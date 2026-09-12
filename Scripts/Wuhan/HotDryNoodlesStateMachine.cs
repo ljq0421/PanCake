@@ -28,7 +28,13 @@ public sealed class HotDryNoodlesStateMachine
     }
     public bool TryAddTopping(string ingredientId)
     {
-        if (State != NoodleBowlState.Seasoned || ingredientId is not (StableIds.Ingredients.WuhanScallion or StableIds.Ingredients.WuhanChiliOil or StableIds.Ingredients.WuhanBraisedBeef)) return false;
+        bool allowed = ingredientId switch
+        {
+            StableIds.Ingredients.WuhanBraisedBeef => State == NoodleBowlState.Ready,
+            StableIds.Ingredients.WuhanScallion or StableIds.Ingredients.WuhanChiliOil => State == NoodleBowlState.Seasoned,
+            _ => false,
+        };
+        if (!allowed) return false;
         return _toppings.Add(ingredientId);
     }
     public bool AddMixDistance(double pixels)

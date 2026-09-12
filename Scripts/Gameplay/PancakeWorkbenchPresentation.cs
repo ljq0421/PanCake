@@ -49,6 +49,27 @@ public partial class PancakeWorkstation
             Name = "EmbeddedFryerForeground", Polygon = fryerOutline, UV = fryerOutline,
             Texture = _art.WorkbenchBackground(new[] { ProductKind.Youtiao }), Scale = TianjinWorkbenchLayout.SourceScale };
         _fryerPanel.AddChild(foreground);
+        // Trace the source silhouette: the exact painted tongs must remain in
+        // front of customers without covering the gap between their two arms.
+        Vector2[][] tongOutlines = {
+            new Vector2[] { new(480, 477), new(487, 480), new(489, 487), new(487, 497),
+                new(492, 506), new(491, 514), new(488, 518), new(492, 526), new(490, 534),
+                new(493, 541), new(489, 549), new(494, 575), new(501, 595), new(486, 596),
+                new(479, 570), new(474, 548), new(469, 536), new(466, 521), new(463, 508),
+                new(464, 490), new(468, 480), new(473, 477) },
+            new Vector2[] { new(529, 478), new(536, 480), new(541, 492), new(542, 505),
+                new(539, 520), new(537, 531), new(533, 544), new(528, 560), new(522, 591),
+                new(506, 596), new(510, 577), new(515, 553), new(513, 541), new(511, 532),
+                new(514, 524), new(511, 517), new(513, 509), new(517, 502), new(516, 493), new(521, 481) },
+            new Vector2[] { new(469, 568), new(481, 562), new(518, 562), new(535, 570),
+                new(541, 582), new(540, 654), new(535, 668), new(516, 677), new(482, 675),
+                new(468, 667), new(461, 653), new(461, 585) }
+        };
+        var tongs = new Node2D { Name = "EmbeddedTongsForeground" };
+        _fryerPanel.AddChild(tongs);
+        foreach (Vector2[] outline in tongOutlines)
+            tongs.AddChild(new Polygon2D { Polygon = outline, UV = outline,
+                Texture = foreground.Texture, Scale = TianjinWorkbenchLayout.SourceScale });
         _fryerVisual.Reparent(_fryerPanel, false);
         _fryerVisual.ZIndex = 1;
         PositionEmbedded(_fryerVisual, TianjinWorkbenchLayout.EmbeddedFryer);

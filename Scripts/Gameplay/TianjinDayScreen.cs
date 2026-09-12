@@ -410,7 +410,7 @@ public partial class TianjinDayScreen : Control
             {
                 _portraitSignatures[index] = portraitSignature;
                 _portraits[index].SetVisual(_art.CustomerPortrait(customer.AppearanceId, expression));
-                _portraits[index].SetCounterCalibration(_art.CustomerLayout(customer.AppearanceId).NormalVisibleBounds);
+                _portraits[index].SetCounterCalibration(_art.CustomerLayout(customer.AppearanceId));
             }
             if (_displayedCustomerStates[index] is CustomerState previousState && previousState != customer.State
                 && customer.State is CustomerState.Impatient or CustomerState.Angry)

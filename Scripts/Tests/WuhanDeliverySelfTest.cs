@@ -167,8 +167,9 @@ public partial class WuhanDeliverySelfTest : Node
     private void PrepareFood(NoodleQuality quality = NoodleQuality.Optimal, bool toppings = false)
     {
         var bowl = _screen.Bowl; bowl.Reset(); bowl.TryAddNoodles(quality); bowl.TryAddBaseSeasoning();
-        if (toppings) foreach (string id in WuhanWorkstationView.IngredientIds.Skip(1)) bowl.TryAddTopping(id);
+        if (toppings) foreach (string id in WuhanWorkstationView.IngredientIds.Skip(1).Where(id => id != StableIds.Ingredients.WuhanBraisedBeef)) bowl.TryAddTopping(id);
         bowl.AddMixDistance(425);
+        if (toppings) bowl.TryAddTopping(StableIds.Ingredients.WuhanBraisedBeef);
         if (_screen.DoupiStock.Count == 0) _screen.DoupiStock.TryAddBatch(8);
         _screen.Workstation.CancelAnimations(); Step(.001);
     }

@@ -17,6 +17,41 @@ using System.Runtime.InteropServices;
 
 public static class PortraitBitmapTools
 {
+    // The lowest skin run in the middle of an isolated expression is its neck,
+    // rather than the bottom of a hat/hair bounding box.
+    public static PointF NeckAnchor(Bitmap bitmap, Rectangle bounds)
+    {
+        int left = bounds.Left + (int)(bounds.Width * .30);
+        int right = bounds.Left + (int)(bounds.Width * .72);
+        for (int y = bounds.Bottom - 1; y >= bounds.Top + bounds.Height / 2; y--)
+        {
+            int count = 0; double sum = 0;
+            for (int x = left; x < right; x++)
+            {
+                Color c = bitmap.GetPixel(x, y);
+                if (c.A < 200 || c.R < 185 || c.G < 100 || c.G > 225
+                    || c.R < c.G * 1.09 || c.G < c.B * 1.08) continue;
+                count++; sum += x;
+            }
+            if (count >= Math.Max(4, bounds.Width / 35)) return new PointF((float)(sum / count), y);
+        }
+        throw new InvalidOperationException("No neck anchor found in expression.");
+    }
+
+    public static void CutOriginalHead(Bitmap body, int cutY)
+    {
+        // Authored collar cut replaces the union-of-expression erase, which
+        // removed different parts of the shirt and left old ears/chins behind.
+        var rect = new Rectangle(0, 0, body.Width, body.Height);
+        BitmapData data = body.LockBits(rect, ImageLockMode.ReadWrite, PixelFormat.Format32bppArgb);
+        try
+        {
+            byte[] clear = new byte[data.Stride * cutY];
+            Marshal.Copy(clear, 0, data.Scan0, clear.Length);
+        }
+        finally { body.UnlockBits(data); }
+    }
+
     public static int FindBestVerticalCut(Bitmap bitmap, int searchLeft, int searchRight)
     {
         var rect = new Rectangle(0, 0, bitmap.Width, bitmap.Height);
@@ -164,66 +199,7 @@ public static class PortraitBitmapTools
         }
     }
 
-    public static void EraseCoveredPixels(Bitmap body, Bitmap[] heads, int dilation)
-    {
-        var rect = new Rectangle(0, 0, body.Width, body.Height);
-        BitmapData bodyData = body.LockBits(rect, ImageLockMode.ReadWrite, PixelFormat.Format32bppArgb);
-        var headData = new BitmapData[heads.Length];
-        try
-        {
-            byte[] bodyBytes = new byte[bodyData.Stride * bodyData.Height];
-            Marshal.Copy(bodyData.Scan0, bodyBytes, 0, bodyBytes.Length);
-            bool[] mask = new bool[body.Width * body.Height];
-            for (int index = 0; index < heads.Length; index++)
-            {
-                headData[index] = heads[index].LockBits(rect, ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
-                byte[] bytes = new byte[headData[index].Stride * headData[index].Height];
-                Marshal.Copy(headData[index].Scan0, bytes, 0, bytes.Length);
-                for (int y = 0; y < body.Height; y++)
-                    for (int x = 0; x < body.Width; x++)
-                        if (bytes[y * headData[index].Stride + x * 4 + 3] > 0)
-                            mask[y * body.Width + x] = true;
-            }
 
-            bool[] dilated = new bool[mask.Length];
-            for (int y = 0; y < body.Height; y++)
-            {
-                for (int x = 0; x < body.Width; x++)
-                {
-                    if (!mask[y * body.Width + x]) continue;
-                    for (int offsetY = -dilation; offsetY <= dilation; offsetY++)
-                    {
-                        int targetY = y + offsetY;
-                        if (targetY < 0 || targetY >= body.Height) continue;
-                        for (int offsetX = -dilation; offsetX <= dilation; offsetX++)
-                        {
-                            int targetX = x + offsetX;
-                            if (targetX >= 0 && targetX < body.Width)
-                                dilated[targetY * body.Width + targetX] = true;
-                        }
-                    }
-                }
-            }
-
-            for (int y = 0; y < body.Height; y++)
-            {
-                int row = y * bodyData.Stride;
-                for (int x = 0; x < body.Width; x++)
-                {
-                    if (!dilated[y * body.Width + x]) continue;
-                    int pixel = row + x * 4;
-                    bodyBytes[pixel] = bodyBytes[pixel + 1] = bodyBytes[pixel + 2] = bodyBytes[pixel + 3] = 0;
-                }
-            }
-            Marshal.Copy(bodyBytes, 0, bodyData.Scan0, bodyBytes.Length);
-        }
-        finally
-        {
-            for (int index = 0; index < heads.Length; index++)
-                if (headData[index] != null) heads[index].UnlockBits(headData[index]);
-            body.UnlockBits(bodyData);
-        }
-    }
 }
 '@
 
@@ -242,7 +218,6 @@ $characters = @(
         Sheet = '普通男上班族-表情.png'
         ExpectedSheetSize = @(1254, 1254)
         Cells = @(@(0, 0, 318, 1254), @(318, 0, 309, 1254), @(627, 0, 311, 1254), @(938, 0, 316, 1254))
-        Target = @(264, 48, 558, 558)
     },
     @{
         Id = 'female_office'
@@ -250,7 +225,6 @@ $characters = @(
         Sheet = '普通女上班族-表情.png'
         ExpectedSheetSize = @(2172, 724)
         Cells = $wideCells
-        Target = @(272, 24, 550, 580)
     },
     @{
         Id = 'elder_regular'
@@ -258,7 +232,6 @@ $characters = @(
         Sheet = '老大爷熟客-表情.png'
         ExpectedSheetSize = @(2172, 724)
         Cells = $wideCells
-        Target = @(207, 92, 620, 530)
     },
     @{
         Id = 'young_woman'
@@ -266,28 +239,27 @@ $characters = @(
         Sheet = '年轻女性-表情.png'
         ExpectedSheetSize = @(2172, 724)
         Cells = $wideCells
-        Target = @(180, 42, 680, 620)
     },
-    @{ Id = 'xiangsheng_performer'; Portrait = '相声演员男.png'; Sheet = '相声演员男-表情.png'; ExpectedSheetSize = @(1254, 1254); Cells = $squareCells; Target = @(240, 30, 606, 600) },
-    @{ Id = 'tianjin_aunt'; Portrait = '天津本地阿姨.png'; Sheet = '天津本地阿姨-表情.png'; ExpectedSheetSize = @(1254, 1254); Cells = $squareCells; Target = @(235, 20, 616, 610) },
-    @{ Id = 'morning_elder'; Portrait = '晨练大爷.png'; Sheet = '晨练大爷-表情.png'; ExpectedSheetSize = @(1254, 1254); Cells = $squareCells; Target = @(235, 25, 616, 600) },
-    @{ Id = 'morning_aunt'; Portrait = '晨练阿姨.png'; Sheet = '晨练阿姨-表情.png'; ExpectedSheetSize = @(1254, 1254); Cells = $squareCells; Target = @(230, 20, 626, 620) },
-    @{ Id = 'student'; Portrait = '学生顾客.png'; Sheet = '学生顾客-表情.png'; ExpectedSheetSize = @(1254, 1254); Cells = $squareCells; Target = @(235, 30, 616, 590) },
-    @{ Id = 'delivery_rider'; Portrait = '外卖骑手.png'; Sheet = '外卖骑手-表情.png'; ExpectedSheetSize = @(1254, 1254); Cells = $squareCells; Target = @(220, 20, 650, 630) },
-    @{ Id = 'taxi_driver'; Portrait = '出租车司机.png'; Sheet = '出租车司机-表情.png'; ExpectedSheetSize = @(1254, 1254); Cells = $squareCells; Target = @(240, 45, 610, 590) },
-    @{ Id = 'tourist'; Portrait = '外地游客.png'; Sheet = '外地游客-表情.png'; ExpectedSheetSize = @(1254, 1254); Cells = $squareCells; Target = @(210, 15, 665, 650) },
-    @{ Id = 'kuaiban_performer'; Portrait = '快板演员男.png'; Sheet = '快板演员男-表情.png'; ExpectedSheetSize = @(1254, 1254); Cells = $squareCells; Target = @(235, 45, 620, 600) },
-    @{ Id = 'yangliuqing_painter'; Portrait = '杨柳青年画年轻画师.png'; Sheet = '杨柳青年画年轻画师-表情.png'; ExpectedSheetSize = @(1254, 1254); Cells = $squareCells; Target = @(225, 15, 640, 625) },
-    @{ Id = 'clay_figurine_artisan'; Portrait = '泥人张手艺人.png'; Sheet = '泥人张手艺人-表情.png'; ExpectedSheetSize = @(1254, 1254); Cells = $squareCells; Target = @(230, 25, 625, 600) },
-    @{ Id = 'culture_street_shopkeeper'; Portrait = '古文化街老店掌柜.png'; Sheet = '古文化街老店掌柜-表情.png'; ExpectedSheetSize = @(1254, 1254); Cells = $squareCells; Target = @(235, 40, 615, 580) },
-    @{ Id = 'haihe_cruise_worker'; Portrait = '海河游船工作人员.png'; Sheet = '海河游船工作人员-表情.png'; ExpectedSheetSize = @(2172, 724); Cells = $wideCells; Target = @(235, 30, 620, 600) },
-    @{ Id = 'wudadao_clerk'; Portrait = '五大道文艺店员.png'; Sheet = '五大道文艺店员-表情.png'; ExpectedSheetSize = @(2172, 724); Cells = $wideCells; Target = @(230, 25, 625, 620) },
-    @{ Id = 'breakfast_shop_peer'; Portrait = '天津老字号早点铺同行大叔.png'; Sheet = '天津老字号早点铺同行大叔-表情.png'; ExpectedSheetSize = @(2172, 724); Cells = $wideCells; Target = @(230, 40, 625, 600) },
-    @{ Id = 'culture_street_owner'; Portrait = '古文化街文创店年轻女店主.png'; Sheet = '古文化街文创店年轻女店主-表情.png'; ExpectedSheetSize = @(1254, 1254); Cells = $squareCells; Target = @(225, 20, 640, 620) },
-    @{ Id = 'haihe_runner'; Portrait = '海河晨跑青年.png'; Sheet = '海河晨跑青年-表情.png'; ExpectedSheetSize = @(2172, 724); Cells = $wideCells; Target = @(235, 25, 620, 600) },
-    @{ Id = 'tianjin_port_worker'; Portrait = '天津港码头工作者.png'; Sheet = '天津港码头工作者-表情.png'; ExpectedSheetSize = @(1254, 1254); Cells = $squareCells; Target = @(235, 25, 620, 610) },
-    @{ Id = 'folk_art_performer'; Portrait = '鼓曲从业者女.png'; Sheet = '鼓曲从业者女-表情.png'; ExpectedSheetSize = @(1254, 1254); Cells = $squareCells; Target = @(220, 10, 650, 650) },
-    @{ Id = 'kite_artisan'; Portrait = '风筝手艺人.png'; Sheet = '风筝手艺人-表情.png'; ExpectedSheetSize = @(1254, 1254); Cells = $squareCells; Target = @(230, 25, 630, 610) }
+    @{ Id = 'xiangsheng_performer'; Portrait = '相声演员男.png'; Sheet = '相声演员男-表情.png'; ExpectedSheetSize = @(1254, 1254); Cells = $squareCells },
+    @{ Id = 'tianjin_aunt'; Portrait = '天津本地阿姨.png'; Sheet = '天津本地阿姨-表情.png'; ExpectedSheetSize = @(1254, 1254); Cells = $squareCells },
+    @{ Id = 'morning_elder'; Portrait = '晨练大爷.png'; Sheet = '晨练大爷-表情.png'; ExpectedSheetSize = @(1254, 1254); Cells = $squareCells },
+    @{ Id = 'morning_aunt'; Portrait = '晨练阿姨.png'; Sheet = '晨练阿姨-表情.png'; ExpectedSheetSize = @(1254, 1254); Cells = $squareCells },
+    @{ Id = 'student'; Portrait = '学生顾客.png'; Sheet = '学生顾客-表情.png'; ExpectedSheetSize = @(1254, 1254); Cells = $squareCells },
+    @{ Id = 'delivery_rider'; Portrait = '外卖骑手.png'; Sheet = '外卖骑手-表情.png'; ExpectedSheetSize = @(1254, 1254); Cells = $squareCells },
+    @{ Id = 'taxi_driver'; Portrait = '出租车司机.png'; Sheet = '出租车司机-表情.png'; ExpectedSheetSize = @(1254, 1254); Cells = $squareCells },
+    @{ Id = 'tourist'; Portrait = '外地游客.png'; Sheet = '外地游客-表情.png'; ExpectedSheetSize = @(1254, 1254); Cells = $squareCells },
+    @{ Id = 'kuaiban_performer'; Portrait = '快板演员男.png'; Sheet = '快板演员男-表情.png'; ExpectedSheetSize = @(1254, 1254); Cells = $squareCells },
+    @{ Id = 'yangliuqing_painter'; Portrait = '杨柳青年画年轻画师.png'; Sheet = '杨柳青年画年轻画师-表情.png'; ExpectedSheetSize = @(1254, 1254); Cells = $squareCells },
+    @{ Id = 'clay_figurine_artisan'; Portrait = '泥人张手艺人.png'; Sheet = '泥人张手艺人-表情.png'; ExpectedSheetSize = @(1254, 1254); Cells = $squareCells },
+    @{ Id = 'culture_street_shopkeeper'; Portrait = '古文化街老店掌柜.png'; Sheet = '古文化街老店掌柜-表情.png'; ExpectedSheetSize = @(1254, 1254); Cells = $squareCells },
+    @{ Id = 'haihe_cruise_worker'; Portrait = '海河游船工作人员.png'; Sheet = '海河游船工作人员-表情.png'; ExpectedSheetSize = @(2172, 724); Cells = $wideCells },
+    @{ Id = 'wudadao_clerk'; Portrait = '五大道文艺店员.png'; Sheet = '五大道文艺店员-表情.png'; ExpectedSheetSize = @(2172, 724); Cells = $wideCells },
+    @{ Id = 'breakfast_shop_peer'; Portrait = '天津老字号早点铺同行大叔.png'; Sheet = '天津老字号早点铺同行大叔-表情.png'; ExpectedSheetSize = @(2172, 724); Cells = $wideCells },
+    @{ Id = 'culture_street_owner'; Portrait = '古文化街文创店年轻女店主.png'; Sheet = '古文化街文创店年轻女店主-表情.png'; ExpectedSheetSize = @(1254, 1254); Cells = $squareCells },
+    @{ Id = 'haihe_runner'; Portrait = '海河晨跑青年.png'; Sheet = '海河晨跑青年-表情.png'; ExpectedSheetSize = @(2172, 724); Cells = $wideCells },
+    @{ Id = 'tianjin_port_worker'; Portrait = '天津港码头工作者.png'; Sheet = '天津港码头工作者-表情.png'; ExpectedSheetSize = @(1254, 1254); Cells = $squareCells },
+    @{ Id = 'folk_art_performer'; Portrait = '鼓曲从业者女.png'; Sheet = '鼓曲从业者女-表情.png'; ExpectedSheetSize = @(1254, 1254); Cells = $squareCells },
+    @{ Id = 'kite_artisan'; Portrait = '风筝手艺人.png'; Sheet = '风筝手艺人-表情.png'; ExpectedSheetSize = @(1254, 1254); Cells = $squareCells }
 )
 
 function New-TransparentBitmap {
@@ -306,17 +278,11 @@ function Save-Png {
     $Bitmap.Save($Path, [System.Drawing.Imaging.ImageFormat]::Png)
 }
 
-function Remove-HeadPixels {
-    param(
-        [System.Drawing.Bitmap]$Body,
-        [System.Drawing.Bitmap[]]$Heads
-    )
-
-    [PortraitBitmapTools]::EraseCoveredPixels($Body, $Heads, 2)
-}
 
 $processed = @()
+$calibrations = Get-Content (Join-Path $PSScriptRoot 'tianjin_portrait_calibration.json') -Raw | ConvertFrom-Json -AsHashtable
 foreach ($character in $characters) {
+    $calibration = $calibrations[$character.Id]
     $portraitPath = Join-Path $ArtRoot $character.Portrait
     $sheetPath = Join-Path $ArtRoot $character.Sheet
     if (-not (Test-Path -LiteralPath $portraitPath)) { throw "Missing source portrait: $portraitPath" }
@@ -381,14 +347,9 @@ foreach ($character in $characters) {
                 $isolatedHeads += $isolated
             }
         }
-        $maxWidth = ($bounds | Measure-Object -Property Width -Maximum).Maximum
-        $maxHeight = ($bounds | Measure-Object -Property Height -Maximum).Maximum
         $sourceVisibleBounds = @($isolatedHeads | ForEach-Object { [PortraitBitmapTools]::VisibleBounds($_) })
         $normalSourceArea = [double]($sourceVisibleBounds[1].Width * $sourceVisibleBounds[1].Height)
-        $target = $character.Target
-        $placementScale = [Math]::Min($target[2] / $maxWidth, $target[3] / $maxHeight)
-        $centerX = $target[0] + ($target[2] / 2.0)
-        $centerY = $target[1] + ($target[3] / 2.0)
+        $placementScale = $calibration.headWidth / $sourceVisibleBounds[1].Width
 
         $heads = @()
         for ($index = 0; $index -lt $expressions.Count; $index++) {
@@ -404,8 +365,9 @@ foreach ($character in $characters) {
                 $expressionScale = $placementScale * [Math]::Sqrt($normalSourceArea / $sourceArea)
                 $width = [int][Math]::Round($source.Width * $expressionScale)
                 $height = [int][Math]::Round($source.Height * $expressionScale)
-                $left = [int][Math]::Round($centerX - ($width / 2.0))
-                $top = [int][Math]::Round($centerY - ($height / 2.0))
+                $neck = [PortraitBitmapTools]::NeckAnchor($isolatedHeads[$index], $sourceVisibleBounds[$index])
+                $left = [int][Math]::Round($calibration.neck[0] - ($neck.X - $source.Left) * $expressionScale)
+                $top = [int][Math]::Round($calibration.neck[1] - ($neck.Y - $source.Top) * $expressionScale)
                 $destination = [System.Drawing.Rectangle]::new($left, $top, $width, $height)
                 $graphics.DrawImage($isolatedHeads[$index], $destination, $source, [System.Drawing.GraphicsUnit]::Pixel)
             }
@@ -426,7 +388,7 @@ foreach ($character in $characters) {
         }
 
         $body = $portrait.Clone([System.Drawing.Rectangle]::new(0, 0, $canvasWidth, $canvasHeight), [System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
-        Remove-HeadPixels -Body $body -Heads $heads
+        [PortraitBitmapTools]::CutOriginalHead($body, $calibration.cutY)
 
         $outputDirectory = Join-Path $ArtRoot (Join-Path 'Customers' $character.Id)
         Save-Png -Bitmap $body -Path (Join-Path $outputDirectory 'body.png')
@@ -439,6 +401,7 @@ foreach ($character in $characters) {
             Body = $body
             Heads = $heads
             NormalBounds = [PortraitBitmapTools]::VisibleBounds($heads[1])
+            WaistY = $calibration.waistY
         }
         foreach ($isolated in $isolatedHeads) { $isolated.Dispose() }
     }
@@ -466,6 +429,8 @@ foreach ($character in $processed) {
             [Math]::Round(($bounds.Top + ($bounds.Height / 2.0)) / $canvasHeight, 8)
         )
         normalVisibleBounds = @($bounds.Left, $bounds.Top, $bounds.Width, $bounds.Height)
+        counterWaist = @([int]($bounds.Left + $bounds.Width / 2), [int]$character.WaistY)
+        counterHeight = [int]($character.WaistY - $bounds.Top)
     }
 }
 $layout = [ordered]@{

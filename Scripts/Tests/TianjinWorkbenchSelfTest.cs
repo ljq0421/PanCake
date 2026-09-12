@@ -105,11 +105,17 @@ public partial class StageFourSelfTest
         foreach (var appearance in CustomerAppearanceCatalog.All)
         {
             portrait.SetVisual(art.CustomerPortrait(appearance.Id, CustomerExpression.Normal));
-            portrait.SetCounterCalibration(art.CustomerLayout(appearance.Id).NormalVisibleBounds);
+            CustomerPortraitLayout layout = art.CustomerLayout(appearance.Id);
+            portrait.SetCounterCalibration(layout);
             TextureRect head = portrait.GetChildren().OfType<TextureRect>().Single(node => node.Texture == portrait.HeadTexture);
-            Rect2I pixels = VisibleBounds(portrait.HeadTexture!);
-            Vector2 headSize = (Vector2)pixels.Size * head.Size / portrait.HeadTexture!.GetSize();
-            Check(headSize.Y is >= 151 and <= 159, $"{appearance.Id} 天津头部按实体边界统一视觉高度");
+            float halfBodyHeight = layout.CounterHeight * head.Size.Y / portrait.HeadTexture!.GetHeight();
+            Check(Math.Abs(halfBodyHeight - 240) < 1, $"{appearance.Id} 天津按半身轮廓统一视觉高度");
+            Vector2 bodyPosition = head.Position;
+            foreach (CustomerExpression expression in Enum.GetValues<CustomerExpression>())
+            {
+                portrait.SetVisual(art.CustomerPortrait(appearance.Id, expression));
+                Check(head.Position.IsEqualApprox(bodyPosition), $"{appearance.Id} {expression} 切换不移动身体或腰线");
+            }
         }
         var order = screen.Descendants<OrderBubbleView>().First();
         Control portraitWindow = portrait.GetParent<Control>();

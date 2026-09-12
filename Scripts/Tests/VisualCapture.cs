@@ -240,7 +240,14 @@ public partial class VisualCapture : Node
                         {
                             fryer.TryExecute(FryerCommand.LowerBasket);
                             fryer.Tick(fryerState == "burnt" ? fryer.Level.BurnAtSeconds + 1 : fryer.Level.GoldenStartSeconds + .05);
-                            if (fryerState == "raised") fryer.TryExecute(FryerCommand.RaiseBasket);
+                            if (fryerState == "raised")
+                            {
+                                if (fryer.Level.AutoRaise)
+                                    fryer.Tick(Math.Max(0, fryer.Level.AutoRaiseAtSeconds - fryer.Runtime.FrySeconds) + .01);
+                                else fryer.TryExecute(FryerCommand.RaiseBasket);
+                                if (fryer.Runtime.State is not (FryerState.Raised or FryerState.Draining))
+                                    throw new InvalidOperationException("Raised-basket capture did not reach a raised state.");
+                            }
                         }
                         workstation.RefreshForCapture();
                         // Freeze the fixture before the capture delay drains the raised batch.
@@ -292,6 +299,12 @@ public partial class VisualCapture : Node
                     }
                     if (capturePause && dayScreen.FindChild("PauseButton", true, false) is Button pause)
                         pause.EmitSignal(Button.SignalName.Pressed);
+                    if (args.Contains("--capture-five-customers", StringComparer.Ordinal))
+                    {
+                        controller.CustomerQueue!.Tick(1000, .4, true);
+                        dayScreen.RefreshForCapture(true);
+                        dayScreen.SetProcess(false);
+                    }
                     if (captureClosingBag)
                     {
                         // Close while a newly bagged pancake is still in flight.
@@ -760,11 +773,13 @@ public partial class VisualCapture : Node
             {
                 var panel = TianjinUi.Panel(TianjinUi.Paper, 14, 3, false);
                 panel.CustomMinimumSize = new Vector2(365, 202);
+                grid.AddChild(panel);
                 var portrait = ProjectCake.Core.SceneFactory.Instantiate<CustomerPortraitView>("res://Scenes/UI/CustomerPortraitView.tscn");
-                portrait.SetVisual(art.CustomerPortrait(appearance.Id, expression));
                 portrait.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
                 panel.AddChild(portrait);
-                grid.AddChild(panel);
+                portrait.SetVisual(art.CustomerPortrait(appearance.Id, expression));
+                portrait.SetCounterCalibration(art.CustomerLayout(appearance.Id));
+                portrait.CustomMinimumSize = new Vector2(0, 180);
             }
         }
     }

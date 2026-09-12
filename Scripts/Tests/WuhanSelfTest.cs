@@ -162,6 +162,37 @@ public partial class WuhanSelfTest : Node
     }
     private void TestNoodles(DataCatalog c)
     {
+        const string beef = StableIds.Ingredients.WuhanBraisedBeef;
+        const string chili = StableIds.Ingredients.WuhanChiliOil;
+        const string scallion = StableIds.Ingredients.WuhanScallion;
+        var timing = new HotDryNoodlesStateMachine();
+        Check(!timing.TryAddTopping(beef), "空碗不能加牛肉");
+        timing.TryAddNoodles(NoodleQuality.Optimal);
+        Check(!timing.TryAddTopping(beef), "未调味不能加牛肉");
+        timing.TryAddBaseSeasoning();
+        Check(!timing.TryAddTopping(beef) && timing.Toppings.Count == 0, "已调味未拌面不能加牛肉");
+        Check(timing.TryAddTopping(chili) && !timing.TryAddTopping(chili), "辣油拌面前加入且禁止重复");
+        timing.AddMixDistance(100);
+        double partial = timing.MixProgress;
+        Check(!timing.TryAddTopping(beef) && !timing.TryAddTopping(scallion) && timing.MixProgress == partial,
+            "搅拌中拒绝加牛肉和葱花且不改变进度");
+        timing.AddMixDistance(325);
+        Check(!timing.TryAddTopping(scallion) && !timing.TryAddTopping("unknown"), "拌匀后拒绝葱花和未知小料");
+        Check(timing.TryAddTopping(beef) && timing.State == NoodleBowlState.Ready && timing.MixProgress == 100,
+            "拌匀后加入牛肉保持可出餐且无需再拌");
+        Check(!timing.TryAddTopping(beef) && timing.Toppings.Count == 2, "牛肉只添加一份");
+        Check(timing.TryPrepare(c.RecipesById, out var beefChili) && beefChili.RecipeId == StableIds.Recipes.HotDryNoodlesBeefChili,
+            "后加牛肉正确匹配牛肉辣油配方");
+        foreach (var recipe in c.RecipesById.Values.Where(r => r.Id.StartsWith("hot_dry_noodles_", StringComparison.Ordinal)))
+        {
+            timing.Reset(); timing.TryAddNoodles(NoodleQuality.Optimal); timing.TryAddBaseSeasoning();
+            foreach (string ingredient in recipe.ExtraIngredients.Where(id => id != beef))
+                Check(timing.TryAddTopping(ingredient), $"{recipe.Id}: 拌面前小料生效");
+            timing.AddMixDistance(425);
+            if (recipe.ExtraIngredients.Contains(beef)) Check(timing.TryAddTopping(beef), $"{recipe.Id}: 拌面后牛肉生效");
+            Check(timing.TryPrepare(c.RecipesById, out var prepared) && prepared.RecipeId == recipe.Id,
+                $"{recipe.Id}: 按新顺序正确出餐");
+        }
         var lv1=new NoodleCookerStateMachine(c.NoodleCookersByLevel[1]);Check(lv1.TryStart(0),"Lv1 面条下锅");lv1.Tick(1.6);Check(lv1.Baskets[0].State==NoodleBasketState.Ready,"1.6 秒进入最佳");lv1.Tick(1.5);Check(lv1.Baskets[0].State==NoodleBasketState.Soft,"超过 3 秒偏软");lv1.Tick(1);Check(lv1.Baskets[0].State==NoodleBasketState.Overcooked,"超过 4 秒煮过头");
         var lv2=new NoodleCookerStateMachine(c.NoodleCookersByLevel[2]);lv2.TryStart(0);lv2.Tick(5);Check(lv2.Baskets[0].State==NoodleBasketState.Locked,"Lv2 最佳点锁熟且不自动提篮");
         var lv3=new NoodleCookerStateMachine(c.NoodleCookersByLevel[3]);lv3.TryStart(0);lv3.TryStart(1);lv3.Tick(1.3);Check(lv3.Baskets.All(x=>x.State==NoodleBasketState.Draining),"Lv3 双漏勺独立自动提篮");

@@ -105,6 +105,7 @@ public partial class WorkstationSlotView : Control
         if (_ingredientVisuals.Count == 0)
             throw new InvalidOperationException($"{Name} 缺少场景预建的 Ingredient 视觉节点。");
         LoadSceneConfiguration();
+        foreach (TextureRect visual in _ingredientVisuals) FoodInk.Apply(visual);
         ApplyAttentionStyle();
         Resized += LayoutChildren;
     }
@@ -520,6 +521,7 @@ public partial class WorkstationSlotView : Control
         for (int index = 0; index < _ingredientVisuals.Count; index++)
         {
             _ingredientVisuals[index].Texture = texture;
+            FoodInk.Apply(_ingredientVisuals[index]);
             _ingredientVisuals[index].Visible = index < count;
         }
     }

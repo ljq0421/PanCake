@@ -67,11 +67,17 @@ public partial class WuhanWorkbenchSelfTest : Node
                                     screen.Workstation.CancelAnimations();
                                     screen.Workstation._GuiInput(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true, Position = screen.Workstation.IngredientCenter(0) });
                                     Check(screen.Bowl.State == NoodleBowlState.Seasoned && !screen.Workstation.Busy("bowl"), "repeated sesame clicks season once");
-                                    foreach (string ingredient in catalog.RecipesById[line.DefinitionId].ExtraIngredients)
+                                    var toppings = catalog.RecipesById[line.DefinitionId].ExtraIngredients;
+                                    foreach (string ingredient in toppings.Where(id => id != StableIds.Ingredients.WuhanBraisedBeef))
                                     {
                                         screen.IngredientAction(ingredient); screen.Workstation.CancelAnimations();
                                     }
                                     screen.Bowl.AddMixDistance(1000);
+                                    if (toppings.Contains(StableIds.Ingredients.WuhanBraisedBeef))
+                                    {
+                                        screen.IngredientAction(StableIds.Ingredients.WuhanBraisedBeef);
+                                        screen.Workstation.CancelAnimations();
+                                    }
                                 }
                                 else if (line.ProductKind == ProductKind.Doupi)
                                 {

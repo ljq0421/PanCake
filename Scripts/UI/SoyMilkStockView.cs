@@ -16,7 +16,11 @@ public partial class SoyMilkStockView : Control
 
     public void Configure(Texture2D texture)
     {
-        foreach (TextureRect cup in _cups) cup.Texture = texture;
+        foreach (TextureRect cup in _cups)
+        {
+            cup.Texture = texture;
+            FoodInk.Apply(cup);
+        }
     }
 
     public void RenderQuantity(int quantity)

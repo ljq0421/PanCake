@@ -20,7 +20,9 @@ public partial class WuhanWorkstationView
         if (target.StartsWith("ingredient"))
         {
             int index = int.Parse(target[^1..]);
-            return $"{new[] { "基础调味", "葱花", "辣油", "牛肉" }[index]}\n点击加入面碗；无需补货";
+            string timing = index == 3 ? "搅拌完成后点击加入；无需补货"
+                : index == 0 ? "放入熟面后点击加入；无需补货" : "开始拌面前点击加入；无需补货";
+            return $"{new[] { "基础调味", "葱花", "辣油", "牛肉" }[index]}\n{timing}";
         }
         if (target.StartsWith("basket"))
         {
@@ -39,7 +41,7 @@ public partial class WuhanWorkstationView
         return target switch
         {
             "raw" => "生面无限供应，拖进空漏勺",
-            "bowl" => "加入基础调味后在碗内划动拌匀；成品拖给顾客",
+            "bowl" => "基础调味、辣油和葱花在拌面前加入；划动拌匀后可加牛肉，再拖给顾客",
             "stock" => "豆皮拖给顾客，按订单所需数量出餐",
             "pan" when _doupi is null => "豆皮锅 · Day 4 解锁",
             "pan" when _doupi.State == DoupiState.Burnt => "豆皮焦糊；长按右键拖入底部垃圾桶",

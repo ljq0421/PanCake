@@ -77,6 +77,11 @@ public partial class FryerVisualView : Control
             AddChild(_basketAnchor); // Programmatic previews may omit the packed scene.
         }
         _basketAnchor.Draw += DrawBasket;
+        var basketInk = (ShaderMaterial)FoodInk.Material().Duplicate();
+        basketInk.SetShaderParameter("key_green", true);
+        basketInk.SetShaderParameter("outline_pixels", 0.4f);
+        basketInk.SetShaderParameter("detail_pixels", 0.25f);
+        _basketAnchor.Material = basketInk;
     }
 
     private Rect2 BodyCanvas()
@@ -181,6 +186,14 @@ public partial class FryerVisualView : Control
         FryerBatchRuntime runtime = _machine!.Runtime;
         Rect2 basket = new(opening.Position + new Vector2(0, -22 * (1 - _loweredProgress)), opening.Size);
         _basketAnchor.DrawTextureRect(_art!.EmbeddedBasket, basket, false);
+        Vector2[] rim = {
+            new(.015f, .61f), new(.10f, .12f), new(.12f, .05f), new(.15f, .015f),
+            new(.85f, .015f), new(.88f, .05f), new(.90f, .12f), new(.985f, .61f),
+            new(.995f, .72f), new(.986f, .80f), new(.96f, .85f), new(.04f, .85f),
+            new(.014f, .80f), new(.005f, .72f), new(.015f, .61f)
+        };
+        _basketAnchor.DrawPolyline(rim.Select(p => basket.Position + p * basket.Size).ToArray(),
+            new Color("#59351F"), 2.2f, true);
         int columns = _machine.Level.Capacity <= 6 ? 3 : 4;
         Texture2D food = runtime.State is FryerState.Empty or FryerState.Loaded ? _art.RawYoutiao
             : runtime.State == FryerState.Burnt ? _art.BurntYoutiao : _art.Ingredient(Data.StableIds.Ingredients.Youtiao);
@@ -214,6 +227,31 @@ public partial class FryerVisualView : Control
         Vector2 position = floor.Position + new Vector2(
             index * travel.X / (count - 1), travel.Y);
         return new Rect2(position, size);
+    }
+
+    public Control CreateBatchFoodPreview(Vector2 displaySize)
+    {
+        var preview = new Control { CustomMinimumSize = displaySize, MouseFilter = MouseFilterEnum.Ignore };
+        if (_machine is null || _art is null || _machine.Runtime.Quantity <= 0) return preview;
+        FryerBatchRuntime runtime = _machine.Runtime;
+        Texture2D texture = runtime.State == FryerState.Loaded ? _art.RawYoutiao
+            : runtime.State == FryerState.Burnt ? _art.BurntYoutiao : _art.Ingredient(Data.StableIds.Ingredients.Youtiao);
+        Color tint = runtime.State == FryerState.Loaded ? Colors.White : YoutiaoPresentation.Tint(runtime.Quality);
+        Rect2 basket = EmbeddedOpening ?? new Rect2(Vector2.Zero, new Vector2(300, 180));
+        int columns = _machine.Level.Capacity <= 6 ? 3 : 4;
+        Rect2[] pieces = Enumerable.Range(0, runtime.Quantity)
+            .Select(index => EmbeddedFoodRect(basket, columns, index, texture.GetSize())).ToArray();
+        Rect2 bounds = pieces.Aggregate((left, right) => left.Merge(right));
+        float scale = Mathf.Min(displaySize.X / bounds.Size.X, displaySize.Y / bounds.Size.Y);
+        foreach (Rect2 piece in pieces)
+            preview.AddChild(new TextureRect
+            {
+                Texture = texture, Modulate = tint, MouseFilter = MouseFilterEnum.Ignore,
+                ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+                Position = displaySize / 2 + (piece.Position - bounds.GetCenter()) * scale,
+                Size = piece.Size * scale,
+            });
+        return preview;
     }
 
     private void DrawBatch(FryerBatchRuntime runtime, Rect2 canvas, Rect2 basketPlacement)

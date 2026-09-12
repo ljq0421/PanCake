@@ -68,6 +68,8 @@ public partial class DragService : Node
                 StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
                 MouseFilter = Control.MouseFilterEnum.Ignore,
             });
+            foreach (TextureRect preview in _proxy.GetChildren().OfType<TextureRect>())
+                ProjectCake.UI.FoodInk.Apply(preview);
             _overlay.AddChild(_proxy);
             MoveProxy(source.GetGlobalMousePosition());
             SetProcessInput(true);

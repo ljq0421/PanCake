@@ -16,7 +16,9 @@ public readonly record struct CustomerPortraitVisual(
 public readonly record struct CustomerPortraitLayout(
     float Scale,
     Vector2 HeadAnchor,
-    Rect2I NormalVisibleBounds);
+    Rect2I NormalVisibleBounds,
+    Vector2 CounterWaist,
+    float CounterHeight);
 
 public enum CustomerExpression
 {
@@ -302,7 +304,13 @@ public sealed class TianjinArtCatalog
                     || headAnchor.X is < 0 or > 1 || headAnchor.Y is < 0 or > 1
                     || visibleBounds.Size.X <= 0 || visibleBounds.Size.Y <= 0)
                     throw new InvalidOperationException($"天津顾客头像布局数据非法：{appearance.Id}");
-                layouts[appearance.Id] = new CustomerPortraitLayout(scale, headAnchor, visibleBounds);
+                JsonElement waist = entry.GetProperty("counterWaist");
+                Vector2 counterWaist = new(waist[0].GetSingle(), waist[1].GetSingle());
+                float counterHeight = entry.GetProperty("counterHeight").GetSingle();
+                if (!float.IsFinite(counterHeight) || counterHeight <= 0 || counterHeight > 1448
+                    || counterWaist.X is < 0 or > 1086 || counterWaist.Y is < 0 or > 1448)
+                    throw new InvalidOperationException($"天津顾客半身布局数据非法：{appearance.Id}");
+                layouts[appearance.Id] = new CustomerPortraitLayout(scale, headAnchor, visibleBounds, counterWaist, counterHeight);
             }
             SharedPortraitLayouts = layouts;
             return SharedPortraitLayouts;

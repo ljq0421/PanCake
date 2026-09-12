@@ -22,12 +22,24 @@ public partial class CustomerPortraitView : Control
     private CustomerPortraitPresentation _presentation;
     private float _portraitScale = 1.0f;
     private Vector2 _headAnchor = new(0.5f, 0.25f);
-    private Rect2? _counterHeadBounds;
+    private CustomerPortraitLayout? _counterLayout;
+    private bool _fitCounterToWindow;
 
-    /// <summary>Tianjin-only fitting: a 155px head above a fixed 240px waist crop.</summary>
+    /// <summary>Tianjin-only fitting: the whole half-body silhouette above an authored waist.</summary>
+    public void SetCounterCalibration(CustomerPortraitLayout layout)
+    {
+        _counterLayout = layout;
+        _fitCounterToWindow = true;
+        LayoutLayers();
+    }
+
+    // Preserve Xi'an's existing head-based presentation.
     public void SetCounterCalibration(Rect2 normalHeadBounds)
     {
-        _counterHeadBounds = normalHeadBounds;
+        float height = normalHeadBounds.Size.Y * 240f / 155f;
+        _fitCounterToWindow = false;
+        _counterLayout = new CustomerPortraitLayout(1, Vector2.Zero, (Rect2I)normalHeadBounds,
+            new Vector2(normalHeadBounds.GetCenter().X, normalHeadBounds.Position.Y + height), height);
         LayoutLayers();
     }
 
@@ -75,10 +87,11 @@ public partial class CustomerPortraitView : Control
 
     private void LayoutLayers()
     {
-        if (_counterHeadBounds is Rect2 head)
+        if (_counterLayout is CustomerPortraitLayout layout)
         {
-            float counterScale = 155f / head.Size.Y;
-            Vector2 sourceWaist = new(head.GetCenter().X, head.Position.Y + 240f / counterScale);
+            float visibleHeight = _fitCounterToWindow ? Math.Clamp(Size.Y - TopInset, 1f, 240f) : 240f;
+            float counterScale = visibleHeight / layout.CounterHeight;
+            Vector2 sourceWaist = layout.CounterWaist;
             Vector2 position = new Vector2(Size.X * .5f, Size.Y) - sourceWaist * counterScale;
             foreach (TextureRect layer in new[] { _body, _head })
             {

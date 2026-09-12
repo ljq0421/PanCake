@@ -49,7 +49,7 @@ public partial class OrderBubbleSelfTest : Node
                 OrderLineData sideA = wuhan ? new(ProductKind.EggRiceWine, "egg_rice_wine", 1) : new(ProductKind.SoyMilk, "soy_milk", 1);
                 OrderLineData sideB = wuhan ? new(ProductKind.Doupi, "doupi", 2) : new(ProductKind.Youtiao, "youtiao", 2);
                 string firstRecipe = wuhan ? "hot_dry_noodles_scallion_chili" : "pancake_scallion_crispy";
-                string secondRecipe = wuhan ? "hot_dry_noodles_beef" : "pancake_ham";
+                string secondRecipe = wuhan ? "hot_dry_noodles_beef_chili" : "pancake_ham";
                 string plainRecipe = wuhan ? "hot_dry_noodles_classic" : "pancake_basic";
                 OrderLineData[][] fixtures =
                 {
@@ -100,9 +100,17 @@ public partial class OrderBubbleSelfTest : Node
                 for (int i = 0; i < 2; i++)
                 {
                     string[] actual = firstRows[i].FindChildren("OrderIngredientIcon*", "TextureRect", true, false).Select(n => n.GetMeta("ingredient_id").AsString()).ToArray();
-                    Check(actual.SequenceEqual(catalog.RecipesById[fixtures[0][i].DefinitionId].ExtraIngredients), "each portion has exactly its own topping icons");
+                    string[] expected = wuhan
+                        ? i == 0 ? new[] { "wuhan_chili_oil", "wuhan_scallion" } : new[] { "wuhan_chili_oil", "wuhan_braised_beef" }
+                        : catalog.RecipesById[fixtures[0][i].DefinitionId].ExtraIngredients.ToArray();
+                    Check(actual.SequenceEqual(expected), "each portion displays its own toppings in the city presentation order");
                 }
                 Check(Regions(bubbles[1], "OrderMainRow").Length == 2, "quantity two of same recipe expands into two rows");
+                if (wuhan)
+                    foreach (Control row in Regions(bubbles[1], "OrderMainRow"))
+                        Check(row.FindChildren("OrderIngredientIcon*", "TextureRect", true, false)
+                            .Select(n => n.GetMeta("ingredient_id").AsString()).SequenceEqual(new[] { "wuhan_chili_oil", "wuhan_braised_beef" }),
+                            "both repeated portions display chili before beef");
                 Check(Regions(bubbles[2], "OrderMainRow")[0].FindChildren("OrderIngredientIcon*", "", true, false).Count == 0, "plain recipe has no invented topping icons");
                 Check(bubbles[2].FindChildren("OrderSauceIcon*", "", true, false).Count == 0, "normal sauce has no badge");
                 Check(bubbles[0].FindChildren("OrderSauceIcon*", "", true, false).Count == (wuhan ? 0 : 2), "only Tianjin uses the light and extra sauce badges");

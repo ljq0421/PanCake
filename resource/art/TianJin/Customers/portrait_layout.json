@@ -1,319 +1,439 @@
 {
   "canvasWidth": 1086,
   "canvasHeight": 1448,
-  "referenceVisibleArea": 331874.5,
+  "referenceVisibleArea": 260294.0,
   "appearances": {
     "male_office": {
-      "scale": 1.0829153,
+      "scale": 0.98022907,
       "headAnchor": [
-        0.50046041,
-        0.22548343
+        0.49723757,
+        0.22824586
       ],
       "normalVisibleBounds": [
-        280,
-        58,
-        527,
-        537
-      ]
+        282,
+        68,
+        516,
+        525
+      ],
+      "counterWaist": [
+        540,
+        890
+      ],
+      "counterHeight": 822
     },
     "female_office": {
-      "scale": 1.07340486,
+      "scale": 0.9650308,
       "headAnchor": [
-        0.50368324,
-        0.21650552
+        0.5092081,
+        0.26070442
       ],
       "normalVisibleBounds": [
-        293,
-        30,
-        508,
-        567
-      ]
+        303,
+        98,
+        500,
+        559
+      ],
+      "counterWaist": [
+        553,
+        810
+      ],
+      "counterHeight": 712
     },
     "elder_regular": {
-      "scale": 1.04434629,
+      "scale": 0.89886733,
       "headAnchor": [
-        0.47605893,
-        0.24654696
+        0.51427256,
+        0.27520718
       ],
       "normalVisibleBounds": [
-        221,
-        100,
-        592,
-        514
-      ]
+        254,
+        134,
+        609,
+        529
+      ],
+      "counterWaist": [
+        558,
+        995
+      ],
+      "counterHeight": 861
     },
     "young_woman": {
-      "scale": 0.92359828,
+      "scale": 0.82724053,
       "headAnchor": [
-        0.47882136,
-        0.24309392
+        0.50138122,
+        0.28211326
       ],
       "normalVisibleBounds": [
-        199,
-        49,
-        642,
-        606
-      ]
+        227,
+        109,
+        635,
+        599
+      ],
+      "counterWaist": [
+        544,
+        1000
+      ],
+      "counterHeight": 891
     },
     "xiangsheng_performer": {
-      "scale": 1.0333875,
+      "scale": 1.02043134,
       "headAnchor": [
-        0.50046041,
-        0.22790055
+        0.53637201,
+        0.25448895
       ],
       "normalVisibleBounds": [
-        262,
-        54,
-        563,
-        552
-      ]
+        330,
+        121,
+        505,
+        495
+      ],
+      "counterWaist": [
+        582,
+        965
+      ],
+      "counterHeight": 844
     },
     "tianjin_aunt": {
-      "scale": 1.00946531,
+      "scale": 1.01285841,
       "headAnchor": [
-        0.5,
-        0.22444751
+        0.48664825,
+        0.25310773
       ],
       "normalVisibleBounds": [
-        248,
-        49,
-        590,
-        552
-      ]
+        268,
+        123,
+        521,
+        487
+      ],
+      "counterWaist": [
+        528,
+        950
+      ],
+      "counterHeight": 827
     },
     "morning_elder": {
-      "scale": 0.99959723,
+      "scale": 1.00565668,
       "headAnchor": [
-        0.49953959,
-        0.22513812
+        0.52255985,
+        0.25690608
       ],
       "normalVisibleBounds": [
-        247,
-        45,
-        591,
-        562
-      ]
+        307,
+        125,
+        521,
+        494
+      ],
+      "counterWaist": [
+        568,
+        945
+      ],
+      "counterHeight": 820
     },
     "morning_aunt": {
-      "scale": 0.97496495,
+      "scale": 1.0015287,
       "headAnchor": [
-        0.50046041,
-        0.22824586
-      ],
-      "normalVisibleBounds": [
-        242,
-        41,
-        603,
-        579
-      ]
-    },
-    "student": {
-      "scale": 1.01156716,
-      "headAnchor": [
-        0.50046041,
-        0.22513812
-      ],
-      "normalVisibleBounds": [
-        258,
-        42,
-        571,
-        568
-      ]
-    },
-    "delivery_rider": {
-      "scale": 0.95031013,
-      "headAnchor": [
-        0.50184162,
-        0.23066298
-      ],
-      "normalVisibleBounds": [
-        226,
-        46,
-        638,
-        576
-      ]
-    },
-    "taxi_driver": {
-      "scale": 1.00550885,
-      "headAnchor": [
-        0.50184162,
-        0.23411602
-      ],
-      "normalVisibleBounds": [
-        254,
-        57,
-        582,
-        564
-      ]
-    },
-    "tourist": {
-      "scale": 0.95695001,
-      "headAnchor": [
-        0.5,
-        0.23446133
-      ],
-      "normalVisibleBounds": [
-        254,
-        26,
-        578,
-        627
-      ]
-    },
-    "kuaiban_performer": {
-      "scale": 0.98483204,
-      "headAnchor": [
-        0.50184162,
-        0.23825967
-      ],
-      "normalVisibleBounds": [
-        249,
-        56,
-        592,
-        578
-      ]
-    },
-    "yangliuqing_painter": {
-      "scale": 1.03377178,
-      "headAnchor": [
-        0.50230203,
-        0.22686464
-      ],
-      "normalVisibleBounds": [
-        288,
-        27,
-        515,
-        603
-      ]
-    },
-    "clay_figurine_artisan": {
-      "scale": 0.99159418,
-      "headAnchor": [
-        0.50046041,
-        0.22410221
-      ],
-      "normalVisibleBounds": [
-        250,
-        37,
-        587,
-        575
-      ]
-    },
-    "culture_street_shopkeeper": {
-      "scale": 1.02460262,
-      "headAnchor": [
-        0.49907919,
-        0.22790055
-      ],
-      "normalVisibleBounds": [
-        246,
-        63,
-        592,
-        534
-      ]
-    },
-    "haihe_cruise_worker": {
-      "scale": 1.00389077,
-      "headAnchor": [
-        0.50138122,
-        0.22824586
-      ],
-      "normalVisibleBounds": [
-        264,
-        37,
-        561,
-        587
-      ]
-    },
-    "wudadao_clerk": {
-      "scale": 0.97521637,
-      "headAnchor": [
-        0.49953959,
-        0.2316989
-      ],
-      "normalVisibleBounds": [
-        238,
-        49,
-        609,
-        573
-      ]
-    },
-    "breakfast_shop_peer": {
-      "scale": 0.98186803,
-      "headAnchor": [
-        0.49953959,
-        0.23515193
-      ],
-      "normalVisibleBounds": [
-        240,
-        56,
-        605,
-        569
-      ]
-    },
-    "culture_street_owner": {
-      "scale": 1.01105292,
-      "headAnchor": [
-        0.50184162,
-        0.22755525
-      ],
-      "normalVisibleBounds": [
-        274,
-        30,
-        542,
-        599
-      ]
-    },
-    "haihe_runner": {
-      "scale": 0.98452422,
-      "headAnchor": [
-        0.50184162,
-        0.22479282
-      ],
-      "normalVisibleBounds": [
-        242,
-        43,
-        606,
-        565
-      ]
-    },
-    "tianjin_port_worker": {
-      "scale": 0.97977266,
-      "headAnchor": [
-        0.50230203,
-        0.22824586
-      ],
-      "normalVisibleBounds": [
-        249,
-        39,
-        593,
-        583
-      ]
-    },
-    "folk_art_performer": {
-      "scale": 0.94307027,
-      "headAnchor": [
-        0.50184162,
-        0.23135359
-      ],
-      "normalVisibleBounds": [
-        233,
-        36,
-        624,
-        598
-      ]
-    },
-    "kite_artisan": {
-      "scale": 1.00040326,
-      "headAnchor": [
-        0.50138122,
-        0.22755525
+        0.48112339,
+        0.26312155
       ],
       "normalVisibleBounds": [
         263,
-        35,
-        563,
-        589
-      ]
+        131,
+        519,
+        500
+      ],
+      "counterWaist": [
+        522,
+        915
+      ],
+      "counterHeight": 784
+    },
+    "student": {
+      "scale": 1.00135892,
+      "headAnchor": [
+        0.50322284,
+        0.21754144
+      ],
+      "normalVisibleBounds": [
+        291,
+        61,
+        511,
+        508
+      ],
+      "counterWaist": [
+        546,
+        935
+      ],
+      "counterHeight": 874
+    },
+    "delivery_rider": {
+      "scale": 0.99386017,
+      "headAnchor": [
+        0.51657459,
+        0.27417127
+      ],
+      "normalVisibleBounds": [
+        291,
+        153,
+        540,
+        488
+      ],
+      "counterWaist": [
+        561,
+        915
+      ],
+      "counterHeight": 762
+    },
+    "taxi_driver": {
+      "scale": 1.01847349,
+      "headAnchor": [
+        0.5271639,
+        0.24482044
+      ],
+      "normalVisibleBounds": [
+        318,
+        108,
+        509,
+        493
+      ],
+      "counterWaist": [
+        572,
+        970
+      ],
+      "counterHeight": 862
+    },
+    "tourist": {
+      "scale": 0.82961588,
+      "headAnchor": [
+        0.53314917,
+        0.29592541
+      ],
+      "normalVisibleBounds": [
+        284,
+        108,
+        590,
+        641
+      ],
+      "counterWaist": [
+        579,
+        950
+      ],
+      "counterHeight": 842
+    },
+    "kuaiban_performer": {
+      "scale": 1.00240788,
+      "headAnchor": [
+        0.50138122,
+        0.27106354
+      ],
+      "normalVisibleBounds": [
+        287,
+        141,
+        515,
+        503
+      ],
+      "counterWaist": [
+        544,
+        930
+      ],
+      "counterHeight": 789
+    },
+    "yangliuqing_painter": {
+      "scale": 0.98040461,
+      "headAnchor": [
+        0.49033149,
+        0.20890884
+      ],
+      "normalVisibleBounds": [
+        292,
+        21,
+        481,
+        563
+      ],
+      "counterWaist": [
+        532,
+        850
+      ],
+      "counterHeight": 829
+    },
+    "clay_figurine_artisan": {
+      "scale": 0.98024716,
+      "headAnchor": [
+        0.52946593,
+        0.23377072
+      ],
+      "normalVisibleBounds": [
+        312,
+        81,
+        526,
+        515
+      ],
+      "counterWaist": [
+        575,
+        890
+      ],
+      "counterHeight": 809
+    },
+    "culture_street_shopkeeper": {
+      "scale": 1.0532288,
+      "headAnchor": [
+        0.52900552,
+        0.26899171
+      ],
+      "normalVisibleBounds": [
+        320,
+        159,
+        509,
+        461
+      ],
+      "counterWaist": [
+        574,
+        970
+      ],
+      "counterHeight": 811
+    },
+    "haihe_cruise_worker": {
+      "scale": 0.94854483,
+      "headAnchor": [
+        0.49539595,
+        0.26243094
+      ],
+      "normalVisibleBounds": [
+        275,
+        105,
+        526,
+        550
+      ],
+      "counterWaist": [
+        538,
+        960
+      ],
+      "counterHeight": 855
+    },
+    "wudadao_clerk": {
+      "scale": 1.05027436,
+      "headAnchor": [
+        0.48572744,
+        0.23446133
+      ],
+      "normalVisibleBounds": [
+        277,
+        104,
+        501,
+        471
+      ],
+      "counterWaist": [
+        528,
+        915
+      ],
+      "counterHeight": 811
+    },
+    "breakfast_shop_peer": {
+      "scale": 1.00188009,
+      "headAnchor": [
+        0.52117864,
+        0.26001381
+      ],
+      "normalVisibleBounds": [
+        303,
+        130,
+        526,
+        493
+      ],
+      "counterWaist": [
+        566,
+        890
+      ],
+      "counterHeight": 760
+    },
+    "culture_street_owner": {
+      "scale": 0.94866617,
+      "headAnchor": [
+        0.52440147,
+        0.24447514
+      ],
+      "normalVisibleBounds": [
+        314,
+        71,
+        511,
+        566
+      ],
+      "counterWaist": [
+        570,
+        835
+      ],
+      "counterHeight": 764
+    },
+    "haihe_runner": {
+      "scale": 1.0261429,
+      "headAnchor": [
+        0.51151013,
+        0.23895028
+      ],
+      "normalVisibleBounds": [
+        298,
+        106,
+        515,
+        480
+      ],
+      "counterWaist": [
+        556,
+        895
+      ],
+      "counterHeight": 789
+    },
+    "tianjin_port_worker": {
+      "scale": 1.00833018,
+      "headAnchor": [
+        0.49401473,
+        0.23722376
+      ],
+      "normalVisibleBounds": [
+        281,
+        93,
+        511,
+        501
+      ],
+      "counterWaist": [
+        536,
+        970
+      ],
+      "counterHeight": 877
+    },
+    "folk_art_performer": {
+      "scale": 0.99864659,
+      "headAnchor": [
+        0.49631676,
+        0.27417127
+      ],
+      "normalVisibleBounds": [
+        278,
+        147,
+        522,
+        500
+      ],
+      "counterWaist": [
+        539,
+        980
+      ],
+      "counterHeight": 833
+    },
+    "kite_artisan": {
+      "scale": 0.9880284,
+      "headAnchor": [
+        0.51519337,
+        0.23480663
+      ],
+      "normalVisibleBounds": [
+        307,
+        76,
+        505,
+        528
+      ],
+      "counterWaist": [
+        560,
+        975
+      ],
+      "counterHeight": 899
     }
   }
 }

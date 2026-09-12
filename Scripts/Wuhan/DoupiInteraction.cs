@@ -9,7 +9,7 @@ public static class DoupiInteraction
 {
     public const int CoverageWidth = 32, CoverageHeight = 16;
     public const float BrushRadius = .22f, CoverageTarget = .85f;
-    public const float CutBand = .08f, CutTarget = .70f;
+    public const float CutBand = .18f, CutTarget = .70f;
     public const float FlipDistance = 40, FlipSideTolerance = 150;
     public static bool Inside(Vector2 p) => p.IsFinite() && p.X >= 0 && p.X <= 1 && p.Y >= 0 && p.Y <= 1;
     public static float Position(DoupiCutLine line) => line switch
@@ -61,15 +61,16 @@ public sealed class DoupiCutStroke
         float axisA = horizontal ? from.X : from.Y, axisB = horizontal ? point.X : point.Y;
         float crossA = horizontal ? from.Y : from.X, crossB = horizontal ? point.Y : point.X;
         float position = DoupiInteraction.Position(Line.Value);
-        // Only sufficiently straight segments contribute; clip each sample to the pan and band.
-        if (Math.Abs(axisB - axisA) < Math.Abs(crossB - crossA) * 1.5f || Math.Abs(axisB - axisA) < .00001f) return false;
+        // Direction is locked once. Small sideways jitters must not drop valid progress.
+        // Still clip every sample to the food and the selected line's forgiving band.
+        if (Math.Abs(axisB - axisA) < .00001f) return false;
         for (int i = 0; i < Samples; i++)
         {
             float axis = (i + .5f) / Samples;
             float t = (axis - axisA) / (axisB - axisA);
             if (t < 0 || t > 1) continue;
             float cross = Mathf.Lerp(crossA, crossB, t);
-            if (Math.Abs(cross - position) <= DoupiInteraction.CutBand) _covered[i] = true;
+            if (cross >= 0 && cross <= 1 && Math.Abs(cross - position) <= DoupiInteraction.CutBand) _covered[i] = true;
         }
         return Coverage >= DoupiInteraction.CutTarget;
     }

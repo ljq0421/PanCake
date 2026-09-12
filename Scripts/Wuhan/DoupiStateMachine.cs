@@ -120,6 +120,13 @@ public sealed class DoupiStateMachine
     public bool TryCut(DoupiCutLine direction)
     {
         if (!Enum.IsDefined(direction) || State is not (DoupiState.ReadyToCut or DoupiState.Overbrowned or DoupiState.Cutting) || !_cuts.Add(direction)) return false;
+        // One vertical gesture cuts all three columns; counts remain physical knife marks.
+        if (direction != DoupiCutLine.Horizontal)
+        {
+            _cuts.Add(DoupiCutLine.Left);
+            _cuts.Add(DoupiCutLine.Center);
+            _cuts.Add(DoupiCutLine.Right);
+        }
         State = DoupiState.Cutting;
         if (_cuts.Count == RequiredCuts) { State = DoupiState.Cut; RemainingPieces = _data.BatchYield; }
         return true;

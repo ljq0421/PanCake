@@ -11,6 +11,7 @@ namespace ProjectCake.Gameplay;
 
 public partial class WuhanDayScreen : Control
 {
+    private const float OrderCardWidth = 240;
     public event Action? HubRequested;
     private readonly Control[] _customers = new Control[5];
     private readonly DropZone[] _customerDropZones = new DropZone[5];
@@ -104,7 +105,7 @@ public partial class WuhanDayScreen : Control
             _portraits[i].Position = new Vector2(5, 162);
             _portraits[i].Size = new Vector2(340, 268);
             _orders[i].Reparent(_customers[i], false);
-            _orders[i].Position = new Vector2(29, 5);
+            _orders[i].CustomMinimumSize = new Vector2(OrderCardWidth, 0);
             _orders[i].Scale = Vector2.One * .88f;
             _patience[i].CustomMinimumSize = new Vector2(0, 6);
             foreach (string style in new[] { "background", "fill" })
@@ -293,7 +294,7 @@ public partial class WuhanDayScreen : Control
         Render(); return ok;
     }
     internal bool PourDoupiBatter() => ApplyDoupi(d => d.TryPourBatter(), "空锅才能倒浆；请先处理锅中豆皮。");
-    internal bool AddDoupiEgg() => ApplyDoupi(d => d.TryAddEgg(), "先从浆碗拖浆入锅，再点击鸡蛋。");
+    internal bool AddDoupiEgg() => ApplyDoupi(d => d.TryAddEgg(), "先从浆碗拖浆入锅，再点击蛋液容器。");
     internal bool FlipDoupi() => ApplyDoupi(d => d.TryFlip(), "等面皮定型后，按住锅面向上划。");
     internal bool AddDoupiFilling() => ApplyDoupi(d => d.TryAddFilling(), "翻面后再取馅；已经投入的馅直接在锅面续铺。", false);
     internal bool SpreadDoupi(Vector2 from, Vector2 to)
@@ -361,7 +362,10 @@ public partial class WuhanDayScreen : Control
             _deliveryQuantityLabels[i].Visible = quantity > 0;
             if (customer is null) continue;
             _orders[i].Render(customer.Order,customer.Progress,_catalog.RecipesById);
-            _orders[i].Size = new Vector2(332, _orders[i].GetCombinedMinimumSize().Y);
+            // All Wuhan cards share one compact width, with the tail over the customer.
+            _orders[i].Size = new Vector2(OrderCardWidth, _orders[i].GetCombinedMinimumSize().Y);
+            _orders[i].Position = new Vector2(
+                (_customers[i].Size.X - _orders[i].Size.X * _orders[i].Scale.X) * .5f, 5);
             PatienceBarPresentation.Render(_patience[i], 1 - customer.PatienceProgress);
             _portraits[i].SetVisual(_art.Shared.CustomerPortrait(customer.AppearanceId,TianjinArtCatalog.ResolveCustomerExpression(customer.State,customer.WasServed)));
         }
@@ -379,9 +383,12 @@ public partial class WuhanDayScreen : Control
     }
     private void OnFinished(DayResult result)
     {
-        CollectionFeedback.Clear();
-        if(_committed||_controller.CurrentConfig?.CityId!=StableIds.Cities.Wuhan)return;_committed=true;CloseBusinessDetails();_paymentFeedback.Clear();Workstation.CancelAnimations();try{DayCommitResult commit=_save.CommitDay(result,_controller.CurrentPlan!,_controller.CurrentConfig!);string stars=result.Day==12?$"\n武汉评级 {new string('★',commit.EarnedStars)}{new string('☆',3-commit.EarnedStars)}":"";_resultText.Text=$"[center][font_size=28]武汉 Day {result.Day} 打烊[/font_size]\n\n[font_size=42]今日总收入 ¥{result.TotalRevenue}[/font_size]\n永久金币增加 ¥{commit.PermanentCoinGain}\n\n完成 {result.CompletedCustomers} 位 · 流失 {result.LostCustomers} 位\n满意度 {result.Satisfaction:0}% · Perfect {result.PerfectOrders} 单{stars}[/center]";_unlock.Text=commit.NewChapterCompletion?"武汉 · 过早之城已经点亮！获得两件早餐收藏与章节徽章。西安章节已开放。":_controller.CurrentConfig.CompletionUnlocks.Count>0?"新的武汉设备升级已经开放。":"成绩已写入武汉经营手账。";}catch(IOException e){_resultText.Text=$"保存失败：{e.Message}";_unlock.Text="本次结果已回退。";}_blocker.Visible=true;_results.Visible=true;
+        if (_committed || _controller.CurrentConfig?.CityId != StableIds.Cities.Wuhan) return;
+        _committed = true; CloseBusinessDetails(); _paymentFeedback.Clear(); Workstation.CancelAnimations();
+        var model = BusinessBookModel.From(StableIds.Cities.Wuhan, result, _controller.BusinessRecords, _catalog);
+        BusinessBookSettlement.Commit(model, _save, _controller.CurrentPlan!, _controller.CurrentConfig!, _catalog, allowFailedReturn: true);
+        _blocker.Hide(); _results.Hide(); BusinessDetails.Open(model);
     }
     private static string Subtitle(int day)=>day switch{1=>"初到武汉",4=>"豆皮开锅",6=>"双线熟练",7=>"牛肉与上班族",8=>"完整早餐",9=>"带走大单",12=>"最终挑战",_=>"过早高峰"};
-    private static string Tutorial(int day)=>day switch{1=>"拖面入锅，漏勺亮起后向上提篮并拖到空碗。点击调味，划动至酱料拌匀，再拖给顾客。",4=>"拖浆入锅并点鸡蛋，皮边金黄翘起后上划翻面。\n拖馅铺开；铲刀亮起后按住锅面，沿辅助线切一横三竖，8 块自动入盘。",6=>"热干面与豆皮搭配出餐；豆皮一次拖拽按顾客所需数量交付",7=>"上班族耐心只有 34 秒；牛肉要等热干面搅拌完成后再加入",8=>"熟客和游客加入：短耐心不一定是最高价值订单",_=>string.Empty};
+    private static string Tutorial(int day)=>day switch{1=>"拖面入锅，漏勺亮起后向上提篮并拖到空碗。点击调味，划动至酱料拌匀，再拖给顾客。",4=>"拖浆入锅并点击蛋液容器，皮边金黄翘起后上划翻面。\n拖馅铺开；铲刀亮起后按住锅面，横划一刀、竖划一刀（自动切三条），8 块自动入盘。",6=>"热干面与豆皮搭配出餐；豆皮一次拖拽按顾客所需数量交付",7=>"上班族耐心只有 34 秒；牛肉要等热干面搅拌完成后再加入",8=>"熟客和游客加入：短耐心不一定是最高价值订单",_=>string.Empty};
 }

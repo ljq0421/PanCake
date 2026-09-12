@@ -19,9 +19,9 @@ public partial class GuangzhouDayScreen : Control
     private DayController _controller = null!;
     private Control _canvas = null!, _overlay = null!;
     private Label _title = null!, _clock = null!, _income = null!, _feedback = null!, _tutorial = null!, _results = null!;
-    private readonly GuangzhouCustomerCard[] _customers = new GuangzhouCustomerCard[4];
-    private readonly Label[] _orders = new Label[4];
-    private readonly ProgressBar[] _patience = new ProgressBar[4];
+    private readonly GuangzhouCustomerCard[] _customers = new GuangzhouCustomerCard[5];
+    private readonly Label[] _orders = new Label[5];
+    private readonly ProgressBar[] _patience = new ProgressBar[5];
     private readonly GuangzhouTrayView[] _trays = new GuangzhouTrayView[2];
     private readonly Button[] _cuts = new Button[2], _discards = new Button[2];
     private readonly GuangzhouDragSource[] _deliverRolls = new GuangzhouDragSource[2];
@@ -36,12 +36,13 @@ public partial class GuangzhouDayScreen : Control
     private int _selectedTray;
     private string _tool = "";
     private DayResult? _pendingResult;
-    private bool CanInteract => IsVisibleInTree() && _focused && !_manuallyPaused && !_abandon.Visible && !_committed
+    private bool CanInteract => IsVisibleInTree() && !_book.IsOpen && _focused && !_manuallyPaused && !_abandon.Visible && !_committed
         && _controller is not null && _controller.State is DayState.Running or DayState.Closing;
 
     public override void _Ready()
     {
         SceneNodeBinder.Bind(this);
+        BuildBusinessBook();
         void FitCanvas()
         {
             float scale = Math.Min(Size.X / 1920, Size.Y / 1080);
@@ -154,7 +155,7 @@ public partial class GuangzhouDayScreen : Control
         if (practice) foreach (string id in GuangzhouRules.Equipment) city.EquipmentLevels[id] = 2;
         Session = new(catalog, city, config); Practice = practice;
         controller.GuangzhouStockCount = Session.DimSum.Count;
-        _selectedTray = 0; _tool = ""; _committed = _manuallyPaused = false; _pendingResult = null;
+        _book.Reset(); _selectedTray = 0; _tool = ""; _committed = _manuallyPaused = false; _pendingResult = null;
         _focused = true; _overlay.Visible = false; _abandon.Hide(); controller.IsPaused = false;
         for (int i = 0; i < _trays.Length; i++)
         {
@@ -173,7 +174,7 @@ public partial class GuangzhouDayScreen : Control
     {
         if (!IsVisibleInTree() || Session is null || _controller.CurrentConfig?.CityId != StableIds.Cities.Guangzhou) return;
         bool paused = !_focused || _manuallyPaused || _abandon.Visible;
-        _controller.IsPaused = Session.Paused = paused;
+        _controller.IsPaused = paused; Session.Paused = paused || _book.IsOpen;
         _controller.Tick(delta);
         if (_controller.State is DayState.Running or DayState.Closing) Session.Tick(delta);
         Render();
@@ -210,7 +211,7 @@ public partial class GuangzhouDayScreen : Control
         int index = Enumerable.Range(0, Session.Cabinet.Baskets.Count).FirstOrDefault(i => Session.Cabinet.Baskets[i].Empty, -1);
         if (index < 0 || !Session.LoadBasket(index, id)) Feedback("蒸柜已满，请先取出熟蒸点。");
     }
-    private CustomerRuntime? CustomerAt(int slot) => _controller?.CustomerQueue?.Slots.ElementAtOrDefault(slot);
+    private CustomerRuntime? CustomerAt(int slot) => _controller?.CustomerQueue?.CustomerAtSlot(slot);
     private string? SelectedCustomerId => _controller.CustomerQueue?.SelectedCustomerId;
     private void SelectCustomer(int slot) { if (CanInteract && CustomerAt(slot) is { } c) _controller.CustomerQueue!.TrySelect(c.Id); }
     private bool TryGetItem(string payload, out DeliveredItem item, out Func<bool> consume)
@@ -250,7 +251,7 @@ public partial class GuangzhouDayScreen : Control
             DayState.Results => "营业结束", _ => $"剩余 {_controller.DayRemainingSeconds:0}s",
         };
         _income.Text = $"¥{(_controller.Ledger?.SaleRevenue ?? 0) + (_controller.Ledger?.Tips ?? 0)}  ·  {_controller.Ledger?.CompletedCustomers ?? 0}人";
-        for (int i = 0; i < 4; i++)
+        for (int i = 0; i < _customers.Length; i++)
         {
             var c = CustomerAt(i); _customers[i].Disabled = c is null || !CanInteract;
             _patience[i].Visible = c is not null;
@@ -308,20 +309,14 @@ public partial class GuangzhouDayScreen : Control
     private void OnFinished(DayResult result)
     {
         if (!IsVisibleInTree() || _controller.CurrentConfig?.CityId != StableIds.Cities.Guangzhou) return;
-        _pendingResult = result; CancelGestures(); _overlay.Visible = true; CommitResult();
+        _pendingResult = result; CancelGestures(); _overlay.Hide(); CommitResult();
     }
     private void CommitResult()
     {
-        if (_pendingResult is not { } r || _committed) return;
-        try
-        {
-            var commit = Practice ? new DayCommitResult(0, false, SaveService.EvaluateStars(r, Session.Config)) : _save.CommitDay(r, _controller.CurrentPlan!, Session.Config);
-            _committed = true; _retry.Visible = false; _back.Disabled = false;
-            string unlocks = string.Join("、", Session.Config.CompletionUnlocks.Select(id => id.Replace("equipment:", "")).Select(id => _catalog.GuangzhouEquipment.TryGetValue(id, out var e) ? $"{GuangzhouRules.Name(e.EquipmentId)} Lv{e.Level}" : id));
-            _results.Text = $"营业额    ¥{r.SaleRevenue}      小费    ¥{r.Tips}\n\n完成顾客    {r.CompletedCustomers}/{r.PlannedCustomers}      离店    {r.LostCustomers}\n\nPerfect    {r.PerfectOrders}      最高连续正确    {r.HighestCorrectStreak}\n\n满意度    {r.Satisfaction:0.0}%      本次星级    {new string('★', commit.EarnedStars)}\n\n" +
-                (Practice ? "练习结束 · 不保存收入、设备或章节进度" : $"计入共享金币    ¥{commit.PermanentCoinGain}（历史最佳差额）") + (!Practice && unlocks.Length > 0 ? $"\n\n升级已开放：{unlocks}" : "");
-        }
-        catch (Exception e) { _results.Text = $"结算保存失败，成绩仍保留在本页面。\n\n{e.Message}\n\n请重试保存。"; _retry.Visible = true; _back.Disabled = true; }
+        if (_pendingResult is not { } result || _committed) return;
+        var model = BusinessBookModel.From(StableIds.Cities.Guangzhou, result, _controller.BusinessRecords, _catalog);
+        BusinessBookSettlement.Commit(model, _save, _controller.CurrentPlan!, Session.Config, _catalog, Practice);
+        _committed = !model.CanRetry; _book.ShowResult(model);
     }
     public static string Tutorial(int day) => day switch
     {

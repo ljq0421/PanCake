@@ -19,6 +19,7 @@ public partial class YangzhouSurface : Control
     public Action<Vector2, Vector2, double>? Motion { get; set; }
     public Action? Released { get; set; }
     private bool _held;
+    public bool HasGesture => _held;
     private Vector2 _last;
     private ulong _lastTime;
     private Label _title = null!, _detail = null!;

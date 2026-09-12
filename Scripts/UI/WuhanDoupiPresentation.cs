@@ -6,12 +6,22 @@ namespace ProjectCake.UI;
 public partial class WuhanWorkstationView
 {
     private Vector2[] PanCorners => _layout.PanCorners;
-    // Skin and scorch layers keep their original crop. Filling uses a wider
-    // source aspect to avoid flattening the grains on the existing pan mesh.
-    private static readonly Rect2 DoupiSurface = new(.08f, .27f, .84f, .46f);
-    private static readonly Rect2 DoupiFillingSurface = new(.08f, .34f, .84f, .32f);
-    private static Rect2 DoupiSource(string id, Rect2 region) =>
-        RelativeRect(id == "doupi_filling_overlay" ? DoupiFillingSurface : DoupiSurface, region);
+    // Each illustration already has perspective. Sample its trapezoid, not its
+    // rectangular canvas, so the shared pan mesh does not apply perspective twice.
+    private static Vector2[] DoupiSource(string id, Rect2 region)
+    {
+        Vector2[] source = id switch
+        {
+            "doupi_egg" => SourceQuad(1254, 1254, 102, 350, 1158, 350, 1236, 892, 20, 892),
+            "doupi_filling_overlay" => SourceQuad(1254, 1254, 98, 390, 1160, 390, 1234, 870, 22, 870),
+            "doupi_filling_cooked" => SourceQuad(1774, 887, 120, 130, 1650, 130, 1754, 817, 18, 817),
+            "doupi_burnt" => RectQuad(new Rect2(.04f, .075f, .93f, .85f)),
+            _ => SourceQuad(1536, 1024, 122, 250, 1410, 250, 1502, 831, 34, 831),
+        };
+        return QuadRegion(source, region);
+    }
+    private static Vector2[] SourceQuad(float width, float height, params float[] points) =>
+        Enumerable.Range(0, 4).Select(i => new Vector2(points[i * 2] / width, points[i * 2 + 1] / height)).ToArray();
     private static float Smooth(float p) { p = Mathf.Clamp(p, 0, 1); return p * p * (3 - 2 * p); }
     private static float Phase(float p, float start, float end) => Smooth((p - start) / (end - start));
     private static Vector2 QuadPoint(Vector2[] q, float x, float y) => q[0].Lerp(q[1], x).Lerp(q[3].Lerp(q[2], x), y);
@@ -33,14 +43,13 @@ public partial class WuhanWorkstationView
             return;
         }
         Texture2D texture = _art.Texture(id);
-        Rect2 source = DoupiSource(id, region ?? new Rect2(0, 0, 1, 1));
-        (canvas ?? this).DrawPolygon(quad, new[] { tint }, RectQuad(source), texture);
+        Vector2[] source = DoupiSource(id, region ?? new Rect2(0, 0, 1, 1));
+        (canvas ?? this).DrawPolygon(quad, new[] { tint }, source, texture);
     }
 
     private void DrawBurntDoupi(CanvasItem canvas, Vector2[] quad, bool hasFilling)
     {
-        SurfaceLayer("doupi_skin", quad, new Color(.66f, .43f, .24f), canvas: canvas);
-        if (hasFilling) SurfaceLayer("doupi_filling_overlay", quad, new Color(.66f, .43f, .24f), canvas: canvas);
+        SurfaceLayer(hasFilling ? "doupi_filling_cooked" : "doupi_egg", quad, new Color(.66f, .43f, .24f), canvas: canvas);
         SurfaceLayer("doupi_burnt", quad, new Color(.60f, .43f, .28f), canvas: canvas);
         Vector2[] rim = { quad[3], quad[2], QuadPoint(quad, 1, .94f), QuadPoint(quad, 0, .94f) };
         canvas.DrawColoredPolygon(rim, new Color(.19f, .10f, .04f, .85f));
@@ -58,20 +67,62 @@ public partial class WuhanWorkstationView
         preview.Draw += () => DrawBurntDoupi(preview, quad, hasFilling);
         return preview;
     }
-    private static Color CookedTint(float progress, float alpha = 1) => new Color(1, 1, 1, alpha).Lerp(new Color(1, .83f, .56f, alpha), Smooth(progress));
-    private void FilledSurface(Vector2[] quad, float browning, float alpha = 1, Rect2? region = null, DoupiQuality quality = DoupiQuality.Normal)
+    private Control CreateDoupiPiecePreview(DoupiInventory.Piece piece)
     {
-        SurfaceLayer("doupi_skin", quad, CookedTint(browning, alpha), region);
-        SurfaceLayer("doupi_filling_overlay", quad, CookedTint(browning, alpha), region);
-        if (quality != DoupiQuality.Normal)
-            SurfaceLayer("doupi_burnt", quad, new Color(1, 1, 1, alpha * (quality == DoupiQuality.Burnt ? 1 : .3f)), region);
+        var preview = new Control { Name = "DoupiPiecePreview", MouseFilter = MouseFilterEnum.Ignore, CustomMinimumSize = new Vector2(100, 60) };
+        preview.Draw += () => DrawPiece(piece.Tile, RectQuad(new Rect2(0, 0, 100, 57)), piece.Quality, canvas: preview);
+        return preview;
     }
-    private void DrawPiece(int tile, Vector2[] quad, DoupiQuality quality, float alpha = 1)
+    private Control CreatePanDoupiPreview(Vector2 size)
     {
+        var preview = new Control { Name = "PanDoupiPreview", MouseFilter = MouseFilterEnum.Ignore, CustomMinimumSize = size };
+        Vector2[] corners = PanCorners;
+        Vector2 min = new(corners.Min(p => p.X), corners.Min(p => p.Y));
+        Vector2 extent = new(corners.Max(p => p.X) - min.X, corners.Max(p => p.Y) - min.Y);
+        float scale = Math.Min((size.X - 8) / extent.X, (size.Y - 8) / extent.Y);
+        Vector2 offset = (size - extent * scale) / 2;
+        Vector2[] quad = corners.Select(p => (p - min) * scale + offset).ToArray();
+        preview.Draw += () =>
+        {
+            if (_doupi is null) return;
+            DoupiState state = _doupi.State;
+            if (state == DoupiState.Burnt) DrawBurntDoupi(preview, quad, _doupi.Coverage > 0);
+            else if (state == DoupiState.Cut)
+                for (int i = _doupi.FirstRemainingPiece; i < _doupi.FirstRemainingPiece + _doupi.RemainingPieces; i++)
+                    DrawPiece(i, QuadRegion(quad, PieceRegion(i)), _doupi.Quality, canvas: preview);
+            else if (state is DoupiState.SecondCooking or DoupiState.ReadyToCut or DoupiState.Overbrowned or DoupiState.Cutting)
+                FilledSurface(quad, _doupi.BrowningProgress, quality: _doupi.Quality, canvas: preview);
+            else
+            {
+                SurfaceLayer(state == DoupiState.Batter ? "doupi_skin" : "doupi_egg", quad, Colors.White, canvas: preview);
+                if (state == DoupiState.Spreading) DrawSpreading(quad, preview);
+            }
+            if (state == DoupiState.Cutting)
+                foreach (DoupiCutLine line in _doupi.CutLines)
+                {
+                    int index = (int)line;
+                    Vector2 a = index < 3 ? QuadPoint(quad, (index + 1) / 4f, 0) : QuadPoint(quad, 0, .5f);
+                    Vector2 b = index < 3 ? QuadPoint(quad, (index + 1) / 4f, 1) : QuadPoint(quad, 1, .5f);
+                    preview.DrawLine(a, b, new Color("#744625"), 2, true);
+                }
+        };
+        return preview;
+    }
+    private void FilledSurface(Vector2[] quad, float browning, float alpha = 1, Rect2? region = null, DoupiQuality quality = DoupiQuality.Normal, CanvasItem? canvas = null)
+    {
+        float cooked = Smooth(browning);
+        if (cooked < 1) SurfaceLayer("doupi_filling_overlay", quad, new Color(1, 1, 1, alpha), region, canvas);
+        if (cooked > 0) SurfaceLayer("doupi_filling_cooked", quad, new Color(1, 1, 1, alpha * cooked), region, canvas);
+        if (quality != DoupiQuality.Normal)
+            SurfaceLayer("doupi_burnt", quad, new Color(1, 1, 1, alpha * (quality == DoupiQuality.Burnt ? 1 : .3f)), region, canvas);
+    }
+    private void DrawPiece(int tile, Vector2[] quad, DoupiQuality quality, float alpha = 1, CanvasItem? canvas = null)
+    {
+        canvas ??= this;
         Vector2 depth = new(0, 3);
-        DrawColoredPolygon(new[] { quad[3], quad[2], quad[2] + depth, quad[3] + depth }, new Color(.58f, .30f, .10f, alpha));
-        FilledSurface(quad, 1, alpha, PieceRegion(tile), quality);
-        DrawPolyline(new[] { quad[0], quad[1], quad[2], quad[3], quad[0] }, new Color(.52f, .30f, .10f, .7f * alpha), 1, true);
+        canvas.DrawColoredPolygon(new[] { quad[3], quad[2], quad[2] + depth, quad[3] + depth }, new Color(.58f, .30f, .10f, alpha));
+        FilledSurface(quad, 1, alpha, PieceRegion(tile), quality, canvas);
+        canvas.DrawPolyline(new[] { quad[0], quad[1], quad[2], quad[3], quad[0] }, new Color(.52f, .30f, .10f, .7f * alpha), 1, true);
     }
     private Vector2[] PanPiece(int tile) => QuadRegion(PanCorners, PieceRegion(tile));
     private Rect2 StockItemRect(int index)
@@ -129,8 +180,9 @@ public partial class WuhanWorkstationView
             float alpha = motion?.Kind == "batter" ? deposit : 1;
             if (motion?.Kind == "batter" && !ReducedMotion)
                 quad = quad.Select(v => PanCenter + (v - PanCenter) * (.85f + .15f * deposit)).ToArray();
-            SurfaceLayer("doupi_skin", quad, new Color(1, 1, 1, alpha));
-            if (state != DoupiState.Batter)
+            if (state is DoupiState.Batter || motion?.Kind == "egg")
+                SurfaceLayer("doupi_skin", quad, new Color(1, 1, 1, alpha));
+            if (state is DoupiState.SkinCooking or DoupiState.ReadyToFlip or DoupiState.Flipped or DoupiState.Spreading)
             {
                 if (motion?.Kind == "egg" && !ReducedMotion) DrawEggSurface(quad, p);
                 else SurfaceLayer("doupi_egg", quad, new Color(1, 1, 1, motion?.Kind == "egg" ? Smooth(p) : 1));
@@ -192,8 +244,9 @@ public partial class WuhanWorkstationView
     }
     private void DrawDoupiIngredients()
     {
-        // The tray is painted into the sheet; only the eggs are a dynamic overlay.
-        Sprite(_art.Shared.Ingredient(ProjectCake.Data.StableIds.Ingredients.Egg), _layout.DoupiEggFood);
+        // Egg liquid and its tray are painted into the sheet. The spoon is the only overlay.
+        if (ReducedMotion || Find("pan")?.Kind != "egg")
+            Sprite("egg_ladle", _layout.DoupiEggFood);
         Rect2? available = _doupi?.State switch
         { DoupiState.Empty => BatterRect, DoupiState.Batter => DoupiEggRect, DoupiState.Flipped => FillingRect, _ => null };
         if (available is Rect2 rect && !Busy("pan"))
@@ -201,7 +254,7 @@ public partial class WuhanWorkstationView
         Hint(BatterRect, "batter"); Hint(FillingRect, "filling"); Hint(DoupiEggRect, "doupi_egg");
     }
 
-    private void DrawSpreading(Vector2[] quad)
+    private void DrawSpreading(Vector2[] quad, CanvasItem? canvas = null)
     {
         const int width = DoupiInteraction.CoverageWidth, height = DoupiInteraction.CoverageHeight;
         float Alpha(int x, int y)
@@ -218,7 +271,7 @@ public partial class WuhanWorkstationView
                 new(1, 1, 1, Alpha(x + 1, y + 1)), new(1, 1, 1, Alpha(x, y + 1)) };
             if (colors.All(c => c.A == 0)) continue;
             Rect2 region = new((float)x / width, (float)y / height, 1f / width, 1f / height);
-            DrawPolygon(QuadRegion(quad, region), colors, RectQuad(DoupiSource("doupi_filling_overlay", region)), texture);
+            (canvas ?? this).DrawPolygon(QuadRegion(quad, region), colors, DoupiSource("doupi_filling_overlay", region), texture);
         }
     }
     private (Vector2 From, Vector2 To) CutLine(int index)
@@ -280,7 +333,7 @@ public partial class WuhanWorkstationView
         }
     }
 
-    // One accepted egg action: travel/crack, pour, then a single automatic spatula sweep.
+    // One accepted egg action: scoop, carry, pour, return and one automatic spatula sweep.
     // Cooking continues on the existing clock while these presentation phases play.
     private void DrawEggSurface(Vector2[] quad, float p)
     {
@@ -305,32 +358,18 @@ public partial class WuhanWorkstationView
     {
         float p = m.Progress;
         Vector2 above = PanCenter + new Vector2(0, -58);
-        Vector2 center = (m.Origin ?? DoupiEggRect.GetCenter()).Lerp(above, Phase(p, 0, .22f));
-        center.Y += 7 * Mathf.Sin(Phase(p, .18f, .28f) * Mathf.Pi);
-        float open = Phase(p, .23f, .35f);
-        float shellAlpha = Phase(p, 0, .08f) * (1 - Phase(p, .40f, .55f));
-        // Matching curved shell halves separate at a jagged crack; no extra bitmap needed.
-        for (int side = -1; side <= 1; side += 2)
-        {
-            Vector2 offset = center + new Vector2(side * open * 14, -open * 6);
-            var shell = new List<Vector2>();
-            for (int i = 0; i <= 12; i++)
-            {
-                float angle = -Mathf.Pi / 2 + i * Mathf.Pi / 12;
-                shell.Add(offset + new Vector2(side * Mathf.Cos(angle) * 16, Mathf.Sin(angle) * 21));
-            }
-            shell.Add(offset + new Vector2(side * 3, 9));
-            shell.Add(offset + new Vector2(-side * 2, 2));
-            shell.Add(offset + new Vector2(side * 3, -6));
-            shell.Add(offset + new Vector2(-side * 1, -13));
-            DrawColoredPolygon(shell.ToArray(), new Color(side < 0 ? new Color("#F6DCB5") : new Color("#E8C495"), shellAlpha));
-            DrawPolyline(shell.Append(shell[0]).ToArray(), new Color(.56f, .36f, .20f, shellAlpha * .8f), 1, true);
-        }
+        Vector2 home = _layout.DoupiEggFood.GetCenter();
+        float carry = Phase(p, .08f, .28f), retreat = Phase(p, .52f, .86f);
+        Vector2 center = home.Lerp(above, carry).Lerp(home, retreat);
+        center.Y += 5 * Mathf.Sin(Phase(p, 0, .08f) * Mathf.Pi);
+        float tilt = -.42f * Phase(p, .28f, .36f) * (1 - Phase(p, .48f, .58f));
+        Sprite("egg_ladle", At(center, _layout.DoupiEggFood.Size), 1, tilt);
         float stream = Phase(p, .28f, .34f) * (1 - Phase(p, .42f, .50f));
         if (stream > 0)
         {
             Vector2 end = (above + new Vector2(0, 15)).Lerp(PanCenter, Phase(p, .28f, .38f));
-            DrawLine(center + new Vector2(0, 12), end, new Color(1, .86f, .43f, stream), 5, true);
+            Vector2 lip = center + new Vector2(-20, 15).Rotated(tilt);
+            DrawLine(lip, end, new Color(1, .79f, .22f, stream), 5, true);
             Ellipse(end, new Vector2(7, 9), new Color(1, .73f, .13f, stream));
         }
         float sweep = Phase(p, .48f, .88f);

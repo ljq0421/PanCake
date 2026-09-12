@@ -35,13 +35,13 @@ public partial class WuhanClosingSelfTest : Node
             wuhan.RefreshForCapture();
             Check(controller.Ledger.Build().TotalRevenue == 13 && !wuhan.CoinTray.IsVisibleInTree() && !wuhan.CoinTray.TryCollect(), "13 yuan is booked automatically without collection");
             Finish(controller);
-            Check(wuhan.FindButton("收好收入 · 返回武汉经营首页").IsVisibleInTree(), "Wuhan results visible");
+            Check(wuhan.BusinessDetails.IsVisibleInTree() && wuhan.BusinessDetails.Model.Closing, "Wuhan results visible");
             Check(save.Data.Wuhan.DayBestRecords[7].TotalRevenue == 13 && save.Data.Coins == 13,
                 "automatically booked revenue committed once");
             Check(save.Data.Tianjin.DayBestRecords.Count == 0, "Tianjin progress untouched");
             bool returned = false;
             wuhan.HubRequested += () => returned = true;
-            wuhan.FindButton("收好收入 · 返回武汉经营首页").EmitSignal(Button.SignalName.Pressed);
+            wuhan.BusinessDetails.CloseButton.EmitSignal(Button.SignalName.Pressed);
             Check(returned && main.GetNode<WuhanHub>("UI/WuhanHub").IsVisibleInTree(), "return to Wuhan hub");
 
             // A later Tianjin day must still settle normally (no poisoned _committed flag).
@@ -63,9 +63,8 @@ public partial class WuhanClosingSelfTest : Node
             controller.Tick(DayController.OpeningDurationSeconds);
             controller.Ledger!.RecordDelivery(new DeliveryEvaluation(DeliveryGrade.Correct, 20, 0, 80, "test"));
             Finish(controller);
-            Check(wuhan.FindButton("收好收入 · 返回武汉经营首页").IsVisibleInTree(), "repeat Wuhan results visible");
-            var resultText = wuhan.FindChildren("*", "RichTextLabel", true, false).OfType<RichTextLabel>();
-            Check(resultText.Any(label => label.Text.Contains("永久金币增加 ¥7")), "Wuhan owns the best-record gain");
+            Check(wuhan.BusinessDetails.IsVisibleInTree() && wuhan.BusinessDetails.Model.Closing, "repeat Wuhan results visible");
+            Check(wuhan.BusinessDetails.Model.SaveMessage.Contains("已入账 ¥7"), "Wuhan owns the best-record gain");
             Check(save.Data.Coins == 20, "only best-record difference awarded");
             GD.Print("WUHAN_CLOSING_RESULT passed=true");
             GetTree().Quit();

@@ -229,6 +229,18 @@ public partial class SaveService : Node
     public bool TryPurchase(string upgradeId, DataCatalog catalog, out string error) => TryPurchase(StableIds.Cities.Tianjin, upgradeId, catalog, out error);
     public bool TryPurchase(string cityId, string upgradeId, DataCatalog catalog, out string error)
     {
+        if (!DescribePurchase(cityId, upgradeId, catalog, out var offer, out error)) return false;
+        var (equipment, target, price, _) = offer;
+        CityProgressData city = Data.GetCity(cityId);
+        SaveData snapshot = Clone(Data); Data.Coins -= price; city.EquipmentLevels[equipment] = target;
+        if (!TrySave(out error)) { Data = snapshot; return false; }
+        Changed?.Invoke(); return true;
+    }
+
+    private bool DescribePurchase(string cityId, string upgradeId, DataCatalog catalog,
+        out (string Equipment, int Target, int Price, string Display) offer, out string error)
+    {
+        offer = default;
         CityProgressData city = Data.GetCity(cityId);
         if (!city.UnlockedContentIds.Contains(upgradeId, StringComparer.Ordinal)) { error = "该升级尚未开放。"; return false; }
         (string equipment, int target, int price, string display) = cityId == StableIds.Cities.Guangzhou ? ResolveGuangzhouUpgrade(upgradeId, catalog) : cityId == StableIds.Cities.Xian ? ResolveXianUpgrade(upgradeId, catalog) : cityId == StableIds.Cities.Wuhan ? ResolveWuhanUpgrade(upgradeId, catalog) : ResolveTianjinUpgrade(upgradeId, catalog);
@@ -241,10 +253,12 @@ public partial class SaveService : Node
         if (current >= target) return Fail($"{display} 已经购买。", out error);
         if (current != target - 1) return Fail($"需要先购买上一等级的{display[..^3]}。", out error);
         if (Data.Coins < price) return Fail($"金币不足，需要 ¥{price}。", out error);
-        SaveData snapshot = Clone(Data); Data.Coins -= price; city.EquipmentLevels[equipment] = target;
-        if (!TrySave(out error)) { Data = snapshot; return false; }
-        Changed?.Invoke(); return true;
+        offer = (equipment, target, price, display); error = ""; return true;
     }
+    internal string[] AvailableBookUpgrades(string cityId, DataCatalog catalog) =>
+        Data.GetCity(cityId).UnlockedContentIds.OrderBy(id => id, StringComparer.Ordinal)
+            .Select(id => DescribePurchase(cityId, id, catalog, out var offer, out _) ? offer.Display : null)
+            .Where(name => name is not null).Select(name => name!).ToArray();
 
     public bool ResetProgress(out string error)
     {

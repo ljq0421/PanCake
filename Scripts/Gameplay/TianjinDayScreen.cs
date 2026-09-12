@@ -56,7 +56,6 @@ public partial class TianjinDayScreen : Control
     private ConfirmationDialog _abandonDialog = null!;
     private ColorRect _pauseBlocker = null!;
     private PanelContainer _pausePanel = null!;
-    private DayCommitResult _commit;
     private bool _committed;
     private bool _focused = true;
     private bool _manualPaused;
@@ -266,34 +265,12 @@ public partial class TianjinDayScreen : Control
 
     private void OnDayFinished(DayResult result)
     {
-        // All city screens share this controller, including uninitialized hidden screens.
-        if (_controller.CurrentConfig?.CityId != StableIds.Cities.Tianjin) return;
-        _collectionFeedback.Clear();
-        ClearCoinFlights();
-        if (_committed) return;
-        _committed = true;
-        _workstation.InteractionEnabled = false;
-        _workstation.CancelInput();
-        try
-        {
-            _commit = _save.CommitDay(result, _controller.CurrentPlan!, _controller.CurrentConfig!);
-        }
-        catch (IOException exception)
-        {
-            _resultText.Text = $"[center][font_size=34][color=#D95D47]！ 本次成绩未能保存[/color][/font_size]\n\n{exception.Message}\n\n请检查存档目录后返回经营首页。[/center]";
-            _unlockText.Text = "本次金币、纪录与解锁均已回退，不会留下半份存档。";
-            _resultBlocker.Visible = true;
-            _results.Visible = true;
-            return;
-        }
-        string stars = result.Day == 15
-            ? $"\n[font_size=30][color=#E9873D]天津评级  {new string('★', _commit.EarnedStars)}{new string('☆', 3 - _commit.EarnedStars)}[/color][/font_size]"
-            : string.Empty;
-        _resultText.Text = $"[center][font_size=24]Day {result.Day} 打烊[/font_size]\n\n[font_size=42][color=#4A291C]今日总收入  ¥{result.TotalRevenue}[/color][/font_size]\n销售额 ¥{result.SaleRevenue}  ·  小费 ¥{result.Tips}\n永久金币增加 ¥{_commit.PermanentCoinGain}{(_commit.NewBest ? "  ·  新纪录" : string.Empty)}\n\n完成 {result.CompletedCustomers} 位  ·  流失 {result.LostCustomers} 位\n满意度 {result.Satisfaction:0}%  ·  Perfect {result.PerfectOrders} 单\n最高连续正确 {result.HighestCorrectStreak} 单\n油条使用 {result.YoutiaoUsed} 根  ·  炸焦 {result.YoutiaoBurnt} 根{stars}[/center]";
-        string[] unlocks = _controller.CurrentConfig!.CompletionUnlocks.ToArray();
-        _unlockText.Text = unlocks.Length > 0 ? "新设备或新内容已经送到店里，回到经营首页查看。" : "今天的记录已经写进经营手账。";
-        _resultBlocker.Visible = true;
-        _results.Visible = true;
+        if (_controller.CurrentConfig?.CityId != StableIds.Cities.Tianjin || _committed) return;
+        CloseBusinessDetails(); _collectionFeedback.Clear(); ClearCoinFlights();
+        _committed = true; _workstation.InteractionEnabled = false; _workstation.CancelInput();
+        var model = BusinessBookModel.From(StableIds.Cities.Tianjin, result, _controller.BusinessRecords, _catalog);
+        BusinessBookSettlement.Commit(model, _save, _controller.CurrentPlan!, _controller.CurrentConfig!, _catalog, allowFailedReturn: true);
+        _resultBlocker.Hide(); _results.Hide(); BusinessDetails.Open(model);
     }
 
     private bool SubmitToCustomer(string customerId, int slot, string payload)
@@ -503,6 +480,7 @@ public partial class TianjinDayScreen : Control
     private void BuildCashPendant()
     {
         Rect2 bounds = TianjinWorkbenchLayout.CashPendant;
+        bounds.Size = new Vector2(bounds.Size.X, 54); // Keep the hit target above the five order bubbles.
         CashPendant = new Button { Name = "CashPendant", Position = bounds.Position, Size = bounds.Size,
             TooltipText = "查看营业明细", MouseDefaultCursorShape = CursorShape.PointingHand, ZIndex = 80 };
         foreach (string state in new[] { "normal", "hover", "pressed", "disabled" })
@@ -514,7 +492,7 @@ public partial class TianjinDayScreen : Control
         CashPendant.Pressed += OpenBusinessDetails;
         BusinessDetails = new TianjinBusinessDetails { Name = "BusinessDetails" };
         AddChild(BusinessDetails);
-        BusinessDetails.CloseRequested += CloseBusinessDetails;
+        BusinessDetails.CloseRequested += () => { if (BusinessDetails.Model.Closing) { BusinessDetails.Hide(); HubRequested?.Invoke(); } else CloseBusinessDetails(); };
     }
 
     internal void OpenBusinessDetails()

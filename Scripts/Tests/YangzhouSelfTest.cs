@@ -108,10 +108,10 @@ public partial class YangzhouSelfTest : Node
         var lost = new YangzhouOrder(new(5, 0, "ordinary", "C"), _catalog, false); lost.Stage("B01", kitchen); lost.Lose();
         Check(lost.StagedItems.Count == 0 && !lost.Serve(), "离店销毁专属托盘");
         var tutorial = new YangzhouSession(_catalog, 1, 1, 1); tutorial.Tick(1000);
-        Check(tutorial.Phase == YangzhouPhase.Closing && tutorial.Waiting.Count == 4 && tutorial.Result().Lost == 0, "Day1长等待不会离店教学失败");
+        Check(tutorial.Phase == YangzhouPhase.Closing && tutorial.Waiting.Count == 5 && tutorial.Result().Lost == 0, "Day1长等待不会离店教学失败");
         var pressure = new YangzhouSession(_catalog, 12, 3, 3); bool cap = true;
-        for (int i = 0; i < 3600; i++) { pressure.Tick(.05); cap &= pressure.Waiting.Count <= 4 && pressure.CurrentDelay <= 4; }
-        Check(cap && pressure.PressureDelays > 0, "高压保护最多延迟4秒、同屏最多4组");
+        for (int i = 0; i < 3600; i++) { pressure.Tick(.05); cap &= pressure.Waiting.Count <= 5 && pressure.CurrentDelay <= 4; }
+        Check(cap && pressure.PressureDelays > 0, "高压保护最多延迟4秒、同屏最多5组");
         Check(new YangzhouResult(12,20,18,2,1,0,90,0,10).Stars == 3 && new YangzhouResult(12,20,18,2,1,0,90,20,9).Stars == 2, "三星数交付Perfect干丝份数，不替换为Perfect订单数");
         for (int dips = 1; dips <= 2; dips++)
         {

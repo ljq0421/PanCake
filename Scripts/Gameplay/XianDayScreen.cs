@@ -96,6 +96,7 @@ public partial class XianDayScreen : Control
         soup.DragToken = () => Session.Soup?.HasBowl == true ? "soup" : "";
         _surfaces["soup_bowl"].DragToken = soup.DragToken;
         _exitDialog.Confirmed += () => { _controller.AbandonDay(); _controller.IsPaused = false; CancelGestures(); HubRequested?.Invoke(); };
+        BuildBusinessBook();
     }
     public void ConnectController(DayController controller)
     {
@@ -114,7 +115,7 @@ public partial class XianDayScreen : Control
         { Feedback(error, true); return false; }
         Session = new XianSession(catalog, save.Data.Xian, day);
         CollectionFeedback.Clear(); CoinTray.RenderRevenue(0);
-        _committed = false; _pendingResult = null; _controller.IsPaused = false;
+        _book.Reset(); _committed = false; _pendingResult = null; _controller.IsPaused = false;
         _results.Visible = _blocker.Visible = false; _exitDialog.Hide(); CancelGestures();
         _batch.MaxValue = Session.OvenData.Capacity; _batch.Value = Session.OvenData.Capacity;
         _tutorial.Text = Tutorial(day); _tutorial.Visible = false; _feedbackTime = 0; Render(); return true;
@@ -253,21 +254,15 @@ public partial class XianDayScreen : Control
     private void OnFinished(DayResult result)
     {
         if (_controller.CurrentConfig?.CityId != StableIds.Cities.Xian || _committed) return;
-        CancelGestures(); _pendingResult = result; _results.Visible = _blocker.Visible = true; SaveResult();
+        CancelGestures(); _pendingResult = result; _results.Hide(); _blocker.Hide(); SaveResult();
         CollectionFeedback.Clear();
     }
     private void SaveResult()
     {
         if (_pendingResult is not { } result || _committed) return;
-        try
-        {
-            var commit = _save.CommitDay(result, _controller.CurrentPlan!, _controller.CurrentConfig!); _committed = true;
-            string stars = result.Day == 12 ? $"\n西安评级 {new string('★', commit.EarnedStars)}{new string('☆', 3 - commit.EarnedStars)}" : "";
-            _resultText.Text = $"Day {result.Day} · {XianRules.Titles[result.Day - 1]}\n\n今日收入 ¥{result.TotalRevenue}\n营业额 ¥{result.SaleRevenue} + 小费 ¥{result.Tips}\n金币增加 ¥{commit.PermanentCoinGain}\n\n完成 {result.CompletedCustomers} 位 · 流失 {result.LostCustomers} 位\n满意度 {result.Satisfaction:0.0}%\nPerfect {result.PerfectOrders} 单 · 错误 {result.IncorrectOrders} 单{stars}\n\n{(commit.NewChapterCompletion ? "西安已点亮！" : _controller.CurrentConfig!.CompletionUnlocks.Count > 0 ? "新的设备升级已开放，回首页选购。" : "成绩已写入西安经营手账。")}";
-            GD.Print($"XIAN_SHIFT day={result.Day} completed={result.CompletedCustomers}/{result.PlannedCustomers} chops={Session.Board.CompletedChops} no_bun_seconds={Session.NoBunSeconds:0.0} no_meat_seconds={Session.NoChoppedMeatSeconds:0.0}");
-        }
-        catch (IOException error) { _resultText.Text = $"保存失败：{error.Message}\n\n收入和进度已回滚，可重试保存。"; }
-        _buttons["retry_save"].Visible = !_committed; _buttons["result_back"].Disabled = !_committed;
+        var model = BusinessBookModel.From(StableIds.Cities.Xian, result, _controller.BusinessRecords, _catalog);
+        BusinessBookSettlement.Commit(model, _save, _controller.CurrentPlan!, _controller.CurrentConfig!, _catalog);
+        _committed = !model.CanRetry; _book.ShowResult(model);
     }
     private static string Tutorial(int day) => day switch
     {

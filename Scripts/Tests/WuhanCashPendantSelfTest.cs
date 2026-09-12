@@ -35,7 +35,7 @@ public partial class CoinCollectionSelfTest
             controller.CustomerQueue!.Tick(1000, .4, true);
             screen.RefreshForCapture(); await Frames();
             Check(controller.CustomerQueue.Slots.Count == 5, "Wuhan retains five occupied customer slots");
-            Check(screen.GetNode<TextureRect>("WorkbenchBackground").Texture.ResourcePath.EndsWith(day == 1 ? "武汉-热干面-v1.png" : "武汉-热干面-豆皮-v1.png"), "Wuhan new background matches unlock stage");
+            Check(screen.GetNode<TextureRect>("WorkbenchBackground").Texture.ResourcePath.EndsWith(day == 1 ? "武汉-热干面-v1.png" : "武汉-热干面-豆皮-蛋液-v1.png"), "Wuhan new background matches unlock stage");
             Check(!screen.CoinTray.IsVisibleInTree() && !screen.CoinTray.TryCollect(), "Wuhan old collection control is hidden and inert");
             var bubbles = screen.FindChildren("*", "", true, false).OfType<OrderBubbleView>().Where(b => b.IsVisibleInTree()).ToArray();
             Check(bubbles.Length == 5 && bubbles.All(b => !b.GetGlobalRect().Intersects(screen.CashPendant.GetGlobalRect())), "Wuhan five bubbles leave pendant unobscured");
@@ -122,6 +122,7 @@ public partial class CoinCollectionSelfTest
         Check(controller.Ledger.Build().Satisfaction == controller.BusinessRecords.Where(r => !r.Lost).Average(r => r.Evaluation!.SatisfactionScore), "Wuhan lost customers excluded from satisfaction");
         screen.RefreshForCapture(); Click(screen.CashPendant); await Frames();
         Check(screen.BusinessDetails.Visible && controller.Ledger.Build().TotalRevenue == income && save.Data.Coins == 0, "Wuhan details never settle money twice");
+        screen.BusinessDetails.SelectPage(true); await Frames();
         var scroll = screen.BusinessDetails.FindChildren("*", "ScrollContainer", true, false).OfType<ScrollContainer>().Single();
         Check(scroll.GetVScrollBar().MaxValue > scroll.Size.Y, "Wuhan long record list is scrollable");
         if (Capture && !reduced) await Shot($"wuhan-pendant-{width}-records");

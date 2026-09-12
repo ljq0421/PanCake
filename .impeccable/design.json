@@ -1,8 +1,8 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-09-10T01:54:10.260Z",
-  "title": "早餐铺子：全局标题页",
-  "scope": "仅 Scenes/UI/StartScreen.tscn；不包含城市皮肤；运行平台为 Godot PC。",
+  "generatedAt": "2026-09-12T00:00:00+08:00",
+  "title": "早餐铺子：全局标题页与共享营业账本",
+  "scope": "保留 Scenes/UI/StartScreen.tscn 全局标题页扩展；新增天津、武汉、西安、广州、扬州共享营业账本。城市工作台皮肤仍以 DESIGN.md 既有章节为准；运行平台为 Godot PC。",
   "extensions": {
     "colorMeta": {
       "cover-cream": {
@@ -123,7 +123,76 @@
         "purpose": "按下缩至 0.98，释放恢复；新反馈中断旧反馈。"
       }
     ],
-    "breakpoints": []
+    "breakpoints": [],
+    "nativeSurfaces": {
+      "business-book": {
+        "runtime": "Godot Control / C#",
+        "sources": [
+          "Scripts/UI/BusinessDetailsView.cs",
+          "Scripts/UI/BusinessBookModel.cs",
+          "Scripts/UI/BookFoodIcon.cs",
+          "docs/全章节营业账本.md"
+        ],
+        "tokens": "DESIGN.md frontmatter book-*；不在此重复颜色、字号与圆角原语。",
+        "layout": {
+          "canvas": [1920, 1080],
+          "bookPosition": [120, 90],
+          "bookSize": [1680, 900],
+          "fit": "min(viewportWidth / 1920, viewportHeight / 1080)，等比居中",
+          "detailsScrollSize": [1524, 568],
+          "rowMinHeight": 132,
+          "rowSeparation": 12,
+          "longRows": "按字体测量顾客名、两列商品及错误原因的换行高度；左右同属一个行容器并共用滚动。"
+        },
+        "depth": "背景 Color(0.12, 0.08, 0.04, 0.4)；无阴影封皮与内纸，中缝为低透明度双线。",
+        "motion": {
+          "open": "200ms 淡入",
+          "closingSequence": "淡入 200ms → 收入累计 600ms → 经营数字 250ms → 印章淡入 80ms → 印章 1.13→1 缩放 160ms Expo Out → 手记 300ms",
+          "interrupt": "左键点击、切页、筛选、关闭结束 Tween 并立即显示最终值。",
+          "reducedMotionSetting": "accessibility/reduce_motion",
+          "reducedMotion": "直接显示完整内容，不启动入场序列。",
+          "audio": "复用 PancakeAudio 与现有音量总线；零 Perfect 不播放盖章音。"
+        },
+        "interaction": {
+          "modal": "背景输入拦截；Tab/Shift+Tab 循环有效按钮；Enter/Space 激活；Esc 与关闭遵守相同 CanClose 限制。",
+          "focus": "默认收好账本；不能关闭时重试保存。营业中关闭恢复原焦点及暂停状态，制作或拖拽手势中禁止打开。",
+          "pages": "默认今日小结；顾客明细为左右配对客单；筛选保留原编号与结束顺序，完成包含错误完成。",
+          "settlement": "页面只展示快照并发出关闭/重试事件，不付款或保存；失败说明与城市既有返回限制保留。"
+        },
+        "art": "BookFoodIcon 使用已有对应食物素材，缺失时用程序图标配名称；不借用其他城市菜品。头像裁去透明留白，结果同时使用状态文字与符号。",
+        "globalArtChapters": {
+          "cities": ["tianjin", "wuhan", "xian"],
+          "source": "Scripts/UI/CitySettlementTheme.cs",
+          "productionSpec": "docs/营业结算页的正式配色生产规范.md",
+          "implementation": "docs/三章节账本配色接入.md",
+          "tianjin": ["#D7A45F", "#729DAC", "#B8C9CC"],
+          "wuhan": ["#71A08D", "#A9C1B3", "#DFC88D"],
+          "xian": ["#98594D", "#CBB38B", "#D0A04E"],
+          "xianDivider": "#B98870",
+          "protectedArtwork": "纸面、书皮、金币、状态、Perfect及食物保持共用自然配色；局部材质只用于弱装饰。",
+          "captures": ".impeccable/review/global-book-ui/"
+        },
+        "citySkins": {
+          "tianjin": {
+            "sources": ["Scripts/UI/BusinessDetailsView.ArtSkin.cs", "Scripts/UI/BookArtCatalog.cs", "docs/天津营业账本素材接入.md"],
+            "assets": "resource/art/Global/BookUI/",
+            "pages": {"summary": "营业结算账本底板-v1.png", "details": "营业结算账本底板-v1.png"},
+            "imageFit": "AtlasTexture 可见边界以 Alpha > 0.125 测量；原文件不变，底板和图标等比显示。",
+            "layout": "手记左下，条件贴片右下，关闭按钮对齐底板操作区；天津明细滚动区 1524×480。",
+            "paper": "留白 v1 底板，不使用纸面遮盖；账本轻分隔线以 28% 透明度分隔小结及动态行，保留一个真实滚动条。",
+            "status": "明细头像圆框与状态章；小结红色 Perfect 印章，明细金色 Perfect 图标。",
+            "stickers": "解锁与升级分组，多个解锁提示合并，全部原文保留在明细末尾。",
+            "verification": "BusinessBookSelfTest 118 passed；CoinCollectionSelfTest 588 passed；.impeccable/review/tianjin-book-art/"
+          }
+        },
+        "verification": {
+          "review": "ship",
+          "selfTest": "BusinessBookSelfTest: 108 passed, 0 failed",
+          "captures": ".impeccable/review/business-book/",
+          "examples": ["Wuhan-1280-details.png", "Xian-1600-summary.png", "edge-long-order.png"]
+        }
+      }
+    }
   },
   "components": [
     {

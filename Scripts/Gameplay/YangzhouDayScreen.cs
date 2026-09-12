@@ -21,8 +21,8 @@ public partial class YangzhouDayScreen : Control
     private readonly Button[] _steamActions = new Button[2];
     private readonly Button[,] _loadButtons = new Button[2, 2];
     private readonly List<Button> _workButtons = new();
-    private readonly Button[] _customers = new Button[4];
-    private readonly ProgressBar[] _patience = new ProgressBar[4];
+    private readonly Button[] _customers = new Button[5];
+    private readonly ProgressBar[] _patience = new ProgressBar[5];
     private readonly Dictionary<string, Button> _refills = new();
     private bool _committed, _focusLost, _pausedBeforeLeave;
     private double _feedbackSeconds;
@@ -31,6 +31,7 @@ public partial class YangzhouDayScreen : Control
     public override void _Ready()
     {
         SceneNodeBinder.Bind(this);
+        BuildBusinessBook();
         void FitCanvas()
         {
             float scale = Math.Min(Size.X / 1920, Size.Y / 1080);
@@ -122,15 +123,15 @@ public partial class YangzhouDayScreen : Control
         _catalog = catalog; _save = save; Practice = practice;
         var city = save.Data.Yangzhou;
         Session = new(catalog, day, practice ? 2 : city.EquipmentLevels.GetValueOrDefault(YangzhouCatalog.BoardId, 1), practice ? 2 : city.EquipmentLevels.GetValueOrDefault(YangzhouCatalog.SteamerId, 1));
-        _committed = _focusLost = false; _resultPanel.Hide(); _leave.Hide(); _return.Text = "收好收入 · 返回经营首页";
+        _book.Reset(); _committed = _focusLost = false; _resultPanel.Hide(); _leave.Hide(); _return.Text = "收好收入 · 返回经营首页";
         _feedback.Text = ""; Render(); return true;
     }
     public override void _Process(double delta)
     {
         if (!IsVisibleInTree() || Session is null) return;
-        if (!_focusLost) Session.Tick(delta);
+        if (!_focusLost && !_book.IsOpen) Session.Tick(delta);
         if (_feedbackSeconds > 0) { _feedbackSeconds -= delta; if (_feedbackSeconds <= 0) _feedback.Text = ""; }
-        if (Session.Phase == YangzhouPhase.Results && !_resultPanel.Visible) ShowResult();
+        if (Session.Phase == YangzhouPhase.Results && !_book.IsOpen) ShowResult();
         Render();
     }
     public override void _Notification(int what)
@@ -141,7 +142,7 @@ public partial class YangzhouDayScreen : Control
         }
         if (what == NotificationApplicationFocusIn) _focusLost = false;
     }
-    private bool CanWork() => IsVisibleInTree() && Session?.CanWork == true && !_focusLost && !_leave.Visible;
+    private bool CanWork() => IsVisibleInTree() && !_book.IsOpen && Session?.CanWork == true && !_focusLost && !_leave.Visible;
     private void Say(string text) { _feedback.Text = text; _feedbackSeconds = 3; }
     private void Act(Func<bool> action, string failure)
     {
@@ -174,7 +175,7 @@ public partial class YangzhouDayScreen : Control
         _hint.Text = s.Paused ? "已暂停 · 点击继续营业恢复" : s.Phase == YangzhouPhase.Prep ? "开店前5秒：先切干丝或装第一笼；到时自动开门。" : s.Day.Hint;
         _pause.Text = s.Paused ? "继续营业" : "暂停";
         foreach (var button in _workButtons) button.Disabled = !CanWork();
-        for (int i = 0; i < 4; i++)
+        for (int i = 0; i < _customers.Length; i++)
         {
             var order = i < s.Waiting.Count ? s.Waiting[i] : null;
             _customers[i].Disabled = order is null || !CanWork();
@@ -216,24 +217,12 @@ public partial class YangzhouDayScreen : Control
         foreach (var surface in new[] { _board, _cutStock, _scald, _tea, _tray }) surface.Refresh();
     }
     private static string Quality(YangzhouQuality quality) => quality switch { YangzhouQuality.Perfect => "Perfect · 最佳", YangzhouQuality.Good => "Good · 轻微不足", _ => "品质欠佳 · 仍可出售" };
-    private void ShowResult()
-    {
-        _resultPanel.Show(); var r = Session.Result();
-        _resultText.Text = $"扬州 · Day {r.Day} 营业收据\n\n今日收入   ¥{r.Revenue}\n营业额 ¥{r.Sales}  +  小费 ¥{r.Tips}\n\n完成 {r.Completed}/{r.Planned}组    离店 {r.Lost}组\n满意度 {r.Satisfaction:0.0}% · 仅统计已完成顾客\nPerfect订单 {r.PerfectOrders}    Perfect干丝 {r.PerfectGansi}份\n\n" + (r.Day == 12 ? $"本次星级 {new string('★', r.Stars)}{new string('☆', 3 - r.Stars)}\n" : $"下一天：{_catalog.Day(r.Day + 1).Title}\n");
-        SaveResult();
-    }
+    private void ShowResult() { _resultPanel.Hide(); SaveResult(); }
     private bool SaveResult()
     {
         if (_committed) return true;
-        if (Practice) { _committed = true; _resultText.Text += "练习营业 · 本次不保存"; return true; }
-        try
-        {
-            var commit = _save.CommitYangzhou(Session); _committed = true;
-            _resultText.Text += $"已入账 ¥{commit.PermanentCoinGain} · 共享金币 ¥{_save.Data.Coins}";
-            if (Session.Result().Stars == 3) _resultText.Text += "\n已收藏蟹黄汤包图鉴与扬州三星徽章";
-            return true;
-        }
-        catch (Exception exception) { _return.Text = "保存失败 · 点击重试"; Say(exception.Message); return false; }
+        var model = YangzhouBusinessBook.Commit(Session, _catalog, _save, Practice);
+        _committed = !model.CanRetry; _book.ShowResult(model); return _committed;
     }
     private void ReturnAfterResult() { if (SaveResult()) HubRequested?.Invoke(); }
 }

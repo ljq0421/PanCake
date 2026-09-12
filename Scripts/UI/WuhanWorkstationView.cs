@@ -124,20 +124,7 @@ public partial class WuhanWorkstationView : Control
         }
         else if (kind == ProductKind.Doupi && _stock.Count > 0)
         {
-            DoupiInventory.Piece piece = _stock.PieceAt(0);
-            Rect2 source = RelativeRect(DoupiSurface, PieceRegion(piece.Tile));
-            foreach (string id in new[] { "doupi_skin", "doupi_filling_overlay" })
-            {
-                Texture2D texture = _art.Texture(id);
-                root.AddChild(new Polygon2D { Polygon = RectQuad(new Rect2(0, 0, 100, 60)),
-                    UV = RectQuad(DoupiSource(id, PieceRegion(piece.Tile))).Select(p => p * texture.GetSize()).ToArray(), Texture = texture, Color = CookedTint(1) });
-            }
-            if (piece.Quality == DoupiQuality.Overbrowned)
-            {
-                Texture2D texture = _art.Texture("doupi_burnt");
-                root.AddChild(new Polygon2D { Polygon = RectQuad(new Rect2(0, 0, 100, 60)),
-                    UV = RectQuad(source).Select(p => p * texture.GetSize()).ToArray(), Texture = texture, Color = new Color(1, 1, 1, .3f) });
-            }
+            root.AddChild(CreateDoupiPiecePreview(_stock.PieceAt(0)));
         }
         return root;
     }

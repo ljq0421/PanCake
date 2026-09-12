@@ -25,19 +25,29 @@ public partial class SaveService
     }
     public bool PurchaseYangzhou(string equipment, YangzhouCatalog catalog, out string error)
     {
+        if (!DescribeYangzhouPurchase(equipment, catalog, out int price, out int level, out error)) return false;
         var city = Data.Yangzhou;
-        if (equipment is not (YangzhouCatalog.BoardId or YangzhouCatalog.SteamerId)) return Fail("未知设备。", out error);
-        int level = city.EquipmentLevels.GetValueOrDefault(equipment);
-        if (level is < 1 or >= 3) return Fail("设备未开放或已经升满。", out error);
-        int price, day;
-        if (equipment == YangzhouCatalog.BoardId) { var next = catalog.Boards.Single(b => b.Level == level + 1); price = next.Price; day = next.UnlockAfterDay; }
-        else { var next = catalog.Steamers.Single(b => b.Level == level + 1); price = next.Price; day = next.UnlockAfterDay; }
-        if (!city.DayBestRecords.ContainsKey(day)) return Fail($"完成 Day {day} 后开放。", out error);
-        if (Data.Coins < price) return Fail("金币不足，继续营业后再来。", out error);
         var snapshot = Clone(Data); Data.Coins -= price; city.EquipmentLevels[equipment] = level + 1;
         if (!TrySave(out error)) { Data = snapshot; return false; }
         Changed?.Invoke(); return true;
     }
+    private bool DescribeYangzhouPurchase(string equipment, YangzhouCatalog catalog, out int price, out int level, out string error)
+    {
+        price = level = 0;
+        var city = Data.Yangzhou;
+        if (equipment is not (YangzhouCatalog.BoardId or YangzhouCatalog.SteamerId)) return Fail("未知设备。", out error);
+        level = city.EquipmentLevels.GetValueOrDefault(equipment);
+        if (level is < 1 or >= 3) return Fail("设备未开放或已经升满。", out error);
+        int day; int nextLevel = level + 1;
+        if (equipment == YangzhouCatalog.BoardId) { var next = catalog.Boards.Single(b => b.Level == nextLevel); price = next.Price; day = next.UnlockAfterDay; }
+        else { var next = catalog.Steamers.Single(b => b.Level == nextLevel); price = next.Price; day = next.UnlockAfterDay; }
+        if (!city.DayBestRecords.ContainsKey(day)) return Fail($"完成 Day {day} 后开放。", out error);
+        if (Data.Coins < price) return Fail("金币不足，继续营业后再来。", out error);
+        error = ""; return true;
+    }
+    internal string[] AvailableYangzhouBookUpgrades(YangzhouCatalog catalog) => new[] { YangzhouCatalog.BoardId, YangzhouCatalog.SteamerId }
+        .Where(id => DescribeYangzhouPurchase(id, catalog, out _, out _, out _))
+        .Select(id => id == YangzhouCatalog.BoardId ? "干丝台" : "蒸笼").ToArray();
     public DayCommitResult CommitYangzhou(YangzhouSession session)
     {
         if (session.Phase != YangzhouPhase.Results) throw new InvalidOperationException("营业尚未结算。");

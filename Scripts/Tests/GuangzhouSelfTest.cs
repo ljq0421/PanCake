@@ -57,7 +57,7 @@ public partial class GuangzhouSelfTest : Node
             finally { d.RandomSeed = seed; }
         }
         var day9 = c.GetDays(StableIds.Cities.Guangzhou)[9]; var old = day9.MaxWaitingCustomers;
-        day9.MaxWaitingCustomers = 5;
+        day9.MaxWaitingCustomers = 4;
         Check(GuangzhouCatalogValidator.Validate(c.GetDays(StableIds.Cities.Guangzhou).Values.ToArray(), c.RecipesById.Values.Where(r => GuangzhouRules.Recipes.Contains(r.Id)).ToArray(),
             c.ProductsById.Values.Where(p => p.Id.StartsWith("gz_")).ToArray(), c.CustomersById.Values.Where(t => t.Id.StartsWith("gz_")).ToArray(), c.GuangzhouEquipment.Values.ToArray()).Count > 0, "错误上限被校验器拒绝");
         day9.MaxWaitingCustomers = old;
@@ -150,10 +150,10 @@ public partial class GuangzhouSelfTest : Node
     {
         PlannedCustomer Make(int i, string type = "gz_normal") => new() { CustomerId = "q" + i, CustomerTypeId = type, ArrivalTime = i * .1,
             Order = new OrderData { OrderId = "o" + i, CityId = StableIds.Cities.Guangzhou, CustomerTypeId = type, OrderTypeId = "gz_f", PatienceSeconds = 50, Lines = new[] { new OrderLineData(ProductKind.SiuMai, GuangzhouRules.SiuMai, 1) }, BasePrice = 6 } };
-        var q = new CustomerQueue(new() { Customers = new[] { Make(0), Make(1), Make(2), Make(3), Make(4) } }, c.CustomersById, 1, 4, 2, 4);
+        var q = new CustomerQueue(new() { Customers = new[] { Make(0), Make(1), Make(2), Make(3), Make(4) } }, c.CustomersById, 1, 5, 2, 4);
         q.Tick(0, .01, true); q.Tick(.1, .1, true); q.Tick(.2, .1, true); Check(q.Slots.Count == 2 && q.AppliedPressureDelay == 2, "两复杂单延迟2秒");
-        q.Tick(2.2, 2, true); Check(q.Slots.Count == 2 && q.AppliedPressureDelay == 4, "累计最大4秒"); q.Tick(4.2, 2, true); Check(q.Slots.Count == 3, "4秒后放行"); q.Tick(8.3, 4.1, true); q.Tick(12.4, 4.1, true); Check(q.Slots.Count <= 4, "等待硬上限4");
-        var family = new CustomerQueue(new() { Customers = new[] { Make(0, "gz_family"), Make(1) } }, c.CustomersById, 1, 4, 2, 4);
+        q.Tick(2.2, 2, true); Check(q.Slots.Count == 2 && q.AppliedPressureDelay == 4, "累计最大4秒"); q.Tick(4.2, 2, true); Check(q.Slots.Count == 3, "4秒后放行"); q.Tick(8.3, 4.1, true); q.Tick(12.4, 4.1, true); Check(q.Slots.Count <= 5, "等待硬上限5");
+        var family = new CustomerQueue(new() { Customers = new[] { Make(0, "gz_family"), Make(1) } }, c.CustomersById, 1, 5, 2, 4);
         family.Tick(0, .01, true); family.Tick(.1, .1, true); Check(family.Slots.Count == 2, "一个家庭不自我重复触发压力");
         var d = c.GetDays(StableIds.Cities.Guangzhou)[9]; int protectedHar = 0, baseHar = 0;
         for (int i = 0; i < 1000; i++)

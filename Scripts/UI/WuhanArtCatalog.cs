@@ -14,7 +14,7 @@ public sealed class WuhanArtCatalog
     {
         Load("background", "武汉早餐铺主界面背景＋空工作台_v4.png");
         Load("workbench_noodles", "武汉-热干面-v1.png");
-        Load("workbench_doupi", "武汉-热干面-豆皮-v1.png");
+        Load("workbench_doupi", "武汉-热干面-豆皮-蛋液-v1.png");
         Load("ingredient_tray", "Trays_v2/ingredient.png");
         Load("beef_tray", "通用托盘-圆.png");
         Load("egg_tray", "Trays_v2/egg.png");
@@ -25,10 +25,12 @@ public sealed class WuhanArtCatalog
         Load("raw_noodles", "生热干面面条.png"); Load("basket", "通用热干面漏勺_v2.png"); Load("cooked_basket", "漏勺中的熟面状态.png");
         Load("base_seasoning", "芝麻酱容器_v2.png"); Load("scallion", "葱花覆盖层.png"); Load("chili", "辣油壶_v2.png"); Load("beef", "卤牛肉片.png");
         Load("doupi_ladle", "doupi_ladle_v1.png");
-        Load("doupi_batter", "豆皮豆米浆容器_v2.png"); Load("doupi_skin", "豆皮薄皮基础层.png"); Load("doupi_egg", "豆皮鸡蛋覆盖层.png"); Load("doupi_filling", "三鲜糯米馅容器_v2.png"); Load("doupi_finished", "整张三鲜豆皮完成状态.png"); Load("doupi_cut", "切块后的整锅豆皮 .png"); Load("doupi_single", "单块三鲜豆皮成品.png"); Load("doupi_stock", "Trays_v2/stock.png"); Load("doupi_burnt", "豆皮焦糊覆盖层.png");
+        Load("egg_ladle", "蛋液勺-透明-v1.png");
+        Load("doupi_batter", "豆皮豆米浆容器_v2.png"); Load("doupi_skin", "豆皮基础层-透明-v1.png"); Load("doupi_egg", "豆皮-鸡蛋覆盖层.png"); Load("doupi_filling", "三鲜糯米馅容器_v2.png"); Load("doupi_finished", "整张三鲜豆皮完成状态.png"); Load("doupi_cut", "切块后的整锅豆皮 .png"); Load("doupi_single", "单块三鲜豆皮成品.png"); Load("doupi_stock", "Trays_v2/stock.png"); Load("doupi_burnt", "豆皮焦糊覆盖层.png");
         Load("egg_finished", "成品蛋酒杯_v2.png");
         Load("base_sauce", "基础酱汁瓶_v2.png"); Load("chili_overlay", "辣油覆盖层.png"); Load("beef_overlay", "牛肉覆盖层.png");
-        Load("doupi_filling_overlay", "豆皮糯米馅覆盖层.png"); Load("flip_tool", "豆皮手动翻面铲.png");
+        Load("doupi_filling_overlay", "未成熟豆皮三鲜馅.png");
+        Load("doupi_filling_cooked", "成熟豆皮三鲜馅.png"); Load("flip_tool", "豆皮手动翻面铲.png");
         Load("auto_flip_tool", "Lv3豆皮锅自动翻面铲.png"); Load("cut_tool", "豆皮切块铲刀.png");
         for (int level = 1; level <= 3; level++)
         {

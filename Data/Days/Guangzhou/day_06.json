@@ -6,7 +6,7 @@
   "customerCount": 12,
   "expectedRevenue": 132,
   "patienceMultiplier": 1,
-  "maxWaitingCustomers": 4,
+  "maxWaitingCustomers": 5,
   "randomSeed": 4006,
   "customerWeights": {
     "gz_normal": 1

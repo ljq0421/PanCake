@@ -40,7 +40,7 @@ public partial class DayController : Node
 
     private void RecordOutcome(CustomerRuntime customer, DeliveryEvaluation? evaluation)
     {
-        if ((CurrentConfig?.CityId is StableIds.Cities.Tianjin or StableIds.Cities.Wuhan) && _recordedOrders.Add(customer.Order.OrderId))
+        if (_recordedOrders.Add(customer.Order.OrderId))
             _businessRecords.Add(BusinessOrderRecord.Capture(customer, evaluation));
     }
     public double DayElapsedSeconds { get; private set; }

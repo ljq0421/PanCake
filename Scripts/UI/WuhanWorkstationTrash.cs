@@ -101,19 +101,19 @@ public partial class WuhanWorkstationView
             long generation = doupi.Generation;
             _trashValid = () => ReferenceEquals(_doupi, doupi) && doupi.Generation == generation && doupi.State != DoupiState.Empty;
             _trashCommit = () => { doupi.Discard(); return true; };
-            rect = PanRect; texture = _art.Texture(doupi.State == DoupiState.Burnt ? "doupi_burnt" : "doupi_finished");
-            if (doupi.State == DoupiState.Burnt)
-            {
-                displaySize = new Vector2(180, 85);
-                previewFactory = () => CreateBurntDoupiPreview(doupi.Coverage > 0, displaySize);
-            }
+            rect = PanRect; texture = _art.Texture("doupi_filling_cooked");
+            displaySize = new Vector2(180, 85);
+            previewFactory = () => CreatePanDoupiPreview(displaySize);
         }
         else if (hit == "stock" && _stock.Count > 0)
         {
             var stock = _stock; long generation = stock.HeadGeneration;
             _trashValid = () => ReferenceEquals(_stock, stock) && stock.HeadGeneration == generation && stock.Count > 0;
             _trashCommit = () => stock.TryTake(1, out _);
-            rect = StockRect; texture = _art.Texture("doupi_single");
+            rect = StockRect; texture = _art.Texture("doupi_filling_cooked");
+            DoupiInventory.Piece piece = stock.PieceAt(0);
+            displaySize = new Vector2(100, 60);
+            previewFactory = () => CreateDoupiPiecePreview(piece);
         }
         else return false;
         _trashChannel = hit;

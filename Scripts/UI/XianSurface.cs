@@ -26,6 +26,7 @@ public partial class XianSurface : Control
     public Action<double>? HorizontalStroke { get; set; }
     public Action? GestureEnded { get; set; }
     private bool _held;
+    public bool HasGesture => _held;
     private readonly StyleBoxFlat _meatBadge = new() { BgColor = new Color("#fff1d9ee"), CornerRadiusTopLeft = 9,
         CornerRadiusTopRight = 9, CornerRadiusBottomLeft = 9, CornerRadiusBottomRight = 9 };
     private Vector2 _previous;

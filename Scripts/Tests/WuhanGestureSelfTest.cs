@@ -180,9 +180,8 @@ public partial class WuhanGestureSelfTest : Node
                 Check(_screen.Doupi.CompletedCuts==1&&_screen.Doupi.Quality==DoupiQuality.Normal,"same press cannot cut another line or burn");Button(View.PanCenter,false);
                 Cut(DoupiCutLine.Horizontal);
                 Check(_screen.Doupi.CompletedCuts==1,"duplicate line does not advance");
-                foreach(var line in new[]{DoupiCutLine.Right,DoupiCutLine.Left,DoupiCutLine.Center})
-                { Cut(line); if(line != DoupiCutLine.Center)Step(.4); }
-                Check(_screen.Doupi.State==DoupiState.Cut&&_screen.Doupi.CompletedCuts==4,"four template lines finish eight pieces");Step(.4);
+                Cut(DoupiCutLine.Center);
+                Check(_screen.Doupi.State==DoupiState.Cut&&_screen.Doupi.CompletedCuts==4,"two gestures finish all four marks and eight pieces");Step(.4);
                 Check(_screen.DoupiStock.Count==16&&_screen.Doupi.RemainingPieces==5,"three free slots receive three pieces with five left in pan");Step(.5);
                 await Shot("04-partial-stock");
                 Check(!_screen.Doupi.TryPourBatter(),"leftover pieces block new batch");
@@ -196,8 +195,8 @@ public partial class WuhanGestureSelfTest : Node
                 _screen.DoupiStock.TryTake(_screen.DoupiStock.Count,out _); View.CancelAnimations();
                 int batchPresses = _pressCount;
                 PrepareDoupi(level);
-                foreach(var line in Enum.GetValues<DoupiCutLine>()){Cut(line);Step(.4);}Step(.5);
-                Check(_pressCount-batchPresses==(level==3?7:8) && _screen.DoupiStock.Count==8,$"Lv{level} full batch uses {(level==3?7:8)} presses");
+                foreach(var line in new[]{DoupiCutLine.Horizontal,DoupiCutLine.Center}){Cut(line);Step(.4);}Step(.5);
+                Check(_pressCount-batchPresses==(level==3?5:6) && _screen.DoupiStock.Count==8,$"Lv{level} full batch uses {(level==3?5:6)} presses");
                 if(capture) {
                     // Fill all four slots for visual review without changing production fixtures.
                     for(int i=0;i<120&&controller.CustomerQueue!.Slots.Count<4;i++)Step(.2);
@@ -238,7 +237,7 @@ public partial class WuhanGestureSelfTest : Node
                 GetViewport().GetTexture().GetImage().SavePng($"{root}/day-{day}-{name}.png");
             }
             bool unlocked = day == 4;
-            string expected = unlocked ? "武汉-热干面-豆皮-v1.png" : "武汉-热干面-v1.png";
+            string expected = unlocked ? "武汉-热干面-豆皮-蛋液-v1.png" : "武汉-热干面-v1.png";
             Check(_screen.GetNode<TextureRect>("WorkbenchBackground").Texture.ResourcePath.EndsWith(expected), $"Day {day} selects its pendant sheet");
             // Independent points on the supplied PNGs, rather than deriving all input from layout constants.
             Vector2 P(float x, float y) => new Vector2(x * 1920 / 1672, y * 1080 / 941);
@@ -353,9 +352,9 @@ public partial class WuhanGestureSelfTest : Node
         Drag(View.PanPoint(.2f,.2f),View.PanPoint(.6f,.6f));
         Check(_screen.Doupi!.CompletedCuts==0,"diagonal stroke is not classified as either cut direction");
         Drag(View.PanPoint(.5f,.95f),View.PanPoint(.5f,-.4f));Step(.4);
-        Check(_screen.Doupi.CutLines.SetEquals(new[]{DoupiCutLine.Center}),"vertical first and fast stroke ending outside pan are accepted");
+        Check(_screen.Doupi.CutLines.SetEquals(new[]{DoupiCutLine.Left,DoupiCutLine.Center,DoupiCutLine.Right}),"vertical first and fast stroke ending outside pan are accepted");
         _screen.DoupiStock.TryAddBatch(16);
-        foreach(var line in new[]{DoupiCutLine.Horizontal,DoupiCutLine.Right,DoupiCutLine.Left}){Cut(line,true);Step(.4);}
+        Cut(DoupiCutLine.Horizontal,true);Step(.4);
         Check(_screen.Doupi.State==DoupiState.Cut&&_screen.Doupi.RemainingPieces==8,"full tray keeps entire cut batch in pan");
         _screen.Doupi.Tick(100);
         Check(_screen.Doupi.Quality==DoupiQuality.Normal,"fully cut batch does not burn while waiting for capacity");
@@ -395,15 +394,15 @@ public partial class WuhanGestureSelfTest : Node
         Check(_pressCount-before==6&&controller.CustomerQueue.Slots[0].Progress.GetDeliveredQuantity(0)==1,"one scallion noodle bowl including delivery needs exactly six presses");
         before=_pressCount;
         PrepareDoupi(1);
-        foreach(var line in Enum.GetValues<DoupiCutLine>()){Cut(line);Step(.4);}Step(.5);
-        Check(_pressCount-before==8&&_screen.DoupiStock.Count==8,"one doupi batch automatically stocks eight with exactly eight presses");
+        foreach(var line in new[]{DoupiCutLine.Horizontal,DoupiCutLine.Center}){Cut(line);Step(.4);}Step(.5);
+        Check(_pressCount-before==6&&_screen.DoupiStock.Count==8,"one doupi batch automatically stocks eight with exactly six presses");
         for(int i=0;i<4;i++)Deliver(View.StockCenter,i);
         // Day 8 now admits a fifth waiting customer during cooking. The measured
         // budget still covers the four original quantity-two orders only.
-        Check(_pressCount-before==12&&_screen.DoupiStock.Count==0&&budgetCustomers.All(c=>c.Progress.GetDeliveredQuantity(1)==2),
-            $"batch and four quantity-two deliveries total twelve presses (presses={_pressCount-before}, stock={_screen.DoupiStock.Count}, delivered={string.Join(',', controller.CustomerQueue.Slots.Select(c=>c.Progress.GetDeliveredQuantity(1)))})");
+        Check(_pressCount-before==10&&_screen.DoupiStock.Count==0&&budgetCustomers.All(c=>c.Progress.GetDeliveredQuantity(1)==2),
+            $"batch and four quantity-two deliveries total ten presses (presses={_pressCount-before}, stock={_screen.DoupiStock.Count}, delivered={string.Join(',', controller.CustomerQueue.Slots.Select(c=>c.Progress.GetDeliveredQuantity(1)))})");
         Check(controller.Ledger!.Build().CompletedCustomers==1,"noodles and doupi complete the first combo without egg");
-        GD.Print("WUHAN_OPERATION_BUDGET noodles_with_one_topping=6 doupi_make_and_four_double_deliveries=12 egg=0");
+        GD.Print("WUHAN_OPERATION_BUDGET noodles_with_one_topping=6 doupi_make_and_four_double_deliveries=10 egg=0");
         ProjectSettings.SetSetting("accessibility/reduce_motion",reduced);
         _screen.Free();controller.Free();save.Free();await Frames();
     }

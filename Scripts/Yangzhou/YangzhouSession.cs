@@ -1,5 +1,8 @@
 namespace ProjectCake.Yangzhou;
 
+public sealed record YangzhouOrderRecord(int Id, string Customer, string CustomerType, string TemplateId,
+    bool Lost, bool Unreceived, bool Perfect, int Mistakes, int Sales, int Tips, double? Satisfaction);
+
 public enum YangzhouPhase { Prep, Running, Closing, Results }
 public sealed record YangzhouResult(int Day, int Planned, int Completed, int Lost, int Sales, int Tips, double Satisfaction, int PerfectOrders, int PerfectGansi)
 {
@@ -12,6 +15,10 @@ public sealed class YangzhouSession
 {
     private readonly YangzhouCatalog _catalog;
     private readonly List<YangzhouOrder> _waiting = new(), _served = new();
+    private readonly List<YangzhouOrderRecord> _records = new();
+    public IReadOnlyList<YangzhouOrderRecord> BusinessRecords => _records.AsReadOnly();
+    private void Record(YangzhouOrder o, bool lost) => _records.Add(new(o.Plan.Id, o.Type.Name, o.Type.Id,
+        o.Template.Id, lost, false, !lost && o.Perfect, o.Mistakes, lost ? 0 : o.Price, lost ? 0 : o.Tip, lost ? null : o.Satisfaction));
     private int _next, _lost, _prepBatches;
     private double _delay, _nextAt;
     public YangzhouSession(YangzhouCatalog catalog, int day, int boardLevel, int steamerLevel)
@@ -75,7 +82,7 @@ public sealed class YangzhouSession
     {
         var order = Selected;
         if (!CanWork || order is null || !order.Serve()) return false;
-        _served.Add(order); _waiting.Remove(order); SelectFirst(); return true;
+        Record(order, false); _served.Add(order); _waiting.Remove(order); SelectFirst(); return true;
     }
     public void Tick(double seconds)
     {
@@ -98,7 +105,7 @@ public sealed class YangzhouSession
         foreach (var order in _waiting.ToArray())
         {
             order.Tick(dt, Day.Day == 1);
-            if (Day.Day != 1 && order.WaitRatio >= 1) { order.Lose(); _waiting.Remove(order); _lost++; }
+            if (Day.Day != 1 && order.WaitRatio >= 1) { Record(order, true); order.Lose(); _waiting.Remove(order); _lost++; }
         }
         SelectFirst();
         if (Phase == YangzhouPhase.Running)
@@ -114,14 +121,16 @@ public sealed class YangzhouSession
             if (_waiting.Count == 0 && _next == Plan.Count) Phase = YangzhouPhase.Results;
             else if (Day.Day != 1 && ClosingRemaining < .000001)
             {
-                foreach (var order in _waiting) order.Lose();
+                foreach (var order in _waiting) { Record(order, true); order.Lose(); }
+                foreach (var pending in Plan.Skip(_next)) _records.Add(new(pending.Id, _catalog.Customer(pending.CustomerId).Name,
+                    pending.CustomerId, pending.TemplateId, true, true, false, 0, 0, 0, null));
                 _lost += _waiting.Count + Plan.Count - _next; _waiting.Clear(); _next = Plan.Count; Phase = YangzhouPhase.Results;
             }
         }
     }
     private void Arrive(bool tutorialClosing = false)
     {
-        if (_next >= Plan.Count || _waiting.Count >= 4 || (!tutorialClosing && Elapsed + .000001 < _nextAt)) return;
+        if (_next >= Plan.Count || _waiting.Count >= 5 || (!tutorialClosing && Elapsed + .000001 < _nextAt)) return;
         var next = Plan[_next];
         if (Day.Day < 6 && next.TemplateId == "K" && _waiting.Any(o => o.Template.Id == "K")) return;
         int complex = _waiting.Count(o => o.Template.Complex);

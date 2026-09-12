@@ -40,6 +40,8 @@ public partial class CoinCollectionSelfTest
             string suffix = day == 1 ? "天津-煎饼-v1.png" : day == 5 ? "天津-煎饼-炸锅-v1.png" : "天津-煎饼-炸锅-豆浆-v1.png";
             Check(screen.GetNode<TextureRect>("ShopBackground").Texture.ResourcePath.EndsWith(suffix), "correct new stage background: " + day);
             Check(!station.CoinTray!.IsVisibleInTree() && !station.CoinTray.TryCollect(), "old Tianjin collection control stays hidden and inert");
+            foreach (var bubble in screen.FindChildren("OrderBubble", "", true, false).OfType<OrderBubbleView>().Where(b => b.GetGlobalRect().Intersects(screen.CashPendant.GetGlobalRect())))
+                GD.Print($"PENDANT_OVERLAP bubble={bubble.GetGlobalRect()} pendant={screen.CashPendant.GetGlobalRect()} width={width}");
             Check(screen.FindChildren("OrderBubble", "", true, false).OfType<OrderBubbleView>()
                 .All(b => !b.GetGlobalRect().Intersects(screen.CashPendant.GetGlobalRect())), "five customer bubbles leave the pendant unobscured");
             if (Capture && !reduced) await Shot($"tianjin-pendant-{width}-day{day}-five-customers");
@@ -141,6 +143,7 @@ public partial class CoinCollectionSelfTest
         Click(screen.CashPendant); await Frames();
         Check(screen.BusinessDetails.Visible && controller.Ledger.Build().TotalRevenue == income && save.Data.Coins == 0,
             "opening detailed records never changes session or permanent money");
+        screen.BusinessDetails.SelectPage(true); await Frames();
         var scroll = screen.BusinessDetails.FindChildren("*", "ScrollContainer", true, false).OfType<ScrollContainer>().Single();
         Check(scroll.GetVScrollBar().MaxValue > scroll.Size.Y, "all session records are reachable by scrolling");
         if (Capture && !reduced) await Shot($"tianjin-pendant-{width}-records");

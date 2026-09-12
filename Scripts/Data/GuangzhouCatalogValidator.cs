@@ -36,7 +36,7 @@ public static class GuangzhouCatalogValidator
             void Weights(Dictionary<string, double> values, IEnumerable<string> allowed, string field) => Check(values.Count > 0
                 && Math.Abs(values.Values.Sum() - 1) < .00001 && values.All(p => double.IsFinite(p.Value) && p.Value > 0 && allowed.Contains(p.Key)), d.SourcePath, field, "权重必须为已开放ID、正值且总和为1。");
             Check(d.Day is >= 1 and <= 12 && d.CityId == StableIds.Cities.Guangzhou && d.DurationSeconds > 0 && d.CustomerCount > 0
-                && d.MaxWaitingCustomers == 4 && d.SatisfactionAverageMode == SatisfactionAverageMode.CompletedCustomers && d.RandomSeed > 0 && d.PatienceMultiplier == 1, d.SourcePath, "day", "广州营业配置无效。");
+                && d.MaxWaitingCustomers == 5 && d.SatisfactionAverageMode == SatisfactionAverageMode.CompletedCustomers && d.RandomSeed > 0 && d.PatienceMultiplier == 1, d.SourcePath, "day", "广州营业配置无效。");
             var unlocked = GuangzhouRules.Recipes.Where((_, i) => GuangzhouRules.RecipeUnlockDay(i) <= d.Day).ToArray();
             Weights(d.RecipeWeights, unlocked, "recipeWeights");
             Check(d.AvailableRecipeIds.Count == unlocked.Length && d.AvailableRecipeIds.ToHashSet().SetEquals(unlocked), d.SourcePath, "availableRecipeIds", "配方未按日开放。");

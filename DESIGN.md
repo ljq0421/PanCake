@@ -1,6 +1,6 @@
 ---
 name: 早餐铺子
-description: 全局标题页令牌；城市皮肤按正文各章维护
+description: 全局标题页与共享营业账本令牌；城市皮肤按正文各章维护
 colors:
   cover-cream: "#FFF6E5"
   cover-teal: "#286354"
@@ -9,6 +9,23 @@ colors:
   cover-brick: "#983F32"
   cover-muted: "#665C49"
   cover-disabled: "#E1DDCF"
+  book-paper: "#FFF8E8"
+  book-cover: "#B88045"
+  book-ink: "#4A3024"
+  book-muted: "#775343"
+  book-border: "#9D794E"
+  book-note: "#F4E6BC"
+  book-tab-selected: "#F3DA9B"
+  book-tab-idle: "#F9EFD8"
+  book-tianjin: "#AB692F"
+  book-wuhan: "#527C69"
+  book-xian: "#995448"
+  book-guangzhou: "#637D53"
+  book-yangzhou: "#537C80"
+  book-completed: "#456E49"
+  book-lost: "#92534B"
+  book-incorrect: "#A05C2F"
+  book-perfect: "#91601D"
 typography:
   cover-display:
     fontSize: "94px"
@@ -16,8 +33,22 @@ typography:
     fontSize: "30px"
   cover-body:
     fontSize: "28px"
+  book-income:
+    fontSize: "84px"
+  book-title:
+    fontSize: "46px"
+  book-metric:
+    fontSize: "48px"
+  book-detail:
+    fontSize: "20px"
+  book-control:
+    fontSize: "24px"
 rounded:
   cover-control: "20px"
+  book-cover: "24px"
+  book-paper: "20px"
+  book-tab: "9px"
+  book-note: "3px"
 components:
   cover-button-primary:
     backgroundColor: "{colors.cover-teal}"
@@ -38,6 +69,23 @@ components:
     backgroundColor: "{colors.cover-disabled}"
     textColor: "{colors.cover-muted}"
     rounded: "{rounded.cover-control}"
+  book-paper:
+    backgroundColor: "{colors.book-paper}"
+    textColor: "{colors.book-ink}"
+    rounded: "{rounded.book-paper}"
+    width: "1660px"
+    height: "878px"
+  book-tab-selected:
+    backgroundColor: "{colors.book-tab-selected}"
+    rounded: "{rounded.book-tab}"
+    typography: "{typography.book-control}"
+  book-tab-idle:
+    backgroundColor: "{colors.book-tab-idle}"
+    rounded: "{rounded.book-tab}"
+    typography: "{typography.book-control}"
+  book-note:
+    backgroundColor: "{colors.book-note}"
+    rounded: "{rounded.book-note}"
 ---
 
 <!-- design-system-schema: 1 -->
@@ -88,7 +136,7 @@ components:
 - Do 保留全局封面的独立品牌、三项固定菜单和明确的存档状态；新增城市无需改封面。
 - Don't 用天津专属素材、城市数量或解锁状态定义全局标题页，也不要将封面配色覆盖到已有城市皮肤。
 
-实现、存档兼容与多尺寸验收见 [游戏开始页](docs/游戏开始页.md)。`.impeccable/design.json` 仅提供该全局表面的文档预览扩展，运行平台仍为 Godot PC。
+实现、存档兼容与多尺寸验收见 [游戏开始页](docs/游戏开始页.md)。`.impeccable/design.json` 保留该全局表面的文档预览，并扩展共享营业账本的 Godot 原生规则；运行平台仍为 Godot PC。
 
 ## 基础风格
 
@@ -165,6 +213,8 @@ components:
 
 采用居中的奶油色纸张覆盖层，依次强调总收入、收入构成、完成顾客、满意度、纪录/星级和解锁提示。唯一主操作为“返回经营首页”。
 
+2026-09-12 起，天津、武汉、西安、广州、扬州的营业结算以文末“共享营业账本”为准，旧收据弹窗不再叠加。
+
 ## 页面结构
 
 ### 经营首页
@@ -227,3 +277,65 @@ components:
 ### 天津托盘与滤网库存排布（2026-09-11）
 
 天津嵌入背景的四个小料托盘按用户示意图使用两排整齐重叠，同排统一高度、朝向和间距，不附加逐份旋转或列错位。满库存铺满托盘内部，6／8／10份容量均匀分布，取用后保留空位。豆浆使用两列五排，左右杯并列，前后杯等距重叠。炸锅滤网和前方成品托盘的油条均按原素材斜向逐根排成一整排，成品库存每根单独显示，最右侧前景对应下一根FIFO品质，取用时逐根减少。所有素材等比显示并保持在容器内。仅天津启用此排布，共享库存、补货和品质规则保持原样。
+
+## 共享营业账本（2026-09-12）
+
+天津、武汉、西安已追加下文 Global BookUI 素材皮肤；本节程序纸面及通用布局继续适用于广州、扬州，数据和交互规则仍由五城共享。
+
+### Overview
+
+天津、武汉、西安、广州、扬州共用 `BusinessDetailsView` 的纸质双页账本，承载营业中查看与收摊结算。沿用早餐铺账本的既有视觉，不改变全局封面或城市工作台皮肤。数据由 `BusinessBookModel` 提供本次营业快照，账本本身不付款、不保存、不购买升级。
+
+### Colors
+
+前文 `book-*` 令牌来自 `Scripts/UI/BusinessDetailsView.cs`，仅约束本表面：共用暖纸、棕色封皮、深棕正文与辅助文字；天津暖棕、武汉绿、西安红棕、广州绿、扬州青用于小标题、贴纸及选中页签描边。完成、错误、流失、Perfect 使用各自状态色，并同时显示文字与勾、感叹号、时钟或星形，不只依靠颜色。
+
+### Typography
+
+沿用 Godot 中文系统字体回退及 `TianjinUi` 主题。1920×1080 画布内收入 84px、标题 46px、主要经营数字 48px；小标题及顾客名 26～30px，按钮和收入明细 24px，商品名与错误原因 20px，序号及统计说明 18px。长顾客名、商品和错误原因按实际字体测量换行，禁止通过缩小字号或省略错误原因压回固定行高。
+
+### Layout
+
+1920×1080 设计画布等比居中，账本位于 (120,90)，大小 1680×900；内纸面 1660×878，中缝位于书本 x=840。其他窗口按宽高缩放比的较小值适配。
+
+- 默认“今日小结”：左页收入、销售、小费、热销；右页完成及流失、完成率、完成顾客满意度、Perfect 与手记。零完成的热销和满意度显示真实空态。
+- “顾客明细”使用一个 1524×568 纵向滚动容器，左右内容属于同一客单行；行最小高度 132px、行间距 12px，普通订单约一屏四单。商品每行两项，随名称、商品数量与原因增长行高，左右保持配对；不拆成独立滚动页。
+- 页签 170×64px，筛选 148×48px，底部“收好账本”240×72px。全部／完成／错误／流失筛选保持原编号和结束顺序，完成包含错误完成，切换后滚动回顶部。
+
+### Elevation & Depth
+
+店铺背景覆盖 `Color(0.12, 0.08, 0.04, 0.4)`，即 40% 暗化。账本以封皮、内纸与两条低透明度中缝形成深度，纸面不加阴影；保留原按钮主题反馈，不增加写实纸纹或网页材质。
+
+### Shapes
+
+封皮圆角 24px、描边 3px，内纸圆角 20px、描边 1px；页签圆角 9px，选中描边 2px、未选中 1px。手记纸角 3px，无描边；Perfect 印章圆角 32px、描边 2px。装饰、食物图标及文字忽略鼠标，完整模态层拦截背景点击。
+
+### Components
+
+- 天津、武汉从现有收银挂件打开；西安、广州、扬州使用顶部“营业账本”，保留各自原收钱机制。营业中标记“截至目前”，暂停营业，关闭恢复原暂停状态和焦点；制作或拖拽手势中不可打开。
+- 打开默认聚焦“收好账本”，无法关闭时聚焦“重试保存”。Tab／Shift+Tab 循环有效按钮，Enter／Space 激活；Esc 与关闭按钮遵守相同返回限制。收摊标题“今日收摊”，关闭返回当前城市经营首页。
+- 逐单仅保留本局；完成率只包含完成和流失，满意度只包含完成顾客，未有分母时为“—”。热销按完成订单商品数量统计，含错误完成、不含流失；手记按完成率 80% 和满意度 80 分固定分档。扬州以“组”计数，并区分“等待离开”和“收摊未接待”。
+- 食物优先使用 `BookFoodIcon` 中已有对应城市素材并等比显示；缺失时用程序图标搭配名称，不借用其他城市菜品。头像裁去透明留白，流失头像降低饱和与透明度。
+- 练习、未保存及失败回滚说明持续可见；解锁与可购买升级贴纸只显示真实结果。保存失败按城市现有重试／返回约束处理，Esc 不绕过；账本动画与翻页不产生存档写入。
+- 营业中淡入 200ms；收摊依次为淡入 200ms、收入累计 600ms、经营数字 250ms、印章淡入 80ms 及 1.13→1 缩放 160ms（Expo Out）、手记 300ms，总计约 1.59 秒。零 Perfect 显示空态、不播放盖章音。左键点击、切页、筛选、关闭立即结束动画并呈现最终值；启用 `accessibility/reduce_motion` 时直接显示完整内容。音效复用现有音量总线。
+
+### Do's and Don'ts
+
+- Do 复用五城共享账本与真实数据口径，允许城市辅助色和既有保存约束；保持长订单左右配对、状态文字和可恢复焦点。
+- Don't 将选关经营手账与本次营业账本混为一体，也不将营业记录写入历史存档、虚构零值或把账本变成付款入口。
+
+实现说明见 [全章节营业账本](docs/全章节营业账本.md)。最终评审通过；共享专项 108 通过、0 失败，1920×1080、1280×720、1600×720 五城截图与长行边界见 `.impeccable/review/business-book/`。
+
+### 天津、武汉、西安 Global BookUI 素材皮肤
+
+天津、武汉、西安营业中及收摊账本使用 `resource/art/Global/BookUI/`；`BusinessDetailsView.ArtSkin.cs`、`BookArtCatalog` 和 `CitySettlementTheme` 为实现依据。原 PNG 是此皮肤的视觉权威，不以程序矩形替代其外框、印章或便签，广州、扬州保留原皮肤。
+
+- 延续 1920×1080 画布、1680×900 展示区域及 40% 背景暗化。两个页签统一使用 `营业结算账本底板-v1.png`，底板、图标和贴片均裁去透明余量后等比显示；测量时忽略 Alpha ≤ 0.125 的极淡散点，保留原文件。
+- 小结标题及经营标题分别进入左右页的标题区；左页为收入、构成和热销，右页为经营指标及 Perfect 印章。手记移至左下，解锁／升级贴片位于右下，真实关闭按钮对齐底板操作区。动态文字不烘焙进素材。
+- 新版底板完整留白，不叠加旧纸面切片；小结分区与明细动态行使用 `账本轻分隔线.png`，透明度 28%，两页分隔线分别定位以避开书脊。只显示一个真实滚动条，三章节滚动窗口高 480px，保留原配对行、筛选、内容扩展与状态文字。头像使用圆框，逐单 Perfect 使用金色图标，小结 Perfect 使用红色印章。
+- 解锁与升级分组显示，多个解锁提示在小结合并为“新解锁 · 回店查看”，完整原文保留在明细末尾；评级单独显示。保存失败、重试与禁用态由原模型控制。
+- 收入 84px，结算标题 46px，明细底板标题 30px；主要数字 48px，逐单字号沿用共享规则。热销贴片标题 22px、条件贴片 18px、手记正文 24px。内容不得压住书脊、贴片图案及关闭按钮。
+
+素材清单及验证见 [三章节账本配色接入](docs/三章节账本配色接入.md)，最新截图在 `.impeccable/review/global-book-ui/`。
+
+正式配色遵循 `docs/营业结算页的正式配色生产规范.md`：正文 `#4D352A`、辅助文字 `#765648`、按钮纸色 `#F5E8CF`、浅分区 `#EFDDBD`、描边 `#594034`。PNG 纸面三章共用，不整图染色。天津辅助色 `#D7A45F/#729DAC/#B8C9CC`，武汉 `#71A08D/#A9C1B3/#DFC88D`，西安 `#98594D/#CBB38B/#D0A04E`；西安轻分隔线用 `#B98870`。页签、焦点及弱装饰读取该主题；主文字不随城市换色。局部着色器仅作用于角饰、头像内圈、便签贴角、贴片暖色装饰和分隔线，保留棕色描边，状态章、Perfect、金币与自然食物色共用。

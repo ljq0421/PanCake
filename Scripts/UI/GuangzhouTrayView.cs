@@ -7,6 +7,7 @@ namespace ProjectCake.UI;
 public partial class GuangzhouTrayView : Control
 {
     private readonly RiceRollGesture _gesture = new();
+    public bool HasGesture => _gesture.Mode != RiceRollGestureMode.None;
     private bool _movingHandle;
     public RiceRollStateMachine Tray { get; set; } = null!;
     public Func<bool> CanInteract { get; set; } = () => false;

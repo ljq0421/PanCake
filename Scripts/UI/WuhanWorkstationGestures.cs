@@ -147,7 +147,7 @@ public partial class WuhanWorkstationView
         if (!accepted) GestureRejected?.Invoke(gesture switch {
             "raw" => "把生面拖进空漏勺。", "basket" => "向上提篮后拖到空碗；也可先放下等待沥干。",
             "batter" => "从浆碗拖一勺浆到空锅再松手。", "filling" => "翻面后从馅碗取馅，按住锅面铺开。",
-            "flip" => "按住锅面向上划动翻面。", "cut" => "沿虚线划过大部分长度；一横三竖各切一刀。", _ => "请在对应食物区域完成操作。" });
+            "flip" => "按住锅面向上划动翻面。", "cut" => "沿虚线横划一次、竖划一次；一竖自动切三条。", _ => "请在对应食物区域完成操作。" });
     }
 
     private void DrawGesture()
@@ -172,9 +172,13 @@ public partial class WuhanWorkstationView
         }
         if (_gesture == "cut" && !_cutCommitted && _cutStroke?.Line is DoupiCutLine line)
         {
-            var (from, to) = CutLine((int)line);
-            for (int i = 0; i < _cutStroke.SampleCount; i++)
-                if (_cutStroke.Covered(i)) DrawLine(from.Lerp(to, (float)i / _cutStroke.SampleCount), from.Lerp(to, (float)(i + 1) / _cutStroke.SampleCount), WuhanUi.Ink, 3, true);
+            foreach (DoupiCutLine preview in Enum.GetValues<DoupiCutLine>())
+            {
+                if ((preview == DoupiCutLine.Horizontal) != (line == DoupiCutLine.Horizontal)) continue;
+                var (from, to) = CutLine((int)preview);
+                for (int i = 0; i < _cutStroke.SampleCount; i++)
+                    if (_cutStroke.Covered(i)) DrawLine(from.Lerp(to, (float)i / _cutStroke.SampleCount), from.Lerp(to, (float)(i + 1) / _cutStroke.SampleCount), WuhanUi.Ink, 3, true);
+            }
         }
         string sprite = _gesture switch { "raw" => "raw_noodles", "flip" => "flip_tool", "cut" => "cut_tool", "batter" => "doupi_ladle", "filling" => "doupi_filling_overlay", _ => "basket" };
         Vector2 size = _gesture switch { "raw" => BasketFoodRect(At(Vector2.Zero, BasketSize)).Size, "basket" => BasketSize, _ => new Vector2(100, 100) };

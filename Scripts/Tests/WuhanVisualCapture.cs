@@ -282,7 +282,7 @@ public partial class WuhanVisualCapture : Node
             if(!griddle.AutoFlip)Require(day.Doupi.TryFlip(),"doupi skin flips for fixture");
             Require(day.Doupi.TryAddFilling(),"doupi filling enters fixture");DoupiTestFixture.Spread(day.Doupi);
             day.Doupi.Tick(griddle.SecondStageReadySeconds/Math.Max(.01,griddle.SpeedMultiplier)+.001);
-            for(int cut=0;cut<day.Doupi.RequiredCuts;cut++)Require(day.Doupi.TryCut((DoupiCutLine)cut),$"doupi fixture cut {cut+1}");
+            foreach(var cut in new[]{DoupiCutLine.Horizontal,DoupiCutLine.Center})Require(day.Doupi.TryCut(cut),$"doupi fixture cut {cut}");
             view.CancelAnimations();Step(2.5);
             Require(!day.EggUnlocked,"retired egg stays hidden");
             await Shot("03-ready");
@@ -440,7 +440,7 @@ public partial class WuhanVisualCapture : Node
             Click(day.Workstation.IngredientCenter(3)); Step(.21); await Shot("12b-beef-after-mixing"); Step(.30);
             await Deliver(ProductKind.HotDryNoodles,"13-noodles-delivery");
             day.PourDoupiBatter();Step(.17);await Shot("14-batter-spreading");Step(.25);
-            day.AddDoupiEgg();Step(.17);await Shot("15a-egg-cracking");
+            day.AddDoupiEgg();Step(.17);await Shot("15a-egg-scooping");
             Step(.06);await Shot("15b-egg-pouring");
             Step(.17);await Shot("15c-egg-spreading");
             Step(.21);await Shot("15d-egg-finished");Step(1.96);

@@ -1,4 +1,5 @@
 using Godot;
+using ProjectCake.Data;
 using ProjectCake.Core;
 using ProjectCake.UI;
 
@@ -27,7 +28,7 @@ public partial class WuhanDayScreen
         CashPendant.Pressed += OpenBusinessDetails;
         BusinessDetails = new BusinessDetailsView { Name = "BusinessDetails" };
         AddChild(BusinessDetails);
-        BusinessDetails.CloseRequested += CloseBusinessDetails;
+        BusinessDetails.CloseRequested += () => { if (BusinessDetails.Model.Closing) { BusinessDetails.Hide(); HubRequested?.Invoke(); } else CloseBusinessDetails(); };
     }
 
     private void ApplyPendantPause()
@@ -54,7 +55,7 @@ public partial class WuhanDayScreen
         Workstation.CancelInput();
         _detailsPaused = true;
         ApplyPendantPause();
-        BusinessDetails.Open(_controller.Ledger.Build(), _controller.BusinessRecords, _catalog);
+        BusinessDetails.Open(BusinessBookModel.From(StableIds.Cities.Wuhan, _controller.Ledger.Build(), _controller.BusinessRecords, _catalog));
     }
 
     internal void CloseBusinessDetails()

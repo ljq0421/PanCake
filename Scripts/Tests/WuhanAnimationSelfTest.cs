@@ -17,6 +17,11 @@ public partial class WuhanAnimationSelfTest : Node
         {
             _catalog = GetNode<DataCatalog>("/root/DataCatalog");
             Check(new WuhanArtCatalog().MissingRequiredAssets().Count == 0, "全部武汉必需美术可加载");
+            using (var spoon = new WuhanArtCatalog().Texture("egg_ladle").GetImage())
+            {
+                Check(spoon.GetPixel(0, 0).A == 0, "蛋液勺白底已去除");
+                Check(spoon.GetPixel(spoon.GetWidth() / 2, spoon.GetHeight() * 3 / 5).A > .99f, "蛋液勺内部高光和蛋液保持不透明");
+            }
             TestBasketReadySound();
             if (!OS.GetCmdlineUserArgs().Contains("--basket-ready-sound"))
             {
@@ -103,14 +108,15 @@ public partial class WuhanAnimationSelfTest : Node
     private void TestDoupi()
     {
         var egg = NewDay(); var eggDay = egg.Screen;
+        Check(!eggDay.AddDoupiEgg() && !eggDay.Workstation.Busy("pan"), "空锅点击蛋液不播放取料动画");
         eggDay.PourDoupiBatter(); eggDay._Process(.4);
-        Check(eggDay.AddDoupiEgg(), "点击一次开始打蛋及自动摊蛋");
+        Check(eggDay.AddDoupiEgg(), "点击一次开始舀取蛋液及自动摊开");
         eggDay._Process(.2);
         float eggProgress = eggDay.Workstation.MotionProgress("pan");
         Check(!eggDay.AddDoupiEgg() && eggDay.Workstation.MotionProgress("pan") == eggProgress,
-            "打蛋期间重复点击不重启动画");
+            "舀取蛋液期间重复点击不重启动画");
         egg.Controller.IsPaused = true; eggDay._Process(1);
-        Check(eggDay.Workstation.MotionProgress("pan") == eggProgress, "暂停冻结打蛋阶段");
+        Check(eggDay.Workstation.MotionProgress("pan") == eggProgress, "暂停冻结倒蛋液阶段");
         egg.Controller.IsPaused = false; eggDay._Process(.2);
         Check(eggDay.Workstation.Busy("pan") && eggDay.Doupi!.SkinCookProgress > 0,
             "自动摊蛋时煎制计时继续");

@@ -44,7 +44,7 @@ public partial class WuhanSelfTest : Node
         Check(pan.TryCut(DoupiCutLine.Right) && pan.Quality==DoupiQuality.Overbrowned, "偏焦第一刀锁定原品质");
         pan.Tick(100);
         Check(pan.State==DoupiState.Cutting && pan.Quality==DoupiQuality.Overbrowned, "收火后长时间中断不焦糊且不恢复品质");
-        Check(!pan.TryCut(DoupiCutLine.Right) && !pan.TryCut((DoupiCutLine)99) && pan.CompletedCuts==1, "重复刀及无效刀线编号不计数");
+        Check(!pan.TryCut(DoupiCutLine.Right) && !pan.TryCut((DoupiCutLine)99) && pan.CompletedCuts==3, "重复刀及无效刀线编号不计数");
         foreach(var line in new[]{DoupiCutLine.Horizontal,DoupiCutLine.Left,DoupiCutLine.Center})pan.TryCut(line);
         var stock = new DoupiInventory();stock.TryAddBatch(12);
         Check(pan.TransferAvailable(stock)==4 && pan.RemainingPieces==4, "十二块库存仅接收四块，另四块留锅");
@@ -60,6 +60,16 @@ public partial class WuhanSelfTest : Node
         Check(shortStroke.Coverage<.3f,"刀线局部来回划不靠累计路程完成");
         var offLine=new DoupiCutStroke(new(.05f,.7f));
         Check(!offLine.Move(new(.95f,.7f)) && offLine.Coverage==0,"吸附带外水平划动无效");
+        foreach (bool reverse in new[]{false,true})
+        {
+            var jitter = new DoupiCutStroke(new(reverse ? .95f : .05f, .5f));
+            jitter.Move(new(reverse ? .85f : .15f, .5f));
+            for (int i=11;i<=90;i++)
+                jitter.Move(new(reverse ? .95f-i*.01f : .05f+i*.01f, i%2==0 ? .62f : .5f));
+            Check(jitter.Line==DoupiCutLine.Horizontal && jitter.Coverage>=DoupiInteraction.CutTarget,
+                "横切正反向连续抖动仍累计有效覆盖");
+        }
+        Check(pan.CompletedCuts==0,"新锅没有遗留刀痕");
         var diagonal=new DoupiCutStroke(new(.1f,.1f));
         Check(!diagonal.Move(new(.9f,.9f)) && diagonal.Line is null,"对角划动不选刀线");
         var edge=new DoupiCutStroke(new(.32f,.05f));

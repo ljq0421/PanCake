@@ -51,6 +51,9 @@ public partial class YangzhouDayScreen : Control
         for (int i = 0; i < _customers.Length; i++)
         {
             int index = i;
+            CustomerInteractionPresentation.BindButtonHighlight(_customers[i], () =>
+                CanWork() && index < Session.Waiting.Count && Session.Selected == Session.Waiting[index]
+                    ? InteractionHighlightState.Selected : InteractionHighlightState.None);
             _customers[i].Pressed += () => { if (CanWork() && index < Session.Waiting.Count) Session.Select(Session.Waiting[index].Plan.Id); Render(); };
         }
         for (int i = 0; i < _steam.Length; i++)
@@ -115,6 +118,7 @@ public partial class YangzhouDayScreen : Control
         _leave.Confirmed += () => { _leave.Hide(); Session.Pause(true); HubRequested?.Invoke(); };
         _leave.Canceled += () => Session.Pause(_pausedBeforeLeave);
         _return.Pressed += ReturnAfterResult;
+        foreach (var button in _workButtons.Concat(_refills.Values)) ButtonContourHighlight.Attach(button);
     }
     public bool Initialize(YangzhouCatalog catalog, SaveService save, int day, bool practice = false)
     {
@@ -186,18 +190,23 @@ public partial class YangzhouDayScreen : Control
         _board.Title = $"豆干切丝 · Lv{k.Board.Data.Level}";
         _board.Detail = k.Board.Cutting ? $"按住往复切丝  {k.Board.Progress:P0}\n达到{k.Board.Data.Snap:P0}自动完成" : $"按住砧板，左右往复切丝\n每块{k.Board.Data.Yield}份 · 生豆干{k.Tofu.Count}/3";
         _board.Meter = k.Board.Progress; _board.Active = k.Board.Cutting;
+        _board.InteractionEnabled = k.Board.Cutting || k.Tofu.Count > 0;
         _cutStock.Title = $"干丝备料  {k.Board.Portions}/{k.Board.Data.Capacity}"; _cutStock.Detail = "拖一份到右侧漏勺"; _cutStock.Amount = k.Board.Portions;
+        _cutStock.InteractionEnabled = k.Board.Portions > 0;
         _scald.Title = k.Scald.Ready ? $"烫干丝 · {Quality(k.Scald.Quality)}" : $"漏勺三烫   {k.Scald.Dips}/3";
         _scald.Detail = k.Scald.Ready ? "已调味 · 拖入早茶托盘" : k.Scald.SeasonRemaining > 0 ? "正在淋入调味料…" : !k.Scald.Loaded ? "从备料盘拖入1份干丝" : k.Scald.Immersed ? $"浸入 {k.Scald.ImmersionSeconds:0.0}秒 · 0.3秒后上提" : k.Scald.Dips >= 3 ? "三烫已锁定 · 点击下方调味" : "按住从上向下拖，再提回上方";
         _scald.Amount = k.Scald.Dips; _scald.Active = k.Scald.Immersed;
         _tea.Title = s.Day.Day < 2 ? "绿杨春茶 · Day 2开放" : $"绿杨春茶  {k.Tea.Count}/6";
         _tea.Detail = k.TeaReady ? "已取一杯 · 拖入托盘" : k.TeaRemaining > 0 ? "取茶中…" : "点击取茶，0.3秒后拖入托盘"; _tea.Amount = s.Day.Day >= 2 ? k.Tea.Count : 0;
+        _tea.InteractionEnabled = s.Day.Day >= 2 && (k.TeaReady || k.Tea.Count > 0);
         _tray.Title = s.Selected is null ? "早茶托盘 · 先选茶客" : $"{s.Selected.Type.Name} #{s.Selected.Plan.Id} 的托盘"; _tray.Detail = "";
+        _tray.InteractionEnabled = s.Selected is not null;
         _trayText.Text = s.Selected is null ? "选择上方顾客\n将成品拖到这里" : string.Join("\n", s.Selected.Template.Items.Select(i => $"{_catalog.Product(i.Key).Name}  {s.Selected.Count(i.Key)}/{i.Value}")) + (s.Selected.Complete ? "\n已经齐备，可以出餐" : "\n切换茶客，已放商品保留");
         _serve.Disabled = !CanWork() || s.Selected?.Complete != true;
         for (int i = 0; i < 2; i++)
         {
             var steamer = i < k.Steamers.Length ? k.Steamers[i] : null;
+            _steam[i].InteractionEnabled = steamer is not null;
             _steam[i].Title = steamer is null ? i == 0 ? "蒸笼 · Day 3开放" : "第二层 · 蒸笼Lv3开放" : $"第{i + 1}层  {steamer.Quantity}/{steamer.Data.Capacity}  {(steamer.ProductId == "" ? "空笼" : _catalog.Product(steamer.ProductId).Name)}";
             _steam[i].Detail = steamer is null ? "" : steamer.State switch { YangzhouSteamState.Empty => "装入一种生坯，再盖笼开蒸", YangzhouSteamState.Loaded => "已装笼 · 可继续添加或盖笼", YangzhouSteamState.Steaming => $"蒸制中 {steamer.Elapsed:0.0}/{steamer.CookSeconds:0.0}秒", YangzhouSteamState.Ready => steamer.Holding ? "自动保温 · 请手动揭盖" : $"{Quality(steamer.Quality)} · 可以揭盖", _ => "已揭盖 · 点击出笼到成品盘" };
             _steam[i].Amount = steamer?.Quantity ?? 0; _steam[i].Meter = steamer is null || steamer.State == YangzhouSteamState.Empty ? 0 : steamer.Elapsed / steamer.CookSeconds;
@@ -206,6 +215,7 @@ public partial class YangzhouDayScreen : Control
             for (int p = 0; p < 2; p++) _loadButtons[i, p].Disabled = !CanWork() || steamer is null || steamer.State is not (YangzhouSteamState.Empty or YangzhouSteamState.Loaded) || p == 1 && s.Day.Day < 5;
             _stock[i].Title = $"{(i == 0 ? "三丁包" : "翡翠烧卖")}  {(i == 0 ? k.Buns.Count : k.Siumai.Count)}";
             _stock[i].Detail = "成品拖入托盘"; _stock[i].Amount = i == 0 ? k.Buns.Count : k.Siumai.Count;
+            _stock[i].InteractionEnabled = _stock[i].Amount > 0;
             _steam[i].Refresh(); _stock[i].Refresh();
         }
         var stocks = new[] { k.Tofu, k.RawBuns, k.RawSiumai, k.Seasoning, k.Tea }; int index = 0;

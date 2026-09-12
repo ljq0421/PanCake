@@ -45,7 +45,31 @@ public partial class GuangzhouVisualCapture : Node
                 foreach (var point in points) { Move(Point(point), true); await Frames(2); }
                 Release(); await Frames(2); Step(.01);
             }
-            Step(16); await Shot("day9-empty");
+            Step(16);
+            if (OS.GetCmdlineUserArgs().Contains("--capture-highlights"))
+            {
+                var customerCard = day.Descendants<GuangzhouCustomerCard>().First(button => !button.Disabled);
+                await ClickAt(customerCard.GetGlobalTransformWithCanvas() * (customerCard.Size * .5f));
+                Step(.01); await Frames(2);
+                Require(customerCard.GetChildren().OfType<ButtonContourHighlight>().Single().ResolveState()
+                    == InteractionHighlightState.Selected, "顾客文字卡沿原外形显示选中细描边");
+                await Shot("highlight-customer-card");
+                Require(day.TrayViews[0].HighlightState == InteractionHighlightState.Selected, "当前蒸盘细描边选中状态");
+                var hoverTray = day.TrayViews[1];
+                Move(hoverTray.GetGlobalTransformWithCanvas() * hoverTray.Plate.GetCenter(), false);
+                await Frames(2); Step(.01);
+                Require(hoverTray.HighlightState == InteractionHighlightState.Hover, "另一蒸盘真实悬停描边");
+                await Shot("highlight-trays-selected-hover");
+                var teaButton = day.Descendants<Button>().Single(b => b.Text.StartsWith("取茶 ·", StringComparison.Ordinal));
+                Move(teaButton.GetGlobalTransformWithCanvas() * (teaButton.Size * .5f), false);
+                await Frames(2); Step(.01);
+                Require(teaButton.GetChildren().OfType<ButtonContourHighlight>().Single().ResolveState() == InteractionHighlightState.Hover, "茶设备真实悬停描边");
+                Require(teaButton.GetThemeStylebox("normal") is StyleBoxFlat style && style.BorderWidthTop == 0 && style.ShadowSize == 0, "茶设备无旧粗框和硬阴影");
+                await Shot("highlight-tea-hover");
+                GD.Print($"GUANGZHOU_HIGHLIGHT_RESULT checks={_checks} resolution={(small ? 720 : 1080)} path={_output}");
+                GetTree().Quit(); return;
+            }
+            await Shot("day9-empty");
             var target = controller.CustomerQueue!.Slots.First(c => c.Progress.CanAccept(ProductKind.RiceRoll) && c.State != CustomerState.Entering);
             string recipe = target.Order.Lines.First(l => l.ProductKind == ProductKind.RiceRoll).DefinitionId;
             var trayView = day.TrayViews[0]; var tray = day.Session.Trays[0];

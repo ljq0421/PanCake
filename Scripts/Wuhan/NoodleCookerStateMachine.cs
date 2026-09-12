@@ -26,6 +26,7 @@ public sealed class NoodleCookerStateMachine
     }
 
     public IReadOnlyList<NoodleBasketRuntime> Baskets => _baskets;
+    internal NoodleCookerLevelData Level => _data;
     public int? PendingPourBasket { get; private set; }
     private HotDryNoodlesStateMachine? _reservedBowl;
 

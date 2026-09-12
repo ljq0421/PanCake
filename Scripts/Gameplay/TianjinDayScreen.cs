@@ -79,6 +79,9 @@ public partial class TianjinDayScreen : Control
         _workstation.YoutiaoBurnt += quantity => _controller?.Ledger?.RecordYoutiaoBurnt(quantity);
         for (int i = 0; i < _customerDropZones.Length; i++)
         {
+            int customerSlot = i;
+            _customerDropZones[i].HideInteractionFrame();
+            _portraits[i].BindInteractionHighlight(() => CustomerHighlight(customerSlot));
             _workstation.RegisterCustomerZone(_customerDropZones[i]);
             _orderCards[i].Configure(_art);
             // Move the portrait, order card and delivery zone together at equal intervals.
@@ -370,6 +373,7 @@ public partial class TianjinDayScreen : Control
                 continue;
             }
             button.Visible = true;
+            bool entering = !string.Equals(_deliveryCustomerIds[index], customer.Id, StringComparison.Ordinal);
             BindDeliveryCustomer(index, customer.Id);
             string progress = string.Join(',', customer.Order.Lines.Select((_, line) => customer.Progress.GetDeliveredQuantity(line)));
             string signature = customer.Id + ":" + progress;
@@ -377,7 +381,8 @@ public partial class TianjinDayScreen : Control
             {
                 _customerSignatures[index] = signature;
                 RenderOrder(index, customer);
-                if (!ReducedMotion)
+                // Order progress refreshes in place; only a new guest fades in.
+                if (entering && !ReducedMotion)
                 {
                     button.Modulate = new Color(1, 1, 1, 0.35f);
                     AnimateControl(button, Vector2.One, Colors.White, 0.22);
@@ -391,7 +396,8 @@ public partial class TianjinDayScreen : Control
                 _portraits[index].SetVisual(_art.CustomerPortrait(customer.AppearanceId, expression));
                 _portraits[index].SetCounterCalibration(_art.CustomerLayout(customer.AppearanceId));
             }
-            if (_displayedCustomerStates[index] is CustomerState previousState && previousState != customer.State
+            // Restored patience (for example Angry -> Impatient) is not a warning.
+            if (_displayedCustomerStates[index] is CustomerState previousState && previousState < customer.State
                 && customer.State is CustomerState.Impatient or CustomerState.Angry)
                 PulseCustomer(_portraits[index], customer.State == CustomerState.Angry ? TianjinUi.Red : TianjinUi.Orange, false);
             _displayedCustomerStates[index] = customer.State;
@@ -405,6 +411,18 @@ public partial class TianjinDayScreen : Control
         card.Render(customer.Order, customer.Progress, _catalog.RecipesById);
         card.ResetSize();
         AlignOrderCard(card);
+    }
+
+    private InteractionHighlightState CustomerHighlight(int slot)
+    {
+        if (_controller?.CustomerQueue?.CustomerAtSlot(slot) is not { WasServed: false }
+            || _controller.State is not (DayState.Running or DayState.Closing)
+            || _manualPaused || _focusPaused || _detailsPaused || !_focused || !_workstation.InteractionEnabled)
+            return InteractionHighlightState.None;
+        DropZone zone = _customerDropZones[slot];
+        if (_workstation.IsDragging) return InteractionHighlightPresentation.FromDropZone(zone.VisualState);
+        return zone.ContainsPoint(GetGlobalMousePosition(), false)
+            ? InteractionHighlightState.Hover : InteractionHighlightState.None;
     }
 
     private static void AlignOrderCard(OrderBubbleView card) =>
@@ -483,12 +501,19 @@ public partial class TianjinDayScreen : Control
         bounds.Size = new Vector2(bounds.Size.X, 54); // Keep the hit target above the five order bubbles.
         CashPendant = new Button { Name = "CashPendant", Position = bounds.Position, Size = bounds.Size,
             TooltipText = "查看营业明细", MouseDefaultCursorShape = CursorShape.PointingHand, ZIndex = 80 };
-        foreach (string state in new[] { "normal", "hover", "pressed", "disabled" })
+        foreach (string state in new[] { "normal", "hover", "pressed", "disabled", "focus" })
             CashPendant.AddThemeStyleboxOverride(state, new StyleBoxEmpty());
-        var focus = TianjinUi.Box(Colors.Transparent, 20, 2, false);
-        focus.BorderColor = TianjinUi.Yellow;
-        CashPendant.AddThemeStyleboxOverride("focus", focus);
         AddChild(CashPendant);
+        Vector2[] pendantPath = [new(26, 0), new(89, 0), new(103, 6), new(110, 19),
+            new(104, 37), new(100, 104), new(91, 116), new(26, 116), new(16, 106),
+            new(11, 39), new(4, 23), new(10, 8)];
+        var pendantContour = PathContourHighlight.Attach(CashPendant,
+            pendantPath.Select(point => point * TianjinWorkbenchLayout.SourceScale).ToArray(),
+            () => CashPendant.Disabled ? InteractionHighlightState.None
+                : CashPendant.IsHovered() || CashPendant.HasFocus() ? InteractionHighlightState.Hover : InteractionHighlightState.None);
+        // The pouch is behind the order bubbles even though its small input sits above them.
+        pendantContour.ZAsRelative = false;
+        pendantContour.ZIndex = 20;
         CashPendant.Pressed += OpenBusinessDetails;
         BusinessDetails = new TianjinBusinessDetails { Name = "BusinessDetails" };
         AddChild(BusinessDetails);

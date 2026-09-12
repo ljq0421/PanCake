@@ -938,6 +938,8 @@ public partial class PancakeWorkstation : Control
                 ? "正在放入成品托盘 · 可继续摊饼"
             : DirectCustomerDelivery && Machine.Runtime.State == PancakeState.Bagged ? "拖给顾客"
             : PancakeStatus(Machine.Runtime);
+        if (IsTianjinWorkbench && Machine.Runtime.State == PancakeState.SideACooking)
+            _state.Text = Machine.Runtime.HasEgg ? "等待翻面" : "可加鸡蛋";
         _state.Modulate = Colors.White;
         _state.AddThemeColorOverride("font_color", Machine.Runtime.State switch
         {

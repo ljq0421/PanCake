@@ -25,12 +25,14 @@ public partial class WuhanLedger : Control
     private Control[] _illustrationSlots = Array.Empty<Control>();
     private WuhanLedgerLockIcon _lockIllustration = null!;
     private Button _start = null!;
+    private WuhanActionAudio _audio = null!;
     private int _illustrationDay;
     private bool _illustrationLocked;
 
     public override void _Ready()
     {
         SceneNodeBinder.Bind(this);
+        _audio = new WuhanActionAudio(this);
         _art = new WuhanArtCatalog();
         _illustrationSlots = new[] { GetNode<Control>("%Illustration1"), GetNode<Control>("%Illustration2"), GetNode<Control>("%Illustration3") };
         _lockIllustration = GetNode<WuhanLedgerLockIcon>("%WuhanLedgerLockIllustration");
@@ -51,11 +53,13 @@ public partial class WuhanLedger : Control
         _notice.Modulate = Colors.White;
         Refresh(save);
         Show();
+        _audio.Play(WuhanSound.BookOpen);
         FocusSelectedDay();
     }
 
     public void Close()
     {
+        if (Visible) _audio.Play(WuhanSound.BookClose);
         Hide();
         if (IsInstanceValid(_previousFocus) && _previousFocus!.IsVisibleInTree()) _previousFocus.GrabFocus();
         else GetViewport().GuiGetFocusOwner()?.ReleaseFocus();
@@ -69,6 +73,7 @@ public partial class WuhanLedger : Control
     public void SelectDay(int day)
     {
         if (_save is null || day is < 1 or > 12) return;
+        if (SelectedDay != day) _audio.Play(WuhanSound.Page);
         SelectedDay = day;
         Refresh(_save);
     }

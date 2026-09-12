@@ -152,18 +152,13 @@ public partial class WuhanWorkstationView
 
     private void DrawGesture()
     {
-        void Target(Rect2 rect) => DrawStyleBox(WuhanUi.Box(new Color(WuhanUi.Paper, .62f), 12, 2, false), rect);
         if (_cooker.PendingPourBasket is int pending)
         {
             Vector2 waiting = BowlFood.GetCenter() + new Vector2(-32, -105);
             DrawLoadedBasket(At(waiting, BasketSize));
-            Drips(waiting + new Vector2(0, 30), 4); Target(BowlRect.Grow(10));
+            Drips(waiting + new Vector2(0, 30), 4);
         }
         if (!HasProductionGesture) return;
-        if (_gesture == "raw") for (int i = 0; i < _cooker.Baskets.Count; i++) if (_cooker.Baskets[i].State == NoodleBasketState.Empty) Target(BasketRect(i).Grow(12));
-        if (_gesture == "basket" && _bowl.State == NoodleBowlState.Empty && !_cooker.PendingPourBasket.HasValue) Target(BowlRect.Grow(10));
-        if ((_gesture == "batter" && _doupi?.State == DoupiState.Empty) || (_gesture == "filling" && _doupi?.State == DoupiState.Flipped))
-            DrawPolyline(PanCorners.Concat(new[] { PanCorners[0] }).ToArray(), new Color("#ADBD7B"), 3, true);
         if (_gesture is "spread" || (_gesture == "filling" && _fillingDeposited))
         {
             if (_doupi?.State == DoupiState.Spreading && OnPan(_gesturePoint))

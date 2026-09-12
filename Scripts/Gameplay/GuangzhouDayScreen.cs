@@ -55,6 +55,7 @@ public partial class GuangzhouDayScreen : Control
         for (int i = 0; i < _customers.Length; i++)
         {
             int slot = i;
+            CustomerInteractionPresentation.BindButtonHighlight(_customers[i], () => CustomerHighlight(slot));
             _customers[i].Pressed += () => SelectCustomer(slot);
             _customers[i].Accepts = payload => CanDropOnCustomer(slot, payload);
             _customers[i].Delivered = payload => DeliverPayload(payload, CustomerAt(slot)?.Id);
@@ -135,6 +136,12 @@ public partial class GuangzhouDayScreen : Control
         _abandon.Confirmed += () => { _controller.AbandonDay(); _controller.IsPaused = false; HubRequested?.Invoke(); };
         _back.Pressed += () => HubRequested?.Invoke();
         _retry.Pressed += CommitResult;
+        foreach (var button in _cuts.Concat(_discards).Concat(_deliverRolls).Concat(_baskets)
+            .Concat(_dimSum.Values).Concat(_refills.Values)
+            .Concat(new Button[] { _loadSiuMai, _loadHarGow, _pourTea, _refillTea, _teaCup }))
+            ButtonContourHighlight.Attach(button);
+        foreach (var (id, button) in _ingredients)
+            ButtonContourHighlight.Attach(button, () => _tool == id ? InteractionHighlightState.Selected : InteractionHighlightState.None);
     }
     public void ConnectController(DayController controller)
     {
@@ -212,6 +219,19 @@ public partial class GuangzhouDayScreen : Control
         if (index < 0 || !Session.LoadBasket(index, id)) Feedback("蒸柜已满，请先取出熟蒸点。");
     }
     private CustomerRuntime? CustomerAt(int slot) => _controller?.CustomerQueue?.CustomerAtSlot(slot);
+    private InteractionHighlightState CustomerHighlight(int slot)
+    {
+        if (!CanInteract || CustomerAt(slot) is not { } customer) return InteractionHighlightState.None;
+        if (GetViewport().GuiIsDragging())
+        {
+            Variant payload = GetViewport().GuiGetDragData();
+            bool accepts = payload.VariantType == Variant.Type.String && CanDropOnCustomer(slot, payload.AsString());
+            return _customers[slot].IsHovered()
+                ? accepts ? InteractionHighlightState.Valid : InteractionHighlightState.Invalid
+                : accepts ? InteractionHighlightState.Eligible : InteractionHighlightState.None;
+        }
+        return customer.Id == SelectedCustomerId ? InteractionHighlightState.Selected : InteractionHighlightState.None;
+    }
     private string? SelectedCustomerId => _controller.CustomerQueue?.SelectedCustomerId;
     private void SelectCustomer(int slot) { if (CanInteract && CustomerAt(slot) is { } c) _controller.CustomerQueue!.TrySelect(c.Id); }
     private bool TryGetItem(string payload, out DeliveredItem item, out Func<bool> consume)
@@ -258,8 +278,6 @@ public partial class GuangzhouDayScreen : Control
             if (_customers[i].GetThemeStylebox("normal") is StyleBoxFlat customerStyle)
             {
                 customerStyle.BgColor = c?.Id == SelectedCustomerId ? new Color("#D4E4CC") : GuangzhouUi.Paper;
-                int border = c?.Id == SelectedCustomerId ? 3 : 1;
-                customerStyle.BorderWidthLeft = customerStyle.BorderWidthTop = customerStyle.BorderWidthRight = customerStyle.BorderWidthBottom = border;
             }
             if (c is null) { _orders[i].Text = $"{i + 1:00}    等待街坊\n\n肠粉现蒸 · 点心提前备"; continue; }
             string lines = string.Join("\n", c.Order.Lines.Select((l, n) => $"{(c.Progress.GetRemainingQuantity(n) == 0 ? "✓" : "·")} {LineName(l)}  {c.Progress.GetDeliveredQuantity(n)}/{l.Quantity}"));

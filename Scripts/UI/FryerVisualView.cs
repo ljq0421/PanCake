@@ -61,6 +61,9 @@ public partial class FryerVisualView : Control
     private bool _lastLowered;
     private Tween? _basketTween;
     private Node2D _basketAnchor = null!;
+    private Node2D _embeddedBasketArt = null!;
+    private Node2D _rawFoodAnchor = null!;
+    private ShaderMaterial? _rawFoodInk;
     public bool UseTableContact { get; set; }
     public Rect2? EmbeddedOpening { get; set; }
     public Vector2 TableContactAnchor => EmbeddedOpening.HasValue ? new Vector2(Size.X * .5f, Size.Y)
@@ -82,6 +85,33 @@ public partial class FryerVisualView : Control
         basketInk.SetShaderParameter("outline_pixels", 0.4f);
         basketInk.SetShaderParameter("detail_pixels", 0.25f);
         _basketAnchor.Material = basketInk;
+        // The metal keeps its painted warm grays. FoodInk's dark-detail pass
+        // otherwise tints neutral gray shadows brown along with the food.
+        var metalInk = (ShaderMaterial)basketInk.Duplicate();
+        metalInk.SetShaderParameter("detail_strength", 0f);
+        _embeddedBasketArt = new Node2D {
+            Name = "EmbeddedBasketMetal", Material = metalInk, ShowBehindParent = true,
+        };
+        _basketAnchor.AddChild(_embeddedBasketArt);
+        _embeddedBasketArt.Draw += () =>
+        {
+            if (_art is not null && _machine is not null && EmbeddedOpening is Rect2 opening)
+                DrawEmbeddedBasketArt(EmbeddedBasketRect(opening), opening);
+        };
+        // Food needs the same brown ink as the surrounding hand-drawn artwork,
+        // independently of the basket's light mesh treatment. As a child of the
+        // basket, this non-interactive layer follows its movement automatically.
+        _rawFoodAnchor = new Node2D { Name = "RawFoodInk", Material = RawFoodMaterial() };
+        _basketAnchor.AddChild(_rawFoodAnchor);
+        _rawFoodAnchor.Draw += DrawRawFood;
+    }
+
+    private ShaderMaterial RawFoodMaterial()
+    {
+        if (_rawFoodInk is not null) return _rawFoodInk;
+        _rawFoodInk = (ShaderMaterial)FoodInk.Material().Duplicate();
+        _rawFoodInk.SetShaderParameter("outline_pixels", 1.65f);
+        return _rawFoodInk;
     }
 
     private Rect2 BodyCanvas()
@@ -142,11 +172,13 @@ public partial class FryerVisualView : Control
     public override void _Draw()
     {
         if (_art is null || _machine is null || Size.X <= 0 || Size.Y <= 0) return;
+        _embeddedBasketArt.QueueRedraw();
 
         if (EmbeddedOpening.HasValue)
         {
             _basketAnchor.Position = Vector2.Zero;
             _basketAnchor.QueueRedraw();
+            _rawFoodAnchor.QueueRedraw();
             return;
         }
 
@@ -155,6 +187,7 @@ public partial class FryerVisualView : Control
 
         _basketAnchor.Position = canvas.Position;
         _basketAnchor.QueueRedraw();
+        _rawFoodAnchor.QueueRedraw();
     }
 
     private void DrawBasket()
@@ -168,37 +201,73 @@ public partial class FryerVisualView : Control
         Rect2 canvas = new(Vector2.Zero, BodyCanvas().Size);
 
         FryerBatchRuntime runtime = _machine.Runtime;
-        Rect2 lowered = LoweredBasketPlacementForLevel(_machine.Level.Level);
-        Rect2 raised = UseTableContact ? new Rect2(lowered.Position + new Vector2(0, -.07f), lowered.Size)
-            : BasketPlacementForLevel(_machine.Level.Level);
-        Rect2 basketPlacement = InterpolateRect(
-            raised, lowered,
-            _loweredProgress);
+        Rect2 basketPlacement = CurrentBasketPlacement();
         Rect2 basketRect = ResolveBasketRect(canvas, basketPlacement);
         _basketAnchor.DrawTextureRect(_art.FryerBasket(_machine.Level.Level), basketRect, false);
-        DrawBatch(runtime, canvas, basketPlacement);
+        if (!UsesRawFood(runtime)) DrawBatch(_basketAnchor, runtime, canvas, basketPlacement);
         DrawCookingEffects(runtime, canvas, basketPlacement);
         DrawStateIndicator(runtime, canvas, basketPlacement);
     }
 
+    private Rect2 CurrentBasketPlacement()
+    {
+        Rect2 lowered = LoweredBasketPlacementForLevel(_machine!.Level.Level);
+        Rect2 raised = UseTableContact ? new Rect2(lowered.Position + new Vector2(0, -.07f), lowered.Size)
+            : BasketPlacementForLevel(_machine.Level.Level);
+        return InterpolateRect(
+            raised, lowered,
+            _loweredProgress);
+    }
+
+    private Rect2 EmbeddedBasketRect(Rect2 opening)
+    {
+        // This is the mouth plane, not the complete sprite including its front
+        // wall. The back/front rim now follow the painted tub's full depth.
+        return new Rect2(opening.Position + new Vector2(0, -22 * (1 - _loweredProgress)), opening.Size);
+    }
+
+    private void DrawEmbeddedBasketArt(Rect2 mouth, Rect2 opening)
+    {
+        // In the calibrated sprite the rim is at y=0.82; the remaining 18% is the wall below
+        // it. Map the rim plane onto the tub, then let the fixed front lip hide
+        // that wall as the basket descends. Fitting the entire PNG into the mouth
+        // makes its floor too shallow and leaves the front wall floating on top.
+        Texture2D texture = _art!.EmbeddedBasket;
+        Vector2 canvasSize = new(mouth.Size.X, mouth.Size.Y / .82f);
+        float visibleHeight = Mathf.Clamp(opening.End.Y - mouth.Position.Y, 0, canvasSize.Y);
+        Rect2 destination = new(mouth.Position, new Vector2(canvasSize.X, visibleHeight));
+        Rect2 source = new(Vector2.Zero, texture.GetSize() * new Vector2(1, visibleHeight / canvasSize.Y));
+        _embeddedBasketArt.DrawTextureRectRegion(texture, destination, source);
+    }
+
+    private void DrawRawFood()
+    {
+        if (_art is null || _machine is null || !UsesRawFood(_machine.Runtime)) return;
+        if (EmbeddedOpening is Rect2 opening)
+        {
+            Rect2 basket = EmbeddedBasketRect(opening);
+            int columns = _machine.Level.Capacity <= 6 ? 3 : 4;
+            for (int index = 0; index < _machine.Runtime.Quantity; index++)
+                _rawFoodAnchor.DrawTextureRect(_art.RawYoutiao,
+                    EmbeddedFoodRect(basket, columns, index, _art.RawYoutiao.GetSize()), false);
+            return;
+        }
+        DrawBatch(_rawFoodAnchor, _machine.Runtime,
+            new Rect2(Vector2.Zero, BodyCanvas().Size), CurrentBasketPlacement());
+    }
+
+    private static bool UsesRawFood(FryerBatchRuntime runtime) => runtime.State is FryerState.Empty or FryerState.Loaded;
+
     private void DrawEmbeddedBasket(Rect2 opening)
     {
+        TianjinArtCatalog art = _art!;
         FryerBatchRuntime runtime = _machine!.Runtime;
-        Rect2 basket = new(opening.Position + new Vector2(0, -22 * (1 - _loweredProgress)), opening.Size);
-        _basketAnchor.DrawTextureRect(_art!.EmbeddedBasket, basket, false);
-        Vector2[] rim = {
-            new(.015f, .61f), new(.10f, .12f), new(.12f, .05f), new(.15f, .015f),
-            new(.85f, .015f), new(.88f, .05f), new(.90f, .12f), new(.985f, .61f),
-            new(.995f, .72f), new(.986f, .80f), new(.96f, .85f), new(.04f, .85f),
-            new(.014f, .80f), new(.005f, .72f), new(.015f, .61f)
-        };
-        _basketAnchor.DrawPolyline(rim.Select(p => basket.Position + p * basket.Size).ToArray(),
-            new Color("#59351F"), 2.2f, true);
+        Rect2 basket = EmbeddedBasketRect(opening);
         int columns = _machine.Level.Capacity <= 6 ? 3 : 4;
-        Texture2D food = runtime.State is FryerState.Empty or FryerState.Loaded ? _art.RawYoutiao
-            : runtime.State == FryerState.Burnt ? _art.BurntYoutiao : _art.Ingredient(Data.StableIds.Ingredients.Youtiao);
+        Texture2D food = runtime.State is FryerState.Empty or FryerState.Loaded ? art.RawYoutiao
+            : runtime.State == FryerState.Burnt ? art.BurntYoutiao : art.Ingredient(Data.StableIds.Ingredients.Youtiao);
         Color tint = runtime.State is FryerState.Empty or FryerState.Loaded ? Colors.White : YoutiaoPresentation.Tint(runtime.Quality);
-        for (int index = 0; index < runtime.Quantity; index++)
+        for (int index = 0; !UsesRawFood(runtime) && index < runtime.Quantity; index++)
         {
             _basketAnchor.DrawTextureRect(food, EmbeddedFoodRect(basket, columns, index, food.GetSize()), false, tint);
         }
@@ -247,6 +316,7 @@ public partial class FryerVisualView : Control
             preview.AddChild(new TextureRect
             {
                 Texture = texture, Modulate = tint, MouseFilter = MouseFilterEnum.Ignore,
+                Material = runtime.State == FryerState.Loaded ? RawFoodMaterial() : null,
                 ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
                 Position = displaySize / 2 + (piece.Position - bounds.GetCenter()) * scale,
                 Size = piece.Size * scale,
@@ -254,7 +324,7 @@ public partial class FryerVisualView : Control
         return preview;
     }
 
-    private void DrawBatch(FryerBatchRuntime runtime, Rect2 canvas, Rect2 basketPlacement)
+    private void DrawBatch(Node2D target, FryerBatchRuntime runtime, Rect2 canvas, Rect2 basketPlacement)
     {
         if (_art is null || _machine is null || runtime.Quantity <= 0) return;
         Texture2D texture = runtime.Quality == YoutiaoQuality.Burnt || runtime.State == FryerState.Burnt
@@ -271,10 +341,10 @@ public partial class FryerVisualView : Control
             Vector2 normalizedPosition = basketPlacement.Position + slot.NormalizedPosition * basketPlacement.Size;
             Vector2 center = canvas.Position + canvas.Size * normalizedPosition;
             Vector2 itemSize = FitInside(texture.GetSize(), slotBounds * slot.Scale);
-            _basketAnchor.DrawSetTransform(center, Mathf.DegToRad(slot.RotationDegrees), Vector2.One);
-            _basketAnchor.DrawTextureRect(texture, new Rect2(itemSize * -0.5f, itemSize), false, tint);
+            target.DrawSetTransform(center, Mathf.DegToRad(slot.RotationDegrees), Vector2.One);
+            target.DrawTextureRect(texture, new Rect2(itemSize * -0.5f, itemSize), false, tint);
         }
-        _basketAnchor.DrawSetTransform(Vector2.Zero, 0, Vector2.One);
+        target.DrawSetTransform(Vector2.Zero, 0, Vector2.One);
     }
 
     private void DrawCookingEffects(FryerBatchRuntime runtime, Rect2 canvas, Rect2 basketPlacement)

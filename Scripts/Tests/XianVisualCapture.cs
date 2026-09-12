@@ -15,6 +15,8 @@ public partial class XianVisualCapture : Node
     private int _passed;
     private Vector2 _lastPointer;
     private string _output = "";
+    private SubViewport? _highlightViewport;
+    private Viewport TestViewport => _highlightViewport ?? GetViewport();
     public override async void _Ready()
     {
         try
@@ -22,11 +24,19 @@ public partial class XianVisualCapture : Node
             bool small = OS.GetCmdlineUserArgs().Contains("--capture-720");
             bool wide = OS.GetCmdlineUserArgs().Contains("--capture-16-10");
             GetWindow().Size = wide ? new(1600, 1000) : small ? new(1280, 720) : new(1920, 1080);
+            if (OS.GetCmdlineUserArgs().Contains("--capture-highlight"))
+            {
+                _highlightViewport = new SubViewport { Name = "HighlightViewport", Disable3D = true,
+                    Size = GetWindow().Size, Size2DOverride = new Vector2I(1920, 1080), Size2DOverrideStretch = true,
+                    RenderTargetUpdateMode = SubViewport.UpdateMode.Always };
+                AddChild(_highlightViewport); _highlightViewport.NotifyMouseEntered();
+            }
+            Node sceneParent = _highlightViewport is null ? this : _highlightViewport;
             _output = $"res://.tmp/xian-visual/{(wide ? "16-10" : small ? "720" : "1080")}";
             var catalog = GetNode<DataCatalog>("/root/DataCatalog");
             var save = new SaveService(); save.UsePathForTests($"{_output}/capture-{Guid.NewGuid():N}.json"); AddChild(save);
             save.Data.Coins = 2000; save.Data.Xian.HighestUnlockedDay = 12;
-            var hub = ProjectCake.Core.SceneFactory.Instantiate<XianHub>("res://Scenes/UI/XianHub.tscn"); AddChild(hub); hub.Initialize(catalog, save); await Shot("01-hub"); hub.Hide();
+            var hub = ProjectCake.Core.SceneFactory.Instantiate<XianHub>("res://Scenes/UI/XianHub.tscn"); sceneParent.AddChild(hub); hub.Initialize(catalog, save); await Shot("01-hub"); hub.Hide();
             var controller = new DayController(); AddChild(controller);
             _screen = ProjectCake.Core.SceneFactory.Instantiate<XianDayScreen>("res://Scenes/Gameplay/XianDayScreen.tscn");
             var authoredWorkbench = _screen.GetNode<Control>("Workbench");
@@ -34,9 +44,27 @@ public partial class XianVisualCapture : Node
             Require(authoredWorkbench.GetChildren().OfType<XianSurface>().Count(v => v.Kind == "customer") == 5
                 && authoredWorkbench.HasNode("soup_bowl") && authoredWorkbench.HasNode("CoinTray") && _screen.HasNode("CoinCollectionFeedback"),
                 "进入运行树前固定节点已完整预置");
-            AddChild(_screen); _screen.SetProcess(false); _screen.ConnectController(controller);
+            sceneParent.AddChild(_screen); _screen.SetProcess(false); _screen.ConnectController(controller);
             Require(authoredWorkbench.GetChildCount() == authoredCount, "启动后不增删固定工作台节点");
             Require(_screen.Initialize(catalog, save, controller, 1), "Day1初始化"); _screen.BeginDay(); Step(7);
+            if (OS.GetCmdlineUserArgs().Contains("--capture-highlight"))
+            {
+                controller.AbandonDay(); Require(_screen.Initialize(catalog, save, controller, 6), "描边场景初始化");
+                _screen.BeginDay(); Step(3.1);
+                for (int i = 0; i < 90 && controller.CustomerQueue!.Slots.Count < 5; i++)
+                {
+                    foreach (var waiting in controller.CustomerQueue.Slots) waiting.WaitSeconds = 0;
+                    Step(1);
+                }
+                Step(.4); await Click(new(215, 350)); Move(new(350, 640), false); _screen.Render(); await Shot("highlight-oven-customer");
+                Move(new(930, 650), false); _screen.Render(); await Shot("highlight-board");
+                Move(new(1635, 650), false); _screen.Render(); await Shot("highlight-soup-pot");
+                await Click(new(1635, 650)); Step(.7); Move(new(1635, 900), false); _screen.Render(); await Shot("highlight-soup-bowl");
+                Move(new(1635, 900), false); Mouse(new(1635, 900), true);
+                Move(new(1670, 900), true); await Frames(2); Move(new(215, 350), true); await Frames(10);
+                await Shot("highlight-delivery"); Mouse(new(215, 350), false); Step(.001);
+                GD.Print("XIAN_HIGHLIGHT_CAPTURE_DONE"); GetTree().Quit(); return;
+            }
             Require(!_screen.SoupWorkbenchVisible && _screen.Session.Oven is not null, "初始图及Day1免费馍炉");
             await Frames(2);
             await Click(new(1145, 900));
@@ -241,11 +269,13 @@ public partial class XianVisualCapture : Node
     private Vector2 Position(Vector2 local) => _screen.Workbench.GetGlobalTransformWithCanvas() * local;
     private void Move(Vector2 local, bool held)
     {
-        Vector2 p = Position(local); GetViewport().PushInput(new InputEventMouseMotion { Position = p, GlobalPosition = p, Relative = p - _lastPointer, ButtonMask = held ? MouseButtonMask.Left : 0 }, true); _lastPointer = p;
+        Vector2 p = Position(local);
+        TestViewport.PushInput(new InputEventMouseMotion { Position = p, GlobalPosition = p, Relative = p - _lastPointer, ButtonMask = held ? MouseButtonMask.Left : 0 }, true); _lastPointer = p;
+        if (_highlightViewport is not null) Require(TestViewport.GetMousePosition().DistanceTo(p) < 2, "合成指针到达实际设备位置");
     }
     private void Mouse(Vector2 local, bool pressed)
     {
-        Vector2 p = Position(local); GetViewport().PushInput(new InputEventMouseButton { Position = p, GlobalPosition = p, ButtonIndex = MouseButton.Left, Pressed = pressed }, true);
+        Vector2 p = Position(local); TestViewport.PushInput(new InputEventMouseButton { Position = p, GlobalPosition = p, ButtonIndex = MouseButton.Left, Pressed = pressed }, true);
     }
     private async Task ClickGlobal(Vector2 p)
     {
@@ -272,6 +302,6 @@ public partial class XianVisualCapture : Node
     {
         await Frames(3); await ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
         string path = ProjectSettings.GlobalizePath($"{_output}/{name}.png"); Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        if (GetViewport().GetTexture().GetImage().SavePng(path) != Error.Ok) throw new IOException(path);
+        if (TestViewport.GetTexture().GetImage().SavePng(path) != Error.Ok) throw new IOException(path);
     }
 }

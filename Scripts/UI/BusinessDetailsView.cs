@@ -9,9 +9,10 @@ namespace ProjectCake.UI;
 public partial class BusinessDetailsView : Control
 {
     public event Action? CloseRequested;
+    public event Action? PageChanged;
     public event Action? RetryRequested;
     private Control _canvas = null!, _book = null!, _summary = null!, _details = null!, _metrics = null!, _note = null!, _stamp = null!;
-    private Label _city = null!, _title = null!, _income = null!, _save = null!;
+    private Label _city = null!, _title = null!, _income = null!, _save = null!, _detailHeading = null!;
     private VBoxContainer _rows = null!;
     private ScrollContainer _scroll = null!;
     private Button _summaryTab = null!, _detailTab = null!, _retry = null!;
@@ -50,7 +51,7 @@ public partial class BusinessDetailsView : Control
         _detailTab = ButtonAt(_book, "顾客明细", new(1400, -18, 170, 64), () => SelectPage(true));
         _summary = new Control { Position = new(0, 155), Size = new(1680, 620), MouseFilter = MouseFilterEnum.Ignore }; _book.AddChild(_summary);
         _details = new Control { Position = new(0, 155), Size = new(1680, 620) }; _book.AddChild(_details);
-        Text(_details, "今日客单", new(80, 0, 380, 44), 28);
+        _detailHeading = Text(_details, "今日客单", new(80, 0, 380, 44), 28);
         string[] names = { "全部", "完成", "错误", "流失" };
         for (int i = 0; i < names.Length; i++) { int index = i; _filters.Add(ButtonAt(_details, names[i], new(900 + i * 160, 0, 148, 48), () => SelectFilter((BookFilter)index))); }
         _scroll = new ScrollContainer { Position = new(78, 66), Size = new(1524, 568), HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled, Name = "OrderScroll" }; _details.AddChild(_scroll);
@@ -83,6 +84,7 @@ public partial class BusinessDetailsView : Control
         _city.Text = $"{model.CityName} · DAY {model.Result.Day:00}" + (model.Practice ? "  /  练习营业" : "");
         _title.Text = model.Closing ? "今日收摊" : "营业账本";
         _save.Text = model.SaveMessage.Length > 0 ? model.SaveMessage : "截至目前 · 收好账本后继续营业";
+        _save.TooltipText = UsesBookArt ? _save.Text : "";
         _retry.Visible = model.CanRetry; CloseButton.Disabled = !model.CanClose;
         BuildSummary(); RefreshRows(); SelectPage(false); Show();
         (model.CanClose ? CloseButton : _retry).GrabFocus(); StartAnimation();
@@ -138,8 +140,10 @@ public partial class BusinessDetailsView : Control
     }
     internal void SelectPage(bool details)
     {
+        bool changed = IsVisibleInTree() && _details.Visible != details;
         FinishAnimation(); _summary.Visible = !details; _details.Visible = details;
-        if (UsesBookArt) PaintBookPaper(details);
+        if (changed) PageChanged?.Invoke();
+        if (UsesBookArt) PaintBookPaper();
         StyleTab(_summaryTab, !details); StyleTab(_detailTab, details);
     }
     internal void SelectFilter(BookFilter filter) { FinishAnimation(); _filter = filter; RefreshRows(); }
@@ -148,6 +152,7 @@ public partial class BusinessDetailsView : Control
         Clear(_rows);
         string[] names = { "全部", "完成", "错误", "流失" };
         for (int i = 0; i < 4; i++) { _filters[i].Text = $"{names[i]} {_model.Filter((BookFilter)i).Count()}"; StyleTab(_filters[i], (int)_filter == i); }
+        if (UsesBookArt) { RefreshArtRows(); return; }
         foreach (var order in _model.Filter(_filter))
         {
             float nameHeight = WrappedHeight(order.Customer, 550, 26);

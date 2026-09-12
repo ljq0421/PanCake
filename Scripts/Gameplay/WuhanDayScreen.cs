@@ -57,6 +57,9 @@ public partial class WuhanDayScreen : Control
         };
         for (int i = 0; i < _customerDropZones.Length; i++)
         {
+            int customerSlot = i;
+            _customerDropZones[i].HideInteractionFrame();
+            _portraits[i].BindInteractionHighlight(() => CustomerHighlight(customerSlot));
             DeliveryDrag.RegisterZone(_customerDropZones[i]);
             _orders[i].Configure(_art.Shared, _art);
         }
@@ -74,9 +77,13 @@ public partial class WuhanDayScreen : Control
         Workstation.EggRequested = AddDoupiEgg;
         Workstation.FillingRequested = AddDoupiFilling;
         Workstation.FlipRequested = FlipDoupi;
-        Workstation.FoodDiscarded += () => { Feedback("食物已丢弃。", false, true); Render(); };
+        Workstation.FoodDiscarded += () => { Workstation.PlaySound(WuhanSound.Discard); Feedback("食物已丢弃。", false, true); Render(); };
         Workstation.SpreadRequested = SpreadDoupi;
-        Workstation.MixMoved += distance => { if (CanInteract && !Workstation.Busy("bowl")) _bowl.AddMixDistance(distance); };
+        Workstation.MixMoved += distance =>
+        {
+            if (CanInteract && !Workstation.Busy("bowl") && _bowl.AddMixDistance(distance))
+                Workstation.PlaySound(_bowl.State == NoodleBowlState.Ready ? WuhanSound.Ready : WuhanSound.Mix);
+        };
         Workstation.GestureRejected += message => Feedback(message, true);
         GetNode<Button>("@PanelContainer@312/@HBoxContainer@313/@Button@319").Pressed += () => { Workstation.CancelInput(); _abandon.PopupCentered(); };
         this.FindButton("收好收入 · 返回武汉经营首页").Pressed += () => HubRequested?.Invoke();
@@ -191,7 +198,7 @@ public partial class WuhanDayScreen : Control
     {
         if (!CanInteract || Workstation.Busy($"basket{index}")) return false;
         bool raised = _cooker.TryRaise(index);
-        if (raised) Workstation.RememberProductionState();
+        if (raised) { Workstation.PlaySound(WuhanSound.Raise); Workstation.RememberProductionState(); }
         return raised;
     }
     internal bool ReservePour(int index)
@@ -288,7 +295,7 @@ public partial class WuhanDayScreen : Control
         if (!CanInteract || _doupi is null || Workstation.Busy("pan")) return false;
         DoupiState before = _doupi.State;
         bool ok = action(_doupi);
-        if (ok) ClearDoupiFeedback();
+        if (ok) { ClearDoupiFeedback(); if (!animate) Workstation.PlaySound(_doupi.State == DoupiState.Empty ? WuhanSound.Discard : WuhanSound.Topping); }
         if (ok && animate) Workstation.PlayDoupi(before);
         if (!ok) Feedback(hint, true);
         Render(); return ok;
@@ -301,7 +308,7 @@ public partial class WuhanDayScreen : Control
     {
         if (!CanInteract || _doupi is null || Workstation.Busy("pan")) return false;
         bool changed = _doupi.Spread(from, to, Workstation.PanAspect);
-        if (changed) { ClearDoupiFeedback(); Workstation.RememberProductionState(); Render(); }
+        if (changed) { Workstation.PlaySound(WuhanSound.Spread); ClearDoupiFeedback(); Workstation.RememberProductionState(); Render(); }
         return changed;
     }
     internal bool DiscardDoupi() => ApplyDoupi(d =>
@@ -340,10 +347,10 @@ public partial class WuhanDayScreen : Control
     private void RenderCustomers()
     {
         if (_controller.CustomerQueue is null) return;
-        var slots = _controller.CustomerQueue.Slots;
         for (int i=0;i<_customers.Length;i++)
         {
-            CustomerRuntime? customer=i<slots.Count?slots[i]:null;
+            // Keep portraits, orders and delivery targets at the physical slot assigned on entry.
+            CustomerRuntime? customer = _controller.CustomerQueue.CustomerAtSlot(i);
             _customers[i].Visible=customer is not null;
             string? id=customer?.Id;
             if (_deliveryCustomerIds[i]!=id)
@@ -370,9 +377,23 @@ public partial class WuhanDayScreen : Control
             _portraits[i].SetVisual(_art.Shared.CustomerPortrait(customer.AppearanceId,TianjinArtCatalog.ResolveCustomerExpression(customer.State,customer.WasServed)));
         }
     }
-    private void Feedback(string text,bool error,bool force=false){if (!force && !error && _controller?.State is not (DayState.Opening or DayState.Closing)) return;_feedback.Text=(error?"！ ":"")+text;_feedback.Modulate=Colors.White;_feedback.AddThemeColorOverride("font_color",error?new Color("#9A3528"):WuhanUi.Ink);_feedback.Visible=true;_feedbackSeconds=2.4;}
+    private InteractionHighlightState CustomerHighlight(int slot)
+    {
+        if (!CanInteract || _controller.CustomerQueue?.CustomerAtSlot(slot) is not { WasServed: false })
+            return InteractionHighlightState.None;
+        DropZone zone = _customerDropZones[slot];
+        if (DeliveryDrag.IsDragging) return InteractionHighlightPresentation.FromDropZone(zone.VisualState);
+        return zone.ContainsPoint(GetGlobalMousePosition(), false)
+            ? InteractionHighlightState.Hover : InteractionHighlightState.None;
+    }
+    private void Feedback(string text,bool error,bool force=false){if (error) Workstation.PlaySound(WuhanSound.Error);if (!force && !error && _controller?.State is not (DayState.Opening or DayState.Closing)) return;_feedback.Text=(error?"！ ":"")+text;_feedback.Modulate=Colors.White;_feedback.AddThemeColorOverride("font_color",error?new Color("#9A3528"):WuhanUi.Ink);_feedback.Visible=true;_feedbackSeconds=2.4;}
     private void OnStateChanged(DayState state){if(state==DayState.Running)Feedback("开始营业！做好餐品后，直接拖给对应顾客。",false);else if(state==DayState.Closing)Feedback("停止接新客，最后 15 秒完成手中订单。",false);}
-    private void OnDeliveryCompleted(DeliveryEvaluation result)=>Feedback(result.Message,result.Grade is DeliveryGrade.Incorrect or DeliveryGrade.Rejected);
+    private void OnDeliveryCompleted(DeliveryEvaluation result)
+    {
+        if ((result.ItemAccepted || result.CompletesOrder) && result.Grade is not (DeliveryGrade.Incorrect or DeliveryGrade.Rejected))
+            Workstation.PlaySound(WuhanSound.Success);
+        Feedback(result.Message,result.Grade is DeliveryGrade.Incorrect or DeliveryGrade.Rejected);
+    }
     public override void _ExitTree()
     {
         ClearPendantOnExit();

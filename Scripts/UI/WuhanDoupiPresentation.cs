@@ -69,9 +69,30 @@ public partial class WuhanWorkstationView
     }
     private Control CreateDoupiPiecePreview(DoupiInventory.Piece piece)
     {
-        var preview = new Control { Name = "DoupiPiecePreview", MouseFilter = MouseFilterEnum.Ignore, CustomMinimumSize = new Vector2(100, 60) };
-        preview.Draw += () => DrawPiece(piece.Tile, RectQuad(new Rect2(0, 0, 100, 57)), piece.Quality, canvas: preview);
+        var preview = new Control { Name = "DoupiPiecePreview", MouseFilter = MouseFilterEnum.Ignore, CustomMinimumSize = new Vector2(100, 60), TextureFilter = TextureFilterEnum.LinearWithMipmaps };
+        preview.Draw += () => DrawStockPiece(piece.Tile, FitDoupiPieceQuad(piece.Tile, new Rect2(0, 0, 100, 60)), piece.Quality, canvas: preview);
         return preview;
+    }
+    private Vector2[] FitDoupiPieceQuad(int tile, Rect2 bounds)
+    {
+        // These cut-piece sprites already include perspective, outline and depth.
+        // Preserve the complete illustration with one uniform scale.
+        Vector2 size = _art.DoupiPiece(tile).GetSize();
+        float scale = Math.Min(bounds.Size.X / size.X, bounds.Size.Y / size.Y);
+        Vector2 origin = bounds.GetCenter() - size * scale / 2;
+        return RectQuad(new Rect2(origin, size * scale));
+    }
+    private void DrawStockPiece(int tile, Vector2[] quad, DoupiQuality quality, float alpha = 1, CanvasItem? canvas = null)
+    {
+        if (alpha <= 0) return;
+        Color tint = quality switch
+        {
+            DoupiQuality.Overbrowned => new Color(.78f, .60f, .39f, alpha),
+            DoupiQuality.Burnt => new Color(.35f, .23f, .14f, alpha),
+            _ => new Color(1, 1, 1, alpha),
+        };
+        // Tint the sprite itself so darker food keeps its natural transparent edge.
+        (canvas ?? this).DrawPolygon(quad, new[] { tint }, RectQuad(new Rect2(0, 0, 1, 1)), _art.DoupiPiece(tile));
     }
     private Control CreatePanDoupiPreview(Vector2 size)
     {
@@ -129,23 +150,48 @@ public partial class WuhanWorkstationView
     {
         int slot = index % 8, layer = index / 8;
         Rect2 tray = _layout.StockFood;
-        Vector2 center = tray.Position + tray.Size * new Vector2((slot % 4 + .5f) / 4, .30f + slot / 4 * .43f);
+        // Fill most of the serving area with a compact group. The front row
+        // slightly overlaps the back row; food still keeps its source proportions.
+        Vector2 center = tray.GetCenter() + new Vector2((slot % 4 - 1.5f) * 73, (slot / 4 - .5f) * 32 + 1);
         center += new Vector2(layer * 1.5f, -layer * 5);
-        return At(center, new Vector2(tray.Size.X / 4 - 3, 30));
+        return At(center, new Vector2(70, 50));
+    }
+    private void DrawDoupiStock(Motion? motion)
+    {
+        // Finish both layers of the back row before drawing the front row.
+        // Incoming pieces use this same order, so they do not change depth on landing.
+        for (int row = 0; row < 2; row++)
+        for (int i = 0; i < _stock.Count; i++)
+        {
+            if (i % 8 / 4 != row) continue;
+            DoupiInventory.Piece piece = _stock.PieceAt(i);
+            Vector2[] target = FitDoupiPieceQuad(piece.Tile, StockItemRect(i));
+            if (motion?.Kind != "stock" || i < motion.StockStart || i >= motion.StockStart + motion.Amount)
+            {
+                DrawStockPiece(piece.Tile, target, piece.Quality);
+                continue;
+            }
+            float t = Smooth(motion.Progress);
+            Vector2[] source = PanPiece(piece.Tile);
+            if (ReducedMotion)
+            {
+                DrawPiece(piece.Tile, source, piece.Quality, 1 - t);
+                DrawStockPiece(piece.Tile, target, piece.Quality, t);
+            }
+            else
+            {
+                Vector2[] quad = source.Select((v, j) => v.Lerp(target[j], t) - new Vector2(0, Mathf.Sin(t * Mathf.Pi) * 24)).ToArray();
+                float reveal = Phase(motion.Progress, .08f, .48f);
+                if (reveal < 1) DrawPiece(piece.Tile, quad, piece.Quality, 1 - reveal);
+                DrawStockPiece(piece.Tile, quad, piece.Quality, reveal);
+            }
+        }
     }
     private void DrawDoupi()
     {
         if (_doupi is null) return;
-        Hint(StockRect, "stock");
         DrawDoupiIngredients();
         Motion? motion = Find("pan");
-        int displayed = _stock.Count - (motion?.Kind == "stock" ? motion.Amount : 0);
-        for (int i = 0; i < displayed; i++)
-        {
-            DoupiInventory.Piece piece = _stock.PieceAt(i);
-            DrawPiece(piece.Tile, RectQuad(StockItemRect(i)), piece.Quality);
-        }
-        Hint(At(PanCenter, PanRect.Size * new Vector2(.7f, .4f)), "pan");
         DoupiState state = _doupi.State;
         float p = motion?.Progress ?? 1;
         if (motion?.Kind == "discard")
@@ -240,18 +286,16 @@ public partial class WuhanWorkstationView
                 Ellipse(center, new Vector2(9 + t * 6, 5 + t * 4), new Color(.24f, .22f, .20f, (1 - t) * .22f));
             }
         }
-        if (motion is not null) DrawPanMotion(motion);
+        DrawDoupiStock(motion);
+        if (motion is not null && motion.Kind != "stock") DrawPanMotion(motion);
     }
     private void DrawDoupiIngredients()
     {
+        if (_gesture != "batter" && (ReducedMotion || Find("pan")?.Kind != "batter"))
+            Sprite("doupi_ladle", _layout.BatterLadle);
         // Egg liquid and its tray are painted into the sheet. The spoon is the only overlay.
         if (ReducedMotion || Find("pan")?.Kind != "egg")
             Sprite("egg_ladle", _layout.DoupiEggFood);
-        Rect2? available = _doupi?.State switch
-        { DoupiState.Empty => BatterRect, DoupiState.Batter => DoupiEggRect, DoupiState.Flipped => FillingRect, _ => null };
-        if (available is Rect2 rect && !Busy("pan"))
-            DrawStyleBox(WuhanUi.Box(new Color(1, .93f, .65f, .12f), 16, 1, false), rect);
-        Hint(BatterRect, "batter"); Hint(FillingRect, "filling"); Hint(DoupiEggRect, "doupi_egg");
     }
 
     private void DrawSpreading(Vector2[] quad, CanvasItem? canvas = null)
@@ -289,22 +333,6 @@ public partial class WuhanWorkstationView
     private void DrawPanMotion(Motion m)
     {
         float p = m.Progress;
-        if (m.Kind == "stock")
-        {
-            for (int i = 0; i < m.Amount; i++)
-            {
-                float t = Smooth(p);
-                Vector2[] source = PanPiece(m.Index + i), target = RectQuad(StockItemRect(m.StockStart + i));
-                Vector2[] quad = source.Select((v, j) => v.Lerp(target[j], t) - new Vector2(0, Mathf.Sin(t * Mathf.Pi) * 24)).ToArray();
-                if (ReducedMotion)
-                {
-                    DrawPiece(m.Index + i, source, m.DoupiQuality, 1 - t);
-                    DrawPiece(m.Index + i, target, m.DoupiQuality, t);
-                }
-                else DrawPiece(m.Index + i, quad, m.DoupiQuality);
-            }
-            return;
-        }
         if (ReducedMotion) return;
         float toolAlpha = Phase(p, 0, .12f) * (1 - Phase(p, .85f, 1));
         if (m.Kind is "flip" or "cut")

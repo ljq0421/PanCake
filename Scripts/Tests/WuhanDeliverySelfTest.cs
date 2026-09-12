@@ -36,6 +36,7 @@ public partial class WuhanDeliverySelfTest : Node
             await TestBatchDelivery();
             await TestLifecycle();
             await TestFifthCustomer();
+            await TestCustomerPositions();
             await TestContinuousSupply();
             TestTheme();
             if (_capture) await CaptureScreens();
@@ -76,6 +77,86 @@ public partial class WuhanDeliverySelfTest : Node
     {
         if (!condition) throw new InvalidOperationException(message);
         _passed++; GD.Print($"PASS {message}");
+    }
+
+    private async Task TestCustomerPositions()
+    {
+        foreach (bool expires in new[] { false, true })
+        {
+            await NewDay();
+            var queue = _controller.CustomerQueue!;
+            // Advance admissions without ageing customers or the business clock. Later arrivals
+            // then remain unscheduled until explicitly admitted after the empty-slot checks.
+            for (int elapsed = 100; elapsed <= 140; elapsed += 2) queue.Tick(elapsed, 0, true);
+            queue.Tick(140, .4, true); Step(.001); await Frames();
+            Check(queue.Slots.Count == 5 && queue.DoorQueue.Count == 0,
+                "fixed-position fixture has five customers and no pending arrival");
+            const int vacancy = 2;
+            var departing = queue.CustomerAtSlot(vacancy)!;
+            var survivors = Enumerable.Range(0, 5).Where(slot => slot != vacancy).ToDictionary(slot => slot, slot =>
+            {
+                var panel = (Control)_screen.FindChild($"WuhanCustomer{slot + 1}", true, false);
+                var portrait = panel.FindChildren("*", "", true, false).OfType<CustomerPortraitView>().Single();
+                var order = panel.FindChildren("*", "", true, false).OfType<OrderBubbleView>().Single();
+                return (Customer: queue.CustomerAtSlot(slot)!, Panel: panel, Portrait: portrait,
+                    Body: portrait.BodyTexture, PortraitBounds: portrait.GetGlobalRect(),
+                    Order: order, OrderBounds: order.GetGlobalRect(),
+                    ZoneBounds: Zone(slot).GetGlobalRect(), Version: Zone(slot).ConfigurationVersion);
+            });
+            string reason = expires ? "patience expiry" : "completed order";
+            if (expires)
+            {
+                departing.WaitSeconds = departing.LeaveAtSeconds;
+                Step(.01);
+                Check(departing.Order.Status == OrderStatus.Lost, "middle customer leaves after patience expires");
+            }
+            else
+            {
+                for (int bowl = 0; bowl < 2; bowl++)
+                {
+                    PrepareFood(); await Frames(); await Drop(ProductKind.HotDryNoodles, vacancy);
+                }
+                Check(departing.Progress.IsComplete && departing.WasServed,
+                    "middle customer leaves after a complete real delivery");
+            }
+            Step(CustomerQueue.LeaveDurationSeconds + .01); await Frames();
+            Check(queue.CustomerAtSlot(vacancy) is null && !Zone(vacancy).IsVisibleInTree(),
+                $"{reason} leaves its original position visibly empty");
+            CheckSurvivors("after departure");
+
+            PrepareFood(); await Frames(); await Drop(ProductKind.HotDryNoodles, vacancy);
+            Check(_screen.Bowl.State == NoodleBowlState.Ready
+                && survivors.Values.All(item => item.Customer.Progress.DeliveredItems.Count == 0),
+                "dropping onto the empty position keeps food and does not deliver to a neighbour");
+
+            for (int elapsed = 150; elapsed <= 170; elapsed += 2) queue.Tick(elapsed, 0, true);
+            queue.Tick(170, .4, true); Step(.001); await Frames();
+            var newcomer = queue.CustomerAtSlot(vacancy);
+            Check(queue.Slots.Count == 5 && newcomer is not null && newcomer.Id != departing.Id
+                && survivors.Values.All(item => item.Customer.Id != newcomer.Id) && Zone(vacancy).IsVisibleInTree(),
+                "new customer fills the empty position while occupancy stays at five");
+            CheckSurvivors("after replacement arrival");
+            await Drop(ProductKind.HotDryNoodles, vacancy);
+            Check(newcomer!.Progress.GetDeliveredQuantity(0) == 1
+                && survivors.Values.All(item => item.Customer.Progress.DeliveredItems.Count == 0),
+                "real drag into the filled position serves only the new customer");
+            PrepareFood(); await Frames(); await Drop(ProductKind.HotDryNoodles, 4);
+            Check(survivors[4].Customer.Progress.GetDeliveredQuantity(0) == 1
+                && newcomer.Progress.GetDeliveredQuantity(0) == 1,
+                "original fifth customer still receives food at the original fifth position");
+
+            void CheckSurvivors(string phase)
+            {
+                Check(survivors.All(pair => ReferenceEquals(queue.CustomerAtSlot(pair.Key), pair.Value.Customer)
+                    && pair.Value.Panel.IsVisibleInTree()
+                    && pair.Value.Portrait.BodyTexture == pair.Value.Body
+                    && pair.Value.Portrait.GetGlobalRect() == pair.Value.PortraitBounds
+                    && pair.Value.Order.GetGlobalRect() == pair.Value.OrderBounds
+                    && Zone(pair.Key).GetGlobalRect() == pair.Value.ZoneBounds
+                    && Zone(pair.Key).ConfigurationVersion == pair.Value.Version),
+                    $"{reason}: remaining portraits, orders and delivery bindings stay in place {phase}");
+            }
+        }
     }
 
     private async Task TestContinuousSupply()

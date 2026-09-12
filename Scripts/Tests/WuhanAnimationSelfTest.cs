@@ -25,7 +25,7 @@ public partial class WuhanAnimationSelfTest : Node
             TestBasketReadySound();
             if (!OS.GetCmdlineUserArgs().Contains("--basket-ready-sound"))
             {
-                TestTransfer(); TestClickFlow(); TestBeefTiming(); TestAutomatic(); TestDoupi(); TestEgg(); TestSupply(); TestLifecycle(); TestCookingPresentation();
+                TestActionSounds(); TestTransfer(); TestClickFlow(); TestBeefTiming(); TestAutomatic(); TestDoupi(); TestEgg(); TestSupply(); TestLifecycle(); TestCookingPresentation();
             }
         }
         catch (Exception e) { _failed++; GD.PushError(e.ToString()); }
@@ -239,6 +239,52 @@ public partial class WuhanAnimationSelfTest : Node
         }
         ProjectSettings.SetSetting("accessibility/reduce_motion", false);
     }
+    private void TestActionSounds()
+    {
+        var owner = new Node(); AddChild(owner);
+        var audio = new WuhanActionAudio(owner);
+        foreach (WuhanSound sound in Enum.GetValues<WuhanSound>())
+        {
+            Check(audio.Play(sound), $"{sound} 首次可播放");
+            var player = owner.GetNode<AudioStreamPlayer>($"WuhanCue{sound}");
+            var stream = (AudioStreamWav)player.Stream;
+            Check(stream.Data.Length > 0 && stream.Data.Any(b => b != 0)
+                && stream.LoopMode == AudioStreamWav.LoopModeEnum.Disabled && player.Bus == "Master",
+                $"{sound} 有声音数据、无循环并遵循主音量");
+        }
+        audio.Stop();
+        Check(audio.Play(WuhanSound.Mix) && !audio.Play(WuhanSound.Mix), "连续搅拌输入限频");
+        audio.SetPaused(true);
+        Check(!audio.Play(WuhanSound.Drop) && owner.GetChildren().OfType<AudioStreamPlayer>().All(p => !p.Playing),
+            "暂停停止短音并阻止新音效");
+        audio.SetPaused(false);
+        Check(audio.Play(WuhanSound.Drop), "恢复后操作可重新发声");
+        owner.Free();
+
+        var f = NewDay(); var s = f.Screen; var v = s.Workstation;
+        s.BasketAction(0);
+        Check(v.GetNodeOrNull<AudioStreamPlayer>("WuhanCueDrop")?.Playing == true, "下面成功触发音效");
+        s.IngredientAction(StableIds.Ingredients.WuhanBaseSeasoning);
+        Check(v.GetNodeOrNull<AudioStreamPlayer>("WuhanCueSeason") is null
+            && v.GetNodeOrNull<AudioStreamPlayer>("WuhanCueError")?.Playing == true,
+            "空碗加酱只播错误，不播加酱成功声");
+        s._Process(.3); s._Process(_catalog.NoodleCookersByLevel[1].OptimalSeconds);
+        Check(s.RaiseBasket(0) && v.GetNodeOrNull<AudioStreamPlayer>("WuhanCueRaise")?.Playing == true,
+            "拖拽提篮路径触发音效");
+        s.OpenBusinessDetails(); s._Process(.01);
+        Check(v.GetChildren().OfType<AudioStreamPlayer>().Where(p => p.Name.ToString().StartsWith("WuhanCue")).All(p => !p.Playing)
+            && s.GetNodeOrNull<AudioStreamPlayer>("WuhanCueBookOpen") is not null,
+            "明细暂停制作音，开本音可正常播放");
+        s.BusinessDetails.SelectPage(true);
+        Check(s.GetNodeOrNull<AudioStreamPlayer>("WuhanCuePage")?.Playing == true, "切换明细页触发翻页声");
+        s.CloseBusinessDetails(); s._Process(.01);
+        Check(s.GetNodeOrNull<AudioStreamPlayer>("WuhanCueBookClose")?.Playing == true, "关闭明细触发合本声");
+        s.Hide();
+        Check(v.GetChildren().OfType<AudioStreamPlayer>().All(p => !p.Playing)
+            && s.GetChildren().OfType<AudioStreamPlayer>().All(p => !p.Playing), "隐藏章节清理制作及界面音效");
+        DisposeDay(f);
+    }
+
     private void TestCookingPresentation()
     {
         var f = NewDay(); var s = f.Screen;

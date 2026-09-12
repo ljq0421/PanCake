@@ -16,7 +16,8 @@ internal static class TianjinWorkbenchLayout
     public static readonly Rect2 EmbeddedStove = FromSource(520, 510, 430, 310);
     public static readonly Rect2 EmbeddedSurface = FromSource(550, 530, 365, 197);
     public static readonly Rect2 EmbeddedFryer = FromSource(112, 447, 338, 258);
-    public static readonly Rect2 EmbeddedOpening = FromSource(150, 477, 253, 96);
+    // The painted tub center is x=282.5; keep basket and contents on that axis.
+    public static readonly Rect2 EmbeddedOpening = FromSource(156, 477, 253, 96);
     public static readonly Rect2 EmbeddedYoutiaoTray = FromSource(104, 710, 343, 116);
     public static readonly Rect2 EmbeddedSoyTray = FromSource(1468, 583, 173, 219);
     public static Rect2 EmbeddedIngredient(string id) => id switch

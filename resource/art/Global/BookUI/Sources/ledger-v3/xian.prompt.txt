@@ -1,0 +1,6 @@
+Use case: precise-object-edit.
+Asset type: production game UI open ledger background, Xian chapter.
+Edit the provided approved master. Preserve exactly its complete front-facing double-page geometry, 1448:929 aspect ratio, narrow central spine, rounded silhouette, paper area, dark warm brown contour lines, thin inner frame lines and the small corner ornaments. Leave all cream paper interiors unchanged and empty.
+Recolor ONLY the existing orange/gold narrow cover rim and spine to light sandstone #CBB38B, the thin inner frame lines to subdued jujube red #98594D, and tiny existing corner ornament accents to sandstone and warm gold #D0A04E. Do not leave a large orange cover rim. No large dark red or dark brown areas. Theme color area under 20% of the image. Preserve the original cream paper, dark brown contours, soft 2D rounded low-detail cartoon style.
+Do not draw new elements or change the layout. No text, numbers, icons, bookmarks, ribbons, grids or horizontal ruled lines.
+Output the entire ledger in a single image, original 1448 x 929 aspect ratio, no clipping. Only outside the book, replace transparency with perfectly uniform solid #00FF00 chroma green for subsequent extraction. No shadows outside the book, no checkerboard. Retain reference page proportions and framing.

@@ -11,6 +11,7 @@ public partial class YangzhouSurface : Control
     public int Amount { get; set; }
     public double Meter { get; set; }
     public bool Active { get; set; }
+    public bool InteractionEnabled { get; set; } = true;
     public Func<bool>? CanInteract { get; set; }
     public Func<string>? DragToken { get; set; }
     public Func<string, bool>? AcceptToken { get; set; }
@@ -19,6 +20,7 @@ public partial class YangzhouSurface : Control
     public Action<Vector2, Vector2, double>? Motion { get; set; }
     public Action? Released { get; set; }
     private bool _held;
+    private bool _hovered;
     public bool HasGesture => _held;
     private Vector2 _last;
     private ulong _lastTime;
@@ -26,18 +28,36 @@ public partial class YangzhouSurface : Control
     public override void _Ready()
     {
         SceneNodeBinder.Bind(this);
-        MouseExited += Cancel;
+        MouseEntered += () => { _hovered = true; QueueRedraw(); };
+        MouseExited += () => { _hovered = false; Cancel(); QueueRedraw(); };
+    }
+    public InteractionHighlightState HighlightState
+    {
+        get
+        {
+            if (!InteractionEnabled || CanInteract?.Invoke() != true) return InteractionHighlightState.None;
+            if (GetViewport().GuiIsDragging())
+            {
+                var data = GetViewport().GuiGetDragData();
+                bool accepted = data.VariantType == Variant.Type.String && AcceptToken?.Invoke(data.AsString()) == true;
+                return accepted ? (_hovered ? InteractionHighlightState.Valid : InteractionHighlightState.Eligible) : InteractionHighlightState.None;
+            }
+            if (_held || Active) return InteractionHighlightState.Selected;
+            return _hovered ? InteractionHighlightState.Hover : InteractionHighlightState.None;
+        }
     }
     public void Refresh()
     {
-        if (_title is null) return;
-        _title.Text = Title; _detail.Text = Detail; _detail.Position = new(14, Size.Y - 78); _detail.Size = new(Size.X - 28, 70);
+        if (_title is not null)
+        {
+            _title.Text = Title; _detail.Text = Detail; _detail.Position = new(14, Size.Y - 78); _detail.Size = new(Size.X - 28, 70);
+        }
         QueueRedraw();
     }
     public override void _Draw()
     {
-        var style = GuangzhouUi.Style(Kind == "board" ? new Color("#E5CCA4") : new Color("#FFF8E8"), Active ? 4 : 3);
-        style.BorderColor = Active ? new Color("#347C70") : new Color("#72563B"); DrawStyleBox(style, new Rect2(Vector2.Zero, Size));
+        var style = GuangzhouUi.Style(Kind == "board" ? new Color("#E5CCA4") : new Color("#FFF8E8"), 0);
+        DrawStyleBox(style, new Rect2(Vector2.Zero, Size));
         var ink = new Color("#57402D"); var center = new Vector2(Size.X / 2, 62 + Math.Max(18, (Size.Y - 156) / 2));
         if (Kind == "board")
         {
@@ -61,6 +81,8 @@ public partial class YangzhouSurface : Control
             if (Size.Y >= 140) for (int i = 0; i < Math.Min(8, Amount); i++) DrawCircle(new Vector2(26 + i * Math.Min(42, (Size.X - 52) / 8), 64), 7, new Color("#7FAD91"));
         }
         if (Meter > 0 && Kind != "scald") DrawRect(new(14, Size.Y - 86, (Size.X - 28) * (float)Math.Clamp(Meter, 0, 1), 5), new Color("#347C70"));
+        // These authored geometry devices use the rounded surface itself as their visible body.
+        ButtonContourHighlight.DrawContour(this, style, new Rect2(Vector2.Zero, Size), HighlightState);
     }
     public override void _GuiInput(InputEvent input)
     {

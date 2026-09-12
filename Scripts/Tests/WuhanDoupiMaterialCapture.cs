@@ -48,6 +48,27 @@ public partial class WuhanDoupiMaterialCapture : Node
             Step(.4); Step(.15); await Shot("11-transfer"); Step(.6);
             Require(_day.DoupiStock.Count == 8, "two cuts supply eight pieces");
             await Shot("12-stock", stockPreview: true);
+            VerifyStockProportions();
+            _day.PourDoupiBatter(); Step(.5); _day.AddDoupiEgg(); Step(2.6); _day.FlipDoupi(); Step(.6);
+            _day.AddDoupiFilling(); DoupiTestFixture.Spread(pan); Step(3.6);
+            await Shot("12a-stock-and-pan");
+            _day.CutDoupi(DoupiCutLine.Horizontal); Step(.4); _day.CutDoupi(DoupiCutLine.Center);
+            Step(.4); Step(.24); await Shot("12a-refill-transfer"); Step(.3);
+            Require(_day.DoupiStock.Count == 16, "second batch lands on the occupied tray");
+            await Shot("12b-full-stock", stockPreview: true);
+            _day.DoupiStock.TryTake(3, out _);
+            _day.PourDoupiBatter(); Step(.5); _day.AddDoupiEgg(); Step(2.6); _day.FlipDoupi(); Step(.6);
+            _day.AddDoupiFilling(); DoupiTestFixture.Spread(pan); Step(3.6);
+            _day.CutDoupi(DoupiCutLine.Horizontal); Step(.4); _day.CutDoupi(DoupiCutLine.Center);
+            Step(.4); Step(.08); await Shot("12c-partial-transfer"); Step(.5);
+            Require(_day.DoupiStock.Count == 16 && pan.RemainingPieces == 5, "partial refill keeps the other five pieces in the pan");
+            ProjectSettings.SetSetting("accessibility/reduce_motion", true);
+            _day.DoupiStock.TryTake(2, out _); Step(.12); await Shot("12d-reduced-partial-transfer"); Step(.5);
+            Require(pan.FirstRemainingPiece == 5 && _day.DoupiStock.PieceAt(14).Tile == 3 && _day.DoupiStock.PieceAt(15).Tile == 4,
+                "continued refill preserves the original food fragments");
+            ProjectSettings.SetSetting("accessibility/reduce_motion", false);
+            _day.DiscardDoupi(); Step(.5);
+            _day.DoupiStock.TryTake(8, out _);
             _day.PourDoupiBatter(); Step(.5); _day.AddDoupiEgg(); Step(2.6); _day.FlipDoupi(); Step(.6);
             _day.AddDoupiFilling(); DoupiTestFixture.Spread(pan);
             Step(7); Require(pan.State == DoupiState.Overbrowned, "overbrowned"); await Shot("13-overbrowned", true);
@@ -58,6 +79,30 @@ public partial class WuhanDoupiMaterialCapture : Node
         catch (Exception error) { GD.PushError(error.ToString()); GetTree().Quit(1); }
     }
     private static void Require(bool ok, string message) { if (!ok) throw new InvalidOperationException(message); }
+    private void VerifyStockProportions()
+    {
+        const BindingFlags hidden = BindingFlags.Instance | BindingFlags.Static | BindingFlags.NonPublic;
+        Type type = typeof(WuhanWorkstationView);
+        var art = new WuhanArtCatalog();
+        for (int slot=0; slot<16; slot++)
+        {
+            int tile = (slot + 3) % 8; // Partially transferred batches need not start at tile zero.
+            Rect2 bounds = (Rect2)type.GetMethod("StockItemRect", hidden)!.Invoke(_day.Workstation, new object[]{slot})!;
+            Vector2[] fitted = (Vector2[])type.GetMethod("FitDoupiPieceQuad", hidden)!.Invoke(_day.Workstation, new object[]{tile,bounds})!;
+            Vector2 pixels = art.DoupiPiece(tile).GetSize();
+            Vector2[] source = { Vector2.Zero, new(pixels.X, 0), pixels, new(0, pixels.Y) };
+            float scale = fitted[0].DistanceTo(fitted[1]) / source[0].DistanceTo(source[1]);
+            for (int a=0; a<4; a++) for (int b=a+1; b<4; b++)
+                Require(Math.Abs(fitted[a].DistanceTo(fitted[b])/source[a].DistanceTo(source[b])-scale)<.00001f,
+                    "stock preserves the illustrated sprite's edge and diagonal proportions");
+            Require(fitted.All(p=>p.X>=bounds.Position.X-.001f && p.Y>=bounds.Position.Y-.001f && p.X<=bounds.End.X+.001f && p.Y<=bounds.End.Y+.001f),
+                "stock food stays inside its slot");
+            Rect2 tray = WuhanWorkbenchLayout.Doupi.StockFood;
+            Require(tray.Encloses(new Rect2(bounds.Position - Vector2.One * .5f, bounds.Size + new Vector2(1, 4))),
+                "stacked food including its outline and front edge stays inside the tray");
+        }
+        GD.Print("WUHAN_DOUPI_STOCK_PROPORTIONS_OK slots=16");
+    }
     private void Step(double seconds)
     {
         for (int i=0; i<(int)Math.Ceiling(seconds*60); i++)

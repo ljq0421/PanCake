@@ -10,6 +10,7 @@ public sealed class BunOvenStateMachine
     public BunQuality Quality { get; private set; }
     public int Quantity { get; private set; }
     public double SideSeconds { get; private set; }
+    internal double HeatStress => _data.BurnProof ? 0 : Math.Clamp((SideSeconds - _data.ActionSeconds - 2) / 1.5, 0, 1);
     public int BatchesStarted { get; private set; }
     public int BurntBuns { get; private set; }
     public bool TryStart(int quantity)

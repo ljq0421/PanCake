@@ -69,6 +69,7 @@ public partial class XianDayScreen : Control
         {
             int slot = i;
             XianSurface customer = _customers[i];
+            _portraits[i].BindInteractionHighlight(() => customer.HighlightState);
             customer.Pressed = () => { if (CustomerAt(slot) is { } c) _controller.CustomerQueue!.TrySelect(c.Id); };
             customer.AcceptToken = token => token is "sandwich" or "soup" && CustomerAt(slot) is { } c
                 && c.Progress.CanAccept(token == "soup" ? ProductKind.Hulatang : ProductKind.Roujiamo);
@@ -224,10 +225,12 @@ public partial class XianDayScreen : Control
         oven.FoodColor = s.Oven?.Quality switch { BunQuality.Burnt => new Color("#3F342F"), BunQuality.Overbrowned => new Color("#A77547"), _ => new Color("#E9B963") };
         oven.Detail = s.Oven is null ? "Day 1 免费开放" : s.Oven.State switch { BunOvenState.Empty => "选择数量，整批下炉", BunOvenState.FirstSide => s.Oven.SideSeconds >= s.OvenData.ActionSeconds ? "第一面已好 · 点击翻面" : $"第一面 {s.Oven.SideSeconds:0.0}/{s.OvenData.ActionSeconds:0.0}s", BunOvenState.SecondSide => $"第二面 {s.Oven.SideSeconds:0.0}/{s.OvenData.ActionSeconds:0.0}s", BunOvenState.Ready => s.OvenData.Automatic ? "已弹起 · 等待篮子腾出空间" : "烙好了 · 点击整批收取", _ => "焦糊了 · 点击清理" };
         if (s.Oven?.Quality == BunQuality.Overbrowned) oven.Detail += "\n偏焦 · 尽快处理";
+        if (EquipmentProgressPresentation.Oven(s.Oven, s.OvenData).Visible) oven.Detail = "";
         _buttons["oven"].Text = s.Oven?.State switch { BunOvenState.FirstSide => "整批翻面", BunOvenState.Ready => "整批收取", BunOvenState.Burnt => "清理焦馍", _ => "整批下炉" };
         var soup = _surfaces["soup"]; soup.Title = s.Soup is null ? "胡辣汤 · Day 6" : $"胡辣汤 Lv{s.SoupData.Level}";
         soup.Detail = s.Soup is null ? "快速盛汤，配成套餐" : s.Soup.HasBowl ? "汤已盛好 · 拖给顾客\n或选中顾客后点击交付" : s.Soup.RemainingSeconds > 0 ? $"盛汤中 {s.Soup.RemainingSeconds:0.0}s" : s.Soup.Stock.IsRefilling ? $"补锅中 {s.Soup.Stock.RemainingSeconds:0.0}s" : $"锅内 {s.Soup.Stock.Count}/{s.Soup.Stock.Capacity}份\n点击盛一碗";
         soup.Unavailable = s.Soup is null;
+        if (EquipmentProgressPresentation.Soup(s.Soup, s.SoupData).Visible) soup.Detail = "";
         for (int i = 0; i < _customers.Count; i++)
         {
             var view = _customers[i]; var customer = CustomerAt(i);

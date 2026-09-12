@@ -24,6 +24,13 @@ public partial class CustomerPortraitView : Control
     private Vector2 _headAnchor = new(0.5f, 0.25f);
     private CustomerPortraitLayout? _counterLayout;
     private bool _fitCounterToWindow;
+    private ArtContourHighlight? _interactionOutline;
+
+    public void BindInteractionHighlight(Func<InteractionHighlightState> state)
+    {
+        if (_interactionOutline is not null) return;
+        _interactionOutline = ArtContourHighlight.Attach(_body, state, _head);
+    }
 
     /// <summary>Tianjin-only fitting with equal head footprint and a stable counter crop.</summary>
     public void SetCounterCalibration(CustomerPortraitLayout layout)

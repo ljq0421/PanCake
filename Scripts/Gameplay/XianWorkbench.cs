@@ -28,6 +28,10 @@ public partial class XianDayScreen
         CoinTray = Workbench.GetNode<CoinTrayView>("CoinTray");
         CollectionFeedback = GetNode<CoinCollectionFeedback>("CoinCollectionFeedback");
         _pauseMenu = Workbench.GetNode<Control>("PauseMenu");
+        EquipmentProgressView.Attach(Workbench.GetNode<Control>("oven"), "OvenCookingProgress", new Rect2(150, 184, 260, 42),
+            () => Session is null ? default : EquipmentProgressPresentation.Oven(Session.Oven, Session.OvenData));
+        EquipmentProgressView.Attach(Workbench.GetNode<Control>("soup"), "SoupServingProgress", new Rect2(90, 185, 240, 42),
+            () => Session is null ? default : EquipmentProgressPresentation.Soup(Session.Soup, Session.SoupData));
         for (int i = 0; i < _portraits.Length; i++)
         {
             _portraits[i] = _customers[i].GetNode<CustomerPortraitView>("Portrait");

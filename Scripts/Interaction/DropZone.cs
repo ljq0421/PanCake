@@ -23,6 +23,9 @@ public partial class DropZone : PanelContainer
     public DropZoneVisualState VisualState => _visualState;
     public int ConfigurationVersion { get; private set; }
     public float HitPadding { get; set; }
+    // Illustrated customers and equipment use their existing art feedback.
+    // Keep the drop target active without painting a rectangular overlay.
+    public void HideInteractionFrame() => AddThemeStyleboxOverride("panel", new StyleBoxEmpty());
     // Optional fixed geometry in the parent coordinate space. Feedback tweens
     // may animate this Control without enlarging a destructive drop target.
     public Rect2? FixedHitRect { get; set; }

@@ -163,9 +163,11 @@
         "globalArtChapters": {
           "cities": ["tianjin", "wuhan", "xian"],
           "source": "Scripts/UI/CitySettlementTheme.cs",
+          "cityBoards": {"tianjin": "营业结算账本底板-天津-v2.png", "wuhan": "营业结算账本底板-武汉-v2.png", "xian": "营业结算账本底板-西安-v2.png"},
+          "cityBoardsTint": "独立重绘边框，底板不附加着色器；v1母版保留。",
           "productionSpec": "docs/营业结算页的正式配色生产规范.md",
           "implementation": "docs/三章节账本配色接入.md",
-          "tianjin": ["#D7A45F", "#729DAC", "#B8C9CC"],
+          "tianjin": ["#D7A45F", "#E7C994", "#F1DFC0"],
           "wuhan": ["#71A08D", "#A9C1B3", "#DFC88D"],
           "xian": ["#98594D", "#CBB38B", "#D0A04E"],
           "xianDivider": "#B98870",
@@ -176,7 +178,7 @@
           "tianjin": {
             "sources": ["Scripts/UI/BusinessDetailsView.ArtSkin.cs", "Scripts/UI/BookArtCatalog.cs", "docs/天津营业账本素材接入.md"],
             "assets": "resource/art/Global/BookUI/",
-            "pages": {"summary": "营业结算账本底板-v1.png", "details": "营业结算账本底板-v1.png"},
+            "pages": {"summary": "营业结算账本底板-天津-v2.png", "details": "营业结算账本底板-天津-v2.png"},
             "imageFit": "AtlasTexture 可见边界以 Alpha > 0.125 测量；原文件不变，底板和图标等比显示。",
             "layout": "手记左下，条件贴片右下，关闭按钮对齐底板操作区；天津明细滚动区 1524×480。",
             "paper": "留白 v1 底板，不使用纸面遮盖；账本轻分隔线以 28% 透明度分隔小结及动态行，保留一个真实滚动条。",

@@ -24,6 +24,36 @@ public partial class YangzhouVisualCapture : Node
             var hub = ProjectCake.Core.SceneFactory.Instantiate<YangzhouHub>("res://Scenes/UI/YangzhouHub.tscn"); AddChild(hub); hub.Initialize(catalog, save); await Shot("01-hub"); hub.Hide();
             _screen = ProjectCake.Core.SceneFactory.Instantiate<YangzhouDayScreen>("res://Scenes/Gameplay/YangzhouDayScreen.tscn"); AddChild(_screen); _screen.SetProcess(false);
             Require(_screen.Initialize(catalog, save, 1), "Day1初始化"); await Frames(2); Step(15);
+            if (OS.GetCmdlineUserArgs().Contains("--capture-highlights"))
+            {
+                save.Data.Yangzhou.EquipmentLevels[YangzhouCatalog.BoardId] = 3;
+                save.Data.Yangzhou.EquipmentLevels[YangzhouCatalog.SteamerId] = 3;
+                Require(_screen.Initialize(catalog, save, 12), "设备高亮完整解锁初始化");
+                Step(6);
+                for (int i = 0; i < 30 && _screen.Session.Waiting.Count == 0; i++) Step(1);
+                var customerCard = _screen.GetNode<Button>("Canvas/Customer0");
+                Require(!customerCard.Disabled, "高亮验证时有实际等待顾客");
+                await Click(customerCard.Position + customerCard.Size * .5f);
+                Require(customerCard.GetChildren().OfType<ButtonContourHighlight>().Single().ResolveState()
+                    == InteractionHighlightState.Selected, "整盘上桌顾客文字卡显示选中细描边");
+                await Shot("highlight-customer-card");
+                var board = _screen.GetNode<YangzhouSurface>("Canvas/CuttingBoard");
+                Vector2 point = board.Position + board.Size * .5f;
+                Move(point, false); await Frames(2); Step(.01);
+                Require(board.HighlightState == InteractionHighlightState.Hover, "砧板真实悬停细描边");
+                await Shot("highlight-board-hover");
+                Mouse(point, true); await Frames(2); Step(.01);
+                Require(board.HighlightState == InteractionHighlightState.Selected, "按住砧板真实选中细描边");
+                await Shot("highlight-board-selected");
+                Mouse(point, false);
+                var action = _screen.GetNode<Button>("Canvas/Season");
+                Move(action.Position + action.Size * .5f, false); await Frames(2); Step(.01);
+                Require(action.GetChildren().OfType<ButtonContourHighlight>().Single().ResolveState() == InteractionHighlightState.Hover, "设备动作按钮真实悬停描边");
+                Require(action.GetThemeStylebox("normal") is StyleBoxFlat style && style.BorderWidthTop == 0 && style.ShadowSize == 0, "设备动作按钮无旧粗框和硬阴影");
+                await Shot("highlight-action-hover");
+                GD.Print($"YANGZHOU_HIGHLIGHT_RESULT passed={_passed} failed=0 resolution={(small ? 720 : 1080)} output={_output}");
+                GetTree().Quit(); return;
+            }
             Move(new(730, 580), false); Mouse(new(730, 580), true);
             for (int i = 0; i < 240 && _screen.Session.Kitchen.Board.Portions == 0; i++)
             {

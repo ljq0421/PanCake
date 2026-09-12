@@ -1,0 +1,7 @@
+Use case: precise-object-edit.
+Asset type: production game UI background PNG, Wuhan chapter open ledger.
+Input image is the exact approved master ledger. Edit this image; retain its geometry precisely.
+Preserve the complete front-facing open double-page silhouette, same page proportions (master canvas 1448 x 929), central narrow spine, rounded contour, dark warm-brown outlines, fine inner frame lines, tiny three-petal corner ornaments, and large uninterrupted blank warm cream paper interiors. No text, symbols, icons, bookmarks, ribbons, new objects or changed layout. Preserve the original warm cream paper color; do not tint the pages.
+Change ONLY the existing narrow cover rim, thin inner frame lines and tiny ornaments into Wuhan palette: subdued teal #71A08D and pale bean-green #A9C1B3, with very small warm yellow #DFC88D accents. Keep dark brown contour lines. Color accents remain a small fraction of the complete image, below 20%. Never fill the pages green.
+Style: same 2D rounded low-detail breakfast-shop game art as reference. Do not add detail or texture.
+Output a single image at original 1448 x 929 aspect ratio, completely visible ledger with the same framing. Replace only exterior transparency with uniform pure chroma green #00FF00 for subsequent background extraction. Exterior must be solid green, no shadows, no checkerboard. Inside the ledger teal colors must remain desaturated as specified and never chroma green. No redesign, no crop, no perspective change.

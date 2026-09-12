@@ -12,6 +12,12 @@ public partial class WuhanVisualCapture : Node
 {
     public override async void _Ready()
     {
+        if (OS.GetCmdlineUserArgs().Contains("--capture-highlight"))
+        {
+            try { await CaptureHighlights(); GD.Print("WUHAN_HIGHLIGHT_CAPTURE_DONE"); GetTree().Quit(); }
+            catch (Exception e) { GD.PushError(e.ToString()); GetTree().Quit(1); }
+            return;
+        }
         if (OS.GetCmdlineUserArgs().Contains("--immersive"))
         {
             try { await CaptureImmersive(); GD.Print("WUHAN_IMMERSIVE_CAPTURE_DONE"); GetTree().Quit(); }
@@ -70,6 +76,57 @@ public partial class WuhanVisualCapture : Node
         var controller=new DayController();AddChild(controller);var day=ProjectCake.Core.SceneFactory.Instantiate<WuhanDayScreen>("res://Scenes/Gameplay/WuhanDayScreen.tscn");AddChild(day);day.ConnectController(controller);day.Initialize(catalog,save,controller,8);day.BeginDay();controller.Tick(3.1);controller.Tick(32);await Frames(3);Save("res://.tmp/wuhan_day8.png");
         string absolute=ProjectSettings.GlobalizePath(savePath);if(File.Exists(absolute))File.Delete(absolute);GD.Print("WUHAN_CAPTURE_DONE");GetTree().Quit();
     }
+    private async Task CaptureHighlights()
+    {
+        bool small = OS.GetCmdlineUserArgs().Contains("--capture-720");
+        GetWindow().Size = small ? new Vector2I(1280, 720) : new Vector2I(1920, 1080);
+        var viewport = new SubViewport { Name = "HighlightViewport", Disable3D = true,
+            Size = GetWindow().Size, Size2DOverride = new Vector2I(1920, 1080), Size2DOverrideStretch = true,
+            RenderTargetUpdateMode = SubViewport.UpdateMode.Always };
+        AddChild(viewport); viewport.NotifyMouseEntered();
+        Directory.CreateDirectory(ProjectSettings.GlobalizePath("res://.tmp/interaction-highlights"));
+        var catalog = GetNode<DataCatalog>("/root/DataCatalog");
+        var save = new SaveService(); save.UsePathForTests($"res://.tmp/interaction-highlights/wuhan-fixture-{Guid.NewGuid():N}.json"); AddChild(save);
+        save.Data.Wuhan.HighestUnlockedDay = 12;
+        var controller = new DayController(); AddChild(controller);
+        var day = SceneFactory.Instantiate<WuhanDayScreen>("res://Scenes/Gameplay/WuhanDayScreen.tscn"); viewport.AddChild(day);
+        day.ConnectController(controller); day.Initialize(catalog, save, controller, 4); day.SetProcess(false);
+        day.BeginDay(); day._Notification((int)NotificationApplicationFocusIn); day._Process(3.1);
+        for (int i = 0; i < 90 && controller.CustomerQueue!.Slots.Count < 5; i++)
+        {
+            foreach (var customer in controller.CustomerQueue.Slots) customer.WaitSeconds = 0;
+            day._Process(1);
+        }
+        day._Process(.4);
+        void Move(Vector2 local, bool held = false)
+        {
+            Vector2 point = day.Workstation.GetGlobalTransformWithCanvas() * local;
+            viewport.PushInput(new InputEventMouseMotion { Position = point, GlobalPosition = point,
+                ButtonMask = held ? MouseButtonMask.Left : 0 }, true);
+            if (viewport.GetMousePosition().DistanceTo(point) > 2) throw new InvalidOperationException("Highlight pointer did not reach the scene.");
+            day._Notification((int)NotificationApplicationFocusIn); day.RefreshForCapture();
+        }
+        async Task Shot(string name)
+        {
+            day.Workstation.QueueRedraw(); await Frames(12); await ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
+            string path = ProjectSettings.GlobalizePath($"res://.tmp/interaction-highlights/wuhan-{(small ? 720 : 1080)}-{name}.png");
+            if (viewport.GetTexture().GetImage().SavePng(path) != Error.Ok) throw new IOException(path);
+        }
+        Move(day.Workstation.BasketRect(0).GetCenter()); await Shot("basket");
+        Move(day.Workstation.PanCenter); await Shot("pan");
+        var portrait = day.Descendants<CustomerPortraitView>().First(p => p.IsVisibleInTree());
+        Move(day.Workstation.GetGlobalTransform().AffineInverse() * portrait.GetGlobalRect().GetCenter()); await Shot("customer");
+        day.BasketAction(0); day._Process(2.5); day.Cooker.TryRaise(0); day.Cooker.TryQuickDrain(0);
+        day.Cooker.TryTransferTo(0, day.Bowl); day.Bowl.TryAddBaseSeasoning(); day.Bowl.AddMixDistance(10000); day.RefreshForCapture();
+        var source = day.Workstation.GetNode<ProjectCake.Interaction.DragItem>("WuhanDrag_HotDryNoodles");
+        Move(day.Workstation.BowlCenter);
+        source._GuiInput(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true });
+        Move(day.Workstation.GetGlobalTransform().AffineInverse() * portrait.GetGlobalRect().GetCenter(), true);
+        await Shot("delivery"); day.Workstation.CancelInput();
+        Move(WuhanWorkbenchLayout.CashPendant.GetCenter()); await Shot("pendant");
+        day.QueueFree(); controller.QueueFree(); save.QueueFree();
+    }
+
     private async Task CaptureImmersive()
     {
         GetWindow().Size = new Vector2I(1920, 1080);
@@ -235,8 +292,8 @@ public partial class WuhanVisualCapture : Node
             for (int piece = 0; piece < 16; piece++)
             {
                 Rect2 placement = (Rect2)viewType.GetMethod("StockItemRect", hidden)!.Invoke(view, new object[] { piece })!;
-                Require(placement.Size.X < foodBounds.Size.X / 4 && placement.Size.Y < foodBounds.Size.Y * .43f,
-                    $"stock piece {piece + 1} fits its four-column, two-row serving slot");
+                Require(placement.Size.X < foodBounds.Size.X / 4 && placement.Size.Y < foodBounds.Size.Y * .6f,
+                    $"stock piece {piece + 1} fits the compact four-column layout with overlapping rows");
                 Require(foodBounds.Encloses(placement), "projected stock piece stays within the tray interior");
                 Require(stockBounds.Encloses(placement), $"stock piece {piece + 1} remains inside tray");
             }

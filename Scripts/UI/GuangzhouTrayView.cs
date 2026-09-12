@@ -19,8 +19,30 @@ public partial class GuangzhouTrayView : Control
     public Func<string, bool>? IngredientAllowed { get; set; }
     public int Index { get; set; }
     public bool Active { get; set; }
+    private bool _hovered;
     public Rect2 Plate => new(24, 76, Size.X - 48, Size.Y - 174);
     public Rect2 Handle => new(Size.X * .3f, Size.Y - 82, Size.X * .4f, 48);
+    public override void _Ready()
+    {
+        MouseEntered += () => { _hovered = true; QueueRedraw(); };
+        MouseExited += () => { _hovered = false; QueueRedraw(); };
+    }
+
+    public InteractionHighlightState HighlightState
+    {
+        get
+        {
+            if (!CanInteract() || Tray is null) return InteractionHighlightState.None;
+            if (GetViewport().GuiIsDragging())
+            {
+                var data = GetViewport().GuiGetDragData();
+                bool accepted = data.VariantType == Variant.Type.String && IngredientAllowed?.Invoke(data.AsString()) == true;
+                return accepted ? (_hovered ? InteractionHighlightState.Valid : InteractionHighlightState.Eligible) : InteractionHighlightState.None;
+            }
+            if (Active || HasGesture) return InteractionHighlightState.Selected;
+            return _hovered ? InteractionHighlightState.Hover : InteractionHighlightState.None;
+        }
+    }
     public void CancelGesture() { _gesture.Cancel(); _movingHandle = false; }
     public override void _GuiInput(InputEvent input)
     {
@@ -71,7 +93,7 @@ public partial class GuangzhouTrayView : Control
     public override void _Draw()
     {
         if (Tray is null) return;
-        DrawStyleBox(GuangzhouUi.Style(Active ? new Color("#EFF4E8") : GuangzhouUi.Paper, Active ? 3 : 1), new Rect2(Vector2.Zero, Size));
+        DrawStyleBox(GuangzhouUi.Style(Active ? new Color("#EFF4E8") : GuangzhouUi.Paper, 0), new Rect2(Vector2.Zero, Size));
         var font = GetThemeDefaultFont();
         DrawString(font, new Vector2(24, 38), $"{(Index == 0 ? "左" : "右")}蒸屉", HorizontalAlignment.Left, -1, 26, GuangzhouUi.Ink);
         var plate = Plate;
@@ -121,6 +143,8 @@ public partial class GuangzhouTrayView : Control
         if (Tray.PoppedOut) handle.Position += new Vector2(0, 12);
         DrawStyleBox(GuangzhouUi.Style(GuangzhouUi.Green), handle);
         DrawString(font, handle.Position + new Vector2(12, 32), Tray.State == RiceRollState.Steaming ? "向下拉出 ↓" : "向上推进 ↑", HorizontalAlignment.Left, -1, 20, GuangzhouUi.Paper);
+        ButtonContourHighlight.DrawContour(this, GuangzhouUi.Style(Colors.Transparent), plate, HighlightState);
+        ButtonContourHighlight.DrawContour(this, GuangzhouUi.Style(Colors.Transparent), handle, HighlightState);
         string progressText = Tray.State switch
         {
             RiceRollState.Spreading => $"铺浆 {Tray.SpreadProgress:P0} · 65%可加料",

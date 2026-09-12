@@ -19,11 +19,12 @@ public partial class WuhanWorkstationView
     private void ConfigureTrash(DragService drag)
     {
         TrashZone = GetNode<DropZone>("TrashZone");
+        TrashZone.HideInteractionFrame();
         Rect2 rect = WuhanWorkbenchLayout.EmbeddedTrash;
         TrashZone.Position = rect.Position; TrashZone.Size = rect.Size;
         TrashZone.FixedHitRect = rect; TrashZone.HitPadding = 0;
         TrashZone.MouseFilter = MouseFilterEnum.Stop;
-        TrashZone.TooltipText = "长按鼠标右键 0.45 秒后拖入食物，松开丢弃";
+        TrashZone.TooltipText = string.Empty;
         TrashZone.ConfigureResult(CanAcceptTrash, CommitTrash);
         drag.RegisterZone(TrashZone);
         _trashSource = new Control { Name = "TrashSource", MouseFilter = MouseFilterEnum.Ignore };
@@ -88,6 +89,7 @@ public partial class WuhanWorkstationView
             _trashValid = () => ReferenceEquals(_cooker, cooker) && basket.Generation == generation && basket.State != NoodleBasketState.Empty;
             _trashCommit = () => cooker.TryDiscard(index);
             rect = BasketRect(index); texture = _art.Texture("raw_noodles");
+            previewFactory = () => CreateBasketTrashPreview(basket, displaySize);
         }
         else if (hit == "bowl" && _bowl.State != NoodleBowlState.Empty)
         {
@@ -95,6 +97,16 @@ public partial class WuhanWorkstationView
             _trashValid = () => ReferenceEquals(_bowl, bowl) && bowl.Generation == generation && bowl.State != NoodleBowlState.Empty;
             _trashCommit = () => { _cooker.CancelPendingPour(); bowl.Reset(); return true; };
             rect = BowlRect; texture = _art.Texture("mixed");
+            previewFactory = () =>
+            {
+                var preview = new Control { CustomMinimumSize = displaySize, MouseFilter = MouseFilterEnum.Ignore };
+                Control bowlPreview = CreateDeliveryPreview(ProjectCake.Data.ProductKind.HotDryNoodles);
+                float scale = Mathf.Min(displaySize.X / BowlRect.Size.X, displaySize.Y / BowlRect.Size.Y);
+                bowlPreview.Scale = Vector2.One * scale;
+                bowlPreview.Position = (displaySize - BowlRect.Size * scale) / 2;
+                preview.AddChild(bowlPreview);
+                return preview;
+            };
         }
         else if (hit == "pan" && _doupi is { State: not DoupiState.Empty } doupi)
         {
@@ -110,8 +122,8 @@ public partial class WuhanWorkstationView
             var stock = _stock; long generation = stock.HeadGeneration;
             _trashValid = () => ReferenceEquals(_stock, stock) && stock.HeadGeneration == generation && stock.Count > 0;
             _trashCommit = () => stock.TryTake(1, out _);
-            rect = StockRect; texture = _art.Texture("doupi_filling_cooked");
             DoupiInventory.Piece piece = stock.PieceAt(0);
+            rect = StockRect; texture = _art.DoupiPiece(piece.Tile);
             displaySize = new Vector2(100, 60);
             previewFactory = () => CreateDoupiPiecePreview(piece);
         }
@@ -124,6 +136,24 @@ public partial class WuhanWorkstationView
 
     private bool CanAcceptTrash(string payload) => payload == TrashPayload && _drag?.IsDragging == true
         && IsVisibleInTree() && CanInteract?.Invoke() == true && _trashValid?.Invoke() == true;
+
+    private Control CreateBasketTrashPreview(NoodleBasketRuntime basket, Vector2 size)
+    {
+        // The discarded item is the noodles, so use the same food layer as the basket.
+        string id = BasketFoodArt(basket);
+        Texture2D texture = _art.Texture(id);
+        Vector2 foodSize = BasketFoodRect(new Rect2(Vector2.Zero, BasketSize)).Size;
+        float scale = Mathf.Min(size.X / foodSize.X, size.Y / foodSize.Y);
+        var preview = new Control { Name = "BasketTrashPreview", CustomMinimumSize = size, MouseFilter = MouseFilterEnum.Ignore };
+        preview.AddChild(new TextureRect
+        {
+            Texture = new AtlasTexture { Atlas = texture, Region = Source(texture) },
+            ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.Scale,
+            MouseFilter = MouseFilterEnum.Ignore, Size = foodSize * scale,
+            Position = (size - foodSize * scale) / 2,
+        });
+        return preview;
+    }
 
     private bool CommitTrash(string payload)
     {

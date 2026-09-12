@@ -37,6 +37,8 @@ public partial class XianSurface : Control
     {
         SceneNodeBinder.Bind(this);
         MouseExited += CancelGesture;
+        MouseEntered += QueueRedraw;
+        MouseExited += QueueRedraw;
     }
     public void Refresh()
     {
@@ -53,7 +55,7 @@ public partial class XianSurface : Control
     public override void _Draw()
     {
         if (Kind == "customer") return;
-        if (ArtworkMode && Kind != "customer") { DrawArtwork(); return; }
+        if (ArtworkMode && Kind != "customer") { DrawArtwork(); DrawEquipmentHighlight(); return; }
         var panel = new StyleBoxFlat
         {
             BgColor = ArtworkMode && Kind == "customer" ? new Color(1, .956f, .863f, Amount == 0 ? .45f : .92f)

@@ -18,6 +18,10 @@ public partial class PancakeWorkstation
 
     private void ConfigureTianjinPresentation()
     {
+        foreach (DropZone zone in this.Descendants<DropZone>())
+            zone.HideInteractionFrame();
+        foreach (WorkstationSlotView slot in this.Descendants<WorkstationSlotView>())
+            slot.HideInteractionFrame();
         Rect2 viewport = new(0, 0, 1920, 1080);
         MouseFilter = MouseFilterEnum.Ignore;
         // Keep the canvas, stroke and drop zone in one coordinate space.
@@ -76,6 +80,10 @@ public partial class PancakeWorkstation
         _fryerVisual.EmbeddedOpening = new Rect2(
             TianjinWorkbenchLayout.EmbeddedOpening.Position - _fryerVisual.Position,
             TianjinWorkbenchLayout.EmbeddedOpening.Size);
+        EquipmentProgressView.Attach(this, "PancakeCookingProgress", new Rect2(700, 893, 240, 42),
+            () => EquipmentProgressPresentation.Pancake(Machine));
+        EquipmentProgressView.Attach(_fryerPanel, "FryerCookingProgress", new Rect2(196, 767, 240, 42),
+            () => EquipmentProgressPresentation.Fryer(FryerMachine)).ZIndex = 3;
         Control rawSlot = _rawYoutiaoInput.GetParent().GetParent<Control>();
         _rawYoutiaoInput.Reparent(_fryerPanel, false);
         _rawYoutiaoInput.ZIndex = 2;
@@ -166,5 +174,6 @@ public partial class PancakeWorkstation
         _trashZone.FixedHitRect = TianjinWorkbenchLayout.EmbeddedTrash;
         _trashZone.Configure(CanAcceptTianjinTrash, CommitTianjinTrash);
         _deliveryZone.Hide();
+        ConfigureTianjinHighlights(fryerOutline);
     }
 }

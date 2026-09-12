@@ -75,6 +75,13 @@ public partial class WorkstationSlotView : Control
     private Color[] _wideStockTints = Array.Empty<Color>();
     private LiquidStockView? _liquid;
     private WorkstationSlotAttentionState _attentionState;
+    private bool _hideInteractionFrame;
+
+    public void HideInteractionFrame()
+    {
+        _hideInteractionFrame = true;
+        _attentionFrame.Hide();
+    }
     private Rect2 _stackBounds;
     public bool ContainerInBackground { get; set; }
     public bool IngredientInBackground { get; set; }
@@ -484,7 +491,7 @@ public partial class WorkstationSlotView : Control
             };
             return;
         }
-        _attentionFrame.Visible = true;
+        _attentionFrame.Visible = !_hideInteractionFrame;
         Color border = _attentionState switch
         {
             WorkstationSlotAttentionState.Actionable => new Color(0.61f, 0.35f, 0.18f, 0.72f),

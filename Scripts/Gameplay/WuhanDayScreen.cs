@@ -44,6 +44,8 @@ public partial class WuhanDayScreen : Control
 
     public override void _Ready()
     {
+        // Order icons and the drag overlay are siblings of the workbench.
+        TextureFilter = TextureFilterEnum.LinearWithMipmaps;
         SceneNodeBinder.Bind(this);
         ConfigurePresentation();
         _art = new WuhanArtCatalog();

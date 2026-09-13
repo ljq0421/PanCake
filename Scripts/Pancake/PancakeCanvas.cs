@@ -189,7 +189,7 @@ public partial class PancakeCanvas : Control
         Vector2 radii = rect.Size * 0.5f - Vector2.One * inset;
         if (radii.X <= 0 || radii.Y <= 0) return;
         DrawSetTransform(rect.GetCenter(), 0, new Vector2(radii.X / radii.Y, 1));
-        DrawCircle(Vector2.Zero, radii.Y, color);
+        DrawCircle(Vector2.Zero, radii.Y, color, antialiased: true);
         DrawSetTransform(Vector2.Zero, 0, Vector2.One);
     }
 

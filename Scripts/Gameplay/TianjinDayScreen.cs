@@ -71,6 +71,8 @@ public partial class TianjinDayScreen : Control
 
     public override void _Ready()
     {
+        // Cover the workbench, order icons, payment coins and reparented drag previews.
+        TextureFilter = TextureFilterEnum.LinearWithMipmaps;
         SceneNodeBinder.Bind(this);
         _art = new TianjinArtCatalog();
         _workstation.Feedback += ShowFeedback;

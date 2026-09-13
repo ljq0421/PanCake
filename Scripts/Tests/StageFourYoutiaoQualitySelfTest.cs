@@ -38,8 +38,9 @@ public partial class StageFourSelfTest
                 && fryer.Inventory.Count == 1, $"{quality} 拖拽预览使用队首品质且不提前扣库存");
             drag.CancelDrag();
             await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
-            Check(fryer.Inventory.Count == 1 && input.TooltipText.Contains(YoutiaoPresentation.Name(quality)),
-                $"{quality} 取消拖拽保留品质并提示下一根品质");
+            Check(fryer.Inventory.Count == 1 && input.TooltipText == string.Empty
+                && fryer.Inventory.TryPeek(out YoutiaoQuality retained) && retained == quality,
+                $"{quality} 取消拖拽保留品质且不恢复悬停文字");
 
             foreach (bool internalYoutiao in new[] { false, true })
             {

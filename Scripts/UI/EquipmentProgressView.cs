@@ -17,12 +17,13 @@ public partial class EquipmentProgressView : Control
     private readonly StyleBoxFlat _fill = new() { CornerRadiusTopLeft = 4, CornerRadiusTopRight = 4,
         CornerRadiusBottomLeft = 4, CornerRadiusBottomRight = 4 };
     private Func<EquipmentProgressState> _read = () => default;
+    internal bool ShowCaption { get; private set; } = true;
     internal EquipmentProgressState Presentation { get; private set; }
 
-    internal static EquipmentProgressView Attach(Control parent, string name, Rect2 rect, Func<EquipmentProgressState> read)
+    internal static EquipmentProgressView Attach(Control parent, string name, Rect2 rect, Func<EquipmentProgressState> read, bool showCaption = true)
     {
         var view = new EquipmentProgressView { Name = name, Position = rect.Position, Size = rect.Size,
-            MouseFilter = MouseFilterEnum.Ignore, Visible = false, _read = read };
+            MouseFilter = MouseFilterEnum.Ignore, Visible = false, _read = read, ShowCaption = showCaption };
         parent.AddChild(view);
         return view;
     }
@@ -44,14 +45,17 @@ public partial class EquipmentProgressView : Control
     public override void _Draw()
     {
         if (!Presentation.Visible) return;
-        // The light outline keeps short captions legible on the illustrated counter.
-        var font = GetThemeDefaultFont();
-        const int fontSize = 20;
-        string caption = Presentation.Caption;
-        float width = font.GetStringSize(caption, HorizontalAlignment.Left, -1, fontSize).X;
-        Vector2 baseline = new((Size.X - width) / 2, 21);
-        DrawStringOutline(font, baseline, caption, HorizontalAlignment.Left, -1, fontSize, 5, Paper);
-        DrawString(font, baseline, caption, HorizontalAlignment.Left, -1, fontSize, Ink);
+        if (ShowCaption)
+        {
+            // The light outline keeps short captions legible on the illustrated counter.
+            var font = GetThemeDefaultFont();
+            const int fontSize = 20;
+            string caption = Presentation.Caption;
+            float width = font.GetStringSize(caption, HorizontalAlignment.Left, -1, fontSize).X;
+            Vector2 baseline = new((Size.X - width) / 2, 21);
+            DrawStringOutline(font, baseline, caption, HorizontalAlignment.Left, -1, fontSize, 5, Paper);
+            DrawString(font, baseline, caption, HorizontalAlignment.Left, -1, fontSize, Ink);
+        }
         DrawStyleBox(_track, new Rect2(0, 28, Size.X, 12));
         float filled = (Size.X - 4) * (float)Math.Clamp(Presentation.Progress, 0, 1);
         if (filled <= 0) return;

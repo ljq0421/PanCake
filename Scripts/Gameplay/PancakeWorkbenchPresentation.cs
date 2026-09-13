@@ -81,9 +81,9 @@ public partial class PancakeWorkstation
             TianjinWorkbenchLayout.EmbeddedOpening.Position - _fryerVisual.Position,
             TianjinWorkbenchLayout.EmbeddedOpening.Size);
         EquipmentProgressView.Attach(this, "PancakeCookingProgress", new Rect2(700, 893, 240, 42),
-            () => EquipmentProgressPresentation.Pancake(Machine));
+            () => EquipmentProgressPresentation.Pancake(Machine), showCaption: false);
         EquipmentProgressView.Attach(_fryerPanel, "FryerCookingProgress", new Rect2(196, 767, 240, 42),
-            () => EquipmentProgressPresentation.Fryer(FryerMachine)).ZIndex = 3;
+            () => EquipmentProgressPresentation.Fryer(FryerMachine), showCaption: false).ZIndex = 3;
         Control rawSlot = _rawYoutiaoInput.GetParent().GetParent<Control>();
         _rawYoutiaoInput.Reparent(_fryerPanel, false);
         _rawYoutiaoInput.ZIndex = 2;
@@ -91,7 +91,7 @@ public partial class PancakeWorkstation
         PositionEmbedded(_rawYoutiaoInput, TianjinWorkbenchLayout.EmbeddedFryer);
         _rawYoutiaoInput.Contains = null;
         _rawYoutiaoInput.ActivateOnTap = false;
-        _rawYoutiaoInput.TooltipText = "长按炸锅连续装料，松开停止";
+        _rawYoutiaoInput.TooltipText = string.Empty;
         _rawYoutiaoInput.CanActivate = () => CanLoadRawYoutiao() && !_drag.IsDragging;
         PositionEmbedded(_fryerStatus.GetParent<Control>(), new Rect2(108, 955, 266, 44));
         PositionEmbedded(_fryerActions, new Rect2(383, 955, 150, 44));
@@ -169,11 +169,39 @@ public partial class PancakeWorkstation
         PositionEmbedded(_trashZone, TianjinWorkbenchLayout.EmbeddedTrash);
         _trashZone.ZIndex = 75;
         _trashZone.MouseFilter = MouseFilterEnum.Stop;
-        _trashZone.TooltipText = "长按鼠标右键 0.45 秒后拖入食物，松开丢弃；豆浆不可丢弃";
+        _trashZone.TooltipText = string.Empty;
         _trashZone.HitPadding = 0;
         _trashZone.FixedHitRect = TianjinWorkbenchLayout.EmbeddedTrash;
         _trashZone.Configure(CanAcceptTianjinTrash, CommitTianjinTrash);
         _deliveryZone.Hide();
         ConfigureTianjinHighlights(fryerOutline);
+        foreach (Control control in this.Descendants<Control>())
+            control.TooltipText = string.Empty;
+        foreach (IngredientStockSlotView slot in _ingredientSlots.Values)
+        {
+            slot.ShowTextHints = false;
+            slot.ShowStockNumbers = false;
+        }
+        HideTianjinWorkbenchText();
     }
+
+    // Applied after every tutorial/live refresh, including fresh and restored saves.
+    // Hide only text containers: cooking bars and interaction controls remain active.
+    private void HideTianjinWorkbenchText()
+    {
+        _pancakeStatusTag.Hide();
+        _fryerStatus.GetParent<Control>().Hide();
+        _fryerStock.Hide();
+        _soyStatus.Hide();
+        _directDeliveryHint.Hide();
+        _finishedYoutiaoSlot.HideNameplate();
+        _trashHint?.Hide();
+        foreach (Label hint in _firstUseHints.Values) hint.Hide();
+        foreach (IngredientStockSlotView slot in _ingredientSlots.Values)
+        {
+            slot.HideNameplate();
+            slot.GetNode<Control>("HoldRefillHint").Hide();
+        }
+    }
+
 }

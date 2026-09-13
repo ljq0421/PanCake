@@ -417,8 +417,10 @@ public partial class WuhanWorkstationView : Control
         if (_cooker is null) return;
         DrawCounterForeground();
         // The cooker front must still occlude the submerged part of a basket's contour.
+        DrawEquipmentHighlights(basketsOnly: true);
+        DrawCooker(); DrawMixStation(); DrawDoupi();
         DrawEquipmentHighlights();
-        DrawCooker(); DrawMixStation(); DrawDoupi(); DrawTransfers(); DrawSupplyLabels(); DrawGesture();
+        DrawTransfers(); DrawGesture();
     }
 
     private Rect2 Source(Texture2D texture)

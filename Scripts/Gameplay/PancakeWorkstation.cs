@@ -128,7 +128,10 @@ public partial class PancakeWorkstation : Control
         if (!UseServingTray) return controller.TryDeliverPancakeTo(customerId, Machine, catalog);
         PreparedPancake? prepared = PancakeTray.Selected;
         if (!CanDeliverProduct("finished_pancake") || prepared is null)
+        {
+            if (CanInteract) controller.Feedback.Reject(customerId);
             return new DeliveryEvaluation(DeliveryGrade.Rejected, 0, 0, 0, "托盘中没有可交付的煎饼。");
+        }
         DeliveryEvaluation result = controller.TryDeliverPreparedPancakeTo(customerId, prepared, catalog,
             () => PancakeTray.TryTake(prepared));
         Render();
@@ -152,6 +155,8 @@ public partial class PancakeWorkstation : Control
         return true;
     }
 
+    public Action? DeliveryRejected { get; set; }
+
     public void RegisterCustomerZone(DropZone zone) => _drag.RegisterZone(zone);
 
     public static ProductKind? DeliveryProduct(string payload) => payload switch
@@ -172,11 +177,11 @@ public partial class PancakeWorkstation : Control
 
     public bool DeliverToCustomer(string payload, Func<bool> deliver)
     {
-        if (!CanDeliverProduct(payload) || !deliver()) return false;
+        if (!CanDeliverProduct(payload)) { if (CanInteract) DeliveryRejected?.Invoke(); return false; }
+        if (!deliver()) return false;
         LearnWorkbenchAction($"deliver:{payload}");
         if (payload == SoyMilkPayload) LearnWorkbenchAction("take:soy_milk");
         if (payload == StoredYoutiaoPayload) LearnWorkbenchAction("take:youtiao");
-        _audio.Play(PancakeSound.Success);
         if (payload == "finished_pancake" && !UseServingTray)
         {
             Machine.TryExecute(PancakeCommand.Discard);
@@ -824,7 +829,7 @@ public partial class PancakeWorkstation : Control
                         : $"{IngredientName(id)}只剩 {quantity} 份，可以点击 + 补货。";
                     if (IsTianjinWorkbench || _tutorialMemory && !NeedsTeaching($"refill:{id}"))
                         message = status == IngredientStockStatus.Empty ? $"{IngredientName(id)}已用完。" : $"{IngredientName(id)}余量不足。";
-                    Inform(message, false);
+                    if (!IsTianjinWorkbench) Inform(message, false);
                 }
             }
             else if (status == IngredientStockStatus.Normal)
@@ -867,7 +872,7 @@ public partial class PancakeWorkstation : Control
             _finishedYoutiaoSlot.SetWideStockTints(IsTianjinWorkbench
                 ? FryerMachine.Inventory.Items.Reverse().Select(YoutiaoPresentation.Tint).ToArray()
                 : YoutiaoPresentation.RackTints(FryerMachine.Inventory.Items, 1));
-            _storedYoutiao.TooltipText = FryerMachine.Inventory.TryPeek(out YoutiaoQuality nextQuality)
+            _storedYoutiao.TooltipText = IsTianjinWorkbench ? string.Empty : FryerMachine.Inventory.TryPeek(out YoutiaoQuality nextQuality)
                 ? $"熟油条 · 下一根{QualityName(nextQuality)} · 拖到煎饼或交给顾客"
                 : "熟油条 · 暂无成品";
             _storedYoutiao.Visible = FryerMachine.Inventory.Count > 0;
@@ -918,7 +923,7 @@ public partial class PancakeWorkstation : Control
             _soyRefill.Text = SoyMilkTray.IsRefilling ? "…" : "+";
             _soyRefill.Visible = !IsTianjinWorkbench && (SoyMilkTray.Quantity < SoyMilkTray.Capacity || SoyMilkTray.IsRefilling);
             _soyRefill.Disabled = !CanInteract || SoyMilkTray.Quantity >= SoyMilkTray.Capacity || SoyMilkTray.IsRefilling || SoyMilkTray.IsTaking;
-            _soyRefill.TooltipText = SoyMilkTray.IsRefilling ? "豆浆补货中" : "补满豆浆";
+            _soyRefill.TooltipText = IsTianjinWorkbench ? string.Empty : SoyMilkTray.IsRefilling ? "豆浆补货中" : "补满豆浆";
             if (_soyHoldProgress is not null && SoyMilkTray.IsRefilling)
             {
                 _soyHoldProgress.Visible = true;
@@ -966,7 +971,7 @@ public partial class PancakeWorkstation : Control
                 : string.Empty;
             string quality = PancakeTray.Selected?.Quality == PancakeQuality.Overdone ? "偏焦" : "火候正好";
             string sauce = PancakeTray.Selected is PreparedPancake sauced ? SauceRules.Describe(sauced.SauceAmount) : string.Empty;
-            _finished.TooltipText = $"第 {PancakeTray.SelectedIndex + 1} 张 / 共 {PancakeTray.Count} 张\n{recipe} · {quality}\n酱量 {sauce}\n拖给顾客，或{(IsTianjinWorkbench ? "长按右键" : "")}拖到垃圾桶丢弃";
+            _finished.TooltipText = IsTianjinWorkbench ? string.Empty : $"第 {PancakeTray.SelectedIndex + 1} 张 / 共 {PancakeTray.Count} 张\n{recipe} · {quality}\n酱量 {sauce}\n拖给顾客，或{(IsTianjinWorkbench ? "长按右键" : "")}拖到垃圾桶丢弃";
             foreach (Button? button in new[] { _previousPancake, _nextPancake })
                 if (button is not null)
                 {
@@ -986,7 +991,7 @@ public partial class PancakeWorkstation : Control
         _directDeliveryHint.Text = "拖给顾客";
         _directDeliveryHint.Visible = _finished.Visible;
         if (_finished.Visible && Machine.TryGetPrepared(out PreparedPancake onStove))
-            _finished.TooltipText = $"装袋煎饼 · 酱量 {SauceRules.Describe(onStove.SauceAmount)}\n拖给顾客，或{(IsTianjinWorkbench ? "长按右键" : "")}拖到垃圾桶丢弃";
+            _finished.TooltipText = IsTianjinWorkbench ? string.Empty : $"装袋煎饼 · 酱量 {SauceRules.Describe(onStove.SauceAmount)}\n拖给顾客，或{(IsTianjinWorkbench ? "长按右键" : "")}拖到垃圾桶丢弃";
         if (_previousPancake is not null) _previousPancake.Hide();
         if (_nextPancake is not null) _nextPancake.Hide();
     }
@@ -1096,6 +1101,12 @@ public partial class PancakeWorkstation : Control
     private void OnDragEnded(DragResult result)
     {
         if (result.Completion is DragCompletion.Accepted or DragCompletion.Cancelled) return;
+        if (DirectCustomerDelivery && DeliveryProduct(result.PayloadId) is not null && DeliveryRejected is not null)
+        {
+            if (CanInteract) DeliveryRejected.Invoke();
+            Inform("请拖给仍需要这份餐品的顾客。", true);
+            return;
+        }
         if (result.Completion == DragCompletion.Rejected && result.Zone == _deliveryZone)
         {
             Reject(!HasDeliveryTarget ? "请先选择顾客，再把早餐送到出餐口。" : "当前商品还不能出餐。");

@@ -53,9 +53,12 @@ public partial class WuhanDayScreen : Control
         DeliveryDrag.DragEnded += result =>
         {
             if (result.Completion is DragCompletion.Missed or DragCompletion.Rejected)
-                Feedback(result.PayloadId == WuhanWorkstationView.TrashPayload
-                    ? "未丢弃；请长按右键，将当前食物拖入底部垃圾桶。"
-                    : "请拖给仍需要这份餐品的顾客。", true);
+            {
+                bool delivery = result.PayloadId != WuhanWorkstationView.TrashPayload;
+                if (delivery && CanInteract) _controller.Feedback.Reject();
+                Feedback(delivery ? "请拖给仍需要这份餐品的顾客。"
+                    : "未丢弃；请长按右键，将当前食物拖入底部垃圾桶。", true, sound: !delivery);
+            }
         };
         for (int i = 0; i < _customerDropZones.Length; i++)
         {
@@ -113,6 +116,8 @@ public partial class WuhanDayScreen : Control
             _portraits[i].Reparent(_customers[i], false);
             _portraits[i].Position = new Vector2(5, 162);
             _portraits[i].Size = new Vector2(340, 268);
+            _portraits[i].PivotOffset = new Vector2(_portraits[i].Size.X * .5f, _portraits[i].Size.Y);
+            _portraits[i].Scale = Vector2.One * 1.1f;
             _orders[i].Reparent(_customers[i], false);
             _orders[i].CustomMinimumSize = new Vector2(OrderCardWidth, 0);
             _orders[i].Scale = Vector2.One * .88f;
@@ -163,6 +168,7 @@ public partial class WuhanDayScreen : Control
     }
     public void Initialize(DataCatalog catalog, SaveService save, DayController controller, int day)
     {
+        BusinessFeedbackAudio.Attach(this, controller.Feedback, () => controller.CurrentConfig?.CityId == StableIds.Cities.Wuhan && (CanInteract));
         CloseBusinessDetails();
         _paymentFeedback.Clear();
         Workstation.CancelAnimations();
@@ -259,7 +265,8 @@ public partial class WuhanDayScreen : Control
     }
     internal bool DeliverToCustomer(string customerId, ProductKind kind)
     {
-        if (!CanInteract || !Workstation.CanDeliver(kind)) return false;
+        if (!CanInteract) return false;
+        if (!Workstation.CanDeliver(kind)) { _controller.Feedback.Reject(customerId); return false; }
         DeliveryEvaluation result;
         if (kind == ProductKind.Doupi) result = _controller.TryDeliverWuhanDoupiTo(customerId, _doupiStock);
         else
@@ -269,7 +276,7 @@ public partial class WuhanDayScreen : Control
             switch (kind)
             {
                 case ProductKind.HotDryNoodles:
-                    if (!_bowl.TryPrepare(_catalog.RecipesById, out PreparedHotDryNoodles prepared)) return false;
+                    if (!_bowl.TryPrepare(_catalog.RecipesById, out PreparedHotDryNoodles prepared)) { _controller.Feedback.Reject(customerId); return false; }
                     item = new DeliveredItem(kind, prepared.RecipeId, null, null, null, HotDryNoodlesStateMachine.ToQuality(prepared));
                     consume = () => { _bowl.Reset(); return true; };
                     break;
@@ -286,7 +293,7 @@ public partial class WuhanDayScreen : Control
                 for (int i = 0; i < 3; i++) _paymentFeedback.Spawn(this, _art.Shared.Coin, origin + new Vector2(i * 13 - 13, 0), WuhanWorkbenchLayout.CashSlot, i * .08);
             }
         }
-        Feedback(result.Message, result.Grade is DeliveryGrade.Rejected or DeliveryGrade.Incorrect);
+        Feedback(result.Message, result.Grade is DeliveryGrade.Rejected or DeliveryGrade.Incorrect, sound: false);
         Render();
         return result.ItemAccepted || result.CompletesOrder;
     }
@@ -388,13 +395,11 @@ public partial class WuhanDayScreen : Control
         return zone.ContainsPoint(GetGlobalMousePosition(), false)
             ? InteractionHighlightState.Hover : InteractionHighlightState.None;
     }
-    private void Feedback(string text,bool error,bool force=false){if (error) Workstation.PlaySound(WuhanSound.Error);if (!force && !error && _controller?.State is not (DayState.Opening or DayState.Closing)) return;_feedback.Text=(error?"！ ":"")+text;_feedback.Modulate=Colors.White;_feedback.AddThemeColorOverride("font_color",error?new Color("#9A3528"):WuhanUi.Ink);_feedback.Visible=true;_feedbackSeconds=2.4;}
+    private void Feedback(string text,bool error,bool force=false,bool sound=true){if (error && sound) Workstation.PlaySound(WuhanSound.Error);if (!force && !error && _controller?.State is not (DayState.Opening or DayState.Closing)) return;_feedback.Text=(error?"！ ":"")+text;_feedback.Modulate=Colors.White;_feedback.AddThemeColorOverride("font_color",error?new Color("#9A3528"):WuhanUi.Ink);_feedback.Visible=true;_feedbackSeconds=2.4;}
     private void OnStateChanged(DayState state){if(state==DayState.Running)Feedback("开始营业！做好餐品后，直接拖给对应顾客。",false);else if(state==DayState.Closing)Feedback("停止接新客，最后 15 秒完成手中订单。",false);}
     private void OnDeliveryCompleted(DeliveryEvaluation result)
     {
-        if ((result.ItemAccepted || result.CompletesOrder) && result.Grade is not (DeliveryGrade.Incorrect or DeliveryGrade.Rejected))
-            Workstation.PlaySound(WuhanSound.Success);
-        Feedback(result.Message,result.Grade is DeliveryGrade.Incorrect or DeliveryGrade.Rejected);
+        Feedback(result.Message,result.Grade is DeliveryGrade.Incorrect or DeliveryGrade.Rejected, sound: false);
     }
     public override void _ExitTree()
     {

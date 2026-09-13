@@ -116,7 +116,12 @@ public partial class WuhanVisualCapture : Node
         Move(day.Workstation.PanCenter); await Shot("pan");
         var portrait = day.Descendants<CustomerPortraitView>().First(p => p.IsVisibleInTree());
         Move(day.Workstation.GetGlobalTransform().AffineInverse() * portrait.GetGlobalRect().GetCenter()); await Shot("customer");
-        day.BasketAction(0); day._Process(2.5); day.Cooker.TryRaise(0); day.Cooker.TryQuickDrain(0);
+        day.BasketAction(0); day._Process(2.5);
+        if (day.Cooker.Baskets[0].State is not (NoodleBasketState.Ready or NoodleBasketState.Soft or NoodleBasketState.Overcooked or NoodleBasketState.Locked))
+            throw new InvalidOperationException("Readiness capture must contain cooked noodles.");
+        Move(new Vector2(1800, 950)); await Shot("basket-ready");
+        Move(day.Workstation.BasketRect(0).GetCenter()); await Shot("basket-ready-hover");
+        day.Cooker.TryRaise(0); day.Cooker.TryQuickDrain(0);
         day.Cooker.TryTransferTo(0, day.Bowl); day.Bowl.TryAddBaseSeasoning(); day.Bowl.AddMixDistance(10000); day.RefreshForCapture();
         var source = day.Workstation.GetNode<ProjectCake.Interaction.DragItem>("WuhanDrag_HotDryNoodles");
         Move(day.Workstation.BowlCenter);
@@ -124,6 +129,26 @@ public partial class WuhanVisualCapture : Node
         Move(day.Workstation.GetGlobalTransform().AffineInverse() * portrait.GetGlobalRect().GetCenter(), true);
         await Shot("delivery"); day.Workstation.CancelInput();
         Move(WuhanWorkbenchLayout.CashPendant.GetCenter()); await Shot("pendant");
+        for (int i = 0; i < 4; i++) { Move(day.Workstation.IngredientCenter(i)); await Shot($"ingredient-{i}"); }
+        Move(day.Workstation.BowlCenter); await Shot("bowl");
+        Move(WuhanWorkbenchLayout.Doupi.Raw.GetCenter()); await Shot("raw-tray");
+        Move(WuhanWorkbenchLayout.Doupi.Batter.GetCenter()); await Shot("batter");
+        Move(WuhanWorkbenchLayout.Doupi.DoupiEgg.GetCenter()); await Shot("egg");
+        Move(WuhanWorkbenchLayout.Doupi.Filling.GetCenter()); await Shot("filling");
+        Move(WuhanWorkbenchLayout.Doupi.Stock.GetCenter()); await Shot("stock");
+        Move(WuhanWorkbenchLayout.EmbeddedTrash.GetCenter()); await Shot("trash");
+        controller.AbandonDay(); day.QueueFree(); await Frames(2);
+        day = SceneFactory.Instantiate<WuhanDayScreen>("res://Scenes/Gameplay/WuhanDayScreen.tscn");
+        viewport.AddChild(day); day.ConnectController(controller); day.SetProcess(false);
+        save.Data.Wuhan.EquipmentLevels.Remove("doupi_griddle");
+        day.Initialize(catalog, save, controller, 1);
+        if (day.Doupi is not null) throw new InvalidOperationException("Day 1 capture must use the pre-unlock background.");
+        day.BeginDay(); day._Process(3.1);
+        Move(day.Workstation.BasketRect(0).GetCenter()); await Shot("noodles-basket");
+        Move(day.Workstation.BowlCenter); await Shot("noodles-bowl");
+        Move(WuhanWorkbenchLayout.EmbeddedTrash.GetCenter()); await Shot("noodles-trash");
+        Move(WuhanWorkbenchLayout.CashPendant.GetCenter()); await Shot("noodles-pendant");
+        for (int i = 0; i < 4; i++) { Move(day.Workstation.IngredientCenter(i)); await Shot($"noodles-ingredient-{i}"); }
         day.QueueFree(); controller.QueueFree(); save.QueueFree();
     }
 

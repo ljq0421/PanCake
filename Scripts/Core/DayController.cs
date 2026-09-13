@@ -27,6 +27,8 @@ public partial class DayController : Node
     public event Action<DayState>? StateChanged;
     public event Action<DayResult>? DayFinished;
     public event Action<DeliveryEvaluation>? DeliveryCompleted;
+    public BusinessFeedback Feedback { get; } = new();
+    private bool _deliveryMatches;
 
     public DayConfig? CurrentConfig { get; private set; }
 
@@ -73,6 +75,8 @@ public partial class DayController : Node
             return false;
         }
 
+        DetachFeedbackQueue();
+        Feedback.Reset();
         CurrentConfig = config;
         CurrentPlan = new OrderGenerator().Generate(config, catalog.RecipesById, catalog.ProductsById, catalog.CustomersById);
         CustomerQueue = new CustomerQueue(CurrentPlan, catalog.CustomersById, config.PatienceMultiplier, config.MaxWaitingCustomers,
@@ -81,6 +85,8 @@ public partial class DayController : Node
         if (cityId == StableIds.Cities.Guangzhou)
             CustomerQueue.ResolveBeforeArrival = (planned, ordinal) => ProjectCake.Guangzhou.GuangzhouOrderProtection.Resolve(
                 planned, ordinal, config, CustomerQueue.Slots, id => GuangzhouStockCount?.Invoke(id) ?? 0, catalog.ProductsById);
+        CustomerQueue.CustomerAngry += OnCustomerAngry;
+        CustomerQueue.CustomerTimedOut += OnCustomerTimedOut;
         Ledger = new DayLedger(config.Day, config.CustomerCount, config.SatisfactionAverageMode);
         _businessRecords.Clear();
         _recordedOrders.Clear();
@@ -163,6 +169,9 @@ public partial class DayController : Node
         FindDeliveryCustomer(customerId) is CustomerRuntime customer && customer.Progress.CanAccept(kind);
 
     public DeliveryEvaluation TryDeliverPancakeTo(string? customerId, PancakeStateMachine pancake, DataCatalog catalog)
+        => WithFeedback(customerId, () => TryDeliverPancakeToCore(customerId, pancake, catalog));
+
+    private DeliveryEvaluation TryDeliverPancakeToCore(string? customerId, PancakeStateMachine pancake, DataCatalog catalog)
     {
         if (FindDeliveryCustomer(customerId) is not CustomerRuntime customer)
         {
@@ -178,6 +187,10 @@ public partial class DayController : Node
     }
 
     public DeliveryEvaluation TryDeliverPreparedPancakeTo(string? customerId, PreparedPancake prepared,
+        DataCatalog catalog, Func<bool> consume)
+        => WithFeedback(customerId, () => TryDeliverPreparedPancakeToCore(customerId, prepared, catalog, consume));
+
+    private DeliveryEvaluation TryDeliverPreparedPancakeToCore(string? customerId, PreparedPancake prepared,
         DataCatalog catalog, Func<bool> consume)
     {
         CustomerRuntime? customer = FindDeliveryCustomer(customerId);
@@ -201,6 +214,9 @@ public partial class DayController : Node
         TryDeliverYoutiaoTo(CustomerQueue?.SelectedCustomerId, inventory);
 
     public DeliveryEvaluation TryDeliverYoutiaoTo(string? customerId, YoutiaoInventory inventory)
+        => WithFeedback(customerId, () => TryDeliverYoutiaoToCore(customerId, inventory));
+
+    private DeliveryEvaluation TryDeliverYoutiaoToCore(string? customerId, YoutiaoInventory inventory)
     {
         if (!inventory.TryPeek(out YoutiaoQuality quality))
             return Rejected("没有可用的成品油条。");
@@ -214,6 +230,9 @@ public partial class DayController : Node
         TryDeliverSoyMilkTo(CustomerQueue?.SelectedCustomerId, tray);
 
     public DeliveryEvaluation TryDeliverSoyMilkTo(string? customerId, SoyMilkTrayRuntime tray)
+        => WithFeedback(customerId, () => TryDeliverSoyMilkToCore(customerId, tray));
+
+    private DeliveryEvaluation TryDeliverSoyMilkToCore(string? customerId, SoyMilkTrayRuntime tray)
     {
         CustomerRuntime? customer = FindDeliveryCustomer(customerId);
         if (customer is null) return Rejected("这位顾客已经不能接餐，请拖给仍在等待的顾客。");
@@ -225,6 +244,9 @@ public partial class DayController : Node
         TryDeliverWuhanTo(CustomerQueue?.SelectedCustomerId, item, consume);
 
     public DeliveryEvaluation TryDeliverWuhanTo(string? customerId, DeliveredItem item, Func<bool> consume)
+        => WithFeedback(customerId, () => TryDeliverWuhanToCore(customerId, item, consume));
+
+    private DeliveryEvaluation TryDeliverWuhanToCore(string? customerId, DeliveredItem item, Func<bool> consume)
     {
         if (IsPaused || CurrentConfig?.CityId != StableIds.Cities.Wuhan
             || item.ProductKind is not (ProductKind.HotDryNoodles or ProductKind.Doupi or ProductKind.EggRiceWine))
@@ -242,6 +264,9 @@ public partial class DayController : Node
     }
 
     public DeliveryEvaluation TryDeliverWuhanDoupiTo(string? customerId, ProjectCake.Wuhan.DoupiInventory inventory)
+        => WithFeedback(customerId, () => TryDeliverWuhanDoupiToCore(customerId, inventory));
+
+    private DeliveryEvaluation TryDeliverWuhanDoupiToCore(string? customerId, ProjectCake.Wuhan.DoupiInventory inventory)
     {
         int count = GetWuhanDoupiDeliveryQuantity(customerId, inventory);
         if (count == 0 || FindDeliveryCustomer(customerId) is not CustomerRuntime customer) return Rejected("没有可交付的豆皮或顾客已不再需要。");
@@ -260,6 +285,9 @@ public partial class DayController : Node
     }
 
     public DeliveryEvaluation TryDeliverXianTo(string? customerId, DeliveredItem item, Func<bool> consume)
+        => WithFeedback(customerId, () => TryDeliverXianToCore(customerId, item, consume));
+
+    private DeliveryEvaluation TryDeliverXianToCore(string? customerId, DeliveredItem item, Func<bool> consume)
     {
         if (IsPaused || CurrentConfig?.CityId != StableIds.Cities.Xian || item.ProductKind is not (ProductKind.Roujiamo or ProductKind.Hulatang)) return Rejected("当前不能交付。");
         var customer = FindDeliveryCustomer(customerId);
@@ -267,6 +295,9 @@ public partial class DayController : Node
     }
 
     public DeliveryEvaluation TryDeliverGuangzhouTo(string? customerId, DeliveredItem item, Func<bool> consume)
+        => WithFeedback(customerId, () => TryDeliverGuangzhouToCore(customerId, item, consume));
+
+    private DeliveryEvaluation TryDeliverGuangzhouToCore(string? customerId, DeliveredItem item, Func<bool> consume)
     {
         if (IsPaused || CurrentConfig?.CityId != StableIds.Cities.Guangzhou || !ProjectCake.Guangzhou.GuangzhouRules.IsProduct(item.ProductKind))
             return Rejected("当前不能交付广州商品。");
@@ -278,6 +309,8 @@ public partial class DayController : Node
     {
         if (State is DayState.Opening or DayState.Running or DayState.Closing)
         {
+            DetachFeedbackQueue();
+            Feedback.Reset();
             CurrentPlan = null;
             CustomerQueue = null;
             Ledger = null;
@@ -286,6 +319,26 @@ public partial class DayController : Node
             DayElapsedSeconds = 0;
             SetState(DayState.Preparing);
         }
+    }
+
+    private void OnCustomerAngry(CustomerRuntime customer) => Feedback.Warn(customer.Id);
+    private void OnCustomerTimedOut(CustomerRuntime customer) => Feedback.TimedOut(customer.Id);
+    private void DetachFeedbackQueue()
+    {
+        if (CustomerQueue is null) return;
+        CustomerQueue.CustomerAngry -= OnCustomerAngry;
+        CustomerQueue.CustomerTimedOut -= OnCustomerTimedOut;
+    }
+    public override void _ExitTree() { DetachFeedbackQueue(); Feedback.Reset(); }
+
+    private DeliveryEvaluation WithFeedback(string? customerId, Func<DeliveryEvaluation> deliver)
+    {
+        // One transaction per player action, including multi-piece doupi delivery.
+        if (IsPaused || State is not (DayState.Running or DayState.Closing)) return Rejected("当前不能交付。");
+        _deliveryMatches = true;
+        DeliveryEvaluation result = deliver();
+        Feedback.Delivery(customerId, result, _deliveryMatches);
+        return result;
     }
 
     private bool TryFinishIfResolved()
@@ -332,6 +385,7 @@ public partial class DayController : Node
         if (customer.Order.CityId is StableIds.Cities.Tianjin or StableIds.Cities.Wuhan or StableIds.Cities.Xian && matchesRequestedItem)
             customer.RestorePatience(0.15);
 
+        _deliveryMatches &= matchesRequestedItem;
         if (!acceptance.OrderComplete)
         {
             var incomplete = new DeliveryEvaluation(DeliveryGrade.Incomplete, 0, 0, 0, acceptance.Message, true);
@@ -348,6 +402,8 @@ public partial class DayController : Node
             : new OrderEvaluator().EvaluateCompleted(customer.Progress, customer.State, customer.Type);
         if (!CustomerQueue!.TryMarkServed(customer.Id)) return Rejected("顾客状态已经变化，本次交付未生效。");
         Ledger!.RecordDelivery(evaluation);
+        if (CurrentConfig?.CityId is StableIds.Cities.Tianjin or StableIds.Cities.Wuhan or StableIds.Cities.Guangzhou)
+            Feedback.Credit(evaluation.TotalRevenue, customer.Id);
         RecordOutcome(customer, evaluation);
         if (notify) DeliveryCompleted?.Invoke(evaluation);
         return evaluation;

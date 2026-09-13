@@ -30,8 +30,10 @@ public partial class XianSurface
         if (state == InteractionHighlightState.None) return;
         // These contours are measured on the 1672 x 941 shop artwork. Convert through
         // the common workbench coordinates so its responsive scale applies only once.
-        void Background(Vector2[] points) => InteractionHighlightPresentation.DrawPath(this,
-            points.Select(p => p * new Vector2(1920f / 1672f, 1080f / 941f) - Position).ToArray(), state);
+        void Background(Vector2[] points) => BackgroundArtContour.Draw(this,
+            GetParent().GetNode<TextureRect>("WorkbenchArt").Texture!,
+            points.Select(p => p * new Vector2(1920f / 1672f, 1080f / 941f) - Position).ToArray(),
+            new Rect2(-Position, new Vector2(1920, 1080)), state);
         void Sprite(string id, Rect2 box)
         {
             Texture2D texture = _art.Texture(id);
@@ -43,11 +45,13 @@ public partial class XianSurface
         switch (Kind)
         {
             case "oven":
-                Background(new Vector2[] { new(36, 602), new(34, 583), new(58, 530), new(70, 515), new(98, 514),
-                    new(119, 480), new(137, 469), new(542, 466), new(565, 474), new(577, 490), new(576, 513),
-                    new(589, 515), new(597, 530), new(591, 588), new(581, 606), new(566, 610), new(558, 679),
-                    new(546, 692), new(523, 693), new(519, 705), new(500, 705), new(492, 693), new(99, 693),
-                    new(93, 705), new(68, 705), new(59, 692), new(43, 687), new(36, 674) });
+                Background(new Vector2[] { new(37,617), new(42,601), new(36,598), new(34,589),
+                    new(37,576), new(66,523), new(73,515), new(95,512), new(110,487), new(122,476),
+                    new(141,469), new(546,468), new(562,472), new(573,480), new(578,492), new(575,513),
+                    new(588,515), new(594,522), new(593,548), new(588,593), new(582,603), new(568,609),
+                    new(559,668), new(554,681), new(544,690), new(533,693), new(529,702), new(518,707),
+                    new(505,707), new(494,702), new(491,693), new(103,694), new(99,702), new(87,708),
+                    new(74,708), new(62,702), new(58,694), new(47,688), new(39,679) });
                 break;
             case "board":
                 Background(new Vector2[] { new(590, 666), new(625, 522), new(634, 506), new(652, 498),
@@ -62,8 +66,9 @@ public partial class XianSurface
                 break;
             case "soup":
                 Background(new Vector2[] { new(1226, 554), new(1230, 526), new(1241, 513), new(1270, 508),
-                    new(1293, 484), new(1328, 466), new(1372, 454), new(1425, 451), new(1480, 456),
-                    new(1527, 472), new(1564, 493), new(1583, 513), new(1610, 517), new(1622, 534),
+                    new(1284, 494), new(1303, 480), new(1328, 467), new(1355, 457), new(1390, 451),
+                    new(1425, 450), new(1460, 452), new(1490, 459), new(1518, 469), new(1540, 482),
+                    new(1560, 497), new(1583, 513), new(1610, 517), new(1622, 534),
                     new(1628, 562), new(1621, 581), new(1606, 589), new(1591, 592), new(1579, 632),
                     new(1555, 660), new(1517, 682), new(1474, 695), new(1428, 698), new(1380, 693),
                     new(1337, 680), new(1303, 657), new(1278, 629), new(1267, 590), new(1240, 582), new(1228, 572) });

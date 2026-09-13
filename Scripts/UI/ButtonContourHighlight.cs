@@ -9,6 +9,7 @@ public partial class ButtonContourHighlight : Control
     private Func<InteractionHighlightState>? _state;
     private InteractionHighlightState _drawnState;
     private Vector2 _drawnSize;
+    private Transform2D _drawnTransform;
 
     public static ButtonContourHighlight Attach(Button source, Func<InteractionHighlightState>? state = null)
     {
@@ -43,7 +44,9 @@ public partial class ButtonContourHighlight : Control
     public override void _Process(double delta)
     {
         var state = ResolveState();
-        if (state == _drawnState && Size == _drawnSize) return;
+        Transform2D transform = InteractionHighlightPresentation.PixelTransform(this);
+        if (state == _drawnState && Size == _drawnSize && transform == _drawnTransform) return;
+        _drawnTransform = transform;
         _drawnState = state;
         _drawnSize = Size;
         QueueRedraw();
@@ -69,7 +72,7 @@ public partial class ButtonContourHighlight : Control
     {
         if (state == InteractionHighlightState.None) return;
         var outline = (StyleBoxFlat)source.Duplicate();
-        int width = Math.Max(1, (int)MathF.Ceiling(InteractionHighlightPresentation.WidthFor(state)));
+        int width = Math.Max(1, (int)MathF.Round(InteractionHighlightPresentation.LocalWidthFor(canvas, state)));
         outline.DrawCenter = false;
         outline.SetBorderWidthAll(width);
         outline.BorderColor = InteractionHighlightPresentation.ColorFor(state);

@@ -5,6 +5,18 @@ namespace ProjectCake.UI;
 /// <summary>Replaceable vector placeholder with the same hit target for gestures and native drag/drop.</summary>
 public partial class XianSurface : Control
 {
+    public Action? DeliveryRejected { get; set; }
+    private bool _rejectedDrop, _cancelledDrop, _dropReleasedHere;
+    public override void _Notification(int what)
+    {
+        if (what == NotificationDragBegin) { _rejectedDrop = false; _cancelledDrop = false; _dropReleasedHere = false; }
+        if (what != NotificationDragEnd) return;
+        bool rejected = _rejectedDrop && !_cancelledDrop && !GetViewport().GuiIsDragSuccessful()
+            && IsVisibleInTree() && _dropReleasedHere;
+        _rejectedDrop = false;
+        if (rejected) DeliveryRejected?.Invoke();
+    }
+
     [Export] public string Kind { get; set; } = "";
     [Export] public bool ArtworkMode { get; set; }
     public string Title { get; set; } = "";
@@ -189,6 +201,9 @@ public partial class XianSurface : Control
     }
     public override void _Input(InputEvent input)
     {
+        if (input is InputEventKey { Pressed: true, Keycode: Key.Escape }) _cancelledDrop = true;
+        if (input is InputEventMouseButton { Pressed: false, ButtonIndex: MouseButton.Left } release)
+            _dropReleasedHere = new Rect2(Vector2.Zero, Size).HasPoint(GetGlobalTransformWithCanvas().AffineInverse() * release.Position);
         if (input is InputEventMouseButton b && b.ButtonIndex == MouseButton.Left && !b.Pressed) CancelGesture();
     }
     public void CancelGesture() { _held = false; GestureEnded?.Invoke(); }
@@ -200,6 +215,11 @@ public partial class XianSurface : Control
         var preview = TianjinUi.Label(token == "meat" ? "腊汁肉 · 1份" : token == "soup" ? "胡辣汤" : token == "juice" ? "腊汁" : "肉夹馍", 26, Ink);
         SetDragPreview(preview); CancelGesture(); return token;
     }
-    public override bool _CanDropData(Vector2 atPosition, Variant data) => data.VariantType == Variant.Type.String && CanInteract?.Invoke() == true && AcceptToken?.Invoke(data.AsString()) == true;
+    public override bool _CanDropData(Vector2 atPosition, Variant data)
+    {
+        bool accepts = data.VariantType == Variant.Type.String && CanInteract?.Invoke() == true && AcceptToken?.Invoke(data.AsString()) == true;
+        _rejectedDrop = data.VariantType == Variant.Type.String && !accepts;
+        return accepts;
+    }
     public override void _DropData(Vector2 atPosition, Variant data) { if (_CanDropData(atPosition, data)) Dropped?.Invoke(data.AsString()); }
 }

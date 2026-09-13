@@ -62,6 +62,8 @@ public partial class FryerVisualView : Control
     private Tween? _basketTween;
     private Node2D _basketAnchor = null!;
     private Node2D _embeddedBasketArt = null!;
+    private Node2D _basketContour = null!;
+    public Func<InteractionHighlightState>? ResolveBasketHighlight { get; set; }
     private Node2D _rawFoodAnchor = null!;
     private ShaderMaterial? _rawFoodInk;
     public bool UseTableContact { get; set; }
@@ -93,6 +95,20 @@ public partial class FryerVisualView : Control
             Name = "EmbeddedBasketMetal", Material = metalInk, ShowBehindParent = true,
         };
         _basketAnchor.AddChild(_embeddedBasketArt);
+        _basketContour = new Node2D { Name = "BasketContour" };
+        _basketAnchor.AddChild(_basketContour);
+        _basketContour.Draw += () =>
+        {
+            if (_art is null || EmbeddedOpening is not Rect2 opening) return;
+            Rect2 mouth = EmbeddedBasketRect(opening);
+            Vector2 full = new(mouth.Size.X, mouth.Size.Y / .82f);
+            float height = Mathf.Clamp(opening.End.Y - mouth.Position.Y, 0, full.Y);
+            Rect2 visible = new(mouth.Position, new Vector2(full.X, height));
+            if (!visible.HasPoint(GetLocalMousePosition())) return;
+            DrawnArtContour.Draw(_basketContour, _art.EmbeddedBasket, visible,
+                ResolveBasketHighlight?.Invoke() ?? InteractionHighlightState.None,
+                new Rect2(Vector2.Zero, _art.EmbeddedBasket.GetSize() * new Vector2(1, height / full.Y)), keyGreen: true);
+        };
         _embeddedBasketArt.Draw += () =>
         {
             if (_art is not null && _machine is not null && EmbeddedOpening is Rect2 opening)
@@ -136,6 +152,7 @@ public partial class FryerVisualView : Control
 
     public void Tick(double deltaSeconds)
     {
+        if (IsInstanceValid(_basketContour)) _basketContour.QueueRedraw();
         if (_machine?.Runtime.State == FryerState.Frying)
         {
             _effectPhase += (float)deltaSeconds;
@@ -188,6 +205,12 @@ public partial class FryerVisualView : Control
         _basketAnchor.Position = canvas.Position;
         _basketAnchor.QueueRedraw();
         _rawFoodAnchor.QueueRedraw();
+    }
+
+    public override void _Process(double delta)
+    {
+        // Hover must update even when a capture or pause freezes production ticks.
+        if (IsInstanceValid(_basketContour)) _basketContour.QueueRedraw();
     }
 
     private void DrawBasket()

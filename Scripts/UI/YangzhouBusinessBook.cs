@@ -43,6 +43,7 @@ public static class YangzhouBusinessBook
                 if (upgrades.Length > 0) stickers.Add("可升级：" + string.Join("、", upgrades));
             }
             model.Stickers = stickers.ToArray();
+            if (!practice) model.Upgrades = new BookUpgradeSource(save, catalog);
         }
         catch (Exception e) { model.SaveMessage = "未保存 · " + e.Message + "；收入与进度已回退。"; model.CanClose = false; model.CanRetry = true; }
         return model;

@@ -542,8 +542,8 @@ public partial class StageFourSelfTest : Node
         ((Button)screen.FindChild("ResumeButton", true, false)).EmitSignal(Button.SignalName.Pressed);
         workstation.RefreshForCapture();
         Check(workstation.DirectCustomerDelivery && workstation.FindChild("DeliveryDropZone", true, false) is Control { Visible: false }
-            && workstation.FindChild("DirectDeliveryHint", true, false) is Label { Visible: true },
-            "天津取消出餐口目标，显示直接拖给顾客提示");
+            && workstation.FindChild("DirectDeliveryHint", true, false) is Label { Visible: false },
+            "天津取消出餐口目标及出餐文字提示");
         Check(zone.CanAccept("finished_pancake") && !zone.CanAccept(StableIds.Ingredients.Batter), "顾客接收成品而不接收原料");
         int before = customer.Progress.DeliveredItems.Count;
         using (var press = new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true }) finishedDrag._GuiInput(press);

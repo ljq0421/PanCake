@@ -11,6 +11,8 @@ public partial class PancakeWorkstation
     private void ConfigureTianjinHighlights(Vector2[] fryerOutline)
     {
         var outlines = new TianjinEquipmentHighlightView { Name = "TianjinEquipmentHighlights", ZIndex = 76 };
+        outlines.Background = () => _art.WorkbenchBackground(SoyMilkTray is not null ? new[] { ProductKind.SoyMilk }
+            : FryerMachine is not null ? new[] { ProductKind.Youtiao } : Array.Empty<ProductKind>());
         AddChild(outlines);
 
         InteractionHighlightState Hover(Control target)
@@ -29,16 +31,11 @@ public partial class PancakeWorkstation
                 ? InteractionHighlightPresentation.FromDropZone(zone.VisualState) : Hover(surface);
         }
 
-        outlines.AddEllipse("stove", TianjinWorkbenchLayout.EmbeddedSurface, () => Target(_stoveDropZone, _canvas));
-        outlines.AddPath("fryer", SourcePath(fryerOutline), () => Hover(_rawYoutiaoInput));
+        _fryerVisual.ResolveBasketHighlight = () => Hover(_fryerVisual);
 
         // These appliances are painted into the workbench. Trace that source art;
         // outlining a background crop would draw the old rectangular hit target.
-        outlines.AddPath("youtiao_rack", SourcePath(new Vector2[] {
-            new(138, 711), new(413, 711), new(433, 716), new(445, 727), new(455, 790),
-            new(455, 806), new(449, 817), new(432, 829), new(116, 829), new(101, 823),
-            new(93, 812), new(93, 795), new(110, 736), new(119, 719),
-        }), () => Hover(_finishedYoutiaoSlot));
+        outlines.AddPath("youtiao_rack", Array.Empty<Vector2>(), () => Hover(_finishedYoutiaoSlot));
 
         foreach ((string id, IngredientStockSlotView slot) in _ingredientSlots)
         {
@@ -53,20 +50,12 @@ public partial class PancakeWorkstation
             outlines.AddPath(id, IngredientOutline(id), State);
         }
 
-        outlines.AddPath("soy_tray", SourcePath(new Vector2[] {
-            new(1485, 580), new(1588, 580), new(1606, 586), new(1614, 600),
-            new(1656, 769), new(1659, 786), new(1652, 800), new(1635, 805),
-            new(1508, 805), new(1495, 800), new(1488, 788), new(1462, 606),
-            new(1464, 590), new(1472, 583),
-        }), () => Hover(_soyPanel));
-
-        outlines.AddPath("trash", SourcePath(new Vector2[] {
-            new(1018, 841), new(1149, 841), new(1154, 846), new(1163, 846),
-            new(1167, 854), new(1167, 870), new(1161, 878), new(1155, 920),
-            new(1148, 934), new(1136, 939), new(1031, 939), new(1018, 934),
-            new(1011, 921), new(1006, 879), new(1001, 872), new(1002, 851),
-            new(1007, 845), new(1017, 845),
-        }), () => Target(_trashZone, _trashZone));
+        // Cups stand in front of the painted tray: its edge must not cross them.
+        var soyOutline = new TianjinEquipmentHighlightView { Name = "SoyTrayHighlight", ZIndex = _soyPanel.ZIndex - 1,
+            Background = outlines.Background, TextureFilter = TextureFilterEnum.Linear };
+        AddChild(soyOutline);
+        soyOutline.AddPath("soy_tray", Array.Empty<Vector2>(), () => Hover(_soyPanel));
+        outlines.AddPath("trash", Array.Empty<Vector2>(), () => Target(_trashZone, _trashZone));
 
         // Finished food keeps its existing brown ink material. Its independent
         // alpha contour follows the live texture, stock visibility and motion.
@@ -100,28 +89,38 @@ public partial class PancakeWorkstation
             return SourcePath(bowl);
         }
 
-        Rect2 tray = TianjinWorkbenchLayout.EmbeddedIngredient(id);
-        // The four trays share the background's rounded perspective lip. The
-        // front edge is wider than the rear edge, unlike their rectangular input.
-        Vector2[] normalized = {
-            new(.15f, .02f), new(.84f, .02f), new(.91f, .05f), new(.96f, .12f),
-            new(.99f, .73f), new(1f, .84f), new(.96f, .95f), new(.87f, .99f),
-            new(.10f, .99f), new(.03f, .94f), new(0f, .83f), new(.02f, .22f),
-            new(.05f, .10f), new(.09f, .04f),
-        };
-        return normalized.Select(point => tray.Position + point * tray.Size).ToArray();
+        // Each lip is traced independently on the current sheet, including its front wall.
+        return SourcePath(id switch {
+            StableIds.Ingredients.Egg => new Vector2[] { new(1106,654), new(1112,601), new(1116,588),
+                new(1126,582), new(1141,579), new(1248,579), new(1263,584), new(1271,595),
+                new(1278,654), new(1276,669), new(1269,679), new(1257,684), new(1126,684), new(1113,679), new(1107,669) },
+            StableIds.Ingredients.Crispy => new Vector2[] { new(1285,600), new(1288,589), new(1298,582),
+                new(1315,578), new(1370,578), new(1425,578), new(1439,582), new(1448,591),
+                new(1452,610), new(1459,650), new(1460,665), new(1455,677), new(1445,683),
+                new(1430,685), new(1370,685), new(1310,685), new(1297,681), new(1290,672), new(1287,650) },
+            StableIds.Ingredients.Scallion => new Vector2[] { new(1102,774), new(1109,722), new(1115,707),
+                new(1128,699), new(1249,698), new(1266,703), new(1275,714), new(1284,775),
+                new(1281,793), new(1273,804), new(1259,809), new(1121,809), new(1107,803), new(1102,792) },
+            StableIds.Ingredients.Ham => new Vector2[] { new(1291,725), new(1293,711), new(1302,701),
+                new(1320,696), new(1380,696), new(1437,696), new(1452,700), new(1461,710),
+                new(1467,730), new(1472,758), new(1476,780), new(1474,793), new(1467,802),
+                new(1454,808), new(1380,808), new(1318,808), new(1305,804), new(1297,796), new(1294,780) },
+            _ => throw new ArgumentOutOfRangeException(nameof(id)),
+        });
     }
 }
 
 /// <summary>Non-interactive contours for appliances already painted into Tianjin's background.</summary>
 internal partial class TianjinEquipmentHighlightView : Control
 {
+    public Func<Texture2D> Background { get; set; } = null!;
     private sealed record Contour(string Id, Vector2[]? Path, Rect2? Ellipse, Func<InteractionHighlightState> Resolve)
     {
         public InteractionHighlightState State { get; set; }
     }
 
     private readonly List<Contour> _contours = new();
+    private Transform2D _drawnTransform;
 
     public TianjinEquipmentHighlightView()
     {
@@ -137,7 +136,9 @@ internal partial class TianjinEquipmentHighlightView : Control
 
     public override void _Process(double delta)
     {
-        bool changed = false;
+        Transform2D transform = InteractionHighlightPresentation.PixelTransform(this);
+        bool changed = transform != _drawnTransform;
+        _drawnTransform = transform;
         foreach (Contour contour in _contours)
         {
             InteractionHighlightState next = IsVisibleInTree() ? contour.Resolve() : InteractionHighlightState.None;
@@ -153,10 +154,23 @@ internal partial class TianjinEquipmentHighlightView : Control
         foreach (Contour contour in _contours)
         {
             if (contour.State == InteractionHighlightState.None) continue;
+            if (contour.Id is "soy_tray" or "trash")
+            {
+                TianjinPaintedObjectContour.Draw(this, Background(),
+                    contour.Id == "soy_tray" ? TianjinPaintedObject.SoyTray : TianjinPaintedObject.Trash, contour.State);
+                continue;
+            }
+            if (contour.Id == "youtiao_rack")
+            {
+                TianjinYoutiaoTrayContour.Draw(this, Background(), contour.State);
+                continue;
+            }
             if (contour.Ellipse is Rect2 ellipse)
                 InteractionHighlightPresentation.DrawEllipse(this, ellipse, contour.State);
             else if (contour.Path is Vector2[] path)
-                InteractionHighlightPresentation.DrawPath(this, path, contour.State);
+                BackgroundArtContour.Draw(this, Background(), path, new Rect2(0, 0, 1920, 1080), contour.State,
+                    preferDarkInk: contour.Id is "soy_tray"
+                        or StableIds.Ingredients.Crispy or StableIds.Ingredients.Ham);
         }
     }
 }

@@ -8,8 +8,6 @@ public partial class BusinessDetailsView
     private const float ArtPageLeft = 230, ArtPageRight = 890, ArtPageWidth = 560;
     private const float ArtRowRight = ArtPageRight - ArtPageLeft, ArtRowWidth = 1200;
     private Control _plainPaper = null!, _illustratedPaper = null!;
-    private Button _infoButton = null!;
-    private Label _escapeHint = null!, _explanation = null!;
     private bool UsesBookArt => _model.CityId is "tianjin" or "wuhan" or "xian";
     private CitySettlementTheme CityTheme => CitySettlementTheme.For(_model.CityId);
     private TextureRect Art(Control parent, string name, Rect2 bounds)
@@ -41,31 +39,36 @@ public partial class BusinessDetailsView
             Theme.SetStylebox("focus", "Button", focus);
             foreach (string color in new[] { "font_color", "font_hover_color", "font_pressed_color" }) Theme.SetColor(color, "Button", Ink);
             Theme.SetColor("font_disabled_color", "Button", Muted);
-            _infoButton.AddThemeStyleboxOverride("focus", focus);
         }
         _city.AddThemeColorOverride("font_color", Muted); _title.AddThemeColorOverride("font_color", Ink);
-        _save.AddThemeColorOverride("font_color", Muted); _escapeHint.AddThemeColorOverride("font_color", Muted); _explanation.AddThemeColorOverride("font_color", Muted);
-        _detailHeading.AddThemeColorOverride("font_color", Ink);
         _plainPaper.Visible = !UsesBookArt; _illustratedPaper.Visible = UsesBookArt;
-        _explanation.Hide();
-        _summary.Position = _details.Position = new(0, 155);
+        _summary.Position = _details.Position = new(0, 120);
         _summary.Size = _details.Size = new(1680, 620);
-        _scroll.Position = new(78, 66); _scroll.Size = new(1524, 568);
-        _detailHeading.Position = new(80, 0); _detailHeading.Size = new(380, 44);
-        SetButtonBounds(_summaryTab, new(1220, -18, 170, 64)); SetButtonBounds(_detailTab, new(1400, -18, 170, 64));
+        _scroll.Position = new(78, 58); _scroll.Size = new(1524, 594);
+        SetButtonBounds(_previousPage, new(0, 508, 64, 64)); SetButtonBounds(_nextPage, new(1616, 508, 64, 64));
         for (int i = 0; i < _filters.Count; i++) { SetButtonBounds(_filters[i], new(900 + i * 160, 0, 148, 48)); _filters[i].AddThemeFontSizeOverride("font_size", 24); }
         _save.Position = new(80, 792); _save.Size = new(1120, 65);
         _save.MaxLinesVisible = -1; _save.TextOverrunBehavior = TextServer.OverrunBehavior.NoTrimming;
         _save.AddThemeFontSizeOverride("font_size", 20); _save.MouseFilter = MouseFilterEnum.Ignore;
         SetButtonBounds(CloseButton, new(1320, 798, 240, 72)); SetButtonBounds(_retry, new(1100, 809, 190, 58));
         _city.Size = new(600, 38);
-        _city.Position = new(80, 32); _title.Position = new(80, 78); _title.Size = new(1000, 62); _title.HorizontalAlignment = HorizontalAlignment.Left; _title.AddThemeFontSizeOverride("font_size", 46);
-        SetButtonBounds(_infoButton, new(80, 842, 130, 48));
-        _escapeHint.Position = new(1340, 870); _escapeHint.Size = new(220, 28);
-        _explanation.Position = new(230, 850); _explanation.Size = new(990, 32);
-        _explanation.AutowrapMode = TextServer.AutowrapMode.Off; _explanation.AddThemeFontSizeOverride("font_size", 18);
-        _explanation.RemoveThemeStyleboxOverride("normal");
+        _city.Position = new(80, 32); _title.Position = new(80, 76); _title.Size = new(650, 40); _title.HorizontalAlignment = HorizontalAlignment.Left; _title.AddThemeFontSizeOverride("font_size", 28);
+        _status.Position = new(900, 32); _status.Size = new(650, 38);
+        _status.AddThemeColorOverride("font_color", Muted);
+        _save.AddThemeColorOverride("font_color", Muted);
         if (UsesBookArt) ApplyArtLayout();
+        foreach (var arrow in new[] { _previousPage, _nextPage })
+        {
+            var focus = TianjinUi.Box(Colors.Transparent, 28, 3, false);
+            focus.BorderColor = Accent;
+            arrow.AddThemeStyleboxOverride("focus", focus);
+            foreach (string state in new[] { "normal", "hover", "pressed" })
+            {
+                var paper = TianjinUi.Box(state == "normal" ? new Color("#F5E8CF") : new Color("#EFDDBD"), 28, 2, false);
+                paper.BorderColor = Accent;
+                arrow.AddThemeStyleboxOverride(state, paper);
+            }
+        }
     }
 
     private static void SetButtonBounds(Button button, Rect2 bounds)
@@ -78,12 +81,12 @@ public partial class BusinessDetailsView
     private void ApplyArtLayout()
     {
         _city.Position = new(ArtPageLeft, 78); _city.Size = new(ArtPageWidth, 32);
-        _title.Position = new(ArtPageLeft, 114); _title.Size = new(ArtPageWidth, 60);
-        SetButtonBounds(_summaryTab, new(ArtPageRight, 99, 268, 60));
-        SetButtonBounds(_detailTab, new(1182, 99, 268, 60));
-        _summary.Position = _details.Position = new(0, 185);
+        _title.Position = new(ArtPageLeft, 115); _title.Size = new(ArtPageWidth, 36);
+        _status.Position = new(ArtPageRight, 78); _status.Size = new(ArtPageWidth, 32);
+        SetButtonBounds(_previousPage, new(145, 508, 64, 64));
+        SetButtonBounds(_nextPage, new(1471, 508, 64, 64));
+        _summary.Position = _details.Position = new(0, 155);
         _summary.Size = _details.Size = new(1680, 540);
-        _detailHeading.Position = new(ArtPageLeft, 0); _detailHeading.Size = new(ArtPageWidth, 44);
         for (int i = 0; i < _filters.Count; i++)
         {
             _filters[i].AddThemeFontSizeOverride("font_size", 20);
@@ -91,18 +94,13 @@ public partial class BusinessDetailsView
         }
         // Both halves of an order scroll together; the last 20 px are reserved
         // for the scrollbar, still inside the right-page safe area.
-        _scroll.Position = new(ArtPageLeft, 58); _scroll.Size = new(1220, 477);
+        _scroll.Position = new(ArtPageLeft, 58); _scroll.Size = new(1220, 507);
         _save.AddThemeFontSizeOverride("font_size", 18);
         _save.MaxLinesVisible = 2; _save.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
         _save.MouseFilter = MouseFilterEnum.Pass;
         _save.Position = new(ArtPageLeft, 732); _save.Size = new(ArtPageWidth, 52);
         SetButtonBounds(_retry, new(1020, 738, 180, 56));
         SetButtonBounds(CloseButton, new(1220, 738, 230, 56));
-        SetButtonBounds(_infoButton, new(ArtPageRight, 790, 130, 34));
-        _escapeHint.Position = new(1260, 798); _escapeHint.Size = new(190, 26);
-        _explanation.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-        _explanation.AddThemeFontSizeOverride("font_size", 16);
-        _explanation.Position = new(ArtPageLeft, 790); _explanation.Size = new(ArtPageWidth, 34);
     }
 
     private void PaintBookPaper()
@@ -124,7 +122,7 @@ public partial class BusinessDetailsView
     {
         var r = _model.Result;
         Art(_summary, "总收入图标", new(ArtPageLeft, 38, 100, 100));
-        Text(_summary, "今日收入", new(350, 0, 440, 40), 30);
+        Text(_summary, "收入", new(350, 0, 440, 40), 30);
         _income = Text(_summary, $"¥{r.TotalRevenue}", new(345, 42, 445, 92), 76);
         Text(_summary, "菜品销售", new(ArtPageLeft, 146, 290, 38), 26, Muted);
         Text(_summary, $"¥{r.SaleRevenue}", new(530, 146, 260, 38), 28, Ink, HorizontalAlignment.Right);
@@ -133,19 +131,19 @@ public partial class BusinessDetailsView
         Text(_summary, $"+¥{r.Tips}", new(530, 195, 260, 38), 28, Ink, HorizontalAlignment.Right);
         BookDivider(_summary, new(ArtPageLeft, 245, ArtPageWidth, 10));
         var bestSellerBadge = FittedArtBounds(Art(_summary, "今日热销徽章", new(ArtPageLeft, 263, 300, 60)));
-        Text(_summary, "今日最受欢迎", new(bestSellerBadge.Position + new Vector2(bestSellerBadge.Size.X * .25f, 17), new(bestSellerBadge.Size.X * .68f, 32)), 22);
+        Text(_summary, "最受欢迎", new(bestSellerBadge.Position + new Vector2(bestSellerBadge.Size.X * .25f, 17), new(bestSellerBadge.Size.X * .68f, 32)), 22);
         if (_model.BestSeller is { } best)
         {
             Place(_summary, new BookFoodIcon { Product = best }, new(ArtPageLeft, 337, 68, 68));
             var name = Text(_summary, best.Name, new(320, 326, 470, 58), 26, wrap: true);
             name.MaxLinesVisible = 2; name.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis; name.TooltipText = best.Name;
             name.MouseFilter = MouseFilterEnum.Pass;
-            Text(_summary, $"今日卖出 ×{best.Quantity}", new(320, 387, 470, 30), 22, Muted);
+            Text(_summary, $"已售 ×{best.Quantity}", new(320, 387, 470, 30), 22, Muted);
         }
         else Text(_summary, "还没有完成的客单", new(ArtPageLeft, 337, ArtPageWidth, 68), 25, Muted);
 
         _metrics = new Control { MouseFilter = MouseFilterEnum.Ignore }; _summary.AddChild(_metrics);
-        Text(_metrics, "今日接待" + (_model.Closing ? "" : " · 已结束"), new(ArtPageRight, 0, ArtPageWidth, 40), 30);
+        Text(_metrics, "已结束客单", new(ArtPageRight, 0, ArtPageWidth, 40), 30);
         Text(_metrics, $"{_model.Resolved} {_model.Unit}", new(ArtPageRight, 48, ArtPageWidth, 66), 48);
         Art(_metrics, "完成顾客图标", new(ArtPageRight, 132, 46, 46));
         Text(_metrics, $"完成 {r.CompletedCustomers}", new(946, 132, 214, 46), 27, CitySettlementTheme.Completed.Darkened(.38f));
@@ -162,11 +160,11 @@ public partial class BusinessDetailsView
             Art(_stamp, "Perfect 印章", new(35, 0, 100, 100));
             Text(_stamp, $"Perfect ×{r.PerfectOrders}", new(0, 106, 170, 34), 22, new("#8B5926"), HorizontalAlignment.Center);
         }
-        else Text(_stamp, "今天还没有\n完美出餐", new(0, 34, 170, 86), 22, Muted, HorizontalAlignment.Center);
+        else Text(_stamp, "暂无完美出餐", new(0, 34, 170, 86), 22, Muted, HorizontalAlignment.Center);
 
         _note = new Control { Name = "DailyNote", Position = new(ArtPageLeft, 418), Size = new(ArtPageWidth, 122), MouseFilter = MouseFilterEnum.Ignore }; _summary.AddChild(_note);
         var notePaper = FittedArtBounds(Art(_note, "今日手记便签底板", new(0, 0, ArtPageWidth, 122)));
-        Text(_note, "今日手记", new(notePaper.Position + new Vector2(52, 18), new(notePaper.Size.X - 80, 30)), 21);
+        Text(_note, "营业手记", new(notePaper.Position + new Vector2(52, 18), new(notePaper.Size.X - 80, 30)), 21);
         Text(_note, _model.DailyNote, new(notePaper.Position + new Vector2(28, 52), new(notePaper.Size.X - 56, 62)), 20, wrap: true);
         var rating = _model.Stickers.Where(s => s.Contains("评级")).ToArray();
         if (rating.Length > 0) Text(_summary, string.Join(" · ", rating), new(ArtPageRight, 408, ArtPageWidth, 30), 21);
@@ -183,11 +181,22 @@ public partial class BusinessDetailsView
         Place(_summary, sticker, bounds);
         var paper = FittedArtBounds(Art(sticker, art, new(0, 0, bounds.Size.X, bounds.Size.Y)));
         float textWidth = unlock ? 158 : 181;
-        string shortCaption = unlock ? "新解锁 · 回店查看" : "可升级 · 回店查看";
+        string shortCaption = unlock ? "新解锁 · 回店查看" : CanUpgrade ? "可升级 · 查看效果" : "可升级 · 回店查看";
         string caption = items.Length == 1 ? items[0] : shortCaption;
         if (GetThemeFont("font", "Label").GetStringSize(caption, fontSize: 17).X > textWidth) caption = shortCaption;
         var label = Text(sticker, caption, new(unlock ? 72 : 18, paper.Position.Y + (paper.Size.Y - 28) / 2, textWidth, 28), 17);
         label.MaxLinesVisible = 1; label.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
+        if (!unlock && CanUpgrade)
+        {
+            _upgradeEntry = ButtonAt(sticker, "", new(0, 0, bounds.Size.X, bounds.Size.Y), OpenUpgrades);
+            _upgradeEntry.Name = "OpenBookUpgrades";
+            _upgradeEntry.TooltipText = "查看升级效果与价格";
+            foreach (string state in new[] { "normal", "hover", "pressed" })
+            {
+                var box = TianjinUi.Box(state == "normal" ? Colors.Transparent : Accent with { A = .12f }, 18, 0, false);
+                _upgradeEntry.AddThemeStyleboxOverride(state, box);
+            }
+        }
     }
 
     private void RefreshArtRows()
@@ -222,27 +231,12 @@ public partial class BusinessDetailsView
         if (order.Lost) portrait.Modulate = new(.75f, .70f, .65f, .8f);
         Art(row, "顾客头像圆框", new(55, 0, 70, 70));
         Text(row, order.Customer, new(135, 0, 425, nameHeight), 26, wrap: true);
-        foreach (var product in order.Products)
-        {
-            string caption = $"{product.Name}{(product.Preference.Length > 0 ? "·" + product.Preference : "")} ×{product.Quantity}";
-            float height = Math.Max(48, WrappedHeight(caption, 503, 20));
-            Place(row, new BookFoodIcon { Product = product }, new(0, productY, 45, 45));
-            Text(row, caption, new(57, productY, 503, height), 20, wrap: true);
-            productY += height + 10;
-        }
+        productY = BuildProducts(row, order.Products, 0, productY, ArtPageWidth);
         var color = order.Outcome switch { BookOutcome.Perfect => new Color("#91601D"), BookOutcome.Incorrect => new("#A05C2F"), BookOutcome.Lost or BookOutcome.Unreceived => new("#92534B"), _ => new("#456E49") };
         Art(row, order.Outcome switch { BookOutcome.Perfect => "Perfect 图标", BookOutcome.Incorrect => "状态章-错误完成", BookOutcome.Lost or BookOutcome.Unreceived => "状态章-顾客流失", _ => "状态章-正确完成" }, new(ArtRowRight, 0, 42, 42));
         string status = order.Outcome switch { BookOutcome.Perfect => "完美出餐", BookOutcome.Incorrect => "出餐错误", BookOutcome.Lost => "等待离开", BookOutcome.Unreceived => "收摊未接待", _ => "顺利完成" };
         Text(row, status, new(ArtRowRight + 54, 0, rightWidth - 54, 38), 26, color);
-        Text(row, $"收入 ¥{order.Revenue}    小费 +¥{order.Tips}", new(ArtRowRight, 48, rightWidth, 34), 22);
-        Text(row, order.Score is { } score ? $"评分 {score:0}" : "评分 —", new(ArtRowRight, 86, rightWidth, 34), 22, Muted);
-        float rightBottom = 120;
-        if (order.Reason.Length > 0)
-        {
-            float height = WrappedHeight(order.Reason, rightWidth, 20);
-            Text(row, order.Reason, new(ArtRowRight, 130, rightWidth, height), 20, color, wrap: true);
-            rightBottom = 130 + height;
-        }
+        float rightBottom = BuildOrderMetrics(row, order, ArtRowRight, 48, rightWidth, 22, color);
         row.CustomMinimumSize = new(ArtRowWidth, Math.Max(productY, rightBottom) + 22);
         BookDivider(row, new(0, row.CustomMinimumSize.Y - 10, ArtPageWidth, 10));
         BookDivider(row, new(ArtRowRight, row.CustomMinimumSize.Y - 10, rightWidth, 10));

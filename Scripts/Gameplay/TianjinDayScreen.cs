@@ -74,6 +74,7 @@ public partial class TianjinDayScreen : Control
         // Cover the workbench, order icons, payment coins and reparented drag previews.
         TextureFilter = TextureFilterEnum.LinearWithMipmaps;
         SceneNodeBinder.Bind(this);
+        StyleAbandonDialog();
         _art = new TianjinArtCatalog();
         _workstation.Feedback += ShowFeedback;
         _workstation.WorkbenchActionLearned += RememberWorkbenchAction;
@@ -124,6 +125,7 @@ public partial class TianjinDayScreen : Control
 
     public void Initialize(DataCatalog catalog, SaveService save, DayController controller, int day)
     {
+        BusinessFeedbackAudio.Attach(this, controller.Feedback, () => controller.CurrentConfig?.CityId == StableIds.Cities.Tianjin && (IsVisibleInTree() && _focused && !_manualPaused && !_focusPaused && !_detailsPaused && !_abandonDialog.Visible && !controller.IsPaused && controller.State is DayState.Running or DayState.Closing));
         CloseBusinessDetails();
         ClearCoinFlights();
         _collectionFeedback.Clear();
@@ -159,6 +161,7 @@ public partial class TianjinDayScreen : Control
         GetNode<TextureRect>("ShopBackground").Texture = _art.WorkbenchBackground(controller.CurrentConfig.AvailableProductKinds);
         _workstation.Initialize(catalog, save.Data.PurchasedStoveLevel, save.Data.PurchasedIngredientStationLevel, fryerLevel, controller.CurrentConfig, _art);
         _workstation.DirectCustomerDelivery = true;
+        _workstation.DeliveryRejected = () => controller.Feedback.Reject();
         _workstation.InteractionEnabled = false;
         _workstation.ResetForDay();
         ApplyPauseState();
@@ -304,6 +307,46 @@ public partial class TianjinDayScreen : Control
                 && _controller.CanDeliverTo(customerId, kind),
             payload => _workstation.DeliverToCustomer(payload, () => SubmitToCustomer(customerId, slot, payload)),
             _ => _portraits[slot].GetGlobalRect().GetCenter());
+    }
+
+    private void StyleAbandonDialog()
+    {
+        Theme theme = TianjinUi.CreateTheme();
+        var panel = TianjinUi.Box(TianjinUi.Paper, 16, 4, false);
+        panel.ContentMarginLeft = panel.ContentMarginRight = 28;
+        panel.ContentMarginTop = panel.ContentMarginBottom = 24;
+        theme.SetStylebox("panel", "AcceptDialog", panel);
+
+        var border = TianjinUi.Box(TianjinUi.BrownDark, 16);
+        border.ExpandMarginTop = 44;
+        theme.SetStylebox("embedded_border", "Window", border);
+        theme.SetStylebox("embedded_unfocused_border", "Window", border);
+        theme.SetColor("title_color", "Window", TianjinUi.Paper);
+        theme.SetFontSize("title_font_size", "Window", 26);
+        theme.SetConstant("title_height", "Window", 44);
+        theme.SetConstant("close_v_offset", "Window", 28);
+        theme.SetConstant("close_h_offset", "Window", 32);
+        theme.SetConstant("buttons_separation", "AcceptDialog", 20);
+        theme.SetConstant("buttons_min_height", "AcceptDialog", 60);
+        theme.SetFontSize("font_size", "Label", 22);
+        _abandonDialog.Theme = theme;
+        _abandonDialog.GetLabel().HorizontalAlignment = HorizontalAlignment.Center;
+        _abandonDialog.GetLabel().AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        _abandonDialog.GetLabel().CustomMinimumSize = new Vector2(600, 100);
+
+        foreach (Button button in new[] { _abandonDialog.GetOkButton(), _abandonDialog.GetCancelButton() })
+        {
+            Color fill = button == _abandonDialog.GetCancelButton() ? TianjinUi.Yellow : TianjinUi.Cream;
+            button.CustomMinimumSize = new Vector2(220, 60);
+            button.AddThemeFontSizeOverride("font_size", 22);
+            button.AddThemeColorOverride("font_focus_color", TianjinUi.BrownText);
+            button.AddThemeColorOverride("font_disabled_color", new Color("#826F5D"));
+            button.AddThemeStyleboxOverride("normal", TianjinUi.Box(fill, 14));
+            button.AddThemeStyleboxOverride("hover", TianjinUi.Box(fill.Lightened(.09f), 14));
+            button.AddThemeStyleboxOverride("pressed", TianjinUi.Box(fill.Darkened(.08f), 14, 4, false));
+            button.AddThemeStyleboxOverride("disabled", TianjinUi.Box(TianjinUi.CreamMuted, 14, 3, false));
+            button.AddThemeStyleboxOverride("focus", TianjinUi.Box(Colors.Transparent, 14, 6, false));
+        }
     }
 
     private void RequestAbandon()
@@ -500,22 +543,13 @@ public partial class TianjinDayScreen : Control
     private void BuildCashPendant()
     {
         Rect2 bounds = TianjinWorkbenchLayout.CashPendant;
-        bounds.Size = new Vector2(bounds.Size.X, 54); // Keep the hit target above the five order bubbles.
-        CashPendant = new Button { Name = "CashPendant", Position = bounds.Position, Size = bounds.Size,
+        CashPendant = new TianjinPendantButton { Background = () => GetNode<TextureRect>("ShopBackground").Texture,
+            IsOccluded = point => _orderCards.Any(card => card.IsVisibleInTree() && card.GetGlobalRect().HasPoint(point)),
+            Name = "CashPendant", Position = bounds.Position, Size = bounds.Size,
             TooltipText = "查看营业明细", MouseDefaultCursorShape = CursorShape.PointingHand, ZIndex = 80 };
         foreach (string state in new[] { "normal", "hover", "pressed", "disabled", "focus" })
             CashPendant.AddThemeStyleboxOverride(state, new StyleBoxEmpty());
         AddChild(CashPendant);
-        Vector2[] pendantPath = [new(26, 0), new(89, 0), new(103, 6), new(110, 19),
-            new(104, 37), new(100, 104), new(91, 116), new(26, 116), new(16, 106),
-            new(11, 39), new(4, 23), new(10, 8)];
-        var pendantContour = PathContourHighlight.Attach(CashPendant,
-            pendantPath.Select(point => point * TianjinWorkbenchLayout.SourceScale).ToArray(),
-            () => CashPendant.Disabled ? InteractionHighlightState.None
-                : CashPendant.IsHovered() || CashPendant.HasFocus() ? InteractionHighlightState.Hover : InteractionHighlightState.None);
-        // The pouch is behind the order bubbles even though its small input sits above them.
-        pendantContour.ZAsRelative = false;
-        pendantContour.ZIndex = 20;
         CashPendant.Pressed += OpenBusinessDetails;
         BusinessDetails = new TianjinBusinessDetails { Name = "BusinessDetails" };
         AddChild(BusinessDetails);

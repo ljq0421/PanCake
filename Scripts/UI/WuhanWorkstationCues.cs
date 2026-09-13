@@ -5,16 +5,6 @@ namespace ProjectCake.UI;
 
 public partial class WuhanWorkstationView
 {
-    internal string DoupiSupplyHint => _doupi is null ? "" : _doupi.State switch
-    {
-        DoupiState.Burnt => "长按右键拖入垃圾桶后再做一锅",
-        DoupiState.Cut => "已收火 · 成品待入盘",
-        DoupiState.Cutting => $"已收火 · 已切 {_doupi.CompletedCuts}/4 刀",
-        DoupiState.Spreading => $"按住铺开 · {_doupi.Coverage:P0}",
-        DoupiState.Empty => PendingDoupiDemand > _stock.Count ? "订单缺豆皮，做一锅" : "",
-        _ => "制作中",
-    };
-
     private string HoverDescription(string target)
     {
         if (target.StartsWith("ingredient"))

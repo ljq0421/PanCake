@@ -98,8 +98,9 @@ public partial class YangzhouDayScreen : Control
         _tray.Dropped = Stage;
         _serve.Pressed += () =>
         {
-            Act(() => { bool ok = Session.Serve(); if (ok) Say("早茶上齐了！"); return ok; }, "还没凑齐这桌早茶。");
-            if (CanWork()) _audio.Play(PancakeSound.Success);
+            if (!CanWork()) return;
+            Say(Session.Serve() ? "早茶上齐了！" : "还没凑齐这桌早茶。");
+            Render();
         };
         _stock[0].DragToken = () => Session.Kitchen.HasFood("B01") ? "B01" : "";
         _stock[1].DragToken = () => Session.Kitchen.HasFood("B02") ? "B02" : "";
@@ -127,6 +128,7 @@ public partial class YangzhouDayScreen : Control
         _catalog = catalog; _save = save; Practice = practice;
         var city = save.Data.Yangzhou;
         Session = new(catalog, day, practice ? 2 : city.EquipmentLevels.GetValueOrDefault(YangzhouCatalog.BoardId, 1), practice ? 2 : city.EquipmentLevels.GetValueOrDefault(YangzhouCatalog.SteamerId, 1));
+        BusinessFeedbackAudio.Attach(this, Session.Feedback, CanWork);
         _book.Reset(); _committed = _focusLost = false; _resultPanel.Hide(); _leave.Hide(); _return.Text = "收好收入 · 返回经营首页";
         _feedback.Text = ""; Render(); return true;
     }
@@ -158,10 +160,10 @@ public partial class YangzhouDayScreen : Control
     private void Stage(string id)
     {
         if (!CanWork()) return;
-        if (Session.Selected is null) { Say("先选择一位茶客，再把成品放进他的托盘。"); return; }
+        if (Session.Selected is null) { Session.Feedback.Reject(); Say("先选择一位茶客，再把成品放进他的托盘。"); return; }
         bool needed = Session.Selected.Needs(id);
         if (Session.Stage(id)) { Say($"已放入{_catalog.Product(id).Name}，切换顾客会保留托盘。"); _audio.Play(PancakeSound.PickUp); }
-        else Say(needed ? "这份商品还没准备好。" : "这桌不需要这份商品，满意度降低；商品留在原位。");
+        else { Session.Feedback.Reject(Session.Selected.Plan.Id.ToString()); Say(needed ? "这份商品还没准备好。" : "这桌不需要这份商品，满意度降低；商品留在原位。"); }
         Render();
     }
     private void CancelGestures() { _board?.Cancel(); _scald?.Cancel(); }

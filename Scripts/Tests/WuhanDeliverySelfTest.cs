@@ -163,20 +163,20 @@ public partial class WuhanDeliverySelfTest : Node
     {
         await NewDay();
         var view = _screen.Workstation;
-        Check(view.PendingDoupiDemand == 4 && view.DoupiSupplyHint == "订单缺豆皮，做一锅",
-            "doupi warning counts only remaining live orders");
+        Check(view.PendingDoupiDemand == 4,
+            "doupi demand counts only remaining live orders");
         _screen.DoupiStock.TryAddBatch(4); Step(.001);
-        Check(view.DoupiSupplyHint.Length == 0, "enough finished doupi clears the warning");
+        Check(_screen.DoupiStock.Count == 4, "finished doupi supply remains available without text hints");
         var first = _controller.CustomerQueue!.Slots[0];
         await Drop(ProductKind.Doupi, 0); Step(.001);
-        Check(view.PendingDoupiDemand == 2 && _screen.DoupiStock.Count == 2 && view.DoupiSupplyHint.Length == 0,
+        Check(view.PendingDoupiDemand == 2 && _screen.DoupiStock.Count == 2,
             "delivered doupi reduces demand immediately");
         _screen.DoupiStock.TryTake(2, out _); Step(.001);
         _screen.PourDoupiBatter(); Step(.01);
-        Check(view.DoupiSupplyHint == "制作中", "starting a batch replaces shortage warning with production state");
+        Check(_screen.Doupi!.State == ProjectCake.Wuhan.DoupiState.Batter, "starting a batch still advances production without supply text");
         _screen.Doupi!.Discard();
         _controller.CustomerQueue.Slots[1].State = ProjectCake.Customers.CustomerState.Leaving; Step(.001);
-        Check(view.PendingDoupiDemand == 0 && view.DoupiSupplyHint.Length == 0, "departing customers do not cause false shortage warnings");
+        Check(view.PendingDoupiDemand == 0, "departing customers do not cause false shortage warnings");
 
         await NewDay();
         var queue = _controller.CustomerQueue!;

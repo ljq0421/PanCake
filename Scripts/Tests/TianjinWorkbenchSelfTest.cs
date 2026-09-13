@@ -37,6 +37,22 @@ public partial class StageFourSelfTest
         await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
         var egg = (Button)station.FindChild("IngredientInput_egg", true, false);
         var stove = (DropZone)station.FindChild("PancakeDropZone", true, false);
+        void CheckWorkbenchText(string phase)
+        {
+            Check(!((Control)station.FindChild("PancakeStatusTag", true, false)).Visible
+                && !((Control)station.FindChild("FryerStatusTag", true, false)).Visible
+                && !((Control)station.FindChild("DirectDeliveryHint", true, false)).Visible,
+                $"{phase}: 工作台状态底板和出餐说明隐藏");
+            Check(station.Descendants<EquipmentProgressView>().All(view => !view.ShowCaption),
+                $"{phase}: 制作进度条不绘制文字");
+            Check(station.Descendants<Control>().All(control => string.IsNullOrEmpty(control.TooltipText)),
+                $"{phase}: 工作台无悬停文字");
+            Check(station.Descendants<IngredientStockSlotView>().All(slot => !slot.StockLabel.Visible
+                && !slot.GetNode<Control>("FirstUseHint").Visible
+                && !slot.GetNode<Control>("HoldRefillHint").Visible),
+                $"{phase}: 原料库存及首次教学文字隐藏");
+        }
+        CheckWorkbenchText("首次进入");
         int learnedEvents = 0;
         station.WorkbenchActionLearned += _ => learnedEvents++;
         egg.EmitSignal(Button.SignalName.Pressed);
@@ -63,9 +79,10 @@ public partial class StageFourSelfTest
             "教学记录经真实磁盘写入和重新加载保留");
         loaded.Free();
         station.ResetForDay();
+        CheckWorkbenchText("重新营业");
         Check(!((Control)station.FindChild("PancakeStatusTag", true, false)).Visible
-            && ((Control)station.FindChild("FryerStatusTag", true, false)).Visible,
-            "已学放浆说明收起，未学炸锅仍显示首次说明");
+            && !((Control)station.FindChild("FryerStatusTag", true, false)).Visible,
+            "已学和未学操作均不显示工作台文字");
         var raw = (PressRepeatGesture)station.FindChild("RawYoutiaoInput", true, false);
         raw.Activate?.Invoke();
         Check(station.FryerMachine!.Runtime.Quantity == 1 && save.Data.Tianjin.LearnedWorkbenchActions.Contains("fryer:load"),
@@ -79,6 +96,7 @@ public partial class StageFourSelfTest
         refill.Refill?.Invoke();
         Check(station.Inventory.IsAnyRefilling && save.Data.Tianjin.LearnedWorkbenchActions.Contains("refill:egg"),
             "补货成功启动后单独记录教学");
+        CheckWorkbenchText("制作和补货中");
         var coins = (CoinTrayView)station.FindChild("CoinTray", true, false);
         Check(!coins.TryCollect() && !save.Data.Tianjin.LearnedWorkbenchActions.Contains("collect_coins"), "空盘收钱不学习");
         coins.RenderRevenue(20, 1);
@@ -211,7 +229,20 @@ public partial class StageFourSelfTest
         screen.Initialize(catalog, save, controller, 9);
         Check(station.LearnedWorkbenchActions.Contains("take:batter") && station.LearnedWorkbenchActions.Contains("refill:egg")
             && !station.LearnedWorkbenchActions.Contains("take:ham"), "切换关卡保留已学操作，未成功的新操作继续教学");
+        CheckWorkbenchText("切换关卡后");
         screen.Free(); controller.Free(); save.Free(); DeleteIfExists(absolute);
+        var shared = SceneFactory.Instantiate<PancakeWorkstation>("res://Scenes/Gameplay/PancakeWorkstation.tscn");
+        shared.IsTianjinWorkbench = false;
+        AddChild(shared);
+        shared.Initialize(catalog, 1, 1, 1, catalog.DaysByNumber[11]);
+        Check(((Control)shared.FindChild("PancakeStatusTag", true, false)).Visible
+            && !string.IsNullOrEmpty(((Control)shared.FindChild("RawYoutiaoInput", true, false)).TooltipText),
+            "非天津共享工作台保留状态与悬停说明");
+        var sharedEgg = (IngredientStockSlotView)shared.FindChild("IngredientSlot_egg", true, false);
+        sharedEgg.RenderHoldProgress(.5);
+        Check(sharedEgg.GetNode<Control>("HoldRefillHint").Visible && sharedEgg.StockBar.Visible,
+            "非天津长按教学文字与进度条保留");
+        shared.Free();
     }
 
     private void TestEmbeddedStockContainment(DataCatalog catalog)

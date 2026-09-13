@@ -39,6 +39,7 @@ public partial class WuhanWorkbenchSelfTest : Node
                 screen._Notification((int)NotificationApplicationFocusIn);
                 screen._Process(3.1);
                 Check((screen.Doupi is not null) == (day >= 4), $"Day {day}: original doupi unlock");
+                Check(screen.Workstation.Descendants<EquipmentProgressView>().All(view => !view.ShowCaption), $"Day {day}: progress bars have no text captions");
                 Check(!screen.EggUnlocked, $"Day {day}: egg retired");
                 if (day < 4)
                 {

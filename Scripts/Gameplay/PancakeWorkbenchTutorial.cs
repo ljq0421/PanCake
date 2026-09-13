@@ -73,6 +73,11 @@ public partial class PancakeWorkstation
 
     private void RenderTutorial()
     {
+        if (IsTianjinWorkbench)
+        {
+            HideTianjinWorkbenchText();
+            return;
+        }
         if (!_tutorialMemory) return;
         PancakeRuntime runtime = Machine.Runtime;
         string? action = runtime.State switch

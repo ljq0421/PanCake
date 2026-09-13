@@ -73,6 +73,7 @@ public partial class XianDayScreen : Control
             customer.Pressed = () => { if (CustomerAt(slot) is { } c) _controller.CustomerQueue!.TrySelect(c.Id); };
             customer.AcceptToken = token => token is "sandwich" or "soup" && CustomerAt(slot) is { } c
                 && c.Progress.CanAccept(token == "soup" ? ProductKind.Hulatang : ProductKind.Roujiamo);
+            customer.DeliveryRejected = () => { if (CanInteract) _controller.Feedback.Reject(CustomerAt(slot)?.Id); };
             customer.Dropped = token => { if (CustomerAt(slot) is { } c) Deliver(token, c.Id); };
         }
         XianSurface oven = _surfaces["oven"];
@@ -107,6 +108,7 @@ public partial class XianDayScreen : Control
     public override void _ExitTree() { if (_controller is not null) _controller.DayFinished -= OnFinished; }
     public bool Initialize(DataCatalog catalog, SaveService save, DayController controller, int day)
     {
+        BusinessFeedbackAudio.Attach(this, controller.Feedback, () => controller.CurrentConfig?.CityId == StableIds.Cities.Xian && (CanInteract));
         _catalog = catalog; _save = save;
         if (_controller != controller) ConnectController(controller);
         if (day < 1 || day > save.Data.Xian.HighestUnlockedDay || save.HasLoadError)
@@ -178,7 +180,7 @@ public partial class XianDayScreen : Control
     {
         if (!CanInteract) return null;
         DeliveredItem? item = token == "soup" ? Session.Soup?.HasBowl == true ? new DeliveredItem(ProductKind.Hulatang, "hulatang") : null : Session.Sandwich.Prepared;
-        if (item is null) { Feedback(token == "soup" ? "先点击汤锅盛一碗汤。" : "请先完成肉夹馍并包装。", true); return null; }
+        if (item is null) { _controller.Feedback.Reject(customerId); Feedback(token == "soup" ? "先点击汤锅盛一碗汤。" : "请先完成肉夹馍并包装。", true); return null; }
         string? targetId = customerId ?? _controller.CustomerQueue?.SelectedCustomerId;
         int paidBefore = _controller.Ledger?.CompletedCustomers ?? 0;
         int slot = _controller.CustomerQueue?.Slots.FirstOrDefault(c => c.Id == targetId)?.SlotIndex ?? -1;

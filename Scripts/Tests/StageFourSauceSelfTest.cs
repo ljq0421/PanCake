@@ -137,8 +137,8 @@ public partial class StageFourSelfTest
             station.Tick(.3);
             Check(station.Machine.Runtime.SauceCoverage == amount && station.Machine.Runtime.State == PancakeState.Bagged,
                 "炉面打包成品保留酱量");
-            Check(((Control)station.FindChild("FinishedPancakeDrag", true, false)).TooltipText.Contains(SauceRules.Describe(amount)),
-                "成品提示包含实际酱量");
+            Check(((Control)station.FindChild("FinishedPancakeDrag", true, false)).TooltipText == string.Empty,
+                "天津成品不显示酱量悬停文字");
         }
 
         PrepareSauce();

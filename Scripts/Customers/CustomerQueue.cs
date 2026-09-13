@@ -39,6 +39,8 @@ public sealed class CustomerQueue
 
     public event Action<CustomerRuntime>? CustomerEntered;
     public event Action<CustomerRuntime>? CustomerLost;
+    public event Action<CustomerRuntime>? CustomerAngry;
+    public event Action<CustomerRuntime>? CustomerTimedOut;
     public event Action<CustomerRuntime>? CustomerRemoved;
     public event Action? Changed;
 
@@ -116,6 +118,7 @@ public sealed class CustomerQueue
                 continue;
             }
 
+            CustomerState previousState = customer.State;
             if (customer.Tick(deltaSeconds))
             {
                 if (SelectedCustomerId == customer.Id)
@@ -123,8 +126,11 @@ public sealed class CustomerQueue
                     SelectedCustomerId = null;
                 }
                 CustomerLost?.Invoke(customer);
+                CustomerTimedOut?.Invoke(customer);
                 changed = true;
             }
+            else if (customer.State == CustomerState.Angry && previousState != CustomerState.Angry)
+                CustomerAngry?.Invoke(customer);
         }
 
         changed |= AdmitPending();

@@ -30,6 +30,7 @@ public sealed class BusinessBookModel
     public bool CanRetry { get; set; }
     public string SaveMessage { get; set; } = "";
     public string[] Stickers { get; set; } = Array.Empty<string>();
+    public BookUpgradeSource? Upgrades { get; set; }
     public string[] ExtraNotes { get; set; } = Array.Empty<string>();
     public int Resolved => Result.CompletedCustomers + Result.LostCustomers;
     public double? CompletionRate => Resolved == 0 ? null : 100d * Result.CompletedCustomers / Resolved;

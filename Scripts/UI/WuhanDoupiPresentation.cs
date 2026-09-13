@@ -150,10 +150,10 @@ public partial class WuhanWorkstationView
     {
         int slot = index % 8, layer = index / 8;
         Rect2 tray = _layout.StockFood;
-        // Fill most of the serving area with a compact group. The front row
-        // slightly overlaps the back row; food still keeps its source proportions.
-        Vector2 center = tray.GetCenter() + new Vector2((slot % 4 - 1.5f) * 73, (slot / 4 - .5f) * 32 + 1);
-        center += new Vector2(layer * 1.5f, -layer * 5);
+        // Reserve headroom for the second layer, exposing the lower pieces'
+        // front and left edges instead of hiding them under matching sprites.
+        Vector2 center = tray.GetCenter() + new Vector2((slot % 4 - 1.5f) * 73, (slot / 4 - .5f) * 24 + 8);
+        center += new Vector2(layer * 8, -layer * 16);
         return At(center, new Vector2(70, 50));
     }
     private void DrawDoupiStock(Motion? motion)

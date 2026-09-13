@@ -23,6 +23,11 @@ public partial class BusinessBookSelfTest : Node
         {
             GetWindow().Position = new(-10000,-10000);
             var catalog = GetNode<DataCatalog>("/root/DataCatalog"); Check(catalog.IsValid,"catalog valid");
+            if (OS.GetCmdlineUserArgs().Contains("--upgrades-only"))
+            {
+                await CheckBookUpgrades(catalog, YangzhouCatalog.Load());
+                GD.Print($"BUSINESS_BOOK_UPGRADE_TEST_RESULT passed={_checks} failed=0"); GetTree().Quit(); return;
+            }
             var empty = new BusinessBookModel(); Check(empty.CompletionRate is null && empty.Satisfaction is null && empty.BestSeller is null,"empty aggregates");
             var m=Fixture("tianjin"); Check(m.Filter(BookFilter.Completed).Count()==4 && m.Filter(BookFilter.Incorrect).Count()==1 && m.Filter(BookFilter.Lost).Count()==9,"overlapping complete and error filters");
             Check(Math.Abs(m.CompletionRate!.Value-400d/13)<.001 && m.DailyNote.Contains("等太久"),"ratio and deterministic note");
@@ -69,9 +74,9 @@ public partial class BusinessBookSelfTest : Node
                     if(Capture)await Shot("Yangzhou-five-customers");
                 }
                 await Frames();Click(entry);await Frames();Check(view.Visible&&!view.Model.Closing,city+" live entry");
-                Click(view.Descendants<Button>().Single(b=>b.Text=="顾客明细"));await Frames();Check(view.DetailVisible,city+" real tab click");
+                Click(view.Descendants<Button>().Single(b=>b.Name=="NextBookPage"));view.FinishAnimation();await Frames();Check(view.DetailVisible,city+" real tab click");
                 var errorFilter=view.Descendants<Button>().Single(b=>b.Text.StartsWith("错误 "));Check(!errorFilter.Disabled,city+" filters enabled");Click(errorFilter);
-                Click(view.Descendants<Button>().Single(b=>b.Text=="今日小结"));await Frames();Check(!view.DetailVisible,city+" summary tab click");
+                Click(view.Descendants<Button>().Single(b=>b.Name=="PreviousBookPage"));view.FinishAnimation();await Frames();Check(!view.DetailVisible,city+" summary tab click");
                 double time=controller.DayElapsedSeconds;
                 if(screen is YangzhouDayScreen yz) { double elapsed=yz.Session.Elapsed;yz._Process(10);Check(yz.Session.Elapsed==elapsed,"Yangzhou book pauses"); }
                 else { screen.Call("_Process",10d);Check(controller.DayElapsedSeconds==time,city+" book pauses"); }
@@ -80,7 +85,7 @@ public partial class BusinessBookSelfTest : Node
                 if(screen is YangzhouDayScreen y) { y.Session.Tick(1000);y._Process(0); }
                 else {controller.Tick(1000);controller.Tick(1000);}
                 await Frames();Check(view.Visible && view.Model.Closing,city+" real closing uses shared book");
-                int coins=save.Data.Coins;view.SelectPage(true);view.SelectPage(false);Check(save.Data.Coins==coins,"tabs cannot settle twice");
+                int coins=save.Data.Coins;view.SelectPage(true, false);view.SelectPage(false, false);Check(save.Data.Coins==coins,"tabs cannot settle twice");
                 bool returned=false;
                 switch(screen) {case TianjinDayScreen s:s.HubRequested+=()=>returned=true;break;case WuhanDayScreen s:s.HubRequested+=()=>returned=true;break;case XianDayScreen s:s.HubRequested+=()=>returned=true;break;case GuangzhouDayScreen s:s.HubRequested+=()=>returned=true;break;case YangzhouDayScreen s:s.HubRequested+=()=>returned=true;break;}
                 if(city is "Tianjin" or "Wuhan" or "Xian")
@@ -90,7 +95,7 @@ public partial class BusinessBookSelfTest : Node
                         GetWindow().ContentScaleAspect=Window.ContentScaleAspectEnum.Expand;GetWindow().Size=size;await Frames(5);view.Open(Fixture(city.ToLowerInvariant()));view.FinishAnimation();await Frames();
                         CheckArtPage(view,city.ToLowerInvariant(),"summary");
                         if(Capture)await Shot($"{city}-{size.X}-summary");
-                        view.SelectPage(true);await Frames();CheckArtPage(view,city.ToLowerInvariant(),"details");
+                        view.SelectPage(true, false);await Frames();CheckArtPage(view,city.ToLowerInvariant(),"details");
                         if(Capture)await Shot($"{city}-{size.X}-details");
                     }
                 }
@@ -118,22 +123,123 @@ public partial class BusinessBookSelfTest : Node
             var saveMessage=v.Descendants<Label>().Single(l=>l.Text==failed.SaveMessage);
             Check(saveMessage.MaxLinesVisible==2&&saveMessage.GetVisibleLineCount()<=2&&saveMessage.TooltipText==failed.SaveMessage&&saveMessage.MouseFilter!=Control.MouseFilterEnum.Ignore,"real save exception is bounded and exposes its complete message in a usable tooltip");
             Click(v.Descendants<Button>().Single(b=>b.Text=="重试保存"));Check(requestedRetry,"real save exception leaves retry clickable");
-            Click(v.Descendants<Button>().Single(b=>b.Text=="统计说明"));await Frames();CheckStaticPaperBounds(v,"real save exception with statistics explanation");
-            var explanation=v.Descendants<Label>().Single(l=>l.Text.StartsWith("完成率按已结束客单",StringComparison.Ordinal));
-            var info=v.Descendants<Button>().Single(b=>b.Text=="统计说明");
-            Check(!saveMessage.GetGlobalRect().Intersects(explanation.GetGlobalRect())&&!saveMessage.GetGlobalRect().Intersects(info.GetGlobalRect()),"real save exception does not overlap footer statistics");
+            CheckStaticPaperBounds(v,"real save exception without redundant footer");
+            Check(!v.Descendants<Button>().Any(b=>b.Text=="统计说明"),"standalone statistics entry removed");
             if(Capture)await Shot("xian-save-exception-summary");
-            v.SelectPage(true);await Frames();CheckArtPage(v,"xian","real save exception details");
+            v.SelectPage(true, false);await Frames();CheckArtPage(v,"xian","real save exception details");
             if(Capture)await Shot("xian-save-exception-details");
             GetViewport().PushInput(new InputEventKey { Keycode=Key.Escape,Pressed=true },true);Check(!close,"Esc cannot bypass failed save");v.QueueFree();
             save.UsePathForTests("res://.tmp/book-tests/retry-"+Guid.NewGuid()+".json");int before=save.Data.Coins;
             var good=BusinessBookSettlement.Commit(Fixture("xian"),save,plan,d,catalog);Check(good.CanClose&&!good.CanRetry,"retry saves");int after=save.Data.Coins;
             BusinessBookSettlement.Commit(Fixture("xian"),save,plan,d,catalog);Check(save.Data.Coins==after&&after>=before,"replay only pays best delta");
             BusinessBookSettlement.Commit(Fixture("guangzhou"),save,plan,d,catalog,practice:true);Check(save.Data.Coins==after,"practice doesn't save");
+            await CheckCompactPresentation();
+            await CheckBookUpgrades(catalog, yc);
             GD.Print($"BUSINESS_BOOK_TEST_RESULT passed={_checks} failed=0");GetTree().Quit();
         }
         catch(Exception e) {GD.PushError(e.ToString());GetTree().Quit(1);}
     }
+    private void CheckOrderMetrics(Control metrics, BookOrder order, string city)
+    {
+        string score=order.Score is {} value?$"{value:0}":"—";
+        var expected=new[]{("Revenue","单笔收入",$"¥{order.Revenue}"),("Score",order.Score is >=60?"满意图标":"不满意图标-v1",score),("Tips","小费图标-v1",$"+¥{order.Tips}")};
+        float end=0;
+        foreach(var (name,art,text) in expected)
+        {
+            var icon=metrics.GetNode<TextureRect>(name+"Icon");
+            var label=metrics.GetNode<Label>(name+"Value");
+            Check(icon.Texture is AtlasTexture atlas&&atlas.Atlas.ResourcePath==$"res://resource/art/Global/BookUI/{art}.png",city+" correct "+name+" icon");
+            Check(icon.Size==new Vector2(30,30)&&icon.StretchMode==TextureRect.StretchModeEnum.KeepAspectCentered,city+" proportional small icon");
+            Check(label.Text==text&&label.GetLineCount()==1&&label.Position.Y==0,city+" metric value fits one line");
+            Check(Math.Abs(icon.GetRect().GetCenter().Y-label.GetRect().GetCenter().Y)<.01&&label.Position.X-icon.GetRect().End.X==8,city+" icon and value align");
+            Check(icon.Position.X==end&&label.GetRect().End.X<=metrics.Size.X,city+" metric groups fit without overlap");
+            end=label.GetRect().End.X+20;
+        }
+    }
+    private async Task CheckCompactPresentation()
+    {
+        bool reduced = ProjectSettings.GetSetting("accessibility/reduce_motion", false).AsBool();
+        var view = new BusinessDetailsView(); AddChild(view);
+        var next = view.Descendants<Button>().Single(b=>b.Name=="NextBookPage");
+        var previous = view.Descendants<Button>().Single(b=>b.Name=="PreviousBookPage");
+        int pageEvents = 0; view.PageChanged += ()=>pageEvents++;
+        foreach (string city in new[]{"tianjin","wuhan","xian","guangzhou","yangzhou"})
+        foreach (var size in CaptureSizes)
+        foreach (bool closing in new[]{false,true})
+        {
+            GetWindow().ContentScaleAspect=Window.ContentScaleAspectEnum.Expand;GetWindow().Size=size;await Frames(5);
+            var model=Fixture(city);model.Closing=closing;if(!closing)model.SaveMessage="";
+            view.Open(model);view.FinishAnimation();await Frames();
+            var text=view.Descendants<Label>().Where(l=>l.IsVisibleInTree()).Select(l=>l.Text).ToArray();
+            Check(text.Contains(closing?"已收摊":"营业中 · 已暂停")&&text.Contains("营业小结"),city+" state and chapter");
+            Check(!text.Any(t=>t.Contains("今日")||t.Contains("截至目前")||t=="营业账本"||t=="Esc 返回"),city+" concise summary copy");
+            Check(next.IsVisibleInTree()&&!previous.Visible&&next.TooltipText=="顾客明细"&&next.Size.X>=64&&next.Size.Y>=64,city+" forward edge affordance");
+            Check(view.CloseButton.TooltipText.Contains("Esc")&&view.CloseButton.HasFocus(),city+" default close focus and shortcut hint");
+            var rate=view.Descendants<Label>().Single(l=>l.Text.StartsWith("完成率"));
+            var satisfaction=view.Descendants<Label>().Single(l=>l.Text=="完成顾客满意度");
+            Check(rate.TooltipText.Contains("已结束")&&satisfaction.TooltipText.Contains("流失")&&rate.MouseFilter==Control.MouseFilterEnum.Pass,city+" statistical tooltips");
+            if(city is "tianjin" or "wuhan" or "xian")CheckArtPage(view,city,"compact summary");
+            if(Capture)await Shot($"compact-{city}-{size.X}-{(closing?"closing":"live")}-summary");
+            Click(next);await ToSignal(GetTree().CreateTimer(.25),SceneTreeTimer.SignalName.Timeout);await Frames();
+            Check(view.DetailVisible&&previous.HasFocus()&&previous.TooltipText=="营业小结"&&!next.Visible,city+" page animation completes and transfers focus");
+            var scroll=view.Descendants<ScrollContainer>().Single();
+            var rows=scroll.GetChild<VBoxContainer>(0).GetChildren().OfType<Control>().Where(c=>c.Name.ToString().StartsWith("OrderRow")).ToArray();
+            foreach(var row in rows)
+            {
+                var products=row.GetChildren().OfType<Label>().Where(l=>l.Name.ToString().StartsWith("ProductCaption")).ToArray();
+                Check(products.Length==2&&products.All(l=>!l.Text.Contains("×1"))&&products[0].Position.Y==products[1].Position.Y,city+" two foods flow on one line without unit counts");
+                var metrics=row.GetNode<Control>("OrderMetrics");
+                CheckOrderMetrics(metrics, Fixture(city).Orders.Single(o=>row.Name=="OrderRow"+o.Number), city);
+                Check(products.All(l=>l.Position.Y+l.Size.Y<=row.Size.Y-8)&&metrics.Position.Y+metrics.Size.Y<=row.Size.Y-8,city+" paired row contains both halves");
+            }
+            if(city is "tianjin" or "wuhan" or "xian")CheckArtPage(view,city,"compact details");
+            if(Capture)await Shot($"compact-{city}-{size.X}-{(closing?"closing":"live")}-details");
+            view.SelectFilter(BookFilter.Lost);await Frames();scroll.ScrollVertical=100;await Frames();int offset=scroll.ScrollVertical;
+            view.SelectPage(false,false);view.SelectPage(true,false);await Frames();
+            Check(scroll.ScrollVertical==offset&&scroll.GetChild<VBoxContainer>(0).GetChild<Control>(0).Name=="OrderRow5",city+" page return preserves filter and scroll");
+            view.SelectFilter(BookFilter.All);await Frames();Check(scroll.ScrollVertical==0,city+" filter resets scroll");
+        }
+        foreach(string city in new[]{"tianjin","wuhan","xian","guangzhou","yangzhou"})
+        {
+            var extreme=Fixture(city).Orders[0] with {Sales=1000000000,Tips=1000000000,Score=123456789012345d,
+                Reason="错误原因仍须完整展示",Products=new[]{new BookProduct("long",new string('面',80),2,"HotDryNoodles","少酱")}};
+            view.Open(new BusinessBookModel{CityId=city,Orders=new[]{extreme}});view.SelectPage(true,false);await Frames();
+            var row=view.Descendants<Control>().Single(c=>c.Name=="OrderRow1");
+            var labels=row.GetChildren().OfType<Label>().ToArray();
+            var metrics=row.GetNode<Control>("OrderMetrics");
+            var reason=labels.Single(l=>l.Text==extreme.Reason);
+            Check(metrics.GetChildren().OfType<Label>().Select(l=>l.Position.Y).Distinct().Count()>1&&reason.Position.Y>=metrics.Position.Y+metrics.Size.Y,city+" extreme metrics wrap without hiding reason");
+            Check(metrics.GetChildren().OfType<Control>().All(c=>new Rect2(Vector2.Zero,metrics.Size).Encloses(c.GetRect())),city+" extreme metrics stay inside their column");
+            Check(labels.All(l=>l.Position.Y+l.Size.Y<=row.Size.Y-8)&&labels.Any(l=>l.Text.EndsWith("少酱 ×2")&&l.GetLineCount()>1),city+" long products and plural quantity fit the paired row");
+            if(Capture)await Shot(city+"-extreme-metrics");
+        }
+        foreach(string city in new[]{"tianjin","wuhan","xian","guangzhou","yangzhou"})
+        foreach(double? score in new double?[]{59,59.9,60,100,null})
+        {
+            var order=Fixture(city).Orders[0] with { Score=score,Tips=0 };
+            view.Open(new BusinessBookModel{CityId=city,Orders=new[]{order}});view.SelectPage(true,false);await Frames();
+            CheckOrderMetrics(view.Descendants<Control>().Single(c=>c.Name=="OrderMetrics"),order,city);
+        }
+        Check(BusinessDetailsView.ProductCaption(new("x","豆皮",2,"Doupi","少酱"))=="豆皮·少酱 ×2","plural quantity and preference retained");
+        view.Open(Fixture("wuhan"));view.FinishAnimation();ProjectSettings.SetSetting("accessibility/reduce_motion",false);
+        int events=pageEvents;view.SelectPage(true);view.SelectPage(false);view.SelectPage(true);
+        await ToSignal(GetTree().CreateTimer(.25),SceneTreeTimer.SignalName.Timeout);
+        Check(view.DetailVisible&&pageEvents==events+3,"rapid navigation resolves to last target and emits once per change");
+        ProjectSettings.SetSetting("accessibility/reduce_motion",true);view.SelectPage(false);
+        Check(!view.DetailVisible&&view.Descendants<Label>().Single(l=>l.Text=="收入").IsVisibleInTree(),"reduced motion updates instantly");
+        // Keyboard uses the focused arrow, and close interrupts a running page animation.
+        next.GrabFocus();
+        foreach(bool pressed in new[]{true,false})GetViewport().PushInput(new InputEventKey{Keycode=Key.Enter,Pressed=pressed},true);
+        await Frames();Check(view.DetailVisible&&previous.HasFocus(),"keyboard activation transfers focus");
+        ProjectSettings.SetSetting("accessibility/reduce_motion",false);view.SelectPage(false);
+        bool closed=false;view.CloseRequested+=()=>{closed=true;view.Hide();};Click(view.CloseButton);await Frames();
+        Check(closed&&!view.Visible,"close interrupts navigation");
+        var practice=Fixture("yangzhou");practice.Practice=true;practice.SaveMessage="练习营业 · 不保存进度";
+        view.Open(practice);view.FinishAnimation();await Frames();
+        Check(view.Descendants<Label>().Any(l=>l.IsVisibleInTree()&&l.Text.Contains("练习营业")),"practice remains visible");
+        ProjectSettings.SetSetting("accessibility/reduce_motion",reduced);view.QueueFree();await Frames();
+    }
+
     private void CheckArtPage(BusinessDetailsView view, string city, string page)
     {
         string expected = city switch
@@ -160,7 +266,7 @@ public partial class BusinessBookSelfTest : Node
             for(Node? ancestor=widget.GetParent();ancestor is not null&&ancestor!=book;ancestor=ancestor.GetParent())if(ancestor is ScrollContainer){inScroll=true;break;}
             if(inScroll)continue;
             var bounds=InLocalSpace(book,widget);
-            Check(InPaperColumn(bounds)&&bounds.Position.Y>=77&&bounds.End.Y<=826,$"{city} {page} {WidgetText(widget)} stays inside paper: {bounds}");
+            Check((IsPageArrow(widget) ? InArrowRegion(bounds) : InPaperColumn(bounds)&&bounds.Position.Y>=77&&bounds.End.Y<=826),$"{city} {page} {WidgetText(widget)} stays inside paper: {bounds}");
         }
     }
     private async Task CheckArtEdges(string city)
@@ -171,17 +277,15 @@ public partial class BusinessBookSelfTest : Node
             Enumerable.Range(0,6).Select(i=>new BookProduct("long"+i,food+"双份加料香葱少酱特别早餐套餐请单独打包给同行客人，并注明每份不同口味和酱料要求以及额外配料",2,Fixture(city).Orders[0].Products[0].Visual,"加料少酱")).ToArray(),
             BookOutcome.Incorrect,20,0,55,"出餐时配料与客人点单不一致，请留意多份商品各自的配料和酱量要求，并在交付前再次确认每一份商品。");
         stress.Open(new BusinessBookModel{CityId=city,Orders=new[]{longOrder},Result=new(){CompletedCustomers=1,SaleRevenue=20,Satisfaction=55},SaveMessage="演示数据 · 长名称与多商品边界"});
-        stress.SelectPage(true);await Frames();CheckArtPage(stress,city,"long details");
+        stress.SelectPage(true, false);await Frames();CheckArtPage(stress,city,"long details");
         var scroll=stress.Descendants<ScrollContainer>().Single();
         var orderRow=scroll.GetChild<VBoxContainer>(0).GetChild<Control>(0);
         var labels=orderRow.GetChildren().OfType<Label>().ToArray();
         var products=labels.Where(l=>l.Text.Contains("特别早餐套餐",StringComparison.Ordinal)).OrderBy(l=>l.Position.Y).ToArray();
-        Check(products.Length==6&&products.All(l=>l.Size.X<=503&&l.GetLineCount()>1&&l.GetVisibleLineCount()==l.GetLineCount()),city+" long products wrap completely inside their column");
+        Check(products.Length==6&&products.All(l=>l.Size.X<=510&&l.GetLineCount()>1&&l.GetVisibleLineCount()==l.GetLineCount()),city+" long products wrap completely inside their column");
         Check(products.Select(l=>l.Position.X).Distinct().Count()==1&&products.Zip(products.Skip(1),(a,b)=>a.Position.Y+a.Size.Y<=b.Position.Y).All(ok=>ok),city+" multiple products form a single nonoverlapping column");
         Check(orderRow.Size.Y>scroll.Size.Y&&labels.All(l=>l.Position.Y+l.Size.Y<=orderRow.Size.Y-8),city+" long order grows to fit customer, products and reason");
-        var score=labels.Single(l=>l.Text.StartsWith("评分",StringComparison.Ordinal));
-        var revenue=labels.Single(l=>l.Text.StartsWith("收入",StringComparison.Ordinal));
-        Check(score.Position.Y>=revenue.Position.Y+revenue.Size.Y,city+" score occupies its own line");
+        CheckOrderMetrics(orderRow.GetNode<Control>("OrderMetrics"),longOrder,city);
         var board=stress.Descendants<TextureRect>().Single(t=>t.Name=="BookBoard");
         var book=board.GetParent().GetParent<Control>();
         Check(orderRow.Descendants<Control>().Where(c=>c is Label or TextureRect or BookFoodIcon).All(c=>InPaperColumn(InLocalSpace(book,c))),city+" long order avoids spine and page edges");
@@ -207,7 +311,7 @@ public partial class BusinessBookSelfTest : Node
         bool retried=false;stress.RetryRequested+=()=>retried=true;
         var retry=stress.Descendants<Button>().Single(b=>b.Text=="重试保存");
         Click(retry);Check(retried,city+" visible retry button remains clickable");
-        Click(stress.Descendants<Button>().Single(b=>b.Text=="统计说明"));await Frames();CheckStaticPaperBounds(stress,city+" statistics explanation");
+        CheckStaticPaperBounds(stress,city+" failed save footer");
         if(Capture)await Shot(city+"-unsaved-summary");
         stress.QueueFree();await Frames();
     }
@@ -219,7 +323,7 @@ public partial class BusinessBookSelfTest : Node
         foreach(var control in controls)
         {
             var bounds=InLocalSpace(book,control);
-            Check(InPaperColumn(bounds)&&bounds.Position.Y>=77&&bounds.End.Y<=826,$"{scenario} {WidgetText(control)} stays inside paper: {bounds}");
+            Check((IsPageArrow(control) ? InArrowRegion(bounds) : InPaperColumn(bounds)&&bounds.Position.Y>=77&&bounds.End.Y<=826),$"{scenario} {WidgetText(control)} stays inside paper: {bounds}");
         }
     }
     private static Rect2 InLocalSpace(Control parent,Control child)
@@ -229,6 +333,9 @@ public partial class BusinessBookSelfTest : Node
         var start=inverse*rect.Position;
         return new Rect2(start,inverse*rect.End-start);
     }
+    private static bool IsPageArrow(Control c) => c.Name == "NextBookPage" || c.Name == "PreviousBookPage";
+    private static bool InArrowRegion(Rect2 r) => r.Size.X>=64 && r.Size.Y>=64 && r.Position.Y==508 && r.End.Y<=580
+        && ((r.Position.X>=140 && r.End.X<=210)||(r.Position.X>=1470 && r.End.X<=1540));
     private static bool InPaperColumn(Rect2 bounds) =>
         (bounds.Position.X>=229&&bounds.End.X<=791)||(bounds.Position.X>=889&&bounds.End.X<=1451);
     private static string WidgetText(Control widget)=>widget is Label label?label.Text:widget is Button button?button.Text:widget.Name.ToString();

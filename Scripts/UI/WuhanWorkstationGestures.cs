@@ -191,16 +191,4 @@ public partial class WuhanWorkstationView
             button.MouseFilter = MouseFilterEnum.Ignore; button.TooltipText = "";
         }
     }
-    private void DrawSupplyLabels()
-    {
-        void LabelAt(Vector2 point, string text)
-        {
-            DrawStringOutline(ThemeDB.FallbackFont, point, text, fontSize:18, size:4, modulate:WuhanUi.Paper);
-            DrawString(ThemeDB.FallbackFont, point, text, fontSize:18, modulate:WuhanUi.Ink);
-        }
-        LabelAt(new Vector2(RawTrayRect.Position.X + 12, RawTrayRect.End.Y + 30), "生面 · 无限供应");
-        if (_doupi is not null) LabelAt(new Vector2(StockRect.Position.X + 14, StockRect.End.Y + 22), $"豆皮 {_stock.Count}/{DoupiInventory.Capacity}");
-        if (_doupi is not null && DoupiSupplyHint.Length > 0)
-            LabelAt(new Vector2(StockRect.Position.X + 14, StockRect.End.Y + 44), DoupiSupplyHint);
-    }
 }

@@ -2831,14 +2831,6 @@ text = "暂停"
 script = ExtResource("48_v5rwo")
 metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|<CollectionFeedback>k__BackingField", "ProjectCake.Gameplay.TianjinDayScreen|_collectionFeedback")
 
-[node name="@Node@349" type="Node" parent="CoinCollectionFeedback" unique_id=126914532]
-script = ExtResource("6_sd13d")
-metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.CoinCollectionFeedback|_audio")
-
-[node name="@AudioStreamPlayer@350" type="AudioStreamPlayer" parent="CoinCollectionFeedback/@Node@349" unique_id=1658542015]
-volume_db = -10.0
-metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.PancakeAudio|_player")
-
 [node name="FeedbackPanel" type="PanelContainer" parent="." unique_id=1823220967]
 visible = false
 z_index = 80

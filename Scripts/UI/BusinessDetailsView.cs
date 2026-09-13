@@ -12,19 +12,20 @@ public partial class BusinessDetailsView : Control
     public event Action? PageChanged;
     public event Action? RetryRequested;
     private Control _canvas = null!, _book = null!, _summary = null!, _details = null!, _metrics = null!, _note = null!, _stamp = null!;
-    private Label _city = null!, _title = null!, _income = null!, _save = null!, _detailHeading = null!;
+    private Label _city = null!, _title = null!, _income = null!, _save = null!, _status = null!;
     private VBoxContainer _rows = null!;
     private ScrollContainer _scroll = null!;
-    private Button _summaryTab = null!, _detailTab = null!, _retry = null!;
+    private Button _previousPage = null!, _nextPage = null!, _retry = null!;
     private readonly List<Button> _filters = new();
     private BusinessBookModel _model = new();
     private BookFilter _filter;
     private Tween? _entrance;
+    private Tween? _pageTween;
     private PancakeAudio _audio = null!;
     private TianjinArtCatalog? _art;
     internal Button CloseButton { get; private set; } = null!;
     internal BusinessBookModel Model => _model;
-    internal bool DetailVisible => _details.Visible;
+    internal bool DetailVisible => _previousPage.Visible;
     private Color Ink => UsesBookArt ? CitySettlementTheme.Ink : new("#4A3024");
     private Color Muted => UsesBookArt ? CitySettlementTheme.Muted : new("#775343");
     private Color Accent => _model.CityId switch { "wuhan" => new("#527C69"), "xian" => new("#995448"), "guangzhou" => new("#637D53"), "yangzhou" => new("#537C80"), _ => new("#AB692F") };
@@ -47,11 +48,13 @@ public partial class BusinessDetailsView : Control
         _illustratedPaper = new Control { MouseFilter = MouseFilterEnum.Ignore }; _book.AddChild(_illustratedPaper);
         _city = Text(_book, "", new(80, 32, 600, 38), 26, Muted);
         _title = Text(_book, "", new(80, 78, 1000, 62), 46);
-        _summaryTab = ButtonAt(_book, "今日小结", new(1220, -18, 170, 64), () => SelectPage(false));
-        _detailTab = ButtonAt(_book, "顾客明细", new(1400, -18, 170, 64), () => SelectPage(true));
+        _previousPage = ButtonAt(_book, "＜", new(0, 508, 64, 64), () => SelectPage(false));
+        _nextPage = ButtonAt(_book, "＞", new(1616, 508, 64, 64), () => SelectPage(true));
+        _previousPage.Name = "PreviousBookPage"; _previousPage.TooltipText = "营业小结";
+        _nextPage.Name = "NextBookPage"; _nextPage.TooltipText = "顾客明细";
+        _status = Text(_book, "", new(900, 32, 650, 38), 22, Muted, HorizontalAlignment.Right);
         _summary = new Control { Position = new(0, 155), Size = new(1680, 620), MouseFilter = MouseFilterEnum.Ignore }; _book.AddChild(_summary);
-        _details = new Control { Position = new(0, 155), Size = new(1680, 620) }; _book.AddChild(_details);
-        _detailHeading = Text(_details, "今日客单", new(80, 0, 380, 44), 28);
+        _details = new Control { Position = new(0, 155), Size = new(1680, 620), MouseFilter = MouseFilterEnum.Ignore }; _book.AddChild(_details);
         string[] names = { "全部", "完成", "错误", "流失" };
         for (int i = 0; i < names.Length; i++) { int index = i; _filters.Add(ButtonAt(_details, names[i], new(900 + i * 160, 0, 148, 48), () => SelectFilter((BookFilter)index))); }
         _scroll = new ScrollContainer { Position = new(78, 66), Size = new(1524, 568), HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled, Name = "OrderScroll" }; _details.AddChild(_scroll);
@@ -59,42 +62,34 @@ public partial class BusinessDetailsView : Control
         _save = Text(_book, "", new(80, 792, 1120, 65), 20, Muted, wrap: true);
         CloseButton = ButtonAt(_book, "收好账本", new(1320, 798, 240, 72), RequestClose); CloseButton.Name = "CloseBusinessDetails";
         _retry = ButtonAt(_book, "重试保存", new(1100, 809, 190, 58), () => RetryRequested?.Invoke());
-        _escapeHint = Text(_book, "Esc 返回", new(1340, 870, 220, 28), 18, Muted, HorizontalAlignment.Right);
-        var info = ButtonAt(_book, "统计说明", new(80, 842, 130, 48), () => { });
-        _infoButton = info;
-        info.AddThemeStyleboxOverride("normal", new StyleBoxEmpty());
-        info.AddThemeStyleboxOverride("hover", new StyleBoxEmpty());
-        info.AddThemeStyleboxOverride("pressed", new StyleBoxEmpty());
-        info.AddThemeStyleboxOverride("focus", TianjinUi.Box(new Color("#F4E6BC"), 5, 1, false));
-        info.AddThemeFontSizeOverride("font_size", 18);
-        info.TooltipText = "完成率 = 完成 ÷（完成 + 流失）；流失不计入完成顾客满意度。";
-        var explanation = Text(_book, "完成率按已结束客单计算，错误完成也计入完成；流失不参与满意度。", new(230, 850, 990, 32), 18, Muted);
-        _explanation = explanation;
-        explanation.Hide(); info.Pressed += () => explanation.Visible = !explanation.Visible;
+        CloseButton.TooltipText = "收好账本（Esc）";
         _audio = new PancakeAudio(); AddChild(_audio);
-        VisibilityChanged += () => { if (!Visible) { FinishAnimation(); _audio.Stop(); } };
+        VisibilityChanged += () => { if (!Visible) { RemoveUpgradeModal(); FinishAnimation(); _audio.Stop(); } };
         Hide();
     }
     internal void Open(DayResult result, IReadOnlyList<BusinessOrderRecord> records, DataCatalog catalog) =>
         Open(BusinessBookModel.From("tianjin", result, records, catalog));
     public void Open(BusinessBookModel model)
     {
-        FinishAnimation(); _model = model; _filter = BookFilter.All;
+        RemoveUpgradeModal(); FinishAnimation(); _model = model; _filter = BookFilter.All;
+        RefreshUpgradeCaptions();
         ApplyBookSkin();
         _city.Text = $"{model.CityName} · DAY {model.Result.Day:00}" + (model.Practice ? "  /  练习营业" : "");
-        _title.Text = model.Closing ? "今日收摊" : "营业账本";
-        _save.Text = model.SaveMessage.Length > 0 ? model.SaveMessage : "截至目前 · 收好账本后继续营业";
+        _status.Text = model.Closing ? "已收摊" : "营业中 · 已暂停";
+        _save.Text = model.SaveMessage;
+        _save.Visible = _save.Text.Length > 0;
         _save.TooltipText = UsesBookArt ? _save.Text : "";
         _retry.Visible = model.CanRetry; CloseButton.Disabled = !model.CanClose;
-        BuildSummary(); RefreshRows(); SelectPage(false); Show();
+        BuildSummary(); RefreshRows(); SelectPage(false, false); Show();
         (model.CanClose ? CloseButton : _retry).GrabFocus(); StartAnimation();
     }
     private void BuildSummary()
     {
         Clear(_summary);
+        _upgradeEntry = null;
         if (UsesBookArt) { BuildArtSummary(); return; }
         var r = _model.Result;
-        Text(_summary, "今日收入", new(95, 5, 650, 42), 30);
+        Text(_summary, "收入", new(95, 5, 650, 42), 30);
         _income = Text(_summary, $"¥{r.TotalRevenue}", new(95, 51, 650, 125), 84);
         Text(_summary, "菜品销售", new(100, 210, 390, 40), 26, Muted);
         Text(_summary, $"¥{r.SaleRevenue}", new(500, 210, 230, 40), 28, Ink, HorizontalAlignment.Right);
@@ -103,16 +98,16 @@ public partial class BusinessDetailsView : Control
         Line(_summary, new(100, 321, 630, 1), new Color(.47f, .32f, .20f, .2f));
         _art ??= new TianjinArtCatalog();
         for (int i = 0; i < 3; i++) Picture(_summary, _art.Coin, new(565 + i * 43, 105 - i * 9, 60, 60));
-        Text(_summary, "今日最受欢迎", new(100, 380, 650, 40), 28, Accent);
+        Text(_summary, "最受欢迎", new(100, 380, 650, 40), 28, Accent);
         if (_model.BestSeller is { } best)
         {
             var icon = new BookFoodIcon { Product = best }; Place(_summary, icon, new(95, 446, 108, 108));
             var name = Text(_summary, best.Name, new(225, 448, 510, 54), 30, wrap: true);
-            Text(_summary, $"今日卖出 ×{best.Quantity}", new(225, 511, 510, 42), 24, Muted);
+            Text(_summary, $"已售 ×{best.Quantity}", new(225, 511, 510, 42), 24, Muted);
         }
         else Text(_summary, "还没有完成的客单", new(100, 448, 630, 64), 25, Muted);
         _metrics = new Control { MouseFilter = MouseFilterEnum.Ignore }; _summary.AddChild(_metrics);
-        Text(_metrics, "今日接待" + (_model.Closing ? "" : " · 已结束"), new(925, 5, 650, 42), 28, Accent);
+        Text(_metrics, "已结束客单", new(925, 5, 650, 42), 28, Accent);
         Text(_metrics, $"{_model.Resolved} { _model.Unit}", new(925, 55, 240, 64), 48);
         Text(_metrics, $"完成  {r.CompletedCustomers}", new(925, 140, 280, 48), 32, new("#456E49"));
         Text(_metrics, $"流失  {r.LostCustomers}", new(1260, 140, 300, 48), 32, new("#92534B"));
@@ -127,24 +122,51 @@ public partial class BusinessDetailsView : Control
             Text(_stamp, $"PERFECT ×{r.PerfectOrders}", new(5, 12, 225, 44), 26, new("#8B5926"), HorizontalAlignment.Center);
             Text(_stamp, "完美出餐", new(5, 63, 225, 38), 24, new("#8B5926"), HorizontalAlignment.Center);
         }
-        else Text(_stamp, "今天还没有\n完美出餐", new(0, 12, 230, 94), 24, Muted, HorizontalAlignment.Center);
+        else Text(_stamp, "暂无完美出餐", new(0, 12, 230, 94), 24, Muted, HorizontalAlignment.Center);
         _note = new Control { Position = new(920, 451), Size = new(655, 143), MouseFilter = MouseFilterEnum.Ignore }; _summary.AddChild(_note);
         Panel(_note, new(0, 0, 655, 143), new("#F4E6BC"), 3, 0);
-        Text(_note, "今日手记", new(22, 10, 590, 34), 24, Accent);
+        Text(_note, "营业手记", new(22, 10, 590, 34), 24, Accent);
         var note = Text(_note, _model.DailyNote, new(22, 51, 602, 80), 28, wrap: true);
         if (_model.Stickers.Length > 0)
         {
-            var sticker = Text(_summary, string.Join("  ·  ", _model.Stickers), new(100, 582, 1440, 52), 20, Accent, wrap: true);
+            var sticker = Text(_summary, string.Join("  ·  ", _model.Stickers.Where(s => !CanUpgrade || !s.Contains("升级"))), new(100, 582, 1440, 52), 20, Accent, wrap: true);
             sticker.AutowrapMode = TextServer.AutowrapMode.WordSmart;
         }
+        AddPlainUpgradeEntry();
     }
-    internal void SelectPage(bool details)
+    internal void SelectPage(bool details, bool animate = true)
     {
-        bool changed = IsVisibleInTree() && _details.Visible != details;
+        bool changed = IsVisibleInTree() && DetailVisible != details;
         FinishAnimation(); _summary.Visible = !details; _details.Visible = details;
         if (changed) PageChanged?.Invoke();
         if (UsesBookArt) PaintBookPaper();
-        StyleTab(_summaryTab, !details); StyleTab(_detailTab, details);
+        _title.Text = details ? "顾客明细" : "营业小结";
+        _previousPage.Visible = details; _nextPage.Visible = !details;
+        if (!changed) return;
+        (details ? _previousPage : _nextPage).GrabFocus();
+        if (!animate || ProjectSettings.GetSetting("accessibility/reduce_motion", false).AsBool()) return;
+        var incoming = details ? _details : _summary;
+        var outgoing = details ? _summary : _details;
+        var origin = incoming.Position;
+        float direction = details ? -1 : 1;
+        outgoing.Show(); incoming.Position = origin - new Vector2(direction * 24, 0);
+        incoming.Modulate = new(1, 1, 1, 0);
+        _pageTween = CreateTween().SetParallel();
+        _pageTween.TweenProperty(outgoing, "position", origin + new Vector2(direction * 24, 0), .2).SetTrans(Tween.TransitionType.Cubic).SetEase(Tween.EaseType.Out);
+        _pageTween.TweenProperty(outgoing, "modulate", new Color(1, 1, 1, 0), .2);
+        _pageTween.TweenProperty(incoming, "position", origin, .2).SetTrans(Tween.TransitionType.Cubic).SetEase(Tween.EaseType.Out);
+        _pageTween.TweenProperty(incoming, "modulate", Colors.White, .2);
+        _pageTween.Chain().TweenCallback(Callable.From(FinishPageAnimation));
+    }
+
+    private void FinishPageAnimation()
+    {
+        _pageTween?.Kill(); _pageTween = null;
+        if (_summary is null) return;
+        _summary.Position = _details.Position = new(0, UsesBookArt ? 155 : 120);
+        _summary.Modulate = _details.Modulate = Colors.White;
+        _details.Visible = _previousPage.Visible;
+        _summary.Visible = !_details.Visible;
     }
     internal void SelectFilter(BookFilter filter) { FinishAnimation(); _filter = filter; RefreshRows(); }
     private void RefreshRows()
@@ -157,34 +179,21 @@ public partial class BusinessDetailsView : Control
         {
             float nameHeight = WrappedHeight(order.Customer, 550, 26);
             float productY = Math.Max(48, nameHeight + 8);
-            float reasonHeight = order.Reason.Length > 0 ? WrappedHeight(order.Reason, 600, 20) : 0;
-            var row = new Control { CustomMinimumSize = new(1480, 132), MouseFilter = MouseFilterEnum.Ignore }; _rows.AddChild(row);
+            var row = new Control { Name = $"OrderRow{order.Number}", CustomMinimumSize = new(1480, 132), MouseFilter = MouseFilterEnum.Ignore }; _rows.AddChild(row);
             Text(row, $"#{order.Number:00}", new(0, 0, 65, 38), 18, Muted);
             _art ??= new TianjinArtCatalog();
             var portrait = Picture(row, BookPortraits.Head(_art, order.Appearance, order.Lost ? CustomerExpression.Angry : order.Outcome == BookOutcome.Incorrect ? CustomerExpression.Impatient : CustomerExpression.Happy), new(62, 0, 70, 70));
             if (order.Lost) portrait.Modulate = new(.75f, .70f, .65f, .8f);
             if (UsesBookArt) { portrait.Position += new Vector2(12, 12); portrait.Size = new(46, 46); Art(row, "顾客头像圆框", new(62, 0, 70, 70)); }
             Text(row, order.Customer, new(152, 0, 550, nameHeight), 26, wrap: true);
-            float bandHeight = 54;
-            for (int i = 0; i < order.Products.Count; i++)
-            {
-                var p = order.Products[i]; float x = 146 + (i % 2) * 297, y = productY;
-                string productText = $"{p.Name}{(p.Preference.Length > 0 ? "·" + p.Preference : "")} ×{p.Quantity}";
-                float textHeight = Math.Max(48, WrappedHeight(productText, 238, 20)); bandHeight = Math.Max(bandHeight, textHeight + 8);
-                Place(row, new BookFoodIcon { Product = p }, new(x, y, 45, 45));
-                var label = Text(row, productText, new(x + 51, y, 238, textHeight), 20, wrap: true);
-                label.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-                if (i % 2 == 1 || i == order.Products.Count - 1) { productY += bandHeight; bandHeight = 54; }
-            }
+            productY = BuildProducts(row, order.Products, 0, Math.Max(76, nameHeight + 12), 710);
             var color = order.Outcome switch { BookOutcome.Perfect => new Color("#91601D"), BookOutcome.Incorrect => new("#A05C2F"), BookOutcome.Lost or BookOutcome.Unreceived => new("#92534B"), _ => new("#456E49") };
             if (UsesBookArt) Art(row, order.Outcome switch { BookOutcome.Perfect => "Perfect 图标", BookOutcome.Incorrect => "状态章-错误完成", BookOutcome.Lost or BookOutcome.Unreceived => "状态章-顾客流失", _ => "状态章-正确完成" }, new(838, 0, 44, 44));
             else Place(row, new BookStatusMark { Outcome = order.Outcome, Ink = color }, new(846, 4, 32, 32));
             string status = order.Outcome switch { BookOutcome.Perfect => "完美出餐", BookOutcome.Incorrect => "出餐错误", BookOutcome.Lost => "等待离开", BookOutcome.Unreceived => "收摊未接待", _ => "顺利完成" };
             Text(row, status, new(892, 0, 560, 38), 26, color);
-            Text(row, $"收入 ¥{order.Revenue}    小费 +¥{order.Tips}", new(846, 47, 425, 36), 24);
-            Text(row, order.Score is { } score ? $"评分 {score:0}" : "评分 —", new(1270, 47, 180, 36), 24, Muted);
-            if (order.Reason.Length > 0) { var reason = Text(row, order.Reason, new(846, 88, 600, reasonHeight), 20, color, wrap: true); }
-            row.CustomMinimumSize = new(1480, Math.Max(132, Math.Max(productY + 12, 100 + reasonHeight)));
+            float rightBottom = BuildOrderMetrics(row, order, 846, 48, 600, 24, color);
+            row.CustomMinimumSize = new(1480, Math.Max(productY, rightBottom) + 22);
             if (UsesBookArt)
             {
                 BookDivider(row, new(0, row.CustomMinimumSize.Y - 10, 710, 10));
@@ -206,7 +215,6 @@ public partial class BusinessDetailsView : Control
         _entrance = CreateTween(); _entrance.TweenProperty(_book, "modulate", Colors.White, .2);
         if (!_model.Closing) return;
         _income.Text = "¥0"; _metrics.Modulate = new(1, 1, 1, 0); _stamp.Modulate = new(1, 1, 1, 0); _note.Modulate = new(1, 1, 1, 0);
-        _entrance.TweenCallback(Callable.From(() => _audio.Play(PancakeSound.CoinCollect)));
         _entrance.TweenMethod(Callable.From<float>(n => _income.Text = $"¥{Mathf.RoundToInt(n)}"), 0f, (float)_model.Result.TotalRevenue, .6);
         _entrance.TweenProperty(_metrics, "modulate", Colors.White, .25);
         _entrance.TweenCallback(Callable.From(() => { if (_model.Result.PerfectOrders > 0) _audio.Play(PancakeSound.BookStamp); _stamp.Scale = Vector2.One * 1.13f; }));
@@ -217,6 +225,7 @@ public partial class BusinessDetailsView : Control
     }
     internal void FinishAnimation()
     {
+        FinishPageAnimation();
         _entrance?.Kill(); _entrance = null;
         if (_book is null) return;
         _book.Modulate = Colors.White;
@@ -228,10 +237,10 @@ public partial class BusinessDetailsView : Control
         if (!IsVisibleInTree()) return;
         if (input is InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.Left }) FinishAnimation();
         if (input is not InputEventKey { Pressed: true, Echo: false } key) return;
-        if (key.Keycode == Key.Escape) RequestClose();
+        if (key.Keycode == Key.Escape) { if (_upgradeModal is not null) CloseUpgrades(); else RequestClose(); }
         else if (key.Keycode == Key.Tab)
         {
-            var buttons = this.Descendants<Button>().Where(b => b.IsVisibleInTree() && !b.Disabled).ToArray();
+            var buttons = (_upgradeModal ?? this).Descendants<Button>().Where(b => b.IsVisibleInTree() && !b.Disabled).ToArray();
             int i = Array.IndexOf(buttons, GetViewport().GuiGetFocusOwner());
             if (buttons.Length > 0) buttons[(i + (key.ShiftPressed ? buttons.Length - 1 : 1)) % buttons.Length].GrabFocus();
         }
@@ -245,6 +254,75 @@ public partial class BusinessDetailsView : Control
         box.BorderColor = UsesBookArt ? (selected ? CityTheme.Primary : CitySettlementTheme.Section) : selected ? Accent : new("#BAA385");
         b.AddThemeStyleboxOverride("normal", box);
     }
+    internal static string ProductCaption(BookProduct product) =>
+        product.Name + (product.Preference.Length > 0 ? "·" + product.Preference : "")
+        + (product.Quantity == 1 ? "" : $" ×{product.Quantity}");
+
+    // Wrap whole food items first; only a single over-wide caption wraps within its item.
+    private float BuildProducts(Control row, IReadOnlyList<BookProduct> products, float left, float top, float width)
+    {
+        const float icon = 40, gap = 10, itemGap = 20;
+        float x = 0, y = top, bandHeight = 0;
+        foreach (var product in products)
+        {
+            string caption = ProductCaption(product);
+            float textWidth = Math.Min(width - icon - gap,
+                Mathf.Ceil(GetThemeFont("font", "Label").GetStringSize(caption, fontSize: 20).X) + 2);
+            float itemWidth = icon + gap + textWidth;
+            if (x > 0 && x + itemWidth > width)
+            {
+                y += bandHeight + 10; x = 0; bandHeight = 0;
+            }
+            float height = Math.Max(icon, WrappedHeight(caption, textWidth, 20));
+            Place(row, new BookFoodIcon { Product = product }, new(left + x, y, icon, icon));
+            var label = Text(row, caption, new(left + x + icon + gap, y, textWidth, height), 20, wrap: true);
+            label.Name = $"ProductCaption{row.GetChildCount()}";
+            bandHeight = Math.Max(bandHeight, height); x += itemWidth + itemGap;
+        }
+        return y + bandHeight;
+    }
+
+    private float BuildOrderMetrics(Control row, BookOrder order, float x, float y, float width, int fontSize, Color color)
+    {
+        string score = order.Score is { } value ? $"{value:0}" : "—";
+        const float iconSize = 30, iconGap = 8, groupGap = 20;
+        var metrics = new Control { Name = "OrderMetrics", MouseFilter = MouseFilterEnum.Ignore };
+        Place(row, metrics, new(x, y, width, 0));
+        float cursor = 0, top = 0, bandHeight = 0;
+        var items = new[]
+        {
+            (Name: "Revenue", Icon: "单笔收入", Value: $"¥{order.Revenue}"),
+            (Name: "Score", Icon: order.Score is >= 60 ? "满意图标" : "不满意图标-v1", Value: score),
+            (Name: "Tips", Icon: "小费图标-v1", Value: $"+¥{order.Tips}")
+        };
+        foreach (var item in items)
+        {
+            float textWidth = Math.Min(width - iconSize - iconGap,
+                Mathf.Ceil(GetThemeFont("font", "Label").GetStringSize(item.Value, fontSize: fontSize).X) + 2);
+            float groupWidth = iconSize + iconGap + textWidth;
+            if (cursor > 0 && cursor + groupWidth > width)
+            {
+                top += bandHeight + 10; cursor = 0; bandHeight = 0;
+            }
+            float height = Math.Max(iconSize, WrappedHeight(item.Value, textWidth, fontSize));
+            var icon = Art(metrics, item.Icon, new(cursor, top + (height - iconSize) / 2, iconSize, iconSize));
+            icon.Name = item.Name + "Icon";
+            var label = Text(metrics, item.Value, new(cursor + iconSize + iconGap, top, textWidth, height), fontSize, wrap: true);
+            label.Name = item.Name + "Value";
+            label.VerticalAlignment = VerticalAlignment.Center;
+            bandHeight = Math.Max(bandHeight, height); cursor += groupWidth + groupGap;
+        }
+        metrics.Size = new(width, top + bandHeight);
+        float bottom = y + metrics.Size.Y;
+        if (order.Reason.Length > 0)
+        {
+            float reasonHeight = WrappedHeight(order.Reason, width, 20);
+            Text(row, order.Reason, new(x, bottom + 10, width, reasonHeight), 20, color, wrap: true);
+            bottom += 10 + reasonHeight;
+        }
+        return bottom;
+    }
+
     private float WrappedHeight(string text, float width, int size) => Math.Max(size + 10, GetThemeFont("font", "Label").GetMultilineStringSize(text, HorizontalAlignment.Left, width, size).Y);
     private static string Percent(double? value) => value is { } n ? $"{Math.Round(n, MidpointRounding.AwayFromZero):0}%" : "—";
     private static void Clear(Node n) { foreach (Node child in n.GetChildren()) { n.RemoveChild(child); child.QueueFree(); } }
@@ -254,6 +332,11 @@ public partial class BusinessDetailsView : Control
         var label = TianjinUi.Label(wrap ? "" : value, size, color ?? Ink, align);
         label.MouseFilter = MouseFilterEnum.Ignore;
         if (wrap) { label.Size = r.Size; label.AutowrapMode = TextServer.AutowrapMode.WordSmart; label.Text = value; }
+        if (value.StartsWith("完成率", StringComparison.Ordinal))
+            label.TooltipText = "完成率 = 完成 ÷（完成 + 流失），只计算已结束客单；错误完成也计入完成。";
+        else if (value == "完成顾客满意度")
+            label.TooltipText = "仅按已完成订单的顾客计算满意度，流失顾客不计入平均值。";
+        if (label.TooltipText.Length > 0) label.MouseFilter = MouseFilterEnum.Pass;
         Place(parent, label, r); return label;
     }
     private static void Panel(Control p, Rect2 r, Color color, int radius, int border) { var panel = new Panel { MouseFilter = MouseFilterEnum.Ignore }; var box = TianjinUi.Box(color, radius, border, false); box.BorderColor = new("#9D794E"); panel.AddThemeStyleboxOverride("panel", box); Place(p, panel, r); }

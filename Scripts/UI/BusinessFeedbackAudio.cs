@@ -1,0 +1,92 @@
+using Godot;
+using ProjectCake.Gameplay;
+
+namespace ProjectCake.UI;
+
+/// <summary>Shared, bounded voices. Customer and cash cues never replace each other's stream.</summary>
+public partial class BusinessFeedbackAudio : Node
+{
+    private static readonly Dictionary<BusinessCue, AudioStreamWav> Streams = new();
+    private readonly Dictionary<BusinessCue, AudioStreamPlayer> _players = new();
+    private readonly Dictionary<BusinessCue, ulong> _last = new();
+    private BusinessFeedback? _source;
+    private Func<bool>? _canPlay;
+    internal Func<ulong> Clock { get; set; } = Time.GetTicksMsec;
+    internal event Action<BusinessFeedbackEvent>? Played;
+
+    public static BusinessFeedbackAudio Attach(Node owner, BusinessFeedback source, Func<bool> canPlay)
+    {
+        var audio = owner.GetNodeOrNull<BusinessFeedbackAudio>("BusinessFeedbackAudio");
+        if (audio is null) { audio = new() { Name = "BusinessFeedbackAudio" }; owner.AddChild(audio); }
+        audio.Bind(source, canPlay);
+        return audio;
+    }
+    public void Bind(BusinessFeedback source, Func<bool> canPlay)
+    {
+        Unbind(); _source = source; _canPlay = canPlay;
+        source.Requested += OnRequested; source.ResetRequested += Reset;
+    }
+    private void Unbind()
+    {
+        if (_source is not null) { _source.Requested -= OnRequested; _source.ResetRequested -= Reset; }
+        _source = null; Reset();
+    }
+    private void OnRequested(BusinessFeedbackEvent feedback)
+    {
+        if (!IsInsideTree() || _canPlay?.Invoke() != true) return;
+        ulong now = Clock();
+        ulong interval = feedback.Cue == BusinessCue.DeliveryError ? 400UL
+            : feedback.Cue is BusinessCue.LowPatience or BusinessCue.CustomerLeft ? 500UL : 0;
+        if (_last.TryGetValue(feedback.Cue, out ulong last) && now - last < interval) return;
+        _last[feedback.Cue] = now;
+        if (!_players.TryGetValue(feedback.Cue, out var player))
+        {
+            if (!Streams.TryGetValue(feedback.Cue, out var stream)) Streams[feedback.Cue] = stream = Make(feedback.Cue);
+            player = new AudioStreamPlayer { Name = feedback.Cue.ToString(), Stream = stream,
+                Bus = "Master", VolumeDb = -16, MaxPolyphony = 3 };
+            AddChild(player); _players.Add(feedback.Cue, player);
+        }
+        player.Play(); Played?.Invoke(feedback);
+    }
+    public override void _Process(double delta) { if (_canPlay?.Invoke() != true) Stop(); }
+    public override void _Notification(int what)
+    {
+        if (what == NotificationApplicationFocusOut) Stop();
+    }
+    private void Stop() { foreach (var player in _players.Values) player.Stop(); }
+    public void Reset() { Stop(); _last.Clear(); }
+    public override void _ExitTree() => Unbind();
+
+    internal static AudioStreamWav Make(BusinessCue cue)
+    {
+        // Soft attack and exponential release avoid clicks; short melodic contours convey intent.
+        double[] notes = cue switch
+        {
+            BusinessCue.ItemAccepted => new[] { 659.25, 880.0 },
+            BusinessCue.OrderCompleted => new[] { 659.25, 880.0, 1108.73 },
+            BusinessCue.DeliveryError => new[] { 349.23, 293.66 },
+            BusinessCue.LowPatience => new[] { 783.99, 783.99 },
+            BusinessCue.CustomerLeft => new[] { 440.0, 349.23, 261.63 },
+            _ => new[] { 1046.5, 1318.51, 1567.98 },
+        };
+        double spacing = cue == BusinessCue.CoinCredited ? .055 : cue == BusinessCue.ItemAccepted ? .065 : .09;
+        double duration = spacing * (notes.Length - 1) + .16;
+        const int rate = 22050;
+        byte[] data = new byte[(int)(rate * duration) * 2];
+        for (int i = 0; i < data.Length / 2; i++)
+        {
+            double t = i / (double)rate, value = 0;
+            for (int n = 0; n < notes.Length; n++)
+            {
+                double local = t - n * spacing;
+                if (local < 0 || local > .16) continue;
+                double phase = Math.Tau * notes[n] * local;
+                double envelope = Math.Min(1, local / .005) * Math.Exp(-local * 28) * Math.Min(1, (.16 - local) / .025);
+                value += (Math.Sin(phase) + (cue == BusinessCue.CoinCredited ? .3 * Math.Sin(phase * 2.76) : .12 * Math.Sin(phase * 2))) * envelope * .28;
+            }
+            short sample = (short)(Math.Clamp(value, -1, 1) * short.MaxValue);
+            data[i * 2] = (byte)(sample & 255); data[i * 2 + 1] = (byte)(sample >> 8);
+        }
+        return new AudioStreamWav { Format = AudioStreamWav.FormatEnum.Format16Bits, MixRate = rate, Data = data };
+    }
+}

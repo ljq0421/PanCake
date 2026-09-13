@@ -59,6 +59,7 @@ public partial class GuangzhouDayScreen : Control
             _customers[i].Pressed += () => SelectCustomer(slot);
             _customers[i].Accepts = payload => CanDropOnCustomer(slot, payload);
             _customers[i].Delivered = payload => DeliverPayload(payload, CustomerAt(slot)?.Id);
+            _customers[i].DeliveryRejected = () => { if (CanInteract) _controller.Feedback.Reject(CustomerAt(slot)?.Id); };
         }
         for (int i = 0; i < _trays.Length; i++)
         {
@@ -152,6 +153,7 @@ public partial class GuangzhouDayScreen : Control
 
     public bool Initialize(DataCatalog catalog, SaveService save, DayController controller, int day, bool practice = false)
     {
+        BusinessFeedbackAudio.Attach(this, controller.Feedback, () => controller.CurrentConfig?.CityId == StableIds.Cities.Guangzhou && (CanInteract));
         _catalog = catalog; _save = save;
         if (_controller != controller) ConnectController(controller);
         if (!catalog.TryGetDay(StableIds.Cities.Guangzhou, day, out var config)) return false;
@@ -256,7 +258,8 @@ public partial class GuangzhouDayScreen : Control
         && TryGetItem(payload, out var item, out _) && c.Progress.CanAccept(item, out _);
     public DeliveryEvaluation? DeliverPayload(string payload, string? customerId)
     {
-        if (!CanInteract || !TryGetItem(payload, out var item, out var consume)) return null;
+        if (!CanInteract) return null;
+        if (!TryGetItem(payload, out var item, out var consume)) { _controller.Feedback.Reject(customerId); Feedback("当前没有可交付的成品。"); return null; }
         var result = _controller.TryDeliverGuangzhouTo(customerId, item, consume); Feedback(result.Message); Render(); return result;
     }
     private void Feedback(string message) { if (_feedback is not null) _feedback.Text = message; }

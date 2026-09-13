@@ -48,7 +48,7 @@ public static class BusinessBookSettlement
 {
     public static BusinessBookModel Commit(BusinessBookModel model, SaveService save, DayPlan plan, DayConfig config, DataCatalog catalog, bool practice = false, bool allowFailedReturn = false)
     {
-        model.Closing = true; model.Practice = practice; model.Stickers = Array.Empty<string>(); model.CanClose = true; model.CanRetry = false;
+        model.Closing = true; model.Practice = practice; model.Stickers = Array.Empty<string>(); model.Upgrades = null; model.CanClose = true; model.CanRetry = false;
         var before = save.Data.GetCity(config.CityId).UnlockedContentIds.ToHashSet(StringComparer.Ordinal);
         try
         {
@@ -65,6 +65,7 @@ public static class BusinessBookSettlement
                 if (upgrades.Length > 0) stickers.Add($"可升级：{upgrades[0]}" + (upgrades.Length > 1 ? $"等{upgrades.Length}项" : ""));
             }
             model.Stickers = stickers.ToArray();
+            if (!practice) model.Upgrades = new BookUpgradeSource(save, catalog, config.CityId);
         }
         catch (IOException e) { model.SaveMessage = "未保存 · " + e.Message + "；本次金币与进度已回退。"; model.CanRetry = !allowFailedReturn; model.CanClose = allowFailedReturn; }
         return model;

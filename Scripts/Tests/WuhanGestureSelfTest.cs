@@ -261,7 +261,7 @@ public partial class WuhanGestureSelfTest : Node
             {
                 Check(View.HitTarget(P(1300, 550)) == "" && View.HitTarget(P(1530, 800)) == "", "empty counter has no pan or stock target");
                 Click(P(1300, 550)); Click(P(1530, 800));
-                Check(_screen.Doupi is null && !View.HasProductionGesture && View.DoupiSupplyHint == "", "empty counter produces no doupi interaction or hint");
+                Check(_screen.Doupi is null && !View.HasProductionGesture, "empty counter produces no doupi interaction");
             }
             Drag(View.RawCenter, View.BasketRect(0).GetCenter()); Step(1.61);
             Vector2 basket = View.BasketRect(0).GetCenter(); Move(basket); Button(basket, true);

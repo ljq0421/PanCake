@@ -11,7 +11,8 @@ public partial class CoinCollectionFeedback : Node
     private CoinTrayView? _tray;
     private Control _root = null!, _target = null!;
     private Texture2D _coin = null!;
-    private PancakeAudio _audio = null!;
+    internal BusinessFeedback AudioFeedback { get; } = new();
+    private BusinessFeedbackAudio _audio = null!;
     private Tween? _pulse, _trayPulse;
     private Vector2 _targetScale, _trayScale;
     private Color _targetColor;
@@ -22,7 +23,7 @@ public partial class CoinCollectionFeedback : Node
 
     public override void _Ready()
     {
-        SceneNodeBinder.Bind(this);
+        _audio = BusinessFeedbackAudio.Attach(this, AudioFeedback, () => _root is not null && _root.IsVisibleInTree() && CanAnimate?.Invoke() == true);
     }
 
     public void Bind(CoinTrayView tray, Control root, Control target, Texture2D coin, Func<bool> canAnimate)
@@ -41,7 +42,7 @@ public partial class CoinCollectionFeedback : Node
         if (_root is null) return;
         if (!_root.IsVisibleInTree()) { Clear(); return; }
         bool active = CanAnimate?.Invoke() == true;
-        _audio.SetPaused(!active);
+        if (!active) _audio.Reset();
         if (active) Advance(delta);
     }
 
@@ -64,7 +65,7 @@ public partial class CoinCollectionFeedback : Node
         }
         _payments.Clear();
         Vector2 origin = Local(_tray.LandingPoint), target = Local(_target.GetGlobalRect().GetCenter());
-        _audio.Play(PancakeSound.CoinCollect);
+        AudioFeedback.Credit(amount);
         var text = TianjinUi.Label($"+¥{amount}", 34, new Color("#FFE27A"), HorizontalAlignment.Center);
         text.Name = "CollectedAmount";
         text.Position = origin - new Vector2(110, 70); text.Size = new Vector2(220, 50);
@@ -138,7 +139,7 @@ public partial class CoinCollectionFeedback : Node
         _trayPulse?.Kill(); _trayPulse = null;
         if (_tray is not null && IsInstanceValid(_tray)) _tray.Scale = _trayScale;
         if (_target is not null && IsInstanceValid(_target)) { _target.Scale = _targetScale; _target.Modulate = _targetColor; }
-        _audio?.Stop();
+        _audio?.Reset();
     }
 
     public override void _ExitTree()

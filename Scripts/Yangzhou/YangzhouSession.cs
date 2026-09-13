@@ -1,3 +1,6 @@
+using ProjectCake.Gameplay;
+using ProjectCake.Orders;
+
 namespace ProjectCake.Yangzhou;
 
 public sealed record YangzhouOrderRecord(int Id, string Customer, string CustomerType, string TemplateId,
@@ -13,6 +16,7 @@ public sealed record YangzhouResult(int Day, int Planned, int Completed, int Los
 /// <summary>Whole-tray service, prep time and city-specific pressure rules share one deterministic clock.</summary>
 public sealed class YangzhouSession
 {
+    public BusinessFeedback Feedback { get; } = new();
     private readonly YangzhouCatalog _catalog;
     private readonly List<YangzhouOrder> _waiting = new(), _served = new();
     private readonly List<YangzhouOrderRecord> _records = new();
@@ -81,8 +85,12 @@ public sealed class YangzhouSession
     public bool Serve()
     {
         var order = Selected;
-        if (!CanWork || order is null || !order.Serve()) return false;
-        Record(order, false); _served.Add(order); _waiting.Remove(order); SelectFirst(); return true;
+        if (!CanWork) return false;
+        if (order is null || !order.Serve()) { Feedback.Reject(order?.Plan.Id.ToString()); return false; }
+        Record(order, false); _served.Add(order); _waiting.Remove(order); SelectFirst();
+        Feedback.Delivery(order.Plan.Id.ToString(), new(DeliveryGrade.Correct, order.Price, order.Tip, order.Satisfaction, ""));
+        Feedback.Credit(order.Price + order.Tip, order.Plan.Id.ToString());
+        return true;
     }
     public void Tick(double seconds)
     {
@@ -105,7 +113,9 @@ public sealed class YangzhouSession
         foreach (var order in _waiting.ToArray())
         {
             order.Tick(dt, Day.Day == 1);
-            if (Day.Day != 1 && order.WaitRatio >= 1) { Record(order, true); order.Lose(); _waiting.Remove(order); _lost++; }
+            if (Day.Day != 1 && order.WaitRatio >= 1)
+            { Record(order, true); order.Lose(); _waiting.Remove(order); _lost++; Feedback.TimedOut(order.Plan.Id.ToString()); }
+            else if (order.WaitRatio > .84) Feedback.Warn(order.Plan.Id.ToString(), Day.Day == 1);
         }
         SelectFirst();
         if (Phase == YangzhouPhase.Running)

@@ -53,6 +53,7 @@ public partial class IngredientStockSlotView : WorkstationSlotView
     public ProgressBar StockBar => _stock;
     public bool HoldToRefill { get; set; }
     public bool ShowStockNumbers { get; set; } = true;
+    internal bool ShowTextHints { get; set; } = true;
     private double _holdProgress;
     private bool? _refillTeaching;
     private bool _refillAvailable;
@@ -66,7 +67,7 @@ public partial class IngredientStockSlotView : WorkstationSlotView
     private void RefreshRefillHint()
     {
         bool low = _lastStatus is IngredientStockStatus.Low or IngredientStockStatus.Empty;
-        _refillHint.Visible = HoldToRefill && (_holdProgress > 0 || low || _refillTeaching == true && _refillAvailable);
+        _refillHint.Visible = ShowTextHints && HoldToRefill && (_holdProgress > 0 || low || _refillTeaching == true && _refillAvailable);
         _refillHint.Text = _holdProgress > 0 ? "松开取消" : _refillTeaching == false
             ? _lastStatus == IngredientStockStatus.Empty ? "已用完" : "余量不足" : "长按补货";
     }
@@ -162,7 +163,7 @@ public partial class IngredientStockSlotView : WorkstationSlotView
         _refill.Visible = !HoldToRefill && (needsRefill || status == IngredientStockStatus.Refilling);
         _refill.Disabled = !canInteract || status == IngredientStockStatus.Refilling || quantity >= capacity;
         _refill.Text = status == IngredientStockStatus.Refilling ? "…" : "+";
-        _refill.TooltipText = status == IngredientStockStatus.Refilling ? $"{_displayName}补货中" : $"补满{_displayName}";
+        _refill.TooltipText = !ShowTextHints ? string.Empty : status == IngredientStockStatus.Refilling ? $"{_displayName}补货中" : $"补满{_displayName}";
 
         if (_lastStatus != status)
         {

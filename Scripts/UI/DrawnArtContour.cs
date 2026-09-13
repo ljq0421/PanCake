@@ -8,29 +8,68 @@ public static class DrawnArtContour
     private const int Samples = 4;
     private readonly record struct Key(Texture2D Texture, Rect2I Region, int Width, int Height, int Stroke, bool Green);
     private static readonly Dictionary<Key, Texture2D> Cache = new();
+    private static readonly Dictionary<string, (Texture2D Texture, Rect2 Bounds)> Polygons = new();
+
+    public static void DrawPolygon(CanvasItem canvas, Vector2[] points, InteractionHighlightState state)
+    {
+        string key = string.Join(';', points.Select(p => $"{p.X:R},{p.Y:R}"));
+        if (!Polygons.TryGetValue(key, out var mask))
+        {
+            Vector2 min = points.Aggregate((a, b) => a.Min(b)).Floor();
+            Vector2 max = points.Aggregate((a, b) => a.Max(b)).Ceil();
+            Rect2 bounds = new(min, max - min + Vector2.One);
+            using Image image = Image.CreateEmpty((int)bounds.Size.X, (int)bounds.Size.Y, false, Image.Format.Rgba8);
+            for (int y = 0; y < image.GetHeight(); y++)
+            {
+                float row = min.Y + y + .5f;
+                var crossings = new List<float>();
+                for (int i = 0; i < points.Length; i++)
+                {
+                    Vector2 a = points[i], b = points[(i + 1) % points.Length];
+                    if ((a.Y > row) != (b.Y > row)) crossings.Add(a.X + (row - a.Y) * (b.X - a.X) / (b.Y - a.Y));
+                }
+                crossings.Sort();
+                for (int i = 0; i + 1 < crossings.Count; i += 2)
+                    for (int x = Math.Max(0, (int)MathF.Ceiling(crossings[i] - min.X - .5f));
+                        x < Math.Min(image.GetWidth(), (int)MathF.Ceiling(crossings[i + 1] - min.X - .5f)); x++)
+                        image.SetPixel(x, y, Colors.White);
+            }
+            if (Polygons.Count >= 96) Polygons.Clear();
+            Polygons[key] = mask = (ImageTexture.CreateFromImage(image), bounds);
+        }
+        Draw(canvas, mask.Texture, mask.Bounds, state);
+    }
 
     public static void Draw(CanvasItem canvas, Texture2D texture, Rect2 destination,
         InteractionHighlightState state, Rect2? source = null, bool keyGreen = false, Color? tint = null)
     {
+        float opacity = InteractionHighlightTheme.HoverOpacity(canvas, (texture.GetInstanceId(), destination, source), state);
         if (state == InteractionHighlightState.None || destination.Size.X <= 0 || destination.Size.Y <= 0) return;
         Transform2D transform = InteractionHighlightPresentation.PixelTransform(canvas);
         float sx = transform.X.Length(), sy = transform.Y.Length();
         if (sx < .001f || sy < .001f) return;
         int width = Math.Max(1, (int)MathF.Ceiling(destination.Size.X * sx)) * Samples;
         int height = Math.Max(1, (int)MathF.Ceiling(destination.Size.Y * sy)) * Samples;
-        int stroke = (int)InteractionHighlightPresentation.WidthFor(state) * Samples;
+        int stroke = (int)InteractionHighlightPresentation.WidthFor(state, canvas) * Samples;
         Rect2I region = (Rect2I)(source ?? new Rect2(Vector2.Zero, texture.GetSize()));
-        var key = new Key(texture, region, width, height, stroke, keyGreen);
-        if (!Cache.TryGetValue(key, out Texture2D? outline))
+        if (InteractionHighlightTheme.Applies(canvas, state))
+            DrawLayer(stroke + Samples, InteractionHighlightTheme.BackingColor * new Color(1, 1, 1, opacity));
+        DrawLayer(stroke, (tint ?? InteractionHighlightPresentation.ColorFor(state, canvas)) * new Color(1, 1, 1, opacity));
+
+        void DrawLayer(int stroke, Color color)
         {
-            // Window resizing and moving cropped baskets must not retain unlimited raster sizes.
-            if (Cache.Count >= 96) Cache.Clear();
-            Cache[key] = outline = Build(key);
+            var key = new Key(texture, region, width, height, stroke, keyGreen);
+            if (!Cache.TryGetValue(key, out Texture2D? outline))
+            {
+                // Window resizing and moving cropped baskets must not retain unlimited raster sizes.
+                if (Cache.Count >= 96) Cache.Clear();
+                Cache[key] = outline = Build(key);
+            }
+            int pad = stroke + Samples;
+            Vector2 margin = destination.Size * new Vector2((float)pad / width, (float)pad / height);
+            canvas.DrawTextureRect(outline, new Rect2(destination.Position - margin, destination.Size + margin * 2),
+                false, color);
         }
-        int pad = stroke + Samples;
-        Vector2 margin = destination.Size * new Vector2((float)pad / width, (float)pad / height);
-        canvas.DrawTextureRect(outline, new Rect2(destination.Position - margin, destination.Size + margin * 2),
-            false, tint ?? InteractionHighlightPresentation.ColorFor(state));
     }
 
     private static Texture2D Build(Key key)

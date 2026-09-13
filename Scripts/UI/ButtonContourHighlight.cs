@@ -45,7 +45,8 @@ public partial class ButtonContourHighlight : Control
     {
         var state = ResolveState();
         Transform2D transform = InteractionHighlightPresentation.PixelTransform(this);
-        if (state == _drawnState && Size == _drawnSize && transform == _drawnTransform) return;
+        if (state == _drawnState && Size == _drawnSize && transform == _drawnTransform
+            && !InteractionHighlightTheme.Applies(this, state)) return;
         _drawnTransform = transform;
         _drawnState = state;
         _drawnSize = Size;
@@ -71,6 +72,27 @@ public partial class ButtonContourHighlight : Control
     public static void DrawContour(CanvasItem canvas, StyleBoxFlat source, Rect2 rect, InteractionHighlightState state)
     {
         if (state == InteractionHighlightState.None) return;
+        if (InteractionHighlightTheme.Applies(canvas, state))
+        {
+            // Build the original rounded silhouette, then dilate only its exterior.
+            var points = new List<Vector2>();
+            int[] radii = { source.CornerRadiusTopLeft, source.CornerRadiusTopRight,
+                source.CornerRadiusBottomRight, source.CornerRadiusBottomLeft };
+            for (int corner = 0; corner < 4; corner++)
+            {
+                float radius = Math.Min(radii[corner], Math.Min(rect.Size.X, rect.Size.Y) / 2);
+                Vector2 center = corner switch {
+                    0 => rect.Position + new Vector2(radius, radius),
+                    1 => new Vector2(rect.End.X - radius, rect.Position.Y + radius),
+                    2 => rect.End - new Vector2(radius, radius),
+                    _ => new Vector2(rect.Position.X + radius, rect.End.Y - radius),
+                };
+                for (int i = 0; i <= 12; i++)
+                    points.Add(center + Vector2.FromAngle(Mathf.Pi + corner * Mathf.Pi / 2 + i * Mathf.Pi / 24) * radius);
+            }
+            DrawnArtContour.DrawPolygon(canvas, points.ToArray(), state);
+            return;
+        }
         var outline = (StyleBoxFlat)source.Duplicate();
         int width = Math.Max(1, (int)MathF.Round(InteractionHighlightPresentation.LocalWidthFor(canvas, state)));
         outline.DrawCenter = false;

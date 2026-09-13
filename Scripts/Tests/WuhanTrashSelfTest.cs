@@ -165,7 +165,7 @@ public partial class WuhanTrashSelfTest : Node
                         foreach (bool filled in new[] { false, true })
                         {
                             _screen.Doupi!.Discard();
-                            if (filled) { State(_screen.Doupi, DoupiState.Spreading); DoupiTestFixture.Spread(_screen.Doupi); }
+                            if (filled) { State(_screen.Doupi, DoupiState.Flipped); _screen.Doupi.TryAddFilling(); }
                             State(_screen.Doupi, DoupiState.Burnt); View.RememberProductionState();
                             Hold(View.PanCenter); Move(new Vector2(1320, 490));
                             await Frames(); await ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);

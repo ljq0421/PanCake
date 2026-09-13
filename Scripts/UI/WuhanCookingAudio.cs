@@ -28,8 +28,7 @@ internal sealed class WuhanCookingAudio
     {
         bool boiling = cooker.Baskets.Any(b => b.State is NoodleBasketState.Cooking or NoodleBasketState.Ready
             or NoodleBasketState.Soft or NoodleBasketState.Overcooked or NoodleBasketState.Locked);
-        bool sizzling = pan?.State is DoupiState.SkinCooking or DoupiState.ReadyToFlip or DoupiState.SecondCooking
-            or DoupiState.ReadyToCut or DoupiState.Overbrowned;
+        bool sizzling = pan?.IsHeating == true;
         float stress = pan?.HeatStress ?? 0;
         _pan.PitchScale = 1 + stress * .18f;
         _pan.VolumeDb = -26 + stress * 4;

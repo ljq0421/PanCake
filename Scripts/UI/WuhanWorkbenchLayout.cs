@@ -48,7 +48,7 @@ internal sealed class WuhanWorkbenchLayout
         Raw = Rect(43, 702, 366, 178);
         RawFood = Rect(76, 723, 302, 111);
         _ingredients = new[] { Rect(424, 719, 143, 134), Rect(719, 719, 144, 137), Rect(572, 719, 143, 136), Rect(868, 719, 149, 136) };
-        _basketHome = Point(268, 501);
+        _basketHome = Point(268, 517);
         Vector2[] bowlShape = { new(0, .38f), new(.025f, .26f), new(.10f, .145f), new(.23f, .05f),
             new(.40f, .005f), new(.59f, .005f), new(.77f, .06f), new(.91f, .17f), new(.98f, .30f),
             new(1, .42f), new(.95f, .62f), new(.85f, .80f), new(.74f, .93f), new(.59f, .995f),

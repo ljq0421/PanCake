@@ -34,12 +34,12 @@ public partial class WuhanWorkstationView
                     return over ? valid ? InteractionHighlightState.Valid : InteractionHighlightState.Invalid
                         : valid ? InteractionHighlightState.Eligible : InteractionHighlightState.None;
                 }
-                if (target == "pan" && _gesture is "batter" or "filling" or "spread" or "flip" or "cut")
+                if (target == "pan" && _gesture is "batter" or "filling" or "flip" or "cut")
                 {
                     bool valid = _gesture switch
                     {
                         "batter" => _doupi?.State == DoupiState.Empty,
-                        "filling" => _fillingDeposited || _doupi?.State == DoupiState.Flipped,
+                        "filling" => _doupi?.State == DoupiState.Flipped,
                         _ => true,
                     };
                     return OnPan(_gesturePoint) ? valid ? InteractionHighlightState.Valid : InteractionHighlightState.Invalid
@@ -64,8 +64,7 @@ public partial class WuhanWorkstationView
         {
             for (int i = 0; i < _cooker.Baskets.Count; i++)
             {
-                if (HasProductionGesture && _gestureBasket == i && _gesture == "basket"
-                    || _cooker.PendingPourBasket == i || Find($"basket{i}")?.Kind == "pour" && !ReducedMotion) continue;
+                if (_cooker.PendingPourBasket == i || Find($"basket{i}")?.Kind == "pour" && !ReducedMotion) continue;
                 InteractionHighlightState state = State($"basket{i}");
                 // Readiness remains green under the pointer; hover never hides cooking information.
                 if (!HasProductionGesture && IsBasketReady(_cooker.Baskets[i].State)) state = InteractionHighlightState.Valid;

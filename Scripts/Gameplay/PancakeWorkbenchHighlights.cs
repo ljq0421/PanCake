@@ -142,6 +142,7 @@ internal partial class TianjinEquipmentHighlightView : Control
         foreach (Contour contour in _contours)
         {
             InteractionHighlightState next = IsVisibleInTree() ? contour.Resolve() : InteractionHighlightState.None;
+            if (InteractionHighlightTheme.Applies(this, next)) changed = true;
             if (next == contour.State) continue;
             contour.State = next;
             changed = true;

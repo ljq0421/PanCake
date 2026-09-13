@@ -44,6 +44,7 @@ public partial class WuhanDayScreen : Control
 
     public override void _Ready()
     {
+        InteractionHighlightTheme.Set(this, InteractionHighlightTheme.Wuhan);
         // Order icons and the drag overlay are siblings of the workbench.
         TextureFilter = TextureFilterEnum.LinearWithMipmaps;
         SceneNodeBinder.Bind(this);
@@ -83,7 +84,6 @@ public partial class WuhanDayScreen : Control
         Workstation.FillingRequested = AddDoupiFilling;
         Workstation.FlipRequested = FlipDoupi;
         Workstation.FoodDiscarded += () => { Workstation.PlaySound(WuhanSound.Discard); Feedback("食物已丢弃。", false, true); Render(); };
-        Workstation.SpreadRequested = SpreadDoupi;
         Workstation.MixMoved += distance =>
         {
             if (CanInteract && !Workstation.Busy("bowl") && _bowl.AddMixDistance(distance))
@@ -206,7 +206,7 @@ public partial class WuhanDayScreen : Control
     {
         if (!CanInteract || Workstation.Busy($"basket{index}")) return false;
         bool raised = _cooker.TryRaise(index);
-        if (raised) { Workstation.PlaySound(WuhanSound.Raise); Workstation.RememberProductionState(); }
+        if (raised) Workstation.PlayBasket(index, NoodleBasketState.Ready, _cooker.Baskets[index].Quality);
         return raised;
     }
     internal bool ReservePour(int index)
@@ -312,14 +312,7 @@ public partial class WuhanDayScreen : Control
     internal bool PourDoupiBatter() => ApplyDoupi(d => d.TryPourBatter(), "空锅才能倒浆；请先处理锅中豆皮。");
     internal bool AddDoupiEgg() => ApplyDoupi(d => d.TryAddEgg(), "先从浆碗拖浆入锅，再点击蛋液容器。");
     internal bool FlipDoupi() => ApplyDoupi(d => d.TryFlip(), "等面皮定型后，按住锅面向上划。");
-    internal bool AddDoupiFilling() => ApplyDoupi(d => d.TryAddFilling(), "翻面后再取馅；已经投入的馅直接在锅面续铺。", false);
-    internal bool SpreadDoupi(Vector2 from, Vector2 to)
-    {
-        if (!CanInteract || _doupi is null || Workstation.Busy("pan")) return false;
-        bool changed = _doupi.Spread(from, to, Workstation.PanAspect);
-        if (changed) { Workstation.PlaySound(WuhanSound.Spread); ClearDoupiFeedback(); Workstation.RememberProductionState(); Render(); }
-        return changed;
-    }
+    internal bool AddDoupiFilling() => ApplyDoupi(d => d.TryAddFilling(), "翻面后拖一份三鲜馅入锅，松手自动铺匀。");
     internal bool DiscardDoupi() => ApplyDoupi(d =>
     {
         if (d.State == DoupiState.Empty) return false;
@@ -418,5 +411,5 @@ public partial class WuhanDayScreen : Control
         _blocker.Hide(); _results.Hide(); BusinessDetails.Open(model);
     }
     private static string Subtitle(int day)=>day switch{1=>"初到武汉",4=>"豆皮开锅",6=>"双线熟练",7=>"牛肉与上班族",8=>"完整早餐",9=>"带走大单",12=>"最终挑战",_=>"过早高峰"};
-    private static string Tutorial(int day)=>day switch{1=>"拖面入锅，漏勺亮起后向上提篮并拖到空碗。点击调味，划动至酱料拌匀，再拖给顾客。",4=>"拖浆入锅并点击蛋液容器，皮边金黄翘起后上划翻面。\n拖馅铺开；铲刀亮起后按住锅面，横划一刀、竖划一刀（自动切三条），8 块自动入盘。",6=>"热干面与豆皮搭配出餐；豆皮一次拖拽按顾客所需数量交付",7=>"上班族耐心只有 34 秒；牛肉要等热干面搅拌完成后再加入",8=>"熟客和游客加入：短耐心不一定是最高价值订单",_=>string.Empty};
+    private static string Tutorial(int day)=>day switch{1=>"拖面入锅，漏勺亮起后向上提篮并拖到空碗。点击调味，划动至酱料拌匀，再拖给顾客。",4=>"倒浆即煎制：拖浆入锅，及时点击蛋液；定型后上划翻面。\n翻面后及时拖馅入锅松手，自动铺匀；成熟后横竖各一刀，8 块自动入盘。",6=>"热干面与豆皮搭配出餐；豆皮一次拖拽按顾客所需数量交付",7=>"上班族耐心只有 34 秒；牛肉要等热干面搅拌完成后再加入",8=>"熟客和游客加入：短耐心不一定是最高价值订单",_=>string.Empty};
 }

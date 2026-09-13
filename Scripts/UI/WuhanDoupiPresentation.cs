@@ -49,7 +49,7 @@ public partial class WuhanWorkstationView
 
     private void DrawBurntDoupi(CanvasItem canvas, Vector2[] quad, bool hasFilling)
     {
-        SurfaceLayer(hasFilling ? "doupi_filling_cooked" : "doupi_egg", quad, new Color(.66f, .43f, .24f), canvas: canvas);
+        SurfaceLayer(hasFilling ? "doupi_filling_cooked" : _doupi?.HasEgg == true && !_doupi.SecondSide ? "doupi_egg" : "doupi_skin", quad, new Color(.66f, .43f, .24f), canvas: canvas);
         SurfaceLayer("doupi_burnt", quad, new Color(.60f, .43f, .28f), canvas: canvas);
         Vector2[] rim = { quad[3], quad[2], QuadPoint(quad, 1, .94f), QuadPoint(quad, 0, .94f) };
         canvas.DrawColoredPolygon(rim, new Color(.19f, .10f, .04f, .85f));
@@ -107,7 +107,7 @@ public partial class WuhanWorkstationView
         {
             if (_doupi is null) return;
             DoupiState state = _doupi.State;
-            if (state == DoupiState.Burnt) DrawBurntDoupi(preview, quad, _doupi.Coverage > 0);
+            if (state == DoupiState.Burnt) DrawBurntDoupi(preview, quad, _doupi.HasFilling);
             else if (state == DoupiState.Cut)
                 for (int i = _doupi.FirstRemainingPiece; i < _doupi.FirstRemainingPiece + _doupi.RemainingPieces; i++)
                     DrawPiece(i, QuadRegion(quad, PieceRegion(i)), _doupi.Quality, canvas: preview);
@@ -115,8 +115,7 @@ public partial class WuhanWorkstationView
                 FilledSurface(quad, _doupi.BrowningProgress, quality: _doupi.Quality, canvas: preview);
             else
             {
-                SurfaceLayer(state == DoupiState.Batter ? "doupi_skin" : "doupi_egg", quad, Colors.White, canvas: preview);
-                if (state == DoupiState.Spreading) DrawSpreading(quad, preview);
+                SurfaceLayer(!_doupi.HasEgg || _doupi.SecondSide ? "doupi_skin" : "doupi_egg", quad, Colors.White, canvas: preview);
             }
             if (state == DoupiState.Cutting)
                 foreach (DoupiCutLine line in _doupi.CutLines)
@@ -207,40 +206,56 @@ public partial class WuhanWorkstationView
         {
             Vector2[] quad = PanCorners;
             float deposit = Phase(p, .35f, .80f);
-            if (motion?.Kind == "flip" && !ReducedMotion)
-            {
-                float turn = Phase(p, .18f, .82f);
-                float squash = Mathf.Abs(Mathf.Cos(turn * Mathf.Pi));
-                // Preserve the food/tool relationship throughout lift and landing.
-                float lift = Mathf.Sin(Smooth(p) * Mathf.Pi) * 36;
-                quad = quad.Select(v => PanCenter + (v - PanCenter) * new Vector2(1, squash) - new Vector2(0, lift)).ToArray();
-            }
             float heldLift = _gesture == "flip" && state == DoupiState.ReadyToFlip ? _flipLift : 0;
             if (motion?.Kind == "flip_return") heldLift = motion.Lift * (1 - Smooth(p));
-            if (motion?.Kind == "flip") heldLift = motion.Lift * (1 - Phase(p, 0, .4f));
-            if (heldLift > 0 && !ReducedMotion)
+            if (!ReducedMotion)
             {
-                quad = (Vector2[])quad.Clone();
-                quad[2] -= new Vector2(0, 24 * heldLift); quad[3] -= new Vector2(0, 24 * heldLift);
+                if (motion?.Kind == "flip")
+                {
+                    quad = FlipQuad(motion);
+                    float air = Mathf.Sin(Phase(p, 0, .88f) * Mathf.Pi);
+                    Ellipse(PanCenter + new Vector2(0, 8), new Vector2(130 - air * 14, 38 - air * 10), new Color(.18f,.10f,.04f,.12f + .1f * (1-air)));
+                }
+                else if (heldLift > 0)
+                {
+                    quad = (Vector2[])quad.Clone();
+                    quad[2] -= new Vector2(0,24*heldLift); quad[3] -= new Vector2(0,24*heldLift);
+                }
             }
             float alpha = motion?.Kind == "batter" ? deposit : 1;
             if (motion?.Kind == "batter" && !ReducedMotion)
                 quad = quad.Select(v => PanCenter + (v - PanCenter) * (.85f + .15f * deposit)).ToArray();
             if (state is DoupiState.Batter || motion?.Kind == "egg")
                 SurfaceLayer("doupi_skin", quad, new Color(1, 1, 1, alpha));
-            if (state is DoupiState.SkinCooking or DoupiState.ReadyToFlip or DoupiState.Flipped or DoupiState.Spreading)
+            if (state is DoupiState.SkinCooking or DoupiState.ReadyToFlip or DoupiState.Flipped)
             {
-                if (motion?.Kind == "egg" && !ReducedMotion) DrawEggSurface(quad, p);
-                else SurfaceLayer("doupi_egg", quad, new Color(1, 1, 1, motion?.Kind == "egg" ? Smooth(p) : 1));
+                if (motion?.Kind == "flip")
+                {
+                    if (ReducedMotion)
+                    {
+                        SurfaceLayer("doupi_egg",quad,Colors.White);
+                        SurfaceLayer("doupi_skin",quad,new Color(1,.91f,.66f,Smooth(p)));
+                    }
+                    else DrawFlippingSkin(motion);
+                }
+                else if (motion?.Kind == "egg" && !ReducedMotion) DrawEggSurface(quad, p);
+                else
+                {
+                    bool underside = state == DoupiState.Flipped && (motion?.Kind != "flip" || p >= .5f);
+                    SurfaceLayer(underside ? "doupi_skin" : "doupi_egg", quad,
+                        underside ? new Color(1,.91f,.66f,1) : Colors.White);
+                }
             }
-            if (state == DoupiState.Spreading) DrawSpreading(quad);
             if (state is DoupiState.SecondCooking or DoupiState.ReadyToCut or DoupiState.Overbrowned or DoupiState.Cutting)
-                FilledSurface(quad, _doupi.BrowningProgress, motion?.Kind == "filling" ? deposit : 1, quality: _doupi.Quality);
+            {
+                if (motion?.Kind == "filling") DrawAutoFilling(quad, p);
+                else FilledSurface(quad, _doupi.BrowningProgress, quality: _doupi.Quality);
+            }
             if (state == DoupiState.Burnt)
             {
-                DrawBurntDoupi(this, quad, _doupi.Coverage > 0);
+                DrawBurntDoupi(this, quad, _doupi.HasFilling);
             }
-            if (state is DoupiState.SkinCooking or DoupiState.ReadyToFlip)
+            if (!_doupi.SecondSide && _doupi.IsHeating)
             {
                 float cooked = Smooth(_doupi.SkinCookProgress);
                 // A narrow golden crust follows the food's edge, not the pan's hit box.
@@ -269,8 +284,13 @@ public partial class WuhanWorkstationView
                     var (from, to) = CutLine((int)line);
                     DrawDashedLine(from, to, new Color(1, .96f, .8f, .32f), 1.5f, 9, true);
                 }
-            if (state is DoupiState.SkinCooking or DoupiState.SecondCooking or DoupiState.ReadyToFlip or DoupiState.ReadyToCut)
-                Steam(PanCenter + new Vector2(0, -30), .7f);
+            if (_doupi.IsHeating) Steam(PanCenter + new Vector2(0, -30), .7f);
+            if (motion?.Kind == "flip" && !ReducedMotion && p > .78f)
+            {
+                float puff = Phase(p,.78f,1);
+                for (int i=0;i<3;i++) Ellipse(PanCenter + new Vector2((i-1)*85, -puff*18),
+                    new Vector2(9+puff*14, 3+puff*6), new Color(1,1,1,.28f*(1-puff)));
+            }
         }
         if (state is (DoupiState.ReadyToCut or DoupiState.Overbrowned or DoupiState.Cutting) && _gesture != "cut" && !Busy("pan"))
         {
@@ -298,24 +318,69 @@ public partial class WuhanWorkstationView
             Sprite("egg_ladle", _layout.DoupiEggFood);
     }
 
-    private void DrawSpreading(Vector2[] quad, CanvasItem? canvas = null)
+    private Vector2[] FlipQuad(Motion motion) => FlipQuad(motion.Progress, motion.Lift);
+    private Vector2[] FlipQuad(float p, float heldLift)
     {
-        const int width = DoupiInteraction.CoverageWidth, height = DoupiInteraction.CoverageHeight;
-        float Alpha(int x, int y)
+        float turn = Phase(p,.15f,.80f);
+        float lift = Mathf.Sin(Phase(p,0,.88f)*Mathf.Pi)*36;
+        float depth = Math.Max(.18f, Mathf.Abs(Mathf.Cos(turn*Mathf.Pi)));
+        float settle = Mathf.Sin(Phase(p,.84f,1)*Mathf.Pi)*3;
+        Vector2[] quad = PanCorners.Select(v => PanCenter + (v-PanCenter)*new Vector2(1,depth)
+            + new Vector2((v.Y-PanCenter.Y)*Mathf.Sin(turn*Mathf.Pi)*.12f, -lift+settle)).ToArray();
+        float held = heldLift * (1-Phase(p,0,.35f));
+        quad[2] -= new Vector2(0,24*held); quad[3] -= new Vector2(0,24*held);
+        float tilt = -Mathf.Sin(turn*Mathf.Pi)*.08f;
+        return quad.Select(v => PanCenter+(v-PanCenter).Rotated(tilt)).ToArray();
+    }
+    internal Vector2[] FlipSurfaceQuad(float progress, float heldLift, Rect2 region)
+    {
+        Vector2[] quad = FlipQuad(progress,heldLift);
+        float curl = Mathf.Sin(Phase(progress,.15f,.80f)*Mathf.Pi);
+        // Bend equally along both edges: varying curvature across depth can fold a cell over itself.
+        Vector2 Bent(float u,float v) => QuadPoint(quad,u,v)-new Vector2(0,Mathf.Sin(u*Mathf.Pi)*curl*18);
+        return new[]{Bent(region.Position.X,region.Position.Y),Bent(region.End.X,region.Position.Y),
+            Bent(region.End.X,region.End.Y),Bent(region.Position.X,region.End.Y)};
+    }
+    private void DrawFlippingSkin(Motion motion)
+    {
+        float turn = Phase(motion.Progress,.15f,.80f);
+        // A curved mesh keeps the flexible skin readable through the middle of the turn.
+        // The underside rolls into view across its width instead of swapping one flat sprite.
+        for (int y=0;y<4;y++) for (int x=0;x<12;x++)
         {
-            float sum = 0;
-            for (int dy = -1; dy <= 0; dy++) for (int dx = -1; dx <= 0; dx++)
-                if (_doupi!.IsCovered(Math.Clamp(x + dx, 0, width - 1), Math.Clamp(y + dy, 0, height - 1))) sum += .25f;
-            return sum;
+            Rect2 region = new(x/12f,y/4f,1/12f,1/4f);
+            Vector2[] cell = FlipSurfaceQuad(motion.Progress,motion.Lift,region);
+            if (y==3) DrawColoredPolygon(new[]{cell[3],cell[2],cell[2]+new Vector2(0,4),cell[3]+new Vector2(0,4)},new Color("#C9964A"));
+            float underside = Smooth((turn-.42f+x/12f*.12f)/.16f);
+            SurfaceLayer("doupi_egg",cell,Colors.White,region);
+            SurfaceLayer("doupi_skin",cell,new Color(1,.91f,.66f,underside),region);
         }
-        Texture2D texture = _art.Texture("doupi_filling_overlay");
-        for (int y = 0; y < height; y++) for (int x = 0; x < width; x++)
+    }
+    private void DrawFlipTool(Vector2 contact, float alpha = 1, float angle = 0)
+        => Sprite("flip_tool", At(contact + new Vector2(30,-23), new Vector2(138,91)), alpha, angle);
+    private void DrawFillingPortion(Vector2 center, float alpha = 1)
+    {
+        Vector2[] ring = Enumerable.Range(0,24).Select(i => new Vector2(Mathf.Cos(i*Mathf.Tau/24),Mathf.Sin(i*Mathf.Tau/24))).ToArray();
+        DrawPolygon(ring.Select(v=>center+v*new Vector2(27,13)).ToArray(),new[]{new Color(1,1,1,alpha)},
+            ring.Select(v=>new Vector2(.5f,.5f)+v*new Vector2(.12f,.07f)).ToArray(),_art.Texture("doupi_filling_overlay"));
+    }
+    private void DrawFillingTool(Vector2 contact, float alpha = 1)
+    {
+        DrawFlipTool(contact, alpha); DrawFillingPortion(contact + new Vector2(-6, -4), alpha);
+    }
+    private void DrawAutoFilling(Vector2[] quad, float p)
+    {
+        SurfaceLayer("doupi_skin",quad,new Color(1,.91f,.66f,1));
+        float spread = Phase(p,.20f,.88f);
+        if (ReducedMotion)
+        { FilledSurface(quad,_doupi!.BrowningProgress,Smooth(p),quality:_doupi.Quality); return; }
+        DrawFillingPortion(PanCenter, Phase(p,0,.20f)*(1-spread));
+        const int strips = 32;
+        for (int i=0;i<strips;i++)
         {
-            Color[] colors = { new(1, 1, 1, Alpha(x, y)), new(1, 1, 1, Alpha(x + 1, y)),
-                new(1, 1, 1, Alpha(x + 1, y + 1)), new(1, 1, 1, Alpha(x, y + 1)) };
-            if (colors.All(c => c.A == 0)) continue;
-            Rect2 region = new((float)x / width, (float)y / height, 1f / width, 1f / height);
-            (canvas ?? this).DrawPolygon(QuadRegion(quad, region), colors, DoupiSource("doupi_filling_overlay", region), texture);
+            Rect2 region = new(i/(float)strips,0,1f/strips,1);
+            float alpha = Smooth((spread*1.1f-region.Position.X)/.10f);
+            FilledSurface(QuadRegion(quad,region),_doupi!.BrowningProgress,alpha,region,_doupi.Quality);
         }
     }
     private (Vector2 From, Vector2 To) CutLine(int index)
@@ -335,7 +400,7 @@ public partial class WuhanWorkstationView
         float p = m.Progress;
         if (ReducedMotion) return;
         float toolAlpha = Phase(p, 0, .12f) * (1 - Phase(p, .85f, 1));
-        if (m.Kind is "flip" or "cut")
+        if (m.Kind is "flip" or "flip_return" or "cut")
         {
             Vector2 center;
             if (m.Kind == "cut")
@@ -343,14 +408,28 @@ public partial class WuhanWorkstationView
                 var (from, to) = CutLine((int)m.Line);
                 center = (m.Origin ?? to) - new Vector2(0, 10 * Smooth(p));
             }
-            else center = PanCenter + new Vector2(35, -Mathf.Sin(Smooth(p) * Mathf.Pi) * 36);
-            Sprite(m.Kind == "cut" ? "cut_tool" : "flip_tool", At(center + new Vector2(30, -23), new Vector2(138, 91)), toolAlpha,
-                m.Kind == "flip" ? -Mathf.Sin(Smooth(p) * Mathf.Pi) * .4f : 0);
+            else
+            {
+                Vector2 target = m.Kind == "flip" ? QuadPoint(FlipQuad(m),.65f,.8f) : PanCenter;
+                center = (m.Origin ?? target).Lerp(target, Phase(p,0,.35f));
+                float alpha = m.Kind == "flip_return" ? 1-Smooth(p) : 1-Phase(p,.8f,1);
+                DrawFlipTool(center, alpha, m.Kind == "flip" ? -Mathf.Sin(Phase(p,.15f,.8f)*Mathf.Pi)*.4f : 0);
+                return;
+            }
+            Sprite("cut_tool", At(center + new Vector2(30,-23),new Vector2(138,91)),toolAlpha);
         }
         else if (m.Kind == "egg") DrawEggMotion(m);
-        else if (m.Kind is "batter" or "filling")
+        else if (m.Kind == "filling")
         {
-            Vector2 start = m.Origin ?? (m.Kind == "filling" ? FillingRect : BatterRect).GetCenter();
+            float sweep = Phase(p,.20f,.88f);
+            Vector2 contact = (m.Origin ?? PanCenter).Lerp(QuadPoint(PanCorners,0,.55f),Phase(p,0,.20f));
+            if (p >= .20f) contact = QuadPoint(PanCorners,sweep,.55f);
+            DrawFlipTool(contact,1-Phase(p,.88f,1));
+            if (p < .20f) DrawFillingPortion(contact + new Vector2(-6,-4),1-Phase(p,0,.20f));
+        }
+        else if (m.Kind == "batter")
+        {
+            Vector2 start = m.Origin ?? BatterRect.GetCenter();
             Vector2 above = PanCenter + new Vector2(0, -60);
             float travel = Phase(p, 0, .35f), retreat = Phase(p, .8f, 1);
             Vector2 center = start.Lerp(above, travel).Lerp(start, retreat);

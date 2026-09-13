@@ -41,7 +41,7 @@ public partial class WuhanRepairCapture : Node
             await Advance(catalog.DoupiGriddlesByLevel[level].StageSeconds / catalog.DoupiGriddlesByLevel[level].SpeedMultiplier - .18 + .02);
             if (level == 1) Drag(view.PanCenter, view.PanCenter - new Vector2(0, 55));
             await Advance(.12); await Shot("04-flip-lift"); await Advance(.12); await Shot("05-flip-middle"); await Advance(.26);
-            _day.AddDoupiFilling(); await Advance(.18); await Shot("06-filling-action"); await Advance(.23); await Shot("07-filling");DoupiTestFixture.Spread(_day.Doupi!);
+            _day.AddDoupiFilling(); await Advance(.18); await Shot("06-filling-action"); await Advance(.23); await Shot("07-filling");
             await Advance(1.2); await Shot("08-browning");
             await Advance(catalog.DoupiGriddlesByLevel[level].SecondStageReadySeconds / catalog.DoupiGriddlesByLevel[level].SpeedMultiplier - 1.61 + .01);
             await Shot("09-ready");

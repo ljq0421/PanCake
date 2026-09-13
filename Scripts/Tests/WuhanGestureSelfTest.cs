@@ -28,21 +28,10 @@ public partial class WuhanGestureSelfTest : Node
     private void Click(Vector2 point)=>Drag(point,point);
     private void Step(double dt) { _screen._Notification((int)NotificationApplicationFocusIn);_screen._Process(dt); }
     private async Task Frames() { for(int i=0;i<3;i++)await ToSignal(GetTree(),SceneTree.SignalName.ProcessFrame); }
-    private void SpreadHeld()
-    {
-        for (int row = 0; row < 3; row++)
-        {
-            float y = .15f + row * .35f;
-            Move(View.PanPoint(row % 2 == 0 ? .02f : .98f, y), true);
-            Move(View.PanPoint(row % 2 == 0 ? .98f : .02f, y), true);
-        }
-    }
     private void FillDoupi()
     {
-        Move(View.FillingCenter); Button(View.FillingCenter, true);
-        Move(View.PanPoint(.02f,.15f), true); SpreadHeld();
-        Button(View.PanPoint(.98f,.85f), false);
-        Check(_screen.Doupi!.State == DoupiState.SecondCooking, "one continuous filling gesture starts second cooking");
+        Drag(View.FillingCenter,View.PanCenter);
+        Check(_screen.Doupi!.HasFilling && _screen.Doupi.State==DoupiState.SecondCooking, "release inside pan starts automatic filling once");
     }
     private void PrepareDoupi(int level)
     {
@@ -65,6 +54,7 @@ public partial class WuhanGestureSelfTest : Node
         try {
             bool small=OS.GetCmdlineUserArgs().Contains("--capture-720");
             bool capture=OS.GetCmdlineUserArgs().Contains("--capture");
+            ProjectSettings.SetSetting("accessibility/reduce_motion",OS.GetCmdlineUserArgs().Contains("--reduced-motion"));
             GetWindow().Size=small?new Vector2I(1280,720):new Vector2I(1920,1080);
             var catalog=GetNode<DataCatalog>("/root/DataCatalog");
             for(int level=1;level<=3;level++) {
@@ -77,7 +67,7 @@ public partial class WuhanGestureSelfTest : Node
                 async Task Shot(string name) {
                     if (!capture) return;
                     Step(.00001); await Frames(); await ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
-                    string root=ProjectSettings.GlobalizePath($"res://.tmp/wuhan-optimization/{(small?720:1080)}/lv{level}");
+                    string root=ProjectSettings.GlobalizePath($"res://.tmp/wuhan-cooking-update/{(small?720:1080)}-{(WuhanWorkstationView.ReducedMotion?"reduced":"normal")}/lv{level}");
                     System.IO.Directory.CreateDirectory(root); GetViewport().GetTexture().GetImage().SavePng(root+"/"+name+".png");
                 }
                 await Shot("01-idle");
@@ -92,12 +82,26 @@ public partial class WuhanGestureSelfTest : Node
                 Drag(View.RawCenter,View.BasketRect(0).GetCenter());
                 Check(_screen.Cooker.Baskets[0].State==NoodleBasketState.Cooking&&_screen.Ingredients.Count(StableIds.Ingredients.WuhanNoodles)==noodles,$"Lv{level} raw drag starts once");
                 if(level==3) { Drag(View.RawCenter,View.BasketRect(1).GetCenter());Check(_screen.Cooker.Baskets[1].State==NoodleBasketState.Cooking,"second basket accepts independent noodle drag"); }
+                Step(.25);
+                Check(View.BasketImmersion(0)>.99f,"cooking basket remains submerged");
+                await Shot("01a-basket-submerged");
                 Step(catalog.NoodleCookersByLevel[level].OptimalSeconds+.01);
                 if(level<3) {
-                    var home=View.BasketRect(0).GetCenter();Click(home);Check(_screen.Cooker.Baskets[0].State is NoodleBasketState.Ready or NoodleBasketState.Locked,"basket click cannot substitute for lifting");
+                    var home=View.BasketRect(0).GetCenter();
+                    var heldRect=View.BasketRect(0);
+                    Vector2 handle=heldRect.Position+heldRect.Size*new Vector2(.65f,.2f);
+                    Move(handle);Button(handle,true);
+                    Check(View.BasketRect(0)==heldRect,"grabbing off-center does not teleport the basket");
+                    Move(handle-new Vector2(0,20),true);
+                    Check(View.BasketRect(0)==heldRect&&View.BasketImmersion(0)>.99f,"short lift keeps basket in water until accepted");
+                    Button(handle,false);
+                    Click(home);Check(_screen.Cooker.Baskets[0].State is NoodleBasketState.Ready or NoodleBasketState.Locked,"basket click cannot substitute for lifting");
                     Drag(home,home-new Vector2(0,65));Check(_screen.Cooker.Baskets[0].State==NoodleBasketState.Raised,"upward stroke raises basket");
                 }
-                Step(.25);
+                Step(.12); await Shot("01b-basket-raising");
+                Step(.13); await Shot("01c-basket-raised");
+                Check(View.BasketImmersion(0)==0,"accepted lift clears water before draining");
+                if(level==3)Check(View.BasketImmersion(1)==0,"second automatic basket independently clears water");
                 Vector2 raised=View.BasketRect(0).GetCenter();
                 Drag(raised, View.BowlCenter);
                 Check(_screen.Cooker.PendingPourBasket==0&&_screen.Bowl.State==NoodleBowlState.Empty,"early drop reserves bowl and releases mouse");
@@ -143,34 +147,36 @@ public partial class WuhanGestureSelfTest : Node
                     Check(_screen.Doupi.State==DoupiState.Flipped,"upward pan stroke flips skin");
                 }
                 else Check(_screen.Doupi.State==DoupiState.Flipped,"upgraded griddle still flips automatically");
-                Step(.5);
+                Step(.10); await Shot("02a-flip-lift");
+                Step(.14); await Shot("02a-flip-turn");
+                Step(.17); await Shot("02a-flip-land"); Step(.09);
                 Move(View.FillingCenter); Button(View.FillingCenter,true);Move(View.PanPoint(.1f,.3f),true);
-                Move(View.PanPoint(.35f,.3f),true);
-                Check(_screen.Doupi.State==DoupiState.Spreading && _screen.Doupi.IsCovered(5,5) && !_screen.Doupi.IsCovered(28,5), "filling appears only where the pointer travelled");
-                await Shot("02b-partial-filling");
-                for(int j=0;j<10;j++)Move(View.PanPoint(.35f,.3f),true);
-                Check(_screen.Doupi.Coverage < .5f,"stationary corner cannot fill the pan");
-                Button(View.PanPoint(.35f,.3f),false);
+                Check(!_screen.Doupi.HasFilling && _screen.Doupi.State==DoupiState.Flipped, "entering pan while held does not deposit filling");
+                Move(new Vector2(950,1000),true);Button(new Vector2(950,1000),false);
+                Check(!_screen.Doupi.HasFilling,"crossing pan then releasing outside preserves ingredients");
                 foreach(string reason in new[]{"escape","pause","focus","hidden"})
                 {
-                    Move(View.PanPoint(.35f,.3f));Button(View.PanPoint(.35f,.3f),true);
-                    float coverage = _screen.Doupi.Coverage;
+                    Move(View.FillingCenter);Button(View.FillingCenter,true);Move(View.PanCenter,true);
+                    double heat = _screen.Doupi.SideSeconds;
                     if(reason=="escape")GetViewport().PushInput(new InputEventKey{Pressed=true,Keycode=Key.Escape},true);
                     if(reason=="pause"){controller.IsPaused=true;_screen._Process(2);controller.IsPaused=false;}
                     if(reason=="focus"){_screen._Notification((int)NotificationApplicationFocusOut);_screen._Process(2);_screen._Notification((int)NotificationApplicationFocusIn);}
                     if(reason=="hidden"){_screen.Hide();_screen._Process(2);_screen.Show();}
-                    Button(View.PanPoint(.35f,.3f),false);
-                    Check(!View.HasProductionGesture && _screen.Doupi.Coverage == coverage && _screen.Doupi.State == DoupiState.Spreading,$"{reason} retains filling coverage and releases input");
+                    Button(View.PanCenter,false);
+                    Check(!View.HasProductionGesture && !_screen.Doupi.HasFilling && _screen.Doupi.SideSeconds==heat,$"{reason} cancels uncommitted filling without advancing suspended heat");
                 }
-                Step(10); Check(_screen.Doupi.State==DoupiState.Spreading,"spreading has no extra burn timer");
-                float existing=_screen.Doupi.Coverage;
-                Drag(View.FillingCenter,new Vector2(950,1000));
-                Check(_screen.Doupi.Coverage==existing,"new missed portion never resets existing filling");
-                Move(View.PanPoint(.35f,.3f));Button(View.PanPoint(.35f,.3f),true);SpreadHeld();
+                FillDoupi(); Step(.30); await Shot("02b-auto-filling");
+                double ingredientSeconds = _screen.Doupi.IngredientSeconds;
+                float animation = View.MotionProgress("pan");
+                controller.IsPaused=true;_screen._Process(2);controller.IsPaused=false;
+                Check(_screen.Doupi.IngredientSeconds==ingredientSeconds && View.MotionProgress("pan")==animation,"pause freezes committed filling animation and minimum cooking time");
+                Drag(View.FillingCenter,View.PanCenter);
+                Check(_screen.Doupi.HasFilling&&View.MotionProgress("pan")==animation,"busy pan rejects duplicate filling without restarting animation");
+                Step(.31);Check(!View.Busy("pan")&&_screen.Doupi.HasFilling,"automatic filling finishes without another input");
+                Move(View.PanPoint(.05f,.5f));Button(View.PanPoint(.05f,.5f),true);
                 Step(catalog.DoupiGriddlesByLevel[level].SecondStageReadySeconds/catalog.DoupiGriddlesByLevel[level].SpeedMultiplier+.01);
-                Move(View.PanPoint(.05f,.5f),true);Move(View.PanPoint(.95f,.5f),true);
-                Check(_screen.Doupi.CompletedCuts==0 && View.HasProductionGesture,"completed filling press cannot become a cutting gesture");
-                Button(View.PanPoint(.95f,.5f),false);
+                Move(View.PanPoint(.95f,.5f),true);Button(View.PanPoint(.95f,.5f),false);
+                Check(_screen.Doupi.CompletedCuts==0,"press started during cooking cannot become a cutting gesture");
                 Click(View.PanCenter);Check(_screen.Doupi.CompletedCuts==0,"pan click does not cut");
                 Drag(View.PanPoint(.45f,.5f),View.PanPoint(.5f,.5f));Check(_screen.Doupi.CompletedCuts==0,"short accidental stroke does not cut");
                 _screen.DoupiStock.TryAddBatch(13);

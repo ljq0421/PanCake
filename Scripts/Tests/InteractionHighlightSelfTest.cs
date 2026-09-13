@@ -243,7 +243,7 @@ public partial class InteractionHighlightSelfTest : Node
     {
         using Image image = _viewport.GetTexture().GetImage();
         float scale = image.GetWidth() / 1672f;
-        Color ink = InteractionHighlightPresentation.ColorFor(InteractionHighlightState.Hover);
+        Color ink = InteractionHighlightTheme.Tianjin.HoverColor;
         var rows = new List<int>();
         for (int x = (int)(150 * scale); x < (int)(405 * scale); x++)
         {
@@ -263,9 +263,10 @@ public partial class InteractionHighlightSelfTest : Node
 
     private async Task CheckRenderedContours()
     {
-        using var pixels = Image.CreateEmpty(32, 32, false, Image.Format.Rgba8);
+        _viewport.TransparentBg = true;
+        using var pixels = Image.CreateEmpty(128, 128, false, Image.Format.Rgba8);
         pixels.Fill(Colors.Transparent);
-        pixels.FillRect(new Rect2I(8, 8, 16, 16), Colors.Red);
+        pixels.FillRect(new Rect2I(32, 32, 64, 64), Colors.Red);
         var texture = ImageTexture.CreateFromImage(pixels);
         var fixture = new Control { Position = new Vector2(300, 250), MouseFilter = Control.MouseFilterEnum.Ignore };
         _viewport.AddChild(fixture);
@@ -278,8 +279,9 @@ public partial class InteractionHighlightSelfTest : Node
             MouseFilter = Control.MouseFilterEnum.Ignore };
         fixture.AddChild(head);
         var state = InteractionHighlightState.Hover;
-        ArtContourHighlight.Attach(body, () => state, head);
-        bool IsHighlight(Color color) => color.R > .65f && color.G > .65f && color.B > .3f;
+        var contour = ArtContourHighlight.Attach(body, () => state, head);
+        static bool Near(Color a, Color b) => Math.Abs(a.R - b.R) + Math.Abs(a.G - b.G) + Math.Abs(a.B - b.B) < .14f;
+        bool IsHighlight(Color color) => Near(color, InteractionHighlightPresentation.ColorFor(state, body));
         async Task Verify(float expected, string description, float edgeX = 32, float edgeY = 64)
         {
             await Wait(.16); await Frames();
@@ -289,7 +291,22 @@ public partial class InteractionHighlightSelfTest : Node
             int count = 0;
             for (int x = (int)MathF.Floor(edge.X) - 9; x < (int)MathF.Ceiling(edge.X) + 2; x++)
                 if (IsHighlight(rendered.GetPixel(x, (int)edge.Y))) count++;
+            if (Math.Abs(count - expected) > 1)
+            {
+                rendered.SavePng(ProjectSettings.GlobalizePath("res://.tmp/hover-render-failure.png"));
+                GD.Print("EDGE_PIXELS " + string.Join(",", Enumerable.Range(-9, 12).Select(x => rendered.GetPixel((int)edge.X + x, (int)edge.Y).ToHtml())));
+            }
             Check(Math.Abs(count - expected) <= 1, $"{description}: rendered stroke {count}px (expected {expected}px)");
+            if (InteractionHighlightTheme.Applies(body, state))
+            {
+                // At fractional positions the 1px backing mixes with its neighbours;
+                // measure the complete exterior coverage, not exact-color pixel count.
+                int exterior = Enumerable.Range(-9, 9).Count(x => rendered.GetPixel((int)edge.X + x, (int)edge.Y).A > .15f);
+                Check(exterior is >= 5 and <= 7 && exterior > count,
+                    $"{description}: full 6px exterior including backing is not clipped ({exterior}px)");
+                Vector2 inside = edge + new Vector2(3, 0);
+                Check(Near(rendered.GetPixel((int)inside.X, (int)inside.Y), Colors.Red), "themed shader preserves source interior");
+            }
             if (head.Visible)
             {
                 Vector2 overlap = InteractionHighlightPresentation.PixelTransform(body) * new Vector2(96, 64);
@@ -297,15 +314,36 @@ public partial class InteractionHighlightSelfTest : Node
             }
         }
         await Verify(4, "hover follows alpha at viewport scale");
+        using var otherCity = new Control();
+        InteractionHighlightTheme.Set(fixture, InteractionHighlightTheme.Tianjin);
+        Check(InteractionHighlightPresentation.ColorFor(state, body) == InteractionHighlightTheme.Tianjin.HoverColor
+            && InteractionHighlightPresentation.WidthFor(state, otherCity) == 4
+            && InteractionHighlightPresentation.ColorFor(state, otherCity) == new Color("#FFE7A4"), "theme inherits within its scene without affecting other cities");
+        await Verify(5, "Tianjin themed hover");
+        InteractionHighlightTheme.Set(fixture, InteractionHighlightTheme.Wuhan);
+        await Verify(5, "Wuhan themed hover");
+        state = InteractionHighlightState.None; contour._Process(.1);
+        Check(!contour.Visible, "themed hover clears immediately on exit");
+        state = InteractionHighlightState.Hover; contour._Process(.025);
+        float alpha = ((ShaderMaterial)contour.Material).GetShaderParameter("contour_color").AsColor().A;
+        Check(alpha > .2f && alpha < .3f, "hover reentry starts a fresh 100ms fade");
+        ProjectSettings.SetSetting("accessibility/reduce_motion", true); contour._Process(0);
+        Check(((ShaderMaterial)contour.Material).GetShaderParameter("contour_color").AsColor().A == 1, "reduced motion shows the themed contour immediately");
+        ProjectSettings.SetSetting("accessibility/reduce_motion", false);
         fixture.Scale = new Vector2(.7f, 1.15f);
+        await Verify(5, "themed hover survives non-uniform parent scaling");
+        foreach (var semantic in new[] { InteractionHighlightState.Selected, InteractionHighlightState.Eligible,
+            InteractionHighlightState.Valid, InteractionHighlightState.Invalid, InteractionHighlightState.Attention })
+            Check(InteractionHighlightPresentation.ColorFor(semantic, body) == InteractionHighlightPresentation.ColorFor(semantic)
+                && InteractionHighlightPresentation.WidthFor(semantic, body) == InteractionHighlightPresentation.WidthFor(semantic), "theme preserves semantic state " + semantic);
         state = InteractionHighlightState.Valid;
         await Verify(5, "valid outline survives non-uniform parent scaling");
         // Atlas cropping uses the actual region; unrelated pixels in the atlas cannot leak in.
-        using var atlasPixels = Image.CreateEmpty(64, 32, false, Image.Format.Rgba8);
-        atlasPixels.Fill(Colors.Blue); atlasPixels.BlitRect(pixels, new Rect2I(0, 0, 32, 32), new Vector2I(32, 0));
-        body.Texture = new AtlasTexture { Atlas = ImageTexture.CreateFromImage(atlasPixels), Region = new Rect2(32, 0, 32, 32) };
+        using var atlasPixels = Image.CreateEmpty(256, 128, false, Image.Format.Rgba8);
+        atlasPixels.Fill(Colors.Blue); atlasPixels.BlitRect(pixels, new Rect2I(0, 0, 128, 128), new Vector2I(128, 0));
+        body.Texture = new AtlasTexture { Atlas = ImageTexture.CreateFromImage(atlasPixels), Region = new Rect2(128, 0, 128, 128) };
         await Verify(5, "live texture replacement and atlas region remain aligned");
-        pixels.FillRect(new Rect2I(4, 8, 4, 16), Colors.Red);
+        pixels.FillRect(new Rect2I(16, 32, 16, 64), Colors.Red);
         body.Texture = ImageTexture.CreateFromImage(pixels);
         await Verify(5, "changed silhouette follows the replacement expression", 16);
         body.FlipH = true;
@@ -317,6 +355,7 @@ public partial class InteractionHighlightSelfTest : Node
         Check(!fixture.GetChildren().OfType<ArtContourHighlight>().Single().Visible, "cleared state removes the contour");
         fixture.QueueFree();
         await Frames();
+        _viewport.TransparentBg = false;
         await CheckRasterSilhouette();
     }
 
@@ -344,9 +383,26 @@ public partial class InteractionHighlightSelfTest : Node
         Check(Math.Abs(count - 4) <= 1, $"raster silhouette retains a 4px outer stroke under scaling ({count}px)");
         Check(!Highlight(transform * new Vector2(60, 60)) && !Highlight(transform * new Vector2(80, 60)),
             "filter mesh holes have no internal highlight");
+        foreach (var theme in new[] { InteractionHighlightTheme.Tianjin, InteractionHighlightTheme.Wuhan })
+        {
+            _viewport.TransparentBg = true;
+            InteractionHighlightTheme.Set(raster, theme);
+            ProjectSettings.SetSetting("accessibility/reduce_motion", true);
+            raster.QueueRedraw(); await Frames();
+            await ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
+            using Image themed = _viewport.GetTexture().GetImage();
+            bool Near(Color a, Color b) => Math.Abs(a.R-b.R) + Math.Abs(a.G-b.G) + Math.Abs(a.B-b.B) < .16f;
+            int core = Enumerable.Range(-9, 10).Count(x => Near(themed.GetPixel((int)left.X+x, (int)left.Y), theme.HoverColor));
+            int exterior = Enumerable.Range(-9, 9).Count(x => themed.GetPixel((int)left.X+x, (int)left.Y).A > .15f);
+            Check(core is >= 3 and <= 6 && exterior is >= 5 and <= 7 && exterior > core,
+                $"themed raster preserves 6px exterior with distinct core and backing ({core}/{exterior})");
+            Color interior = themed.GetPixel((int)(transform * new Vector2(60,60)).X, (int)(transform * new Vector2(60,60)).Y);
+            Check(!Near(interior, theme.HoverColor) && !Near(interior, InteractionHighlightTheme.BackingColor), "themed raster does not paint source interior");
+        }
+        ProjectSettings.SetSetting("accessibility/reduce_motion", false);
         _viewport.TransparentBg = true;
         raster.Rotation = .23f;
-        raster.QueueRedraw(); await Frames();
+        raster.QueueRedraw(); await Wait(.2); await Frames();
         await ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
         using Image angled = _viewport.GetTexture().GetImage();
         byte[] rgba = angled.GetData();
@@ -360,6 +416,46 @@ public partial class InteractionHighlightSelfTest : Node
             "angled raster contour has antialiased coverage and an opaque stroke core");
         _viewport.TransparentBg = false;
         raster.QueueFree();
+        await Frames();
+        await CheckDrawnTargetSwitch();
+    }
+
+    private async Task CheckDrawnTargetSwitch()
+    {
+        var canvas = new Node2D { Position = new Vector2(400, 350), Scale = new Vector2(.8f, 1.1f) };
+        _viewport.AddChild(canvas);
+        InteractionHighlightTheme.Set(canvas, InteractionHighlightTheme.Wuhan);
+        ProjectSettings.SetSetting("accessibility/reduce_motion", true);
+        int target = 0;
+        Vector2[][] paths = {
+            new[] { new Vector2(0,0), new Vector2(80,0), new Vector2(80,80), new Vector2(0,80) },
+            new[] { new Vector2(120,0), new Vector2(200,0), new Vector2(200,80), new Vector2(120,80) },
+        };
+        canvas.Draw += () => {
+            for (int i = 0; i < 2; i++)
+            {
+                canvas.DrawColoredPolygon(paths[i], Colors.Red);
+                InteractionHighlightPresentation.DrawPath(canvas, paths[i], target == i
+                    ? InteractionHighlightState.Hover : InteractionHighlightState.None);
+            }
+        };
+        foreach (int next in new[] { 0, 1, -1 })
+        {
+            target = next; canvas.QueueRedraw(); await Frames();
+            await ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
+            using Image rendered = _viewport.GetTexture().GetImage();
+            for (int i = 0; i < 2; i++)
+            {
+                Vector2 p = InteractionHighlightPresentation.PixelTransform(canvas) * new Vector2(i * 120, 40);
+                Color outside = rendered.GetPixel((int)p.X - 3, (int)p.Y);
+                bool lit = outside.G > .5f && outside.B > .45f && outside.R < .3f;
+                Check(lit == (target == i), $"direct path switch {next}: only the current target {i} is highlighted");
+                Color inside = rendered.GetPixel((int)p.X + 3, (int)p.Y);
+                Check(inside.R > .95f && inside.G < .05f, "direct path preserves original interior pixels");
+            }
+        }
+        ProjectSettings.SetSetting("accessibility/reduce_motion", false);
+        canvas.QueueFree(); await Frames();
     }
 
     private static void BeginYoutiaoDrag(DragItem source)
@@ -392,6 +488,7 @@ public partial class InteractionHighlightSelfTest : Node
     private async Task Shot(string name)
     {
         if (!Capture) return;
+        await Wait(.15);
         await Frames();
         await ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
         string directory = ProjectSettings.GlobalizePath("res://.tmp/interaction-highlights");

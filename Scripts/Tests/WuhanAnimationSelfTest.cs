@@ -102,7 +102,7 @@ public partial class WuhanAnimationSelfTest : Node
     private static void MakeDoupi(WuhanDayScreen s,bool automatic=false)
     {
         s.PourDoupiBatter();s._Process(.4);s.AddDoupiEgg();s._Process(2.51);
-        if(!automatic)s.FlipDoupi();s._Process(.5);s.AddDoupiFilling();DoupiTestFixture.Spread(s.Doupi!);s._Process(3.51);
+        if(!automatic)s.FlipDoupi();s._Process(.5);s.AddDoupiFilling();s._Process(3.51);
         foreach(var direction in Enum.GetValues<DoupiCutLine>()){s.CutDoupi(direction);s._Process(.4);}
     }
     private void TestDoupi()
@@ -124,6 +124,39 @@ public partial class WuhanAnimationSelfTest : Node
         Check(!eggDay.Workstation.Busy("pan") && eggDay.Doupi!.State == DoupiState.SkinCooking,
             "无需手动摊蛋即完成动画并保留煎制状态");
         DisposeDay(egg);
+        var meshDay=NewDay();var meshView=meshDay.Screen.Workstation;
+        foreach(float lift in new[]{0f,.5f,1f})
+        {
+            bool valid=true;
+            for(int frame=0;frame<=100;frame++) for(int y=0;y<4;y++) for(int x=0;x<12;x++)
+            {
+                Vector2[] cell=meshView.FlipSurfaceQuad(frame/100f,lift,new Rect2(x/12f,y/4f,1/12f,1/4f));
+                valid &= cell.All(v=>v.IsFinite()) && Geometry2D.TriangulatePolygon(cell).Length==6;
+            }
+            Check(valid,$"翻面全程网格不交叉且能三角化 lift={lift}");
+        }
+        Vector2[] initial=meshView.FlipSurfaceQuad(0,1,new Rect2(0,0,1,1));
+        Vector2[] landed=meshView.FlipSurfaceQuad(1,1,new Rect2(0,0,1,1));
+        Check(initial[0].DistanceTo(meshView.PanPoint(0,0))<.001f && initial[3].DistanceTo(meshView.PanPoint(0,1)-new Vector2(0,24))<.001f,
+            "翻面第一帧继承前缘抬起姿态");
+        Check(landed[0].DistanceTo(meshView.PanPoint(0,0))<.001f && landed[2].DistanceTo(meshView.PanPoint(1,1))<.001f,"翻面落锅精确回到原锅面");
+        DisposeDay(meshDay);
+        var waiting = NewDay(); var hot = waiting.Screen;
+        hot.PourDoupiBatter(); hot._Process(.4);
+        Check(hot.Workstation.GetNode<AudioStreamPlayer>("CookingPan").Playing && hot.Doupi!.SideSeconds > 0,
+            "倒浆后未加蛋也持续煎制并播放煎制声");
+        hot._Process(3.6);hot.AddDoupiEgg();hot._Process(.51);
+        Check(hot.Doupi!.State==DoupiState.Burnt && !hot.Workstation.Busy("pan"),
+            "晚加蛋期间烧焦会结束原料动画且不延后火候");
+        DisposeDay(waiting);
+        waiting=NewDay();hot=waiting.Screen;
+        hot.PourDoupiBatter();hot._Process(.4);hot.AddDoupiEgg();hot._Process(2.2);hot.FlipDoupi();hot._Process(.5);
+        Check(hot.Workstation.GetNode<AudioStreamPlayer>("CookingPan").Playing && hot.Doupi!.SideSeconds > 0 && !hot.Doupi.HasFilling,
+            "翻面后未加馅也持续煎制并播放煎制声");
+        hot._Process(7.5);hot.AddDoupiFilling();hot._Process(.51);
+        Check(hot.Doupi!.State==DoupiState.Burnt && !hot.Workstation.Busy("pan") && hot.DoupiStock.Count==0,
+            "自动铺馅期间烧焦不完成或入库，允许直接丢弃");
+        DisposeDay(waiting);
         var f=NewDay();var s=f.Screen;MakeDoupi(s);
         Check(s.Doupi!.State==DoupiState.Empty&&s.DoupiStock.Count==8,"豆皮四刀切割后自动入盘");
         s.PourDoupiBatter();s.PourDoupiBatter();Check(s.DoupiStock.Count==8&&s.Workstation.Busy("stock"),"豆皮入库连点不重复增加一锅");

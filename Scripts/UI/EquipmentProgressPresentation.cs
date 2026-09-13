@@ -62,10 +62,11 @@ internal static class EquipmentProgressPresentation
         if (machine is null) return default;
         return machine.State switch
         {
-            DoupiState.SkinCooking => new(true, machine.SkinCookProgress, "饼皮煎制中"),
+            DoupiState.Batter => new(true, machine.SkinCookProgress, "正在煎制，请加蛋液", Risk: machine.HeatStress),
+            DoupiState.SkinCooking => new(true, machine.SkinCookProgress, "饼皮煎制中", Risk: machine.HeatStress),
             DoupiState.ReadyToFlip => EquipmentProgressState.Done("可翻面", machine.HeatStress),
-            DoupiState.Flipped => EquipmentProgressState.Done("可加馅"),
-            DoupiState.SecondCooking => new(true, machine.BrowningProgress, "二次煎制中"),
+            DoupiState.Flipped => new(true, machine.BrowningProgress, "正在煎制，请加三鲜馅", Risk: machine.HeatStress),
+            DoupiState.SecondCooking => new(true, machine.BrowningProgress, "二次煎制中", Risk: machine.HeatStress),
             DoupiState.ReadyToCut or DoupiState.Overbrowned => EquipmentProgressState.Done(machine.State == DoupiState.Overbrowned ? "偏焦 · 请切块" : "可切块", machine.HeatStress),
             DoupiState.Cutting => EquipmentProgressState.Done("已收火 · 切块中"),
             DoupiState.Cut => EquipmentProgressState.Done("等待成品盘"),

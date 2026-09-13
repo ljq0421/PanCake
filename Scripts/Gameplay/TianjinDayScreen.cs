@@ -71,6 +71,7 @@ public partial class TianjinDayScreen : Control
 
     public override void _Ready()
     {
+        InteractionHighlightTheme.Set(this, InteractionHighlightTheme.Tianjin);
         // Cover the workbench, order icons, payment coins and reparented drag previews.
         TextureFilter = TextureFilterEnum.LinearWithMipmaps;
         SceneNodeBinder.Bind(this);

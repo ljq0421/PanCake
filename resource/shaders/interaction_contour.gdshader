@@ -4,6 +4,8 @@ uniform sampler2D first_layer : filter_linear, repeat_disable;
 uniform sampler2D second_layer : filter_linear, repeat_disable;
 uniform vec4 contour_color : source_color = vec4(1.0, 0.91, 0.64, 1.0);
 uniform float outline_pixels = 4.0;
+uniform float backing_pixels = 0.0;
+uniform vec4 backing_color : source_color = vec4(0.286, 0.220, 0.176, 1.0);
 uniform bool has_second = false;
 uniform vec3 first_uv_x;
 uniform vec3 first_uv_y;
@@ -33,14 +35,21 @@ void fragment() {
     vec2 dy = dFdy(local_position);
     float base = silhouette(local_position);
     float edge = base;
+    float outer_edge = base;
     // Fill the disk so thin tips cannot leave gaps inside a thick outline.
-    for (int radius = 1; radius <= 5; radius++) {
-        if (float(radius) > outline_pixels) { break; }
+    for (int radius = 1; radius <= 6; radius++) {
+        if (float(radius) > outline_pixels + backing_pixels) { break; }
         float distance_px = float(radius);
         for (int i = 0; i < 16; i++) {
             float angle = float(i) * 0.392699082;
-            edge = max(edge, silhouette(local_position + (cos(angle) * dx + sin(angle) * dy) * distance_px));
+            float sample_alpha = silhouette(local_position + (cos(angle) * dx + sin(angle) * dy) * distance_px);
+            outer_edge = max(outer_edge, sample_alpha);
+            if (float(radius) <= outline_pixels) edge = max(edge, sample_alpha);
         }
     }
-    COLOR = vec4(contour_color.rgb, contour_color.a * max(0.0, edge - base)) * item_tint;
+    float core = max(0.0, edge - base);
+    float backing = max(0.0, outer_edge - edge);
+    float coverage = core + backing;
+    vec3 ink = coverage > 0.0 ? (contour_color.rgb * core + backing_color.rgb * backing) / coverage : contour_color.rgb;
+    COLOR = vec4(ink, contour_color.a * coverage) * item_tint;
 }

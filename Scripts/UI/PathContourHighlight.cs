@@ -36,7 +36,7 @@ public partial class PathContourHighlight : Control
     {
         var state = IsVisibleInTree() ? _resolve() : InteractionHighlightState.None;
         Transform2D transform = InteractionHighlightPresentation.PixelTransform(this);
-        if (_state == state && _drawnTransform == transform) return;
+        if (_state == state && _drawnTransform == transform && !InteractionHighlightTheme.Applies(this, state)) return;
         _drawnTransform = transform;
         _state = state;
         QueueRedraw();

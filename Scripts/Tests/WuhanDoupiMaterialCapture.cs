@@ -37,9 +37,9 @@ public partial class WuhanDoupiMaterialCapture : Node
             Step(2); await Shot("03-egg-ready");
             _day.FlipDoupi(); Step(.23); await Shot("04-flip"); Step(.4);
             _day.AddDoupiFilling();
-            _day.SpreadDoupi(new(.02f, .15f), new(.5f, .15f));
-            await Shot("05-partial-filling", true);
-            DoupiTestFixture.Spread(pan); await Shot("06-uncooked", true);
+            Step(.30);
+            await Shot("05-auto-filling", true);
+             await Shot("06-uncooked", true);
             Step(1.75); await Shot("07-half-cooked", true);
             Step(1.76); Require(pan.State == DoupiState.ReadyToCut, "ready to cut");
             await Shot("08-cooked", true);
@@ -50,7 +50,7 @@ public partial class WuhanDoupiMaterialCapture : Node
             await Shot("12-stock", stockPreview: true);
             VerifyStockProportions();
             _day.PourDoupiBatter(); Step(.5); _day.AddDoupiEgg(); Step(2.6); _day.FlipDoupi(); Step(.6);
-            _day.AddDoupiFilling(); DoupiTestFixture.Spread(pan); Step(3.6);
+            _day.AddDoupiFilling();  Step(3.6);
             await Shot("12a-stock-and-pan");
             _day.CutDoupi(DoupiCutLine.Horizontal); Step(.4); _day.CutDoupi(DoupiCutLine.Center);
             Step(.4); Step(.24); await Shot("12a-refill-transfer"); Step(.3);
@@ -58,7 +58,7 @@ public partial class WuhanDoupiMaterialCapture : Node
             await Shot("12b-full-stock", stockPreview: true);
             _day.DoupiStock.TryTake(3, out _);
             _day.PourDoupiBatter(); Step(.5); _day.AddDoupiEgg(); Step(2.6); _day.FlipDoupi(); Step(.6);
-            _day.AddDoupiFilling(); DoupiTestFixture.Spread(pan); Step(3.6);
+            _day.AddDoupiFilling();  Step(3.6);
             _day.CutDoupi(DoupiCutLine.Horizontal); Step(.4); _day.CutDoupi(DoupiCutLine.Center);
             Step(.4); Step(.08); await Shot("12c-partial-transfer"); Step(.5);
             Require(_day.DoupiStock.Count == 16 && pan.RemainingPieces == 5, "partial refill keeps the other five pieces in the pan");
@@ -70,7 +70,7 @@ public partial class WuhanDoupiMaterialCapture : Node
             _day.DiscardDoupi(); Step(.5);
             _day.DoupiStock.TryTake(8, out _);
             _day.PourDoupiBatter(); Step(.5); _day.AddDoupiEgg(); Step(2.6); _day.FlipDoupi(); Step(.6);
-            _day.AddDoupiFilling(); DoupiTestFixture.Spread(pan);
+            _day.AddDoupiFilling();
             Step(7); Require(pan.State == DoupiState.Overbrowned, "overbrowned"); await Shot("13-overbrowned", true);
             Step(2); Require(pan.State == DoupiState.Burnt, "burnt"); await Shot("14-burnt", true);
             _day.Free(); controller.Free(); save.Free();

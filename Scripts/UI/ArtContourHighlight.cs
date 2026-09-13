@@ -49,10 +49,15 @@ public partial class ArtContourHighlight : Control
         if (!IsInstanceValid(_source) || _source.IsQueuedForDeletion()) { QueueFree(); return; }
         bool available = _source.IsVisibleInTree() && _source.Texture is not null;
         InteractionHighlightState next = available ? _resolve() : InteractionHighlightState.None;
+        bool themed = InteractionHighlightTheme.Find(this) is not null;
         bool reduced = ProjectSettings.HasSetting("accessibility/reduce_motion")
             && ProjectSettings.GetSetting("accessibility/reduce_motion").AsBool();
         _opacity = reduced ? (next == InteractionHighlightState.None ? 0 : 1)
             : Mathf.MoveToward(_opacity, next == InteractionHighlightState.None ? 0 : 1, (float)delta * 10);
+        // Only themed hover clears immediately; other states retain their existing fades.
+        if (themed && next == InteractionHighlightState.None && _state == InteractionHighlightState.Hover) _opacity = 0;
+        if (themed && next == InteractionHighlightState.Hover && _state != next)
+            _opacity = reduced ? 1 : Math.Min(1, (float)delta * 10);
         if (next != InteractionHighlightState.None) _state = next;
         Visible = available && _opacity > 0;
         if (!Visible) return;
@@ -77,11 +82,13 @@ public partial class ArtContourHighlight : Control
         _material.SetShaderParameter("has_second", hasUnion);
         // Include one antialias pixel beyond the screen-space stroke, even at 720p.
         _drawRect = _drawRect.Grow(InteractionHighlightPresentation.LocalWidthFor(this, _state) +
-            InteractionHighlightPresentation.LocalWidthFor(this, InteractionHighlightState.Hover) / 4f);
-        Color color = InteractionHighlightPresentation.ColorFor(_state);
+            InteractionHighlightPresentation.LocalWidthFor(this, InteractionHighlightState.Hover) / 2f);
+        Color color = InteractionHighlightPresentation.ColorFor(_state, this);
         color.A *= _opacity;
         _material.SetShaderParameter("contour_color", color);
-        _material.SetShaderParameter("outline_pixels", InteractionHighlightPresentation.WidthFor(_state));
+        _material.SetShaderParameter("outline_pixels", InteractionHighlightPresentation.WidthFor(_state, this));
+        _material.SetShaderParameter("backing_pixels", InteractionHighlightTheme.Applies(this, _state) ? 1f : 0f);
+        _material.SetShaderParameter("backing_color", InteractionHighlightTheme.BackingColor);
         _material.SetShaderParameter("second_layer", _unionTexture);
         _material.SetShaderParameter("first_layer", _texture);
         QueueRedraw();

@@ -16,7 +16,6 @@ public partial class WuhanWorkstationView : Control
     public event Action<string>? IngredientPressed;
     public Func<bool>? BatterRequested, EggRequested, FillingRequested, FlipRequested;
     public event Action? FoodDiscarded;
-    public Func<Vector2, Vector2, bool>? SpreadRequested;
     public event Action<float>? MixMoved;
     public Func<bool>? CanInteract { get; set; }
     private DragService? _drag;
@@ -251,8 +250,19 @@ public partial class WuhanWorkstationView : Control
         tween.TweenMethod(Callable.From<float>(p => motion.Progress = p), 0f, 1f, ReducedMotion ? .12 : seconds);
         _motions.Add(motion); QueueRedraw(); return motion;
     }
+    private void StopBasketMotion(int index)
+    {
+        foreach (Motion previous in _motions.Where(m=>m.Locks.Contains($"basket{index}")).ToArray())
+        { previous.Tween.Kill(); _motions.Remove(previous); }
+    }
+    private void ParkBasket(int index, Vector2 origin)
+    {
+        StopBasketMotion(index);
+        Play("park",.24,$"basket{index}").Origin=origin;
+    }
     public void PlayBasket(int index, NoodleBasketState before, NoodleQuality quality, Vector2? origin = null)
     {
+        StopBasketMotion(index);
         string kind = before switch
         {
             NoodleBasketState.Empty => "drop", NoodleBasketState.Raised or NoodleBasketState.Draining => "shake",
@@ -272,7 +282,7 @@ public partial class WuhanWorkstationView : Control
         string kind = before switch { DoupiState.Empty => "batter", DoupiState.Batter => "egg",
             DoupiState.ReadyToFlip => "flip", DoupiState.Flipped => "filling", DoupiState.Burnt => "discard", _ => "cut" };
         PlaySound(kind switch { "batter" => WuhanSound.Batter, "egg" => WuhanSound.Egg, "flip" => WuhanSound.Flip, "filling" => WuhanSound.Topping, "discard" => WuhanSound.Discard, _ => WuhanSound.Cut });
-        Motion m = Play(kind, kind == "egg" ? .60 : kind == "flip" ? .48 : .36, "pan");
+        Motion m = Play(kind, kind is "egg" or "filling" ? .60 : kind == "flip" ? .48 : .36, "pan");
         m.Before = before;
         RememberStates();
     }
@@ -283,7 +293,10 @@ public partial class WuhanWorkstationView : Control
         if (_gesture == "cut") m.Origin = _gesturePoint;
         RememberStates();
     }
-    private void PlayFlipReturn(float lift) => Play("flip_return", .16, "pan").Lift = lift;
+    private void PlayFlipReturn(float lift, Vector2 origin)
+    {
+        Motion motion = Play("flip_return", .16, "pan"); motion.Lift = lift; motion.Origin = origin;
+    }
     public void PlayStock(int amount, int stockStart, int firstPiece = 0, DoupiQuality quality = DoupiQuality.Normal)
     {
         PlaySound(WuhanSound.Stock);
@@ -313,7 +326,13 @@ public partial class WuhanWorkstationView : Control
         if (_doupi is not null && _doupi.State != _previousDoupi)
         {
             if (_doupi.State is DoupiState.ReadyToFlip or DoupiState.ReadyToCut) PlaySound(WuhanSound.Ready);
-            if (_doupi.State == DoupiState.Burnt) PlaySound(WuhanSound.Overdone);
+            if (_doupi.State == DoupiState.Burnt)
+            {
+                PlaySound(WuhanSound.Overdone);
+                // Late ingredients cannot keep playing a successful cooking action after burning.
+                if (Find("pan") is Motion stopped) { stopped.Tween.Kill(); _motions.Remove(stopped); }
+                if (_gesture == "flip") CancelGesture();
+            }
         }
         if (Enumerable.Range(0, _cooker.Baskets.Count).Any(i =>
             _cooker.Baskets[i].State == NoodleBasketState.Overcooked && _previousBaskets[i] != NoodleBasketState.Overcooked))
@@ -334,7 +353,7 @@ public partial class WuhanWorkstationView : Control
         for (int i = 0; i < _cooker.Baskets.Count; i++)
             if (_cooker.Baskets[i].State == NoodleBasketState.Draining && !IsRaised(previousBaskets[i]) && !Busy($"basket{i}"))
                 PlayBasket(i, NoodleBasketState.Ready, _cooker.Baskets[i].Quality);
-        if (_doupi?.State == DoupiState.Flipped && previousDoupi == DoupiState.SkinCooking && !Busy("pan"))
+        if (_doupi?.State == DoupiState.Flipped && previousDoupi is (DoupiState.SkinCooking or DoupiState.ReadyToFlip) && !Busy("pan"))
             PlayDoupi(DoupiState.ReadyToFlip);
         RememberStates(); _phase += (float)delta; QueueRedraw();
     }
@@ -504,7 +523,34 @@ public partial class WuhanWorkstationView : Control
         if (m?.Kind == "raise") raised = ReducedMotion ? 1 : Ease(m.Progress);
         Vector2 center = BasketHome(index) + new Vector2(0, -80.4f * raised);
         if (m?.Kind == "shake" && !ReducedMotion) center.Y += Mathf.Sin(m.Progress * Mathf.Tau * 2) * 10;
+        if (_gesture == "basket" && _gestureBasket == index && IsRaised(_cooker.Baskets[index].State))
+            center = center.Lerp(_gesturePoint + _basketGrabOffset, m?.Kind == "raise" && !ReducedMotion ? Ease(m.Progress) : 1);
+        if (m?.Kind == "park" && m.Origin is Vector2 parked)
+            center = parked.Lerp(center, ReducedMotion ? 1 : Ease(m.Progress));
         return At(center, BasketSize);
+    }
+    internal float BasketImmersion(int index) => BasketImmersion(BasketRect(index), index);
+    private float BasketImmersion(Rect2 rect, int index)
+    {
+        if (!CookerCanvas.HasPoint(rect.GetCenter())) return 0;
+        return Mathf.Clamp(1 - (BasketHome(index).Y - rect.GetCenter().Y) / 65, 0, 1);
+    }
+    private void DrawBasketWater(Rect2 rect, int index)
+    {
+        float submerged = BasketImmersion(rect, index);
+        if (submerged <= 0) return;
+        // Restore the actual water through the submerged bowl; the handle stays dry.
+        Vector2[] outline = { new(.06f,.61f), new(.13f,.54f), new(.36f,.51f), new(.62f,.54f),
+            new(.72f,.62f), new(.67f,.88f), new(.54f,.97f), new(.25f,.97f), new(.10f,.89f) };
+        Vector2[] polygon = outline.Select(v => rect.Position + v * rect.Size).ToArray();
+        DrawPolygon(polygon, new[]{new Color(1,1,1,.78f * submerged)},
+            polygon.Select(v => v / WuhanWorkbenchLayout.DesignSize).ToArray(), _art.WorkbenchBackground(_doupi is not null));
+        Vector2 contact = rect.Position + rect.Size * new Vector2(.38f,.61f);
+        float ripple = ReducedMotion ? 0 : Mathf.Sin(_phase * 4) * 2;
+        Vector2[] ring = Enumerable.Range(0, 25).Select(i => contact + new Vector2(
+            Mathf.Cos(i * Mathf.Tau / 24) * (rect.Size.X * .37f + ripple),
+            Mathf.Sin(i * Mathf.Tau / 24) * 8)).ToArray();
+        DrawPolyline(ring, new Color(.83f,.97f,1,.55f * submerged), 1.5f, true);
     }
     private static Rect2 BasketFoodRect(Rect2 basket) => RelativeRect(basket, new Rect2(.10f, .48f, .50f, .37f));
     private static string BasketFoodArt(NoodleBasketRuntime basket) => basket.Quality == NoodleQuality.Overcooked
@@ -527,7 +573,7 @@ public partial class WuhanWorkstationView : Control
         for (int i = 0; i < _cooker.Baskets.Count; i++)
         {
             Motion? m = Find($"basket{i}"); NoodleBasketRuntime basket = _cooker.Baskets[i];
-            if (HasProductionGesture && _gestureBasket == i && _gesture == "basket" || _cooker.PendingPourBasket == i) continue;
+            if (_cooker.PendingPourBasket == i) continue;
             if (m?.Kind == "pour" && !ReducedMotion) continue;
             Rect2 r = BasketRect(i);
             Texture2D basketTexture = _art.Texture("basket");
@@ -546,9 +592,10 @@ public partial class WuhanWorkstationView : Control
                     Steam(noodles.GetCenter() + new Vector2(0,-10), .55f);
                     for (int j=0;j<4;j++) DrawArc(noodles.GetCenter()+new Vector2(j*15-22,13), 3 + Mathf.PosMod((ReducedMotion ? 0 : _phase*5)+j,4), 0, Mathf.Tau, 16, new Color(1,1,1,.55f), 1.5f, true);
                 }
-                if (basket.State is NoodleBasketState.Raised or NoodleBasketState.Draining || m?.Kind == "shake")
+                if (BasketImmersion(i) < .1f && (basket.State is NoodleBasketState.Raised or NoodleBasketState.Draining || m?.Kind == "shake"))
                     Drips(r.Position + r.Size * new Vector2(.38f,.94f), m?.Kind == "shake" ? 8 : 4);
             }
+            DrawBasketWater(r, i);
         }
         DrawCookerFront();
         DrawRawTray();
@@ -652,7 +699,8 @@ public partial class WuhanWorkstationView : Control
                 Sprite("basket",At(center,home.Size),1,angle);
                 if(leave>0)
                 {
-                    // The returning empty basket descends behind the front rim.
+                    // The returning empty basket descends through the water and behind the front rim.
+                    DrawBasketWater(At(center, home.Size), m.Index);
                     DrawCookerFront();
                     DrawRawTray();
                 }

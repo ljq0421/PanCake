@@ -1,9 +1,8 @@
 using ProjectCake.Data;
-using Godot;
 
 namespace ProjectCake.Wuhan;
 
-public enum DoupiState { Empty, Batter, SkinCooking, ReadyToFlip, Flipped, SecondCooking, ReadyToCut, Overbrowned, Burnt, Cut, Cutting, Spreading }
+public enum DoupiState { Empty, Batter, SkinCooking, ReadyToFlip, Flipped, SecondCooking, ReadyToCut, Overbrowned, Burnt, Cut, Cutting }
 public enum DoupiQuality { Normal, Overbrowned, Burnt }
 
 public sealed class DoupiInventory
@@ -32,90 +31,76 @@ public sealed class DoupiStateMachine
     public IReadOnlySet<DoupiCutLine> CutLines => _cuts;
     public int RemainingPieces { get; private set; }
     public int FirstRemainingPiece => _data.BatchYield - RemainingPieces;
-    // Presentation reads the same cooking clock; these values never advance production.
-    internal float SkinCookProgress => State == DoupiState.SkinCooking
-        ? (float)Math.Clamp(_seconds / _data.StageSeconds, 0, 1)
-        : State == DoupiState.ReadyToFlip ? 1 : 0;
-    internal float HeatStress => !_data.CanBurn ? 0 : State switch
-    {
-        DoupiState.ReadyToFlip => (float)Math.Clamp((_seconds - _data.StageSeconds) / Math.Max(.01, _data.BurnSeconds - _data.StageSeconds), 0, 1),
-        DoupiState.ReadyToCut or DoupiState.Overbrowned => (float)Math.Clamp((_seconds - _data.SecondStageReadySeconds) / Math.Max(.01, _data.SecondStageBurnSeconds - _data.SecondStageReadySeconds), 0, 1),
-        DoupiState.Burnt => 1,
-        _ => 0,
-    };
-    public float BrowningProgress => State == DoupiState.SecondCooking
-        ? (float)Math.Clamp(_seconds / _data.SecondStageReadySeconds, 0, 1)
-        : State is DoupiState.ReadyToCut or DoupiState.Overbrowned or DoupiState.Cutting or DoupiState.Cut ? 1 : 0;
-
-    private readonly bool[] _coverage = new bool[DoupiInteraction.CoverageWidth * DoupiInteraction.CoverageHeight];
-    public float Coverage => (float)_coverage.Count(x => x) / _coverage.Length;
-    public bool IsCovered(int x, int y) => _coverage[y * DoupiInteraction.CoverageWidth + x];
-    public int CoverageRevision { get; private set; }
-    public bool Spread(Vector2 from, Vector2 to, float surfaceAspect)
-    {
-        if (State != DoupiState.Spreading || !from.IsFinite() || !to.IsFinite() || !float.IsFinite(surfaceAspect) || surfaceAspect <= 0) return false;
-        // Clip before measuring distance: a brush entirely outside the food must not paint its edge.
-        Vector2 delta = to - from;
-        float enter = 0, leave = 1;
-        for (int axis = 0; axis < 2; axis++)
-        {
-            float a = from[axis], d = delta[axis];
-            if (Math.Abs(d) < .00001f) { if (a < 0 || a > 1) return false; continue; }
-            float t0 = -a / d, t1 = (1 - a) / d;
-            enter = Math.Max(enter, Math.Min(t0, t1)); leave = Math.Min(leave, Math.Max(t0, t1));
-        }
-        if (leave < enter) return false;
-        Vector2 scale = new(Math.Max(1, surfaceAspect), Math.Max(1, 1 / surfaceAspect));
-        Vector2 aPoint = (from + delta * enter) * scale, bPoint = (from + delta * leave) * scale;
-        bool changed = false;
-        for (int y = 0; y < DoupiInteraction.CoverageHeight; y++)
-        for (int x = 0; x < DoupiInteraction.CoverageWidth; x++)
-        {
-            int index = y * DoupiInteraction.CoverageWidth + x;
-            Vector2 center = new Vector2((x + .5f) / DoupiInteraction.CoverageWidth, (y + .5f) / DoupiInteraction.CoverageHeight) * scale;
-            if (!_coverage[index] && center.DistanceTo(Geometry2D.GetClosestPointToSegment(center, aPoint, bPoint)) <= DoupiInteraction.BrushRadius)
-            { _coverage[index] = true; changed = true; }
-        }
-        if (changed) CoverageRevision++;
-        if (Coverage >= DoupiInteraction.CoverageTarget)
-        { Array.Fill(_coverage, true); CoverageRevision++; State = DoupiState.SecondCooking; _seconds = 0; }
-        return changed;
-    }
+    public bool HasEgg { get; private set; }
+    public bool HasFilling { get; private set; }
+    public bool SecondSide { get; private set; }
+    private double _ingredientSeconds;
+    public const double MinimumIngredientSeconds = 1;
+    public bool IsHeating => State is not (DoupiState.Empty or DoupiState.Burnt or DoupiState.Cutting or DoupiState.Cut);
+    internal double SideSeconds => _seconds;
+    internal double IngredientSeconds => _ingredientSeconds;
+    internal float SkinCookProgress => !SecondSide && State != DoupiState.Empty
+        ? (float)Math.Clamp(_seconds / _data.StageSeconds, 0, 1) : 0;
+    public float BrowningProgress => SecondSide ? (float)Math.Clamp(_seconds / _data.SecondStageReadySeconds, 0, 1) : 0;
+    internal float HeatStress => State == DoupiState.Burnt ? 1 : !_data.CanBurn || !IsHeating ? 0
+        : (float)Math.Clamp((_seconds - (SecondSide ? _data.SecondStageReadySeconds : _data.StageSeconds))
+            / Math.Max(.01, (SecondSide ? _data.SecondStageBurnSeconds - _data.SecondStageReadySeconds : _data.BurnSeconds - _data.StageSeconds)), 0, 1);
 
     public DoupiStateMachine(DoupiGriddleLevelData data) => _data = data;
-    public bool TryPourBatter() { if (State != DoupiState.Empty) return false; State = DoupiState.Batter; return true; }
-    public bool TryAddEgg() { if (State != DoupiState.Batter) return false; State = DoupiState.SkinCooking; _seconds = 0; return true; }
+    public bool TryPourBatter()
+    {
+        if (State != DoupiState.Empty) return false;
+        State = DoupiState.Batter; _seconds = 0; return true;
+    }
+    public bool TryAddEgg()
+    {
+        if (State != DoupiState.Batter) return false;
+        HasEgg = true; _ingredientSeconds = 0; State = DoupiState.SkinCooking; return true;
+    }
     public bool TryFlip()
     {
         if (State != DoupiState.ReadyToFlip) return false;
-        State = DoupiState.Flipped; _seconds = 0; return true;
+        SecondSide = true; State = DoupiState.Flipped; _seconds = 0; _ingredientSeconds = 0; return true;
     }
-    public bool TryAddFilling() { if (State != DoupiState.Flipped) return false; State = DoupiState.Spreading; _seconds = 0; return true; }
+    public bool TryAddFilling()
+    {
+        if (State != DoupiState.Flipped || HasFilling) return false;
+        HasFilling = true; _ingredientSeconds = 0; State = DoupiState.SecondCooking; return true;
+    }
     public void Tick(double delta)
     {
-        if (delta <= 0) return;
+        if (!double.IsFinite(delta) || delta <= 0 || !IsHeating) return;
         double speed = Math.Max(.01, _data.SpeedMultiplier);
-        if (State == DoupiState.SkinCooking)
+        // Split at automatic flip so a long frame carries its remaining heat into side two.
+        if (!SecondSide && _data.AutoFlip && HasEgg)
         {
-            _seconds += delta * speed;
-            if (_seconds >= _data.StageSeconds)
+            double untilFlip = Math.Max(Math.Max(0, (_data.StageSeconds - _seconds) / speed),
+                Math.Max(0, MinimumIngredientSeconds - _ingredientSeconds));
+            if (delta + 1e-9 >= untilFlip)
             {
-                if (_data.AutoFlip) { State = DoupiState.Flipped; _seconds = 0; }
-                else State = DoupiState.ReadyToFlip;
+                AdvanceHeat(untilFlip, speed);
+                if (State == DoupiState.ReadyToFlip && TryFlip())
+                    AdvanceHeat(Math.Max(0, delta - untilFlip), speed);
+                return;
             }
         }
-        else if (State == DoupiState.ReadyToFlip && _data.CanBurn)
-        {
-            _seconds += delta * speed;
-            if (_seconds > _data.BurnSeconds) { State = DoupiState.Burnt; Quality = DoupiQuality.Burnt; }
-        }
-        else if (State is DoupiState.SecondCooking or DoupiState.ReadyToCut or DoupiState.Overbrowned)
-        {
-            _seconds += delta * speed;
-            if (State == DoupiState.SecondCooking && _seconds >= _data.SecondStageReadySeconds) State = DoupiState.ReadyToCut;
-            if (_data.CanBurn && _seconds > _data.SecondStageOverbrownedSeconds && State != DoupiState.Burnt) { State = DoupiState.Overbrowned; Quality = DoupiQuality.Overbrowned; }
-            if (_data.CanBurn && _seconds > _data.SecondStageBurnSeconds) { State = DoupiState.Burnt; Quality = DoupiQuality.Burnt; }
-        }
+        AdvanceHeat(delta, speed);
+    }
+    private void AdvanceHeat(double delta, double speed)
+    {
+        _seconds += delta * speed;
+        if (SecondSide ? HasFilling : HasEgg) _ingredientSeconds += delta;
+        // Burn takes precedence over newly reached ingredient/readiness requirements.
+        if (_data.CanBurn && _seconds > (SecondSide ? _data.SecondStageBurnSeconds : _data.BurnSeconds) + 1e-9)
+        { State = DoupiState.Burnt; Quality = DoupiQuality.Burnt; return; }
+        if (SecondSide && _data.CanBurn && _seconds > _data.SecondStageOverbrownedSeconds + 1e-9)
+            Quality = DoupiQuality.Overbrowned;
+        bool ready = _ingredientSeconds + 1e-9 >= MinimumIngredientSeconds
+            && _seconds + 1e-9 >= (SecondSide ? _data.SecondStageReadySeconds : _data.StageSeconds);
+        State = SecondSide
+            ? !HasFilling ? DoupiState.Flipped : !ready ? DoupiState.SecondCooking
+                : Quality == DoupiQuality.Overbrowned ? DoupiState.Overbrowned : DoupiState.ReadyToCut
+            : !HasEgg ? DoupiState.Batter : ready ? DoupiState.ReadyToFlip : DoupiState.SkinCooking;
     }
     public bool TryCut(DoupiCutLine direction)
     {
@@ -142,5 +127,5 @@ public sealed class DoupiStateMachine
         return amount;
     }
     public void Discard() => Reset();
-    private void Reset() { Generation++; State = DoupiState.Empty; Quality = DoupiQuality.Normal; _seconds = 0; _cuts.Clear(); RemainingPieces = 0; Array.Clear(_coverage); CoverageRevision++; }
+    private void Reset() { Generation++; State = DoupiState.Empty; Quality = DoupiQuality.Normal; _seconds = 0; _cuts.Clear(); RemainingPieces = 0; HasEgg = HasFilling = SecondSide = false; _ingredientSeconds = 0; }
 }

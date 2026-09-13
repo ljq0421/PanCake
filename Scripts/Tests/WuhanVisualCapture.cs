@@ -182,7 +182,7 @@ public partial class WuhanVisualCapture : Node
             {
                 day.PourDoupiBatter(); day._Process(.5); day.AddDoupiEgg(); day._Process(2.6);
                 await Shot("flip-ready");
-                day.FlipDoupi(); day._Process(.5); day.AddDoupiFilling(); DoupiTestFixture.Spread(day.Doupi!); day._Process(3.6);
+                day.FlipDoupi(); day._Process(.5); day.AddDoupiFilling();  day._Process(3.6);
                 await Shot("cut-ready");
                 Vector2 start = view.PanPoint(0, .5f);
                 view._GuiInput(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true, Position = start });
@@ -362,7 +362,7 @@ public partial class WuhanVisualCapture : Node
             DoupiGriddleLevelData griddle=catalog.DoupiGriddlesByLevel[level];
             day.Doupi.Tick(griddle.StageSeconds/Math.Max(.01,griddle.SpeedMultiplier)+.001);
             if(!griddle.AutoFlip)Require(day.Doupi.TryFlip(),"doupi skin flips for fixture");
-            Require(day.Doupi.TryAddFilling(),"doupi filling enters fixture");DoupiTestFixture.Spread(day.Doupi);
+            Require(day.Doupi.TryAddFilling(),"doupi filling enters fixture");
             day.Doupi.Tick(griddle.SecondStageReadySeconds/Math.Max(.01,griddle.SpeedMultiplier)+.001);
             foreach(var cut in new[]{DoupiCutLine.Horizontal,DoupiCutLine.Center})Require(day.Doupi.TryCut(cut),$"doupi fixture cut {cut}");
             view.CancelAnimations();Step(2.5);
@@ -532,7 +532,7 @@ public partial class WuhanVisualCapture : Node
                 continue;
             }
             if(level<3)day.FlipDoupi();Step(.18);await Shot("16-flipping");Step(.35);
-            day.AddDoupiFilling();Step(.17);await Shot("17-filling");DoupiTestFixture.Spread(day.Doupi!);Step(3.4);await Shot("18-doupi-cooked");
+            day.AddDoupiFilling();Step(.17);await Shot("17-filling");Step(3.4);await Shot("18-doupi-cooked");
             for(int cut=1;cut<=4;cut++)
             {day.CutDoupi((DoupiCutLine)(cut-1));Step(.15);await Shot($"19-cut-{cut}");Step(.24);}
             Step(.20);await Shot("20-stocking");Step(.3);await Shot("21-stocked-eight");

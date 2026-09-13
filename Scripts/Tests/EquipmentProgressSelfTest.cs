@@ -89,8 +89,11 @@ public partial class EquipmentProgressSelfTest : Node
             Check(Math.Abs(EquipmentProgressPresentation.Doupi(pan).Progress - .5) < .001, "豆皮升级速度同步");
             pan.Tick(panData.StageSeconds / panData.SpeedMultiplier / 2);
             if (!panData.AutoFlip) pan.TryFlip();
-            pan.TryAddFilling(); DoupiTestFixture.Spread(pan);
-            Check(EquipmentProgressPresentation.Doupi(pan).Progress == 0, "豆皮第二段重置");
+            Check(Math.Abs(EquipmentProgressPresentation.Doupi(pan).Progress) < .00001, "翻面后第二段从零开始");
+            pan.Tick(.25);
+            double heat = EquipmentProgressPresentation.Doupi(pan).Progress;
+            pan.TryAddFilling();
+            Check(heat > 0 && EquipmentProgressPresentation.Doupi(pan).Progress == heat, "加馅保留翻面后累计火候");
             pan.Tick(100);
             Check(panData.CanBurn ? EquipmentProgressPresentation.Doupi(pan).Failed
                 : EquipmentProgressPresentation.Doupi(pan) is { Ready: true, Risk: 0 }, "豆皮防焦和烧焦");
@@ -126,7 +129,7 @@ public partial class EquipmentProgressSelfTest : Node
         var warningPan = new DoupiStateMachine(catalog.DoupiGriddlesByLevel[1]);
         warningPan.TryPourBatter(); warningPan.TryAddEgg(); warningPan.Tick(3);
         Check(EquipmentProgressPresentation.Doupi(warningPan) is { Ready: true, Risk: > 0, Failed: false }, "豆皮待翻面风险");
-        warningPan.TryFlip(); warningPan.TryAddFilling(); DoupiTestFixture.Spread(warningPan); warningPan.Tick(7);
+        warningPan.TryFlip(); warningPan.TryAddFilling();  warningPan.Tick(7);
         Check(EquipmentProgressPresentation.Doupi(warningPan).Risk > 0, "豆皮二次加热偏焦");
         warningPan.TryCut(DoupiCutLine.Horizontal); warningPan.Tick(100);
         Check(EquipmentProgressPresentation.Doupi(warningPan) is { Ready: true, Risk: 0, Failed: false }, "切块收火后不再推进风险");

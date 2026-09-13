@@ -7,8 +7,6 @@ public enum DoupiCutLine { Left, Center, Right, Horizontal }
 /// <summary>Shared tuning in normalized food-surface coordinates, independent of viewport size.</summary>
 public static class DoupiInteraction
 {
-    public const int CoverageWidth = 32, CoverageHeight = 16;
-    public const float BrushRadius = .22f, CoverageTarget = .85f;
     public const float CutBand = .18f, CutTarget = .70f;
     public const float FlipDistance = 40, FlipSideTolerance = 150;
     public static bool Inside(Vector2 p) => p.IsFinite() && p.X >= 0 && p.X <= 1 && p.Y >= 0 && p.Y <= 1;

@@ -15,7 +15,7 @@ public partial class WuhanSelfTest : Node
     {
         DataCatalog catalog=GetNode<DataCatalog>("/root/DataCatalog");
         TestData(catalog); TestOrders(catalog); TestNoodles(catalog); TestDoupi(catalog); TestSatisfaction(catalog); TestPressure(catalog); TestSave(catalog); TestV2Migration();
-        TestCustomerParity(catalog); TestRetiredCompatibility(catalog); TestPartialPieces(catalog); TestDoupiInteraction(catalog); TestContinuousDoupiHeat(catalog);
+        TestCustomerParity(catalog); TestRetiredCompatibility(catalog); TestPartialPieces(catalog); TestDoupiInteraction(catalog); TestContinuousDoupiHeat(catalog); TestTrayPositions();
         GD.Print($"WUHAN_TEST_RESULT passed={_passed} failed={_failed}"); GetTree().Quit(_failed==0?0:1);
     }
     private void TestDoupiInteraction(DataCatalog catalog)
@@ -36,10 +36,10 @@ public partial class WuhanSelfTest : Node
         Check(pan.State==DoupiState.Cutting && pan.Quality==DoupiQuality.Overbrowned, "收火后长时间中断不焦糊且不恢复品质");
         Check(!pan.TryCut(DoupiCutLine.Right) && !pan.TryCut((DoupiCutLine)99) && pan.CompletedCuts==3, "重复刀及无效刀线编号不计数");
         foreach(var line in new[]{DoupiCutLine.Horizontal,DoupiCutLine.Left,DoupiCutLine.Center})pan.TryCut(line);
-        var stock = new DoupiInventory();stock.TryAddBatch(12);
-        Check(pan.TransferAvailable(stock)==4 && pan.RemainingPieces==4, "十二块库存仅接收四块，另四块留锅");
-        Check(Enumerable.Range(0,12).All(i=>stock.PieceAt(i).Quality==DoupiQuality.Normal)
-            && Enumerable.Range(12,4).All(i=>stock.PieceAt(i).Quality==DoupiQuality.Overbrowned), "不同锅次逐块保留品质");
+        var stock = new DoupiInventory();stock.TryAddBatch(4);
+        Check(pan.TransferAvailable(stock)==4 && pan.RemainingPieces==4, "四块库存仅接收四块，另四块留锅");
+        Check(Enumerable.Range(0,4).All(i=>stock.PieceAt(i).Quality==DoupiQuality.Normal)
+            && Enumerable.Range(4,4).All(i=>stock.PieceAt(i).Quality==DoupiQuality.Overbrowned), "不同锅次逐块保留品质");
         stock.TryTake(4,out _);pan.TransferAvailable(stock);
         Check(pan.State==DoupiState.Empty && !pan.HasFilling && !pan.HasEgg && pan.CompletedCuts==0, "最后余块出锅后重置原料和刀线");
         var burnt = NewPan();burnt.Tick(9);
@@ -113,6 +113,31 @@ public partial class WuhanSelfTest : Node
         Check(coarse.SecondSide && Math.Abs(coarse.SideSeconds-fine.SideSeconds)<.00001,"三级自动翻面跨帧剩余时间不丢失");
         coarse.Discard();Check(!coarse.HasEgg&&!coarse.HasFilling&&!coarse.SecondSide&&coarse.SideSeconds==0,"丢弃清空两面状态与时钟");
     }
+    private void TestTrayPositions()
+    {
+        var stock=new DoupiInventory();stock.TryAddBatch(8);
+        var original=Enumerable.Range(0,stock.Count).Select(i=>(Piece:stock.PieceAt(i),Slot:stock.SlotAt(i))).ToArray();
+        stock.TryTake(1,out _);
+        Check(Enumerable.Range(0,7).All(i=>stock.PieceAt(i)==original[i+1].Piece && stock.SlotAt(i)==original[i+1].Slot),
+            "交付一块只留下一个空位，其余豆皮的图案与位置不变");
+        stock.TryTake(2,out _);
+        Check(Enumerable.Range(0,5).All(i=>stock.PieceAt(i)==original[i+3].Piece && stock.SlotAt(i)==original[i+3].Slot),
+            "交付多块只清空对应位置，不重新排列");
+        stock.TryAddBatch(3,DoupiQuality.Overbrowned,4);
+        Check(Enumerable.Range(0,5).All(i=>stock.SlotAt(i)==original[i+3].Slot) && Enumerable.Range(5,3).Select(stock.SlotAt).SequenceEqual(new[]{0,1,2}),
+            "补货只填空位，保留原有豆皮的位置");
+        for(int cycle=0;cycle<20;cycle++)
+        {
+            stock.TryAddBatch(DoupiInventory.Capacity-stock.Count);
+            var slots=Enumerable.Range(0,stock.Count).Select(stock.SlotAt).ToArray();
+            Check(slots.Distinct().Count()==8&&slots.All(slot=>slot>=0&&slot<8),"反复交付和补货的托盘位置不重叠");
+            stock.TryTake(3,out _);
+        }
+        var before=Enumerable.Range(0,stock.Count).Select(stock.SlotAt).ToArray();
+        Check(!stock.TryTake(99,out _)&&before.SequenceEqual(Enumerable.Range(0,stock.Count).Select(stock.SlotAt)),"失败取货不改变位置");
+        stock.TryTake(stock.Count,out _);stock.TryAddBatch(8);
+        Check(Enumerable.Range(0,8).Select(stock.SlotAt).SequenceEqual(Enumerable.Range(0,8)),"清空再开一盘恢复初始位置");
+    }
     private void TestRetiredCompatibility(DataCatalog catalog)
     {
         string path = $"res://.tmp/wuhan-retired-{Guid.NewGuid():N}.json";
@@ -131,13 +156,13 @@ public partial class WuhanSelfTest : Node
     }
     private void TestPartialPieces(DataCatalog catalog)
     {
-        var stock = new DoupiInventory(); stock.TryAddBatch(13);
+        var stock = new DoupiInventory(); stock.TryAddBatch(5);
         var pan = new DoupiStateMachine(catalog.DoupiGriddlesByLevel[1]);
         pan.TryPourBatter(); pan.TryAddEgg(); pan.Tick(2.5); pan.TryFlip(); pan.TryAddFilling();
         pan.Tick(7); foreach (var line in Enum.GetValues<DoupiCutLine>()) pan.TryCut(line);
         Check(pan.TransferAvailable(stock) == 3 && pan.RemainingPieces == 5 && pan.FirstRemainingPiece == 3, "部分入盘保留五块及原锅面位置");
-        Check(Enumerable.Range(0, 3).All(i => stock.PieceAt(13 + i) == new DoupiInventory.Piece(DoupiQuality.Overbrowned, i)), "前三块的纹理编号和煎制品质进入托盘");
-        stock.TryTake(16, out _);
+        Check(Enumerable.Range(0, 3).All(i => stock.PieceAt(5 + i) == new DoupiInventory.Piece(DoupiQuality.Overbrowned, i)), "前三块的纹理编号和煎制品质进入托盘");
+        stock.TryTake(8, out _);
         Check(pan.TransferAvailable(stock) == 5 && pan.State == DoupiState.Empty && Enumerable.Range(0, 5).All(i => stock.PieceAt(i).Tile == i + 3), "释放容量后剩余块沿用原纹理且只转移一次");
     }
     private void TestCustomerParity(DataCatalog catalog)
@@ -239,7 +264,7 @@ public partial class WuhanSelfTest : Node
     }
     private void TestDoupi(DataCatalog c)
     {
-        var stock=new DoupiInventory();var machine=new DoupiStateMachine(c.DoupiGriddlesByLevel[1]);MakeBatch(machine,stock);Check(stock.Count==8,"豆皮一锅固定八块");MakeBatch(machine,stock);Check(stock.Count==16,"豆皮备餐盘容量十六块");var third=new DoupiStateMachine(c.DoupiGriddlesByLevel[1]);third.TryPourBatter();third.TryAddEgg();third.Tick(2.5);third.TryFlip();third.TryAddFilling();third.Tick(3.5);foreach(var direction in Enum.GetValues<DoupiCutLine>())third.TryCut(direction);Check(third.TransferAvailable(stock)==0&&third.State==DoupiState.Cut,"库存满时成品留在锅中等待");
+        var stock=new DoupiInventory();var machine=new DoupiStateMachine(c.DoupiGriddlesByLevel[1]);MakeBatch(machine,stock);Check(stock.Count==8,"豆皮一锅固定八块");MakeBatch(machine,stock);Check(stock.Count==8,"豆皮备餐盘容量八块");var third=new DoupiStateMachine(c.DoupiGriddlesByLevel[1]);third.TryPourBatter();third.TryAddEgg();third.Tick(2.5);third.TryFlip();third.TryAddFilling();third.Tick(3.5);foreach(var direction in Enum.GetValues<DoupiCutLine>())third.TryCut(direction);Check(third.TransferAvailable(stock)==0&&third.State==DoupiState.Cut,"库存满时成品留在锅中等待");
     }
     private static void MakeBatch(DoupiStateMachine m,DoupiInventory s){m.TryPourBatter();m.TryAddEgg();m.Tick(2.5);m.TryFlip();m.TryAddFilling();m.Tick(3.5);foreach(var direction in Enum.GetValues<DoupiCutLine>())m.TryCut(direction);m.TransferAvailable(s);}
     private void TestSatisfaction(DataCatalog c)

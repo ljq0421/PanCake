@@ -161,7 +161,7 @@ public partial class WuhanAnimationSelfTest : Node
         Check(s.Doupi!.State==DoupiState.Empty&&s.DoupiStock.Count==8,"豆皮四刀切割后自动入盘");
         s.PourDoupiBatter();s.PourDoupiBatter();Check(s.DoupiStock.Count==8&&s.Workstation.Busy("stock"),"豆皮入库连点不重复增加一锅");
         s._Process(.5);MakeDoupi(s);s.PourDoupiBatter();s._Process(.5);MakeDoupi(s);s.PourDoupiBatter();
-        Check(s.DoupiStock.Count==16&&s.Doupi.State==DoupiState.Cut&&!s.Workstation.Busy("pan"),"备货满盘保留锅内成品，不播放入库动作");DisposeDay(f);
+        Check(s.DoupiStock.Count==8&&s.Doupi.State==DoupiState.Cut&&!s.Workstation.Busy("pan"),"备货满盘保留锅内成品，不播放入库动作");DisposeDay(f);
         f=NewDay(3);s=f.Screen;s.PourDoupiBatter();s._Process(.4);s.AddDoupiEgg();s._Process(2.1);
         Check(s.Doupi!.State==DoupiState.Flipped&&s.Workstation.Busy("pan"),"Lv3 豆皮自动翻面可见");DisposeDay(f);
         f=NewDay();s=f.Screen;s.PourDoupiBatter();s._Process(.4);s.AddDoupiEgg();s._Process(2.6);s._Process(2);

@@ -66,6 +66,7 @@ public partial class WuhanWorkstationView : Control
 
     private void OnDragStarted(string payload)
     {
+        IsKnifeHeld = false;
         _draggedProduct = DeliveryProduct(payload);
         EndMix(); QueueRedraw();
     }
@@ -75,7 +76,7 @@ public partial class WuhanWorkstationView : Control
         ClearTrashSource();
         RefreshDeliverySources(); QueueRedraw();
     }
-    public void CancelInput() { CancelTrashPress(); _drag?.CancelDrag(); CancelGesture(); EndMix(); _cooker?.CancelPendingPour(); }
+    public void CancelInput() { IsKnifeHeld = false; CancelTrashPress(); _drag?.CancelDrag(); CancelGesture(); EndMix(); _cooker?.CancelPendingPour(); }
 
     public void RefreshDeliverySources()
     {
@@ -112,11 +113,11 @@ public partial class WuhanWorkstationView : Control
         {
             Rect2 food = new(BowlFood.Position - BowlRect.Position, BowlFood.Size);
             Texture2D sheet = _art.WorkbenchBackground(_doupi is not null);
-            Vector2[] outline = _layout.BowlOutline;
+            Vector2[] outline = WuhanArtworkContours.MixingBowl.Select(p=>WuhanWorkbenchLayout.Point(p.X,p.Y)).ToArray();
             root.AddChild(new Polygon2D {
                 Polygon = outline.Select(p => p - BowlRect.Position).ToArray(),
                 UV = outline.Select(p => p / WuhanWorkbenchLayout.DesignSize * sheet.GetSize()).ToArray(),
-                Texture = sheet,
+                Texture = sheet, Antialiased = true,
             });
             foreach (var layer in BowlLayers(food, _bowl.State, (float)_bowl.MixProgress, _bowl.Quality, _bowl.Toppings))
                 Layer(layer.Id, layer.Rect, alpha: layer.Alpha);
@@ -130,6 +131,7 @@ public partial class WuhanWorkstationView : Control
 
     public static readonly string[] IngredientIds = { StableIds.Ingredients.WuhanBaseSeasoning,
         StableIds.Ingredients.WuhanScallion, StableIds.Ingredients.WuhanChiliOil, StableIds.Ingredients.WuhanBraisedBeef };
+    private readonly Polygon2D[] _basketWater = new Polygon2D[2];
     private WuhanArtCatalog _art = null!;
     private WuhanWorkbenchLayout _layout = WuhanWorkbenchLayout.Noodles;
     private NoodleCookerStateMachine _cooker = null!;
@@ -197,6 +199,7 @@ public partial class WuhanWorkstationView : Control
     private Rect2 IngredientFoodRect(int index) => RelativeRect(IngredientRect(index), new Rect2(.12f, .15f, .76f, .45f));
     public Vector2 BowlCenter => BowlFood.GetCenter();
     public Vector2 IngredientCenter(int index) => IngredientRect(index).GetCenter();
+    public Vector2 KnifeCenter => _layout.Knife.GetCenter();
     public Vector2 StockCenter => StockRect.GetCenter();
     public Vector2 PanCenter => (PanCorners[0] + PanCorners[2]) / 2;
     public Vector2 CupCenter => EggStockRect.GetCenter();
@@ -206,6 +209,14 @@ public partial class WuhanWorkstationView : Control
         // The ladles shrink from 1254px source sheets to 50–80px on screen.
         // Use their imported mipmaps to preserve smooth ink and alpha edges.
         TextureFilter = TextureFilterEnum.LinearWithMipmaps;
+        for (int i=0;i<_basketWater.Length;i++)
+        {
+            _basketWater[i] = new Polygon2D {
+                Name=$"BasketWater{i}", Visible=false,
+                Material=new ShaderMaterial { Shader=GD.Load<Shader>("res://resource/shaders/wuhan_basket_water.gdshader") }
+            };
+            AddChild(_basketWater[i]);
+        }
         _cookingAudio = new WuhanCookingAudio(this);
         _actionAudio = new WuhanActionAudio(this);
         MouseExited += () => { _hover = ""; _pointer = new Vector2(-1000, -1000); QueueRedraw(); };
@@ -291,6 +302,7 @@ public partial class WuhanWorkstationView : Control
         PlaySound(WuhanSound.Cut);
         Motion m = Play("cut", .36, "pan"); m.Line = line;
         if (_gesture == "cut") m.Origin = _gesturePoint;
+        if (!CanHoldKnife) IsKnifeHeld = false;
         RememberStates();
     }
     private void PlayFlipReturn(float lift, Vector2 origin)
@@ -321,6 +333,7 @@ public partial class WuhanWorkstationView : Control
     public void Tick(double delta)
     {
         if (_cooker is null || delta <= 0) return;
+        if (!CanHoldKnife) IsKnifeHeld = false;
         TickTrashPress(delta);
         _cookingAudio?.Update(_cooker, _doupi);
         if (_doupi is not null && _doupi.State != _previousDoupi)
@@ -379,6 +392,13 @@ public partial class WuhanWorkstationView : Control
         {
             if (!mb.Pressed) { EndMix(); return; }
             string hit = HitTarget(mb.Position);
+            if (hit == "knife")
+            {
+                if (CanHoldKnife && !Busy("pan")) { IsKnifeHeld = true; _pointer = mb.Position; }
+                else GestureRejected?.Invoke("豆皮煎好且操作动画结束后，点击小刀取刀。 ");
+                AcceptEvent(); QueueRedraw(); return;
+            }
+            if (hit != "pan") IsKnifeHeld = false;
             if (TryBeginGesture(hit, mb.Position)) { AcceptEvent(); return; }
             if (hit.StartsWith("ingredient")) IngredientPressed?.Invoke(IngredientIds[int.Parse(hit[^1..])]);
             else if (hit == "doupi_egg") EggRequested?.Invoke();
@@ -423,6 +443,7 @@ public partial class WuhanWorkstationView : Control
         if (_doupi is not null && StockRect.HasPoint(p)) return "stock";
         if (_doupi is not null)
         {
+            if (_layout.Knife.HasPoint(p)) return "knife";
             if (DoupiEggRect.HasPoint(p)) return "doupi_egg";
             if (BatterRect.HasPoint(p)) return "batter";
             if (FillingRect.HasPoint(p)) return "filling";
@@ -434,6 +455,7 @@ public partial class WuhanWorkstationView : Control
     public override void _Draw()
     {
         if (_cooker is null) return;
+        foreach (Polygon2D water in _basketWater) water.Hide();
         DrawCounterForeground();
         // The cooker front must still occlude the submerged part of a basket's contour.
         DrawEquipmentHighlights(basketsOnly: true);
@@ -530,27 +552,41 @@ public partial class WuhanWorkstationView : Control
         return At(center, BasketSize);
     }
     internal float BasketImmersion(int index) => BasketImmersion(BasketRect(index), index);
+    private float BasketWaterY(int index) => BasketHome(index).Y + BasketSize.Y * .10f;
     private float BasketImmersion(Rect2 rect, int index)
     {
         if (!CookerCanvas.HasPoint(rect.GetCenter())) return 0;
-        return Mathf.Clamp(1 - (BasketHome(index).Y - rect.GetCenter().Y) / 65, 0, 1);
+        return Mathf.Clamp((rect.End.Y-BasketWaterY(index))/(BasketSize.Y*.40f),0,1);
     }
     private void DrawBasketWater(Rect2 rect, int index)
     {
-        float submerged = BasketImmersion(rect, index);
-        if (submerged <= 0) return;
-        // Restore the actual water through the submerged bowl; the handle stays dry.
-        Vector2[] outline = { new(.06f,.61f), new(.13f,.54f), new(.36f,.51f), new(.62f,.54f),
-            new(.72f,.62f), new(.67f,.88f), new(.54f,.97f), new(.25f,.97f), new(.10f,.89f) };
-        Vector2[] polygon = outline.Select(v => rect.Position + v * rect.Size).ToArray();
-        DrawPolygon(polygon, new[]{new Color(1,1,1,.78f * submerged)},
-            polygon.Select(v => v / WuhanWorkbenchLayout.DesignSize).ToArray(), _art.WorkbenchBackground(_doupi is not null));
-        Vector2 contact = rect.Position + rect.Size * new Vector2(.38f,.61f);
-        float ripple = ReducedMotion ? 0 : Mathf.Sin(_phase * 4) * 2;
-        Vector2[] ring = Enumerable.Range(0, 25).Select(i => contact + new Vector2(
-            Mathf.Cos(i * Mathf.Tau / 24) * (rect.Size.X * .37f + ripple),
-            Mathf.Sin(i * Mathf.Tau / 24) * 8)).ToArray();
-        DrawPolyline(ring, new Color(.83f,.97f,1,.55f * submerged), 1.5f, true);
+        if (BasketImmersion(rect,index)<=0) return;
+        Texture2D texture = _art.Texture("basket");
+        Rect2 fitted = FitSprite(texture,rect), source=Source(texture);
+        Polygon2D water = _basketWater[index];
+        Vector2[] polygon = RectQuad(fitted);
+        Texture2D sheet = _art.WorkbenchBackground(_doupi is not null);
+        water.Polygon = polygon;
+        water.UV = polygon.Select(p=>p/WuhanWorkbenchLayout.DesignSize*sheet.GetSize()).ToArray();
+        water.Texture = sheet;
+        var material = (ShaderMaterial)water.Material;
+        material.SetShaderParameter("basket_mask",texture);
+        material.SetShaderParameter("mask_region",new Vector4(source.Position.X/texture.GetWidth(),source.Position.Y/texture.GetHeight(),source.Size.X/texture.GetWidth(),source.Size.Y/texture.GetHeight()));
+        material.SetShaderParameter("basket_rect",new Vector4(fitted.Position.X,fitted.Position.Y,fitted.Size.X,fitted.Size.Y));
+        material.SetShaderParameter("water_y",BasketWaterY(index));
+        material.SetShaderParameter("water_center",WuhanWorkbenchLayout.Point(270,550));
+        material.SetShaderParameter("water_radius",WuhanWorkbenchLayout.Point(163,66));
+        water.Show();
+        // A short, soft contact arc replaces the full bright ring painted across the mesh.
+        float immersion=BasketImmersion(rect,index);
+        if (!ReducedMotion && immersion>.65f)
+        {
+            Vector2 contact=new(fitted.Position.X+fitted.Size.X*.38f,BasketWaterY(index));
+            float shimmer=.13f+.035f*Mathf.Sin(_phase*3);
+            Vector2[] arc=Enumerable.Range(0,17).Select(i=>contact+new Vector2(
+                Mathf.Cos(i*Mathf.Pi/16)*fitted.Size.X*.34f,Mathf.Sin(i*Mathf.Pi/16)*3)).ToArray();
+            DrawPolyline(arc,new Color(.85f,.97f,1,shimmer),1,true);
+        }
     }
     private static Rect2 BasketFoodRect(Rect2 basket) => RelativeRect(basket, new Rect2(.10f, .48f, .50f, .37f));
     private static string BasketFoodArt(NoodleBasketRuntime basket) => basket.Quality == NoodleQuality.Overcooked

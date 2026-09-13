@@ -184,6 +184,8 @@ public partial class WuhanVisualCapture : Node
                 await Shot("flip-ready");
                 day.FlipDoupi(); day._Process(.5); day.AddDoupiFilling();  day._Process(3.6);
                 await Shot("cut-ready");
+                view._GuiInput(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true, Position = view.KnifeCenter });
+                view._GuiInput(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = false, Position = view.KnifeCenter });
                 Vector2 start = view.PanPoint(0, .5f);
                 view._GuiInput(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true, Position = start });
                 await Shot("cut-held"); view.CancelInput();
@@ -314,12 +316,12 @@ public partial class WuhanVisualCapture : Node
                 $"pendant matches new artwork and clears the HUD: {day.CashPendant.GetRect()}");
             Require(day.CashPendant.GetRect().HasPoint(WuhanWorkbenchLayout.CashSlot), "payment targets the pendant opening");
             Rect2 foodBounds = WuhanWorkbenchLayout.Doupi.StockFood;
-            for (int piece = 0; piece < 16; piece++)
+            for (int piece = 0; piece < DoupiInventory.Capacity; piece++)
             {
                 Rect2 placement = (Rect2)viewType.GetMethod("StockItemRect", hidden)!.Invoke(view, new object[] { piece })!;
                 Require(placement.Size.X < foodBounds.Size.X / 4 && placement.Size.Y < foodBounds.Size.Y * .6f,
                     $"stock piece {piece + 1} fits the compact four-column layout with overlapping rows");
-                Require(foodBounds.Encloses(placement), "projected stock piece stays within the tray interior");
+                Require(foodBounds.Grow(1).Encloses(placement), "projected stock piece stays within the tray interior");
                 Require(stockBounds.Encloses(placement), $"stock piece {piece + 1} remains inside tray");
             }
             for(int basket=0;basket<day.Cooker.Baskets.Count;basket++)
@@ -369,14 +371,13 @@ public partial class WuhanVisualCapture : Node
             Require(!day.EggUnlocked,"retired egg stays hidden");
             await Shot("03-ready");
 
-            Require(day.DoupiStock.TryAddBatch(DoupiInventory.Capacity-day.DoupiStock.Count),"stock fixture fills all 16 portions");
-            Step(.001); Click(view.StockCenter); day.DeliveryDrag.CancelDrag(); Require(day.DoupiStock.Count==16,"stock click without customer drop retains food");
+            Require(day.DoupiStock.TryAddBatch(DoupiInventory.Capacity-day.DoupiStock.Count),"stock fixture fills all 8 portions");
+            Step(.001); Click(view.StockCenter); day.DeliveryDrag.CancelDrag(); Require(day.DoupiStock.Count==8,"stock click without customer drop retains food");
             Click(view.CupCenter); day.DeliveryDrag.CancelDrag(); Require(!day.EggUnlocked,"retired cup cannot be reactivated by clicking");
             Click(view.BowlCenter); day.DeliveryDrag.CancelDrag(); Require(day.Bowl.State==NoodleBowlState.Ready,"bowl click without customer drop retains food");
             Step(2.5);await Shot("04-stock-full");
-            // Fixed-count fixtures expose both rows and the second layer, including
-            // the transition back to one layer after a partial delivery.
-            foreach (int count in new[] { 0, 1, 7, 8, 9, 15, 16, 8 })
+            // Fixed-count fixtures expose both rows and the empty slots after delivery.
+            foreach (int count in new[] { 0, 1, 3, 5, 7, 8 })
             {
                 day.DoupiStock.TryTake(day.DoupiStock.Count, out _);
                 if (count > 0) Require(day.DoupiStock.TryAddBatch(count), $"stock fixture sets {count} portions");

@@ -7,15 +7,42 @@ public enum DoupiQuality { Normal, Overbrowned, Burnt }
 
 public sealed class DoupiInventory
 {
-    public const int Capacity = 16;
+    public const int Capacity = 8;
     public readonly record struct Piece(DoupiQuality Quality, int Tile);
-    private readonly Queue<Piece> _items = new();
-    public Piece PieceAt(int index) => _items.ElementAt(index);
+    private readonly Queue<(Piece Piece, int Slot)> _items = new();
+    private readonly bool[] _occupied = new bool[Capacity];
+    public Piece PieceAt(int index) => _items.ElementAt(index).Piece;
+    // FIFO delivery order and physical tray positions are independent. Surviving pieces never move.
+    public int SlotAt(int index) => _items.ElementAt(index).Slot;
     public long HeadGeneration { get; private set; }
     public int Count => _items.Count;
-    public bool TryAddBatch(int amount, DoupiQuality quality = DoupiQuality.Normal, int firstTile = 0) { if (amount <= 0 || Count + amount > Capacity) return false; for (int i = 0; i < amount; i++) _items.Enqueue(new Piece(quality, (firstTile + i) % 8)); return true; }
-    public bool TryPeek(out DoupiQuality quality) { if (_items.Count == 0) { quality = DoupiQuality.Normal; return false; } quality = _items.Peek().Quality; return true; }
-    public bool TryTake(int amount, out DoupiQuality quality) { quality = DoupiQuality.Normal; if (amount <= 0 || Count < amount) return false; for (int i = 0; i < amount; i++) quality = _items.Dequeue().Quality; HeadGeneration++; return true; }
+    public bool TryAddBatch(int amount, DoupiQuality quality = DoupiQuality.Normal, int firstTile = 0)
+    {
+        if (amount <= 0 || Count + amount > Capacity) return false;
+        for (int i=0;i<amount;i++)
+        {
+            int slot = Array.IndexOf(_occupied,false);
+            _occupied[slot] = true;
+            _items.Enqueue((new Piece(quality,(firstTile+i)%8),slot));
+        }
+        return true;
+    }
+    public bool TryPeek(out DoupiQuality quality)
+    {
+        quality = DoupiQuality.Normal;
+        if (_items.Count==0) return false;
+        quality = _items.Peek().Piece.Quality; return true;
+    }
+    public bool TryTake(int amount, out DoupiQuality quality)
+    {
+        quality = DoupiQuality.Normal;
+        if (amount<=0 || Count<amount) return false;
+        for (int i=0;i<amount;i++)
+        {
+            var item = _items.Dequeue(); _occupied[item.Slot]=false; quality=item.Piece.Quality;
+        }
+        HeadGeneration++; return true;
+    }
 }
 
 public sealed class DoupiStateMachine

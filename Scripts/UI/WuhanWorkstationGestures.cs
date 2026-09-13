@@ -10,6 +10,8 @@ public partial class WuhanWorkstationView
     public Func<int, bool>? RaiseRequested, PourRequested;
     public Func<DoupiCutLine, bool>? CutRequested;
     private string _gesture = "";
+    public bool IsKnifeHeld { get; private set; }
+    private bool CanHoldKnife => _doupi?.State is DoupiState.ReadyToCut or DoupiState.Overbrowned or DoupiState.Cutting;
     private Vector2 _gestureStart, _gesturePoint, _gesturePrevious;
     private DoupiCutStroke? _cutStroke;
     private Vector2 _basketGrabOffset;
@@ -35,7 +37,7 @@ public partial class WuhanWorkstationView
         else if (hit == "batter" && _doupi is not null && !Busy("pan")) gesture = "batter";
         else if (hit == "filling" && _doupi is not null && !Busy("pan")) gesture = "filling";
         else if (hit == "pan" && NearPan(point) && !Busy("pan")) gesture = _doupi?.State switch {
-            DoupiState.ReadyToFlip => "flip", DoupiState.ReadyToCut or DoupiState.Overbrowned or DoupiState.Cutting => "cut", _ => "" };
+            DoupiState.ReadyToFlip => "flip", DoupiState.ReadyToCut or DoupiState.Overbrowned or DoupiState.Cutting when IsKnifeHeld => "cut", _ => "" };
         if (gesture.Length == 0) return false;
         if (gesture == "basket") _basketGrabOffset = BasketRect(_gestureBasket).GetCenter() - point;
         EndMix(); _gesture = gesture; _gestureStart = _gesturePoint = _gesturePrevious = point;
@@ -48,12 +50,14 @@ public partial class WuhanWorkstationView
     {
         if (input is InputEventKey { Pressed: true, Keycode: Key.Escape })
         {
-            bool active = _trashPressed || _drag?.IsDragging == true || HasProductionGesture || _mixHeld || _cooker?.PendingPourBasket is not null;
+            bool active = IsKnifeHeld || _trashPressed || _drag?.IsDragging == true || HasProductionGesture || _mixHeld || _cooker?.PendingPourBasket is not null;
             CancelInput(); if (active) GetViewport().SetInputAsHandled(); return;
         }
         if (CanInteract?.Invoke() != true) { CancelInput(); return; }
-        if (HandleTrashInput(input)) { GetViewport().SetInputAsHandled(); return; }
+        if (HandleTrashInput(input)) { IsKnifeHeld = false; GetViewport().SetInputAsHandled(); return; }
         if (_drag?.IsDragging == true) return;
+        if (IsKnifeHeld && input is InputEventMouseMotion knifeMotion)
+        { _pointer = GetGlobalTransformWithCanvas().AffineInverse() * knifeMotion.Position; QueueRedraw(); }
         if (_mixHeld) { HandleMixInput(input); return; }
         if (!HasProductionGesture) return;
         if (input is InputEventMouseMotion motion)
@@ -156,6 +160,8 @@ public partial class WuhanWorkstationView
             DrawLoadedBasket(At(waiting, BasketSize));
             Drips(waiting + new Vector2(0, 30), 4);
         }
+        if (IsKnifeHeld && !HasProductionGesture)
+            Sprite("cut_tool", At(_pointer, new Vector2(100, 100)), .9f);
         if (!HasProductionGesture) return;
         if (_gesture == "cut" && !_cutCommitted && _cutStroke?.Line is DoupiCutLine line)
         {

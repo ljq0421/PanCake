@@ -147,24 +147,22 @@ public partial class WuhanWorkstationView
     private Vector2[] PanPiece(int tile) => QuadRegion(PanCorners, PieceRegion(tile));
     private Rect2 StockItemRect(int index)
     {
-        int slot = index % 8, layer = index / 8;
         Rect2 tray = _layout.StockFood;
-        // Reserve headroom for the second layer, exposing the lower pieces'
-        // front and left edges instead of hiding them under matching sprites.
-        Vector2 center = tray.GetCenter() + new Vector2((slot % 4 - 1.5f) * 73, (slot / 4 - .5f) * 24 + 8);
-        center += new Vector2(layer * 8, -layer * 16);
-        return At(center, new Vector2(70, 50));
+        Vector2 cell = tray.Size / new Vector2(4, 2);
+        Vector2 center = tray.Position + cell * new Vector2(index % 4 + .5f, index / 4 + .5f);
+        return At(center, new Vector2(cell.X * .94f, cell.Y * 1.02f));
     }
     private void DrawDoupiStock(Motion? motion)
     {
-        // Finish both layers of the back row before drawing the front row.
+        // Draw the back row before the front row.
         // Incoming pieces use this same order, so they do not change depth on landing.
+        int[] indices = Enumerable.Range(0,_stock.Count).OrderBy(_stock.SlotAt).ToArray();
         for (int row = 0; row < 2; row++)
-        for (int i = 0; i < _stock.Count; i++)
+        foreach (int i in indices)
         {
-            if (i % 8 / 4 != row) continue;
+            if (_stock.SlotAt(i) % 8 / 4 != row) continue;
             DoupiInventory.Piece piece = _stock.PieceAt(i);
-            Vector2[] target = FitDoupiPieceQuad(piece.Tile, StockItemRect(i));
+            Vector2[] target = FitDoupiPieceQuad(piece.Tile, StockItemRect(_stock.SlotAt(i)));
             if (motion?.Kind != "stock" || i < motion.StockStart || i >= motion.StockStart + motion.Amount)
             {
                 DrawStockPiece(piece.Tile, target, piece.Quality);
@@ -277,7 +275,7 @@ public partial class WuhanWorkstationView
         {
             foreach (DoupiCutLine line in _doupi.CutLines)
                 if (state != DoupiState.Cut || motion?.Kind == "cut") DrawCut((int)line, 1);
-            if (_gesture == "cut" && state is (DoupiState.ReadyToCut or DoupiState.Overbrowned or DoupiState.Cutting))
+            if (IsKnifeHeld && state is (DoupiState.ReadyToCut or DoupiState.Overbrowned or DoupiState.Cutting))
                 foreach (DoupiCutLine line in Enum.GetValues<DoupiCutLine>())
                 {
                     if (_doupi.CutLines.Contains(line)) continue;
@@ -291,11 +289,6 @@ public partial class WuhanWorkstationView
                 for (int i=0;i<3;i++) Ellipse(PanCenter + new Vector2((i-1)*85, -puff*18),
                     new Vector2(9+puff*14, 3+puff*6), new Color(1,1,1,.28f*(1-puff)));
             }
-        }
-        if (state is (DoupiState.ReadyToCut or DoupiState.Overbrowned or DoupiState.Cutting) && _gesture != "cut" && !Busy("pan"))
-        {
-            Rect2 tool = At(new Vector2(PanRect.End.X - 28, PanRect.End.Y - 30), new Vector2(110, 73));
-            Sprite("cut_tool", tool); HighlightTool("cut_tool", tool);
         }
         if (state == DoupiState.Burnt && !ReducedMotion)
         {

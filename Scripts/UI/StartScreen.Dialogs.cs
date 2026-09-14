@@ -10,12 +10,12 @@ public partial class StartScreen
         CloseModal(); _previousFocus = GetViewport().GuiGetFocusOwner(); _modalKind = kind;
         Clear(_modal); _modalControls.Clear(); _modal.Show();
         _modal.AddChild(new ColorRect { Size = new(1920, 1080), Color = new Color(.15f, .1f, .06f, .65f) });
-        if (kind == "confirm")
+        if (kind is "confirm" or "reset-ledger" or "developer")
         {
             var panel = new Panel { Position = new(495, 275), Size = new(930, 535), MouseFilter = MouseFilterEnum.Ignore };
             panel.AddThemeStyleboxOverride("panel", StartScreenTheme.Box(StartScreenTheme.Cream, 3, true)); _modal.AddChild(panel);
         }
-        else Art(_modal, "旅行手账双页母版", new(180, 150, 1560, 800));
+        else HomeArt(_modal, "旅行手账双页母版", BookBounds);
         foreach (var button in _buttons) button.FocusMode = FocusModeEnum.None;
     }
     private void CloseModal()
@@ -110,7 +110,7 @@ public partial class StartScreen
     {
         OpenModal("help");
         Text(_modal, "HelpTitle", "一本早餐旅行手账", new(355, 285, 520, 80), 41);
-        Text(_modal, "HelpJourney", "新的旅程\n从天津出发，建立一份新的旅行进度。\n确认重新开始后，会覆盖原有存档。\n\n继续旅程\n回到上次城市的经营首页。\n选营业日、升级设备，再准备开张。\n\n世界地图\n完成一城后，下一站逐步开放。\n点击明信片查看城市，再前往早餐铺。", new(350, 390, 490, 440), 27);
+        Text(_modal, "HelpJourney", "新的旅程\n从天津出发，建立一份新的旅行进度。\n确认重新开始后，会覆盖原有存档。\n\n继续旅程\n回到上次开张的城市早餐铺。\n选营业日、升级设备，再准备开张。\n\n世界地图\n完成一城后，下一站逐步开放。\n选择城市查看信息，再进入早餐铺。", new(350, 390, 490, 440), 27);
         Text(_modal, "HelpControlsTitle", "慢慢来，做好每份早餐", new(1040, 285, 515, 80), 36);
         Text(_modal, "HelpControls", "按各城工作台提示点击或拖动制作。\n天津、武汉：右键长按 0.45 秒，\n拖入垃圾桶可丢弃已投入制作的食物。\n\n天津、武汉自动收款；西安点击收钱。\n广州、扬州完成订单后自动入账。\n扬州先备餐，再整盘上桌。\n\nTab / 方向键选择入口\nEnter / 空格确认，Esc 返回或关闭。\n", new(1035, 390, 535, 365), 24);
         Button(_modal, "Close", "记住了", new(1220, 795, 300, 65), CloseModal, true); _modalControls[0].GrabFocus();

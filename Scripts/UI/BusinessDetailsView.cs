@@ -206,7 +206,7 @@ public partial class BusinessDetailsView : Control
         if (UsesBookArt) foreach (var sticker in _model.Stickers) _rows.AddChild(TianjinUi.Label(sticker, 22, Accent));
         _scroll.ScrollVertical = 0;
     }
-    private void RequestClose() { FinishAnimation(); if (_model.CanClose) CloseRequested?.Invoke(); }
+    private void RequestClose() { FinishAnimation(); if (_upgradeModal is null && _model.CanClose) CloseRequested?.Invoke(); }
     private void StartAnimation()
     {
         if (ProjectSettings.GetSetting("accessibility/reduce_motion", false).AsBool()) return;

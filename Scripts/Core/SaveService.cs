@@ -242,6 +242,9 @@ public partial class SaveService : Node
         Changed?.Invoke(); return true;
     }
 
+    internal bool CanPurchase(string cityId, string upgradeId, DataCatalog catalog, out string error)
+        => DescribePurchase(cityId, upgradeId, catalog, out _, out error);
+
     private bool DescribePurchase(string cityId, string upgradeId, DataCatalog catalog,
         out (string Equipment, int Target, int Price, string Display) offer, out string error)
     {

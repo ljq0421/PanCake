@@ -125,7 +125,7 @@ public partial class TianjinDayScreen : Control
         _abandonDialog.Canceled += () => { if (_manualPaused) _pausePanel.Visible = true; };
     }
 
-    public void Initialize(DataCatalog catalog, SaveService save, DayController controller, int day)
+    public bool Initialize(DataCatalog catalog, SaveService save, DayController controller, int day)
     {
         BusinessFeedbackAudio.Attach(this, controller.Feedback, () => controller.CurrentConfig?.CityId == StableIds.Cities.Tianjin && (IsVisibleInTree() && _focused && !_manualPaused && !_focusPaused && !_detailsPaused && !_abandonDialog.Visible && !controller.IsPaused && controller.State is DayState.Running or DayState.Closing));
         CloseBusinessDetails();
@@ -150,12 +150,12 @@ public partial class TianjinDayScreen : Control
         if (!controller.TryPrepareDay(day, catalog, out string error))
         {
             ShowFeedback(error, true);
-            return;
+            return false;
         }
         if (!save.ApplyStartUnlocks(controller.CurrentConfig!, out error))
         {
             ShowFeedback(error, true);
-            return;
+            return false;
         }
         int fryerLevel = controller.CurrentConfig!.AvailableProductKinds.Contains(ProductKind.Youtiao)
             ? Math.Max(1, save.Data.PurchasedFryerLevel)
@@ -168,6 +168,7 @@ public partial class TianjinDayScreen : Control
         _workstation.ResetForDay();
         ApplyPauseState();
         Render();
+        return true;
     }
 
     public void BeginDay()

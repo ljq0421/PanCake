@@ -84,6 +84,25 @@ public partial class GameController : Node
         _cityHubs[Data.StableIds.Cities.Guangzhou] = _guangzhouHub;
         _cityHubs[Data.StableIds.Cities.Yangzhou] = _yangzhouHub;
         _startScreen.Initialize(save);
+        _startScreen.ConfigureCities(catalog, yangzhouCatalog);
+        _startScreen.BusinessRequested += (city, day) => StartCityBusiness(city, day);
+        _startScreen.UpgradeRequested += (city, id) =>
+        {
+            string error;
+            bool ok = !save.HasLoadError && save.Data.UnlockedCityIds.Contains(city);
+            if (!ok) error = "存档或城市状态不允许升级。";
+            else ok = city == Data.StableIds.Cities.Yangzhou ? save.PurchaseYangzhou(id, yangzhouCatalog, out error) : save.TryPurchase(city, id, catalog, out error);
+            _startScreen.RefreshCityPage();
+            _startScreen.ShowError(ok ? "设备已升级，下次营业生效。" : error);
+        };
+        _startScreen.DeveloperRequested += id =>
+        {
+            if (!_startScreen.DeveloperToolsVisible) return;
+            if (id == "lab") ShowOnly(pancakeLab);
+            else if (id == "data") ShowOnly(debugPanel);
+            else if (id == Data.StableIds.Cities.Guangzhou && _guangzhouDay.Initialize(catalog, save, dayController, 9, true)) { ShowOnly(_guangzhouDay); _guangzhouDay.BeginDay(); }
+            else if (id == Data.StableIds.Cities.Yangzhou && _yangzhouDay.Initialize(yangzhouCatalog, save, 8, true)) ShowOnly(_yangzhouDay);
+        };
         _startScreen.NewGameRequested += () =>
         {
             if (!save.ResetProgress(out string error)) { _startScreen.ShowError(error); return; }
@@ -95,10 +114,6 @@ public partial class GameController : Node
             OpenCity(save.ContinueCityId);
         };
         _startScreen.QuitRequested += () => GetTree().Quit();
-        _startScreen.CityRequested += (cityId, preview) =>
-        {
-            if (!OpenCity(cityId, preview)) _startScreen.ShowError("无法前往该城市，请检查解锁进度或存档写入状态。");
-        };
         hub.DayRequested += day =>
         {
             dayScreen.Initialize(catalog, save, dayController, day);
@@ -152,14 +167,36 @@ public partial class GameController : Node
     {
         if (!_cityHubs.TryGetValue(cityId, out Control? target)) return false;
         if (!_save.Data.UnlockedCityIds.Contains(cityId) && !allowDeveloperPreview) return false;
-        if (!_save.TryRecordCityVisit(cityId, out string error))
-        {
-            if (_startScreen.Visible) _startScreen.ShowError(error);
-            else { _navigationError.DialogText = "当前位置保存失败，请检查存档写入权限和可用空间。\n当前位置未变更，请重试。"; _navigationError.PopupCentered(); }
-            return false;
-        }
-        _xianHub.Render(); _guangzhouHub.Render(); _yangzhouHub.Render();
         ShowOnly(target);
+        return true;
+    }
+
+    public bool StartCityBusiness(string cityId, int day)
+    {
+        var catalog = GetNode<DataCatalog>("/root/DataCatalog");
+        var controller = GetNode<DayController>(DayControllerPath);
+        if (!_save.CanContinue || !catalog.IsValid || !_save.Data.UnlockedCityIds.Contains(cityId)
+            || !JourneyModel.Cities.Any(c => c.Id == cityId) || day < 1 || day > SaveService.ChapterDays(cityId)
+            || day > JourneyModel.Progress(_save, cityId).HighestUnlockedDay)
+        { _startScreen.ShowError("无法开张，请检查营业日、城市解锁和存档状态。"); return false; }
+        Control screen; bool ready;
+        switch (cityId)
+        {
+            case Data.StableIds.Cities.Tianjin:
+                var t = GetNode<TianjinDayScreen>(TianjinDayPath); screen = t; ready = t.Initialize(catalog, _save, controller, day); break;
+            case Data.StableIds.Cities.Wuhan:
+                var w = GetNode<WuhanDayScreen>(WuhanDayPath); screen = w; ready = w.Initialize(catalog, _save, controller, day); break;
+            case Data.StableIds.Cities.Xian: screen = _xianDay; ready = _xianDay.Initialize(catalog, _save, controller, day); break;
+            case Data.StableIds.Cities.Guangzhou: screen = _guangzhouDay; ready = _guangzhouDay.Initialize(catalog, _save, controller, day); break;
+            default: screen = _yangzhouDay; ready = _yangzhouDay.Initialize(ProjectCake.Yangzhou.YangzhouCatalog.Load(), _save, day); break;
+        }
+        if (!ready) { _startScreen.ShowError("营业准备失败，请检查配置或存档写入权限后重试。"); return false; }
+        if (!_save.TryRecordCityVisit(cityId, out string error)) { _startScreen.ShowError(error); return false; }
+        ShowOnly(screen);
+        if (screen is TianjinDayScreen td) td.BeginDay();
+        else if (screen is WuhanDayScreen wd) wd.BeginDay();
+        else if (screen is XianDayScreen xd) xd.BeginDay();
+        else if (screen is GuangzhouDayScreen gd) gd.BeginDay();
         return true;
     }
 
@@ -177,6 +214,11 @@ public partial class GameController : Node
             ShowOnly(_startScreen);
             _startScreen.PresentCompletion(completedCity, () => ShowOnly(show));
             return;
+        }
+        if (_cityHubs.Values.Contains(show))
+        {
+            string city = _cityHubs.First(pair => pair.Value == show).Key;
+            ShowOnly(_startScreen); _startScreen.PresentCity(city); return;
         }
         foreach (Control page in GetNode("UI").GetChildren().OfType<Control>()) page.Visible = page == show;
         GetNode<Node2D>("ShopRoot").Visible = show != _startScreen;

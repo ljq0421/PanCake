@@ -43,9 +43,9 @@ public partial class StartScreen
 
     private void JournalTab(string name, string caption, Action action)
     {
-        var tab = Button(_body, name, "", new(1490, 195, 195, 92), action, bare: true);
-        Art(tab, "旅行手账书签母版", new(0, 0, 195, 92));
-        Text(tab, "Caption", caption, new(24, 18, 148, 52), 23, true);
+        var tab = Button(_body, name, "", new(1610, 554, 245, 100), action, bare: true);
+        HomeArt(tab, "旅行手账书签母版", new(0, 0, 245, 100), stretch: true);
+        Text(tab, "Caption", caption, new(40, 18, 194, 64), 28, true);
     }
 
     private void NodeFeedback(Button node, JourneyCity city, bool unlocked)

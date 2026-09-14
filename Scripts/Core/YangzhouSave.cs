@@ -31,6 +31,8 @@ public partial class SaveService
         if (!TrySave(out error)) { Data = snapshot; return false; }
         Changed?.Invoke(); return true;
     }
+    internal bool CanPurchaseYangzhou(string equipment, YangzhouCatalog catalog, out string error)
+        => DescribeYangzhouPurchase(equipment, catalog, out _, out _, out error);
     private bool DescribeYangzhouPurchase(string equipment, YangzhouCatalog catalog, out int price, out int level, out string error)
     {
         price = level = 0;

@@ -54,7 +54,7 @@ public partial class StartScreenSelfTest : Node
             await Capture("first-run");
             await NewJourney();
             Check(_save.CanContinue && _save.Data.Coins == 0 && _save.Data.LastVisitedCityId == StableIds.Cities.Tianjin, "new game creates an empty valid save");
-            Check(_main.GetNode<Control>("UI/MorningHub").Visible && !_screen.Visible, "new game enters Tianjin hub");
+            Check(_screen.Visible && _screen.Page == JourneyPage.City && _screen.SelectedCityId == StableIds.Cities.Tianjin, "new game enters shared Tianjin hub");
 
             string[] cities = { StableIds.Cities.Tianjin, StableIds.Cities.Wuhan, StableIds.Cities.Xian, StableIds.Cities.Guangzhou, StableIds.Cities.Yangzhou };
             string[] hubs = { "MorningHub", "WuhanHub", "XianHub", "GuangzhouHub", "YangzhouHub" };
@@ -65,14 +65,14 @@ public partial class StartScreenSelfTest : Node
             for (int i = 0; i < cities.Length; i++)
             {
                 Check(_main.OpenCity(cities[i]), $"enter {cities[i]}");
+                Check(_main.StartCityBusiness(cities[i], 1), "start city to update resume");
                 _save.Load();
                 await Launch();
                 Check(_save.ContinueCityId == cities[i] && Find<Button>("Continue").HasFocus(), $"restart retains {cities[i]} and focuses continue");
                 await Click(Find<Button>("Continue"));
-                Check(_screen.Page == JourneyPage.Continue, "continue opens journal first");
+                Check(_screen.Page == JourneyPage.City && _screen.SelectedCityId == cities[i], "continue directly opens shared hub");
                 await Capture("journal-" + i);
-                await Click(Find<Button>("Resume"));
-                Check(_main.GetNode<Control>("UI/" + hubs[i]).Visible && _save.Data.Coins == 321, $"continue enters {hubs[i]} without starting a shift");
+                Check(!_main.GetNode<Control>("UI/" + hubs[i]).Visible && _save.Data.Coins == 321, "legacy hub remains hidden");
             }
 
             await Launch();
@@ -137,11 +137,12 @@ public partial class StartScreenSelfTest : Node
             await Launch();
             await Click(Find<Button>("Continue"));
             int requests = 0;
-            _screen.ContinueRequested += () => requests++;
-            var resumeButton = Find<Button>("Resume");
+            _screen.BusinessRequested += (_, _) => requests++;
+            var resumeButton = Find<Button>("OpenBusiness");
             resumeButton.EmitSignal(BaseButton.SignalName.Pressed);
             resumeButton.EmitSignal(BaseButton.SignalName.Pressed);
             Check(requests == 1, "repeated activation dispatches only one transition");
+            _main.OpenCity(StableIds.Cities.Tianjin);
             await TravelChecks();
             SettlementChecks();
             GD.Print($"START_SCREEN_TEST_RESULT passed={_passed} failed=0");
@@ -173,13 +174,15 @@ public partial class StartScreenSelfTest : Node
         _screen.OpenCard(StableIds.Cities.Wuhan);
         Check(_screen.Page == JourneyPage.Map && File.ReadAllText(_path) == before, "locked card cannot open or mutate save");
         await Click(Find<Button>("Node0"));
-        Check(_screen.Page == JourneyPage.City, "unlocked node opens postcard");
+        Check(_screen.Page == JourneyPage.Map, "node selects map summary");
+        await Click(Find<Button>("EnterCity"));
+        Check(_screen.Page == JourneyPage.City, "summary opens shared city hub");
         await Capture("city-tianjin");
         await Click(Find<Button>("Back"));
         await Click(Find<Button>("Back"));
         Check(_screen.Page == JourneyPage.Home, "map returns to home source");
-        await Click(Find<Button>("Continue")); await Click(Find<Button>("BrowseMap")); await Click(Find<Button>("Back"));
-        Check(_screen.Page == JourneyPage.Continue, "map returns to journal source");
+        await Click(Find<Button>("Continue")); await Click(Find<Button>("MapTab")); await Click(Find<Button>("Back"));
+        Check(_screen.Page == JourneyPage.City, "map returns to city source");
         foreach (var city in JourneyModel.Cities) { if (!_save.Data.UnlockedCityIds.Contains(city.Id)) _save.Data.UnlockedCityIds.Add(city.Id); _save.Data.GetCity(city.Id); }
         _save.Data.GetCity(StableIds.Cities.Tianjin).Completed = true;
         _save.Data.GetCity(StableIds.Cities.Tianjin).BestStars = 1;
@@ -203,7 +206,7 @@ public partial class StartScreenSelfTest : Node
         Check(_screen.Page == JourneyPage.Completion && _save.PendingJourneyCompletion is null, "return to hub consumes pending completion exactly once");
         await Click(Find<Button>("Skip"));
         _main.OpenCity(StableIds.Cities.Tianjin);
-        Check(!_screen.Visible, "second hub return never replays completion");
+        Check(_screen.Page == JourneyPage.City, "second hub return never replays completion");
         _screen.PresentHome(); await Frames();
         await Click(Find<Button>("Settings")); await Capture("settings");
         var settings = GetNode<JourneySettings>("/root/JourneySettings");
@@ -380,7 +383,7 @@ public partial class StartScreenSelfTest : Node
         _save.Data.LastVisitedCityId = StableIds.Cities.Wuhan; _save.TrySave(out _);
         _screen.PresentHome(); await Capture("continue");
         await Click(Find<Button>("Continue")); await Capture("journal");
-        await Click(Find<Button>("BrowseMap")); await Capture("map-progress");
+        await Click(Find<Button>("MapTab")); await Capture("map-progress");
         foreach (var city in JourneyModel.Cities) { _screen.OpenCard(city.Id); await Capture("city-" + city.Name); }
         _screen.PresentCompletion(StableIds.Cities.Tianjin, () => _screen.PresentHome());
         await ToSignal(GetTree().CreateTimer(.5), SceneTreeTimer.SignalName.Timeout); await Capture("completion-tianjin");

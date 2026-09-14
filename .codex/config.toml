@@ -1,0 +1,6 @@
+
+[mcp_servers.codegraph]
+command = 'D:\Program Files (x86)\nodejs\node.exe'
+args = ['C:\Users\Administrator\AppData\Roaming\npm\node_modules\@selvakumaresra\codegraph\dist\bin\codegraph.js', 'serve', '--mcp', '--path', 'D:\Project\ProjectCake\project-cake']
+startup_timeout_sec = 30
+tool_timeout_sec = 120

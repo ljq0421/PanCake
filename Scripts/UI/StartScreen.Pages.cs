@@ -69,7 +69,7 @@ public partial class StartScreen
     private void RenderNewJourney()
     {
         Begin(JourneyPage.NewJourney); Chrome(RenderHome, "新的旅程");
-        Art(_body, "旅行手账双页母版", new(180, 150, 1560, 800));
+        BookFrame();
         JournalTab("JournalMap", "世界地图", () => PresentMap(RenderNewJourney));
         var city = JourneyModel.Cities[0];
         Text(_body, "CityTitle", "第一站 · 天津", new(350, 280, 480, 85), 49, true);
@@ -94,18 +94,7 @@ public partial class StartScreen
     private void RenderContinue()
     {
         if (_save?.CanContinue != true) return;
-        Begin(JourneyPage.Continue); Chrome(RenderHome, "旅行手账");
-        Art(_body, "旅行手账双页母版", new(180, 150, 1560, 800));
-        JournalTab("JournalMap", "世界地图", () => PresentMap(RenderContinue));
-        var city = JourneyModel.City(_save.ContinueCityId);
-        Text(_body, "CityTitle", city.Name + "早餐铺", new(350, 282, 480, 80), 49, true);
-        CityPicture(_body, city, new(310, 398, 550, 310));
-        Text(_body, "Progress", JourneyModel.State(_save, city), new(340, 745, 500, 65), 28, true);
-        Text(_body, "ResumeTitle", "旅程进行到这里", new(1030, 285, 490, 70), 38);
-        Text(_body, "Coins", "旅途积蓄    " + _save.Data.Coins + " 金币", new(1030, 390, 500, 65), 31);
-        Text(_body, "Goal", JourneyModel.Goal(_save, city), new(1030, 485, 500, 110), 28);
-        Button(_body, "Resume", "前往早餐铺", new(1080, 665, 410, 78), () => { _busy = true; ContinueRequested?.Invoke(); }, true);
-        Button(_body, "BrowseMap", "看看世界地图", new(1100, 777, 370, 62), () => PresentMap(RenderContinue), bare: true); Focus("Resume");
+        ContinueRequested?.Invoke();
     }
     private void CityPicture(Control parent, JourneyCity city, Rect2 rect)
     {
@@ -116,94 +105,74 @@ public partial class StartScreen
             Text(parent, "CityShop", city.Name + "早餐铺", new(rect.Position + new Vector2(0, rect.Size.Y * .72f), new Vector2(rect.Size.X, 65)), 38, true);
         }
     }
-    private void Foods(Control parent, JourneyCity city, Vector2 position, float step)
+    private void Foods(Control parent, JourneyCity city, Vector2 position, float step, float scale = 1)
     {
         for (int i = 0; i < city.Foods.Length; i++)
         {
             var food = city.Foods[i]; var at = position + new Vector2(step * i, 0);
-            if (food.Art is not null) Art(parent, food.Art, new(at, new Vector2(135, 155)));
-            else parent.AddChild(new BookFoodIcon { Position = at, Size = new(135, 155), Product = new(food.Visual, food.Name, 1, food.Visual) });
-            Text(parent, "Food" + i, food.Name, new(at + new Vector2(-12, 165), new Vector2(159, 58)), 26, true);
+            if (food.Art is not null) Art(parent, food.Art, new(at + new Vector2((135 - 135 * scale) / 2, 0), new Vector2(135, 155) * scale));
+            else parent.AddChild(new BookFoodIcon { Position = at + new Vector2((135 - 135 * scale) / 2, 0), Size = new Vector2(135, 155) * scale, Product = new(food.Visual, food.Name, 1, food.Visual) });
+            Text(parent, "Food" + i, food.Name, new(at + new Vector2(-12, 155 * scale + 8), new Vector2(159, 58)), 26, true);
         }
     }
-    private static readonly Vector2[] MapPoints = { new(1390, 300), new(1280, 478), new(1070, 355), new(1130, 670), new(1510, 572) };
+    private static readonly Vector2[] MapPoints = { new(1110, 300), new(990, 465), new(810, 355), new(850, 680), new(1190, 610) };
     private void RenderMap()
-    { Begin(JourneyPage.Map); Chrome(() => (_mapReturn ?? RenderHome)(), "世界早餐地图"); DrawMap(); Utilities(); Focus("Node" + Math.Max(0, Array.FindIndex(JourneyModel.Cities, c => c.Id == _city))); }
+    {
+        Begin(JourneyPage.Map); Chrome(() => (_mapReturn ?? RenderHome)(), "世界早餐地图"); DrawMap();
+        DrawMapSummary(); Utilities(); Focus("Node" + Math.Max(0, Array.FindIndex(JourneyModel.Cities, c => c.Id == _city)));
+    }
     private void DrawMap(bool reveal = false)
     {
-        Art(_body, "世界地图墙挂底板", new(175, 125, 1570, 825));
-        Art(_body, "卡通世界地图母版", new(240, 195, 1440, 690));
-        Art(_body, "美洲区域装饰", new(305, 425, 170, 130)).Modulate = new Color(1, 1, 1, .4f);
-        Art(_body, "欧洲区域装饰", new(785, 225, 125, 95)).Modulate = new Color(1, 1, 1, .4f);
-        Art(_body, "世界地图未知早餐剪影", new(560, 650, 150, 100)).Modulate = new Color(1, 1, 1, .28f);
-        Text(_body, "MapRegion", "中国旅程 · 城市路线示意", new(1015, 242, 600, 48), 26, true);
-        Text(_body, "Explore", "还有更多早餐，等着与你相遇。", new(380, 775, 620, 60), 27, true);
-        if (!reveal && _save is not null && JourneyModel.Cities.All(c => JourneyModel.Progress(_save, c.Id).Completed))
-            Art(_body, "中国阶段完成纪念章", new(480, 365, 360, 360));
-        Art(_body, "路线起点_终点小旗", new(1510, 270, 52, 62));
+        HomeArt(_body, "世界地图墙挂底板", new(100, 165, 1280, 740), stretch: true);
+        Art(_body, "卡通世界地图母版", new(150, 230, 1170, 620));
+        Art(_body, "美洲区域装饰", new(220, 420, 130, 95)).Modulate = new Color(1,1,1,.3f);
+        Art(_body, "欧洲区域装饰", new(640, 270, 110, 75)).Modulate = new Color(1,1,1,.3f);
+        Text(_body, "MapRegion", "中国旅程 · 城市路线示意", new(750, 270, 530, 45), 25, true);
+        Text(_body, "Explore", "还有更多早餐，等着与你相遇。", new(310, 813, 650, 50), 25);
+        if (_save is not null && JourneyModel.Cities.All(c => JourneyModel.Progress(_save, c.Id).Completed))
+            Art(_body, "中国阶段完成纪念章", new(430, 530, 210, 210));
         for (int i = 1; i < MapPoints.Length; i++)
         {
-            var from = MapPoints[i - 1] + new Vector2(75, 45); var to = MapPoints[i] + new Vector2(75, 45);
-            var route = Art(_body, "手绘旅行虚线路径1", new(from, new Vector2(from.DistanceTo(to), 28))); route.Rotation = (to - from).Angle();
-            route.Modulate = new Color(1, 1, 1, _save?.Data.UnlockedCityIds.Contains(JourneyModel.Cities[i].Id) == true ? .85f : .18f);
-            if (reveal) { var t = CreateTween(); _tweens.Add(t); route.Scale = new(0, 1); t.TweenProperty(route, "scale:x", 1f, 1.2).SetDelay(.3); }
+            var from = MapPoints[i-1] + new Vector2(50, 36); var to = MapPoints[i] + new Vector2(50, 36);
+            var route = Art(_body, "手绘旅行虚线路径1", new(from, new Vector2(from.DistanceTo(to), 20)));
+            route.Rotation = (to-from).Angle(); route.Modulate = new Color(1,1,1,.4f);
+            if (reveal) { var t = CreateTween(); _tweens.Add(t); route.Scale = new(0,1); t.TweenProperty(route,"scale:x",1f,1.2); }
         }
         for (int i = 0; i < JourneyModel.Cities.Length; i++)
         {
             var city = JourneyModel.Cities[i]; bool unlocked = _save?.Data.UnlockedCityIds.Contains(city.Id) == true || i == 0;
-            bool completed = _save is not null && JourneyModel.Progress(_save, city.Id).Completed; bool current = _save?.ContinueCityId == city.Id;
-            var node = Button(_body, "Node" + i, "", new(MapPoints[i], new Vector2(150, 168)), () => OpenCard(city.Id), bare: true);
-            var marker = Art(node, completed ? JourneyModel.Stamp(city) : unlocked ? JourneyModel.NodeArt(city) : "未解锁城市节点", new(21, 0, 108, 86));
-            if (!reveal) NodeFeedback(node, city, unlocked);
-            var cityName = Text(node, "Name", city.Name, new(0, 85, 150, 43), 28, true);
-            var state = Text(node, "State", completed ? "已完成" : current && unlocked ? "当前旅程" : unlocked ? "可前往" : "尚未抵达", new(-15, 128, 180, 34), 21, true);
-            foreach (var label in new[] { cityName, state })
-            {
-                label.AddThemeColorOverride("font_outline_color", StartScreenTheme.Cream);
-                label.AddThemeConstantOverride("outline_size", 8);
-            }
-            node.Disabled = !unlocked && !DeveloperToolsVisible;
-            node.TooltipText = !unlocked ? i == 0 ? "第一站" : $"完成{JourneyModel.Cities[i - 1].Name}章节后开放" : string.Empty;
-            if (!unlocked) marker.Modulate = new Color(1, 1, 1, .5f);
-            if (current && unlocked)
-            {
-                marker.PivotOffset = marker.Size / 2; var t = CreateTween().SetLoops(); _tweens.Add(t);
-                t.TweenProperty(marker, "scale", new Vector2(1.045f, 1.045f), 1.2).SetTrans(Tween.TransitionType.Sine);
-                t.TweenProperty(marker, "scale", Vector2.One, 1.2).SetTrans(Tween.TransitionType.Sine);
-            }
+            bool completed = _save is not null && JourneyModel.Progress(_save, city.Id).Completed;
+            var node = Button(_body, "Node"+i, "", new(MapPoints[i], new Vector2(130,155)), () => { _city = city.Id; RenderMap(); }, bare:true);
+            Art(node, completed ? JourneyModel.Stamp(city) : unlocked ? JourneyModel.NodeArt(city) : "未解锁城市节点", new(20,0,90,78));
+            var cityLabel = Text(node,"Name",city.Name,new(0,77,130,38),26,true);
+            cityLabel.AddThemeColorOverride("font_outline_color", StartScreenTheme.Cream); cityLabel.AddThemeConstantOverride("outline_size", 4);
+            var stateLabel = Text(node,"State",completed ? "已完成" : !unlocked ? "尚未抵达" : city.Id == _save?.ContinueCityId ? "当前旅程" : "可前往",new(-10,115,150,32),20,true);
+            stateLabel.AddThemeColorOverride("font_outline_color", StartScreenTheme.Cream); stateLabel.AddThemeConstantOverride("outline_size", 4);
+            if (city.Id == _city) { var ring = Art(node,"城市节点悬停高亮环",new(-4,-15,140,105)); ring.ShowBehindParent = true; }
         }
-        if (DeveloperToolsVisible) Text(_body, "Developer", "开发预览：未解锁城市可查看，不写入解锁进度。", new(160, 936, 1120, 48), 24).AddThemeColorOverride("font_color", StartScreenTheme.Cream);
+    }
+    private void DrawMapSummary()
+    {
+        var city = JourneyModel.City(_city); var p = JourneyModel.Progress(_save!, _city);
+        var panel = new Panel { Position = new(1400, 195), Size = new(440, 690), MouseFilter = MouseFilterEnum.Ignore };
+        panel.AddThemeStyleboxOverride("panel", StartScreenTheme.Box(StartScreenTheme.Cream, 3, true)); _body.AddChild(panel);
+        Text(_body,"MapSelection", city.Id == _save?.ContinueCityId ? "当前旅程" : "城市一览",new(1430,225,380,60),37);
+        Text(_body,"SummaryCity",city.Name+"早餐铺",new(1430,289,380,55),32);
+        CityPicture(_body,city,new(1430,360,380,205));
+        Text(_body,"SummaryProgress",JourneyModel.State(_save!,city),new(1430,585,380,55),25);
+        Text(_body,"SummaryGoal",_save!.Data.UnlockedCityIds.Contains(city.Id) ? JourneyModel.Goal(_save,city) : $"完成{JourneyModel.Cities[Math.Max(0,Array.IndexOf(JourneyModel.Cities,city)-1)].Name}章节后开放",new(1430,650,380,105),25);
+        var enter = Button(_body,"EnterCity",_save.CanContinue ? "前往"+city.Name+"早餐铺" : "开始新的旅程",new(1430,787,380,67),()=> { if (!_save.CanContinue) RenderOpening(); else OpenCard(city.Id); },true);
+        enter.Disabled = _save.CanContinue && !_save.Data.UnlockedCityIds.Contains(city.Id) && !DeveloperToolsVisible;
     }
     public void OpenCard(string cityId)
     {
         if (_save is null || (!DeveloperToolsVisible && !_save.Data.UnlockedCityIds.Contains(cityId))) return;
-        _city = cityId; RenderCity();
-    }
-    private void RenderCity()
-    {
-        Begin(JourneyPage.City); var city = JourneyModel.City(_city); Chrome(RenderMap, city.Name + " · 城市明信片");
-        Art(_body, "城市章节页明信片母版", new(175, 150, 1570, 810));
-        CityPicture(_body, city, new(310, 340, 655, 400));
-        Text(_body, "CityTitle", city.Name + "早餐铺", new(1020, 300, 520, 70), 44); Foods(_body, city, new(1020, 405), 170);
-        Text(_body, "CityState", JourneyModel.State(_save!, city), new(1020, 635, 500, 55), 28);
-        var p = JourneyModel.Progress(_save!, city.Id);
-        for (int d = 1; d <= city.Days; d++)
-        {
-            bool recorded = p.DayBestRecords.ContainsKey(d);
-            var mark = Text(_body, "Day" + d, recorded ? d + "·" : d.ToString(), new(1020 + (d - 1) * 33, 696, 30, 35), 20, true);
-            mark.AddThemeColorOverride("font_color", recorded ? StartScreenTheme.Brick : StartScreenTheme.Muted);
-        }
-        Text(_body, "DayLegend", "标点日期已有营业记录", new(1240, 742, 320, 35), 20);
-        Button(_body, "EnterCity", _save!.CanContinue ? "前往早餐铺" : "开始新的旅程", new(722, 805, 470, 79), () =>
-        {
-            if (!_save.CanContinue) { RenderOpening(); return; }
-            _busy = true; CityRequested?.Invoke(city.Id, DeveloperToolsVisible);
-        }, bare: true); Focus("EnterCity");
+        PresentCity(cityId, RenderMap);
     }
     private void RenderCompletion()
     {
         Begin(JourneyPage.Completion); var city = JourneyModel.City(_completedCity!);
-        Art(_body, "旅行手账双页母版", new(180, 150, 1560, 800)); CityPicture(_body, city, new(330, 390, 540, 320));
+        BookFrame(); CityPicture(_body, city, new(330, 390, 540, 320));
         Text(_body, "CompleteTitle", city.Name + "章节完成", new(380, 260, 1120, 90), 54, true);
         var stamp = Art(_body, JourneyModel.Stamp(city), new(1060, 385, 410, 340));
         stamp.PivotOffset = stamp.Size / 2; stamp.Scale = new(1.45f, 1.45f); stamp.Modulate = new(1, 1, 1, 0);
@@ -224,6 +193,6 @@ public partial class StartScreen
     {
         if (_completedCity is null) return;
         var next = JourneyModel.Next(_completedCity); _completedCity = null;
-        if (next is not null && _save!.Data.UnlockedCityIds.Contains(next.Id)) { _city = next.Id; RenderCity(); } else RenderMap();
+        if (next is not null && _save!.Data.UnlockedCityIds.Contains(next.Id)) { PresentCity(next.Id, RenderMap); } else RenderMap();
     }
 }

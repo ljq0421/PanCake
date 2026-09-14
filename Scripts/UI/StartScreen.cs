@@ -3,7 +3,7 @@ using ProjectCake.Core;
 
 namespace ProjectCake.UI;
 
-public enum JourneyPage { Splash, Home, Opening, NewJourney, Continue, Map, City, Completion }
+public enum JourneyPage { Splash, Home, Opening, NewJourney, Continue, Map, City, Completion, Ledger, Upgrades }
 
 /// <summary>Travel navigation uses a single fitted canvas, independent of gameplay views.</summary>
 public partial class StartScreen : Control
@@ -11,7 +11,6 @@ public partial class StartScreen : Control
     public event Action? NewGameRequested;
     public event Action? ContinueRequested;
     public event Action? QuitRequested;
-    public event Action<string, bool>? CityRequested;
     public JourneyPage Page { get; private set; }
     public bool ConfirmationOpen => ModalOpen && _modalKind == "confirm";
     public bool ModalOpen => _modal is not null && _modal.Visible;
@@ -50,10 +49,10 @@ public partial class StartScreen : Control
         if (_save is not null) _save.Changed -= SaveChanged;
         _save = save; _save.Changed += SaveChanged;
     }
-    private void SaveChanged() { if (IsVisibleInTree() && Page == JourneyPage.Home && !_busy) RenderHome(); }
+    private void SaveChanged() { if (!IsVisibleInTree() || _busy) return; if (Page == JourneyPage.Home) RenderHome(); else if (Page is JourneyPage.City or JourneyPage.Ledger or JourneyPage.Upgrades) RefreshCityPage(); }
     public void Present() { Show(); if (!_started) { _started = true; RenderSplash(); } else RenderHome(); }
     public void PresentHome() { Show(); RenderHome(); }
-    public void PresentMap(Action? returnToSource = null) { Show(); _mapReturn = returnToSource ?? RenderHome; RenderMap(); }
+    public void PresentMap(Action? returnToSource = null) { Show(); _mapReturn = returnToSource ?? RenderHome; _city = _save?.ContinueCityId ?? JourneyModel.Cities[0].Id; RenderMap(); }
     public void PresentCompletion(string cityId, Action returnToSource)
     { Show(); _mapReturn = returnToSource; _completedCity = cityId; RenderCompletion(); }
     public void ShowError(string message)
@@ -76,7 +75,7 @@ public partial class StartScreen : Control
             var fade = CreateTween(); _tweens.Add(fade);
             fade.TweenProperty(_body, "modulate:a", 1f, .25).SetTrans(Tween.TransitionType.Expo).SetEase(Tween.EaseType.Out);
         }
-        if (page != JourneyPage.Home && page != JourneyPage.Splash)
+        if (page is JourneyPage.Opening)
             _body.AddChild(new ColorRect { Size = new(1920, 1080), Color = new Color(.23f, .15f, .08f, .36f), MouseFilter = MouseFilterEnum.Ignore });
         _status = Text(_body, "Status", "", new(340, 1006, 1240, 60), 23, true);
         _status.AddThemeColorOverride("font_color", StartScreenTheme.Cream); SetStatus();
@@ -84,7 +83,7 @@ public partial class StartScreen : Control
     private static void Clear(Node parent)
     { foreach (Node child in parent.GetChildren()) { parent.RemoveChild(child); child.QueueFree(); } }
     private void Focus(string name)
-    { (_buttons.FirstOrDefault(b => b.Name == name && !b.Disabled) ?? _buttons.FirstOrDefault(b => !b.Disabled))?.GrabFocus(); }
+    { (_body.Descendants<Button>().FirstOrDefault(b => b.Name == name && !b.Disabled) ?? _buttons.FirstOrDefault(b => !b.Disabled))?.GrabFocus(); }
     private void Chrome(Action back, string title)
     {
         var previous = Button(_body, "Back", "", new(72, 48, 140, 62), back, bare: true);
@@ -138,15 +137,21 @@ public partial class StartScreen : Control
             if (ModalOpen) { if (_settings.DisplayPending) _settings.RevertDisplay(); else CloseModal(); }
             else if (Page == JourneyPage.Opening) RenderNewJourney();
             else if (Page == JourneyPage.Completion) FinishCompletion();
-            else if (Page == JourneyPage.City) RenderMap();
+            else if (Page is JourneyPage.Ledger or JourneyPage.Upgrades) RenderCity();
+            else if (Page == JourneyPage.City) (_cityReturn ?? RenderHome)();
             else if (Page == JourneyPage.Map) (_mapReturn ?? RenderHome)();
             else RenderHome();
             GetViewport().SetInputAsHandled(); return;
         }
         if (key.Keycode is not (Key.Tab or Key.Up or Key.Down or Key.Left or Key.Right)) return;
+        if (!ModalOpen && Page == JourneyPage.Ledger && key.Keycode != Key.Tab && GetViewport().GuiGetFocusOwner()?.Name.ToString() is { } dateName && dateName.StartsWith("Date") && int.TryParse(dateName[4..], out int date))
+        {
+            int offset = key.Keycode == Key.Up ? -3 : key.Keycode == Key.Down ? 3 : key.Keycode == Key.Left ? -1 : 1;
+            Focus("Date" + Math.Clamp(date + offset, 1, JourneyModel.City(_city).Days)); GetViewport().SetInputAsHandled(); return;
+        }
         if (GetViewport().GuiGetFocusOwner() is HSlider && key.Keycode is Key.Left or Key.Right) return;
         Control[] candidates = ModalOpen ? _modalControls.Where(c => c.IsVisibleInTree() && (c is not BaseButton b || !b.Disabled)).ToArray()
-            : _buttons.Where(b => !b.Disabled && b.IsVisibleInTree()).Cast<Control>().ToArray();
+            : _body.Descendants<Button>().Where(b => !b.Disabled && b.IsVisibleInTree()).Cast<Control>().ToArray();
         if (_settings.DisplayPending && _displayConfirmation is not null) candidates = candidates.Where(c => _displayConfirmation.IsAncestorOf(c)).ToArray();
         if (candidates.Length == 0) return;
         int current = Array.IndexOf(candidates, GetViewport().GuiGetFocusOwner());

@@ -52,6 +52,11 @@ public partial class BusinessHudSelfTest : Node
                 Require(hud.IsVisibleInTree(), "HUD visible");
                 Require(hud.GetNode<Control>("DaySign").GetGlobalRect().End.X < hud.GetNode<Control>("ProgressSign").GetGlobalRect().Position.X, "separate signs");
                 Require(hud.PauseButton.GetGlobalRect().End.X <= 1920, "pause in viewport");
+                Require(hud.PauseButton.GetThemeStylebox("focus") is StyleBoxEmpty, "art pause has no rectangular focus frame");
+                hud.PauseButton.GrabFocus(); await Frames();
+                Require(hud.PauseButton.HasFocus(), "pause remains keyboard focusable");
+                if (capture) await Shot(viewport, $"{city}-{width}-focus-pause");
+                hud.PauseButton.ReleaseFocus();
                 if (screen is XianDayScreen cashScreen)
                 {
                     controller.Ledger!.RecordDelivery(new DeliveryEvaluation(DeliveryGrade.Correct, 10, 2, 100, "fixture"));
@@ -67,7 +72,6 @@ public partial class BusinessHudSelfTest : Node
                 var order = screen.Descendants<OrderBubbleView>().First(o => o.IsVisibleInTree());
                 feedback.Delivery(new DeliveryEvaluation(DeliveryGrade.Perfect, 10, 1, 100, "Perfect"), order);
                 feedback.Report("这份餐品不符合订单，请检查配料。", true, screen.GetGlobalTransform() * new Vector2(1300, 620));
-                if (city == "Wuhan") feedback.Flip(screen.GetGlobalTransform() * new Vector2(960, 670));
                 if (capture) await Shot(viewport, $"{city}-{width}-feedback");
                 Require(feedback.GetChildren().OfType<Control>().All(c => c.MouseFilter == Control.MouseFilterEnum.Ignore), "feedback does not intercept input");
                 Require(feedback.Descendants<TextureRect>().All(c => c.Size.X <= 64 && c.Size.Y <= 64), "large source artwork stays within feedback icon bounds");

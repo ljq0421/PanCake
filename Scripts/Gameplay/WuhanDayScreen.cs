@@ -221,13 +221,14 @@ public partial class WuhanDayScreen : Control
         else if(item.State==NoodleBasketState.Drained){if(!Workstation.Busy("bowl")&&_cooker.TryTransferTo(index,_bowl)){ok=true;message="熟面倒入碗中。";}else message="拌面碗还没有空出来。";}
         else message="面还在烫，等到最佳窗口再提篮。";
         if(ok)Workstation.PlayBasket(index,before,quality);
-        Feedback(message,!ok);Render();
+        if (!ok || before is not (NoodleBasketState.Empty or NoodleBasketState.Drained)) Feedback(message, !ok);
+        Render();
     }
     internal void IngredientAction(string id)
     {
         if(!CanInteract||Workstation.Busy("bowl")||!_ingredients.IsUnlimited(id))return;
         bool ok=id==StableIds.Ingredients.WuhanBaseSeasoning?_bowl.TryAddBaseSeasoning():_bowl.TryAddTopping(id);
-        if(ok){_ingredients.TryConsume(id);Workstation.PlayIngredient(id);Feedback("配料已经加入。",false);}
+        if(ok){_ingredients.TryConsume(id);Workstation.PlayIngredient(id);}
         else
         {
             string message = _bowl.Toppings.Contains(id) ? "这份配料已经加入了。"
@@ -288,12 +289,7 @@ public partial class WuhanDayScreen : Control
     }
     internal bool PourDoupiBatter() => ApplyDoupi(d => d.TryPourBatter(), "空锅才能倒浆；请先处理锅中豆皮。");
     internal bool AddDoupiEgg() => ApplyDoupi(d => d.TryAddEgg(), "先从浆碗拖浆入锅，再点击蛋液容器。");
-    internal bool FlipDoupi()
-    {
-        bool flipped = ApplyDoupi(d => d.TryFlip(), "等面皮定型后，按住锅面向上划。");
-        if (flipped) _sceneFeedback.Flip(GetGlobalTransform() * new Vector2(1320, 630));
-        return flipped;
-    }
+    internal bool FlipDoupi() => ApplyDoupi(d => d.TryFlip(), "等面皮定型后，按住锅面向上划。");
     internal bool AddDoupiFilling() => ApplyDoupi(d => d.TryAddFilling(), "翻面后拖一份三鲜馅入锅，松手自动铺匀。");
     internal bool DiscardDoupi() => ApplyDoupi(d =>
     {

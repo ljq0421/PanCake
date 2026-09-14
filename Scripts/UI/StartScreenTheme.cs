@@ -32,10 +32,8 @@ public static class StartScreenTheme
         button.AddThemeStyleboxOverride("hover", Box(fill.Lightened(0.07f), 3, true));
         button.AddThemeStyleboxOverride("pressed", Box(fill.Darkened(0.06f)));
         button.AddThemeStyleboxOverride("disabled", Box(new Color("#E1DDCF"), 2));
-        var focus = Box(Colors.Transparent, 4);
-        focus.BorderColor = Teal;
-        focus.ExpandMarginLeft = focus.ExpandMarginRight = focus.ExpandMarginTop = focus.ExpandMarginBottom = 6;
-        button.AddThemeStyleboxOverride("focus", focus);
+        // Image-backed navigation supplies its own silhouette feedback.
+        button.AddThemeStyleboxOverride("focus", new StyleBoxEmpty());
         foreach (string state in new[] { "font_color", "font_hover_color", "font_pressed_color", "font_focus_color" })
             button.AddThemeColorOverride(state, text);
         button.AddThemeColorOverride("font_disabled_color", Muted);

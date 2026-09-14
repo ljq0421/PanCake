@@ -87,11 +87,10 @@ public partial class BusinessHud : Control
         button.MouseDefaultCursorShape = CursorShape.PointingHand;
         foreach (string state in new[] { "normal", "hover", "pressed", "disabled" })
             button.AddThemeStyleboxOverride(state, new StyleBoxEmpty());
-        var focus = TianjinUi.Box(Colors.Transparent, 12, 2, false);
-        button.AddThemeStyleboxOverride("focus", focus);
         var icon = new TextureRect { Name = "Artwork", Texture = texture, MouseFilter = MouseFilterEnum.Ignore,
             ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered };
         button.AddChild(icon); icon.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+        ArtworkButtonFocus.Attach(button, icon);
         button.MouseEntered += () => icon.Modulate = new Color(1.12f, 1.12f, 1.12f);
         button.MouseExited += () => icon.Modulate = Colors.White;
         button.ButtonDown += () => icon.Modulate = new Color(.88f, .88f, .88f);

@@ -95,6 +95,13 @@ public partial class StartScreen : Control
     }
     private void Utilities()
     {
+        if (Page == JourneyPage.Home)
+        {
+            HomeUtility("Settings", "设置", "设置图标", 1540, OpenSettings);
+            HomeUtility("Help", "帮助", "帮助图标", 1664, OpenHelp);
+            HomeUtility("Quit", "退出", "返回主界面图标", 1788, () => { _busy = true; QuitRequested?.Invoke(); });
+            return;
+        }
         Utility("Settings", "设置", "设置图标", 1390, OpenSettings);
         _audioButton = Utility("Audio", _settings.Muted ? "已静音" : "声音", _settings.Muted ? "音效关闭" : "音效开启", 1506, _settings.ToggleMute);
         Utility("Help", "帮助", "帮助图标", 1622, OpenHelp);

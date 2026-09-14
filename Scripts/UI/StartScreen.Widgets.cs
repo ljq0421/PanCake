@@ -66,13 +66,19 @@ public partial class StartScreen
         bool modalButton = parent == _modal || _modal.IsAncestorOf(parent);
         if (modalButton) _modalControls.Add(button); else _buttons.Add(button);
         button.Pressed += () => { if (!button.Disabled && !_busy && IsVisibleInTree() && (!ModalOpen || modalButton) && button.IsVisibleInTree()) action(); };
+        ArtworkButtonFocus.Attach(button);
         Vector2 position = rect.Position;
-        button.MouseEntered += () => Hover(button, 1.015f, position - new Vector2(0, 4));
-        button.MouseExited += () => Hover(button, 1, position);
-        button.FocusEntered += () => Hover(button, 1.015f, position - new Vector2(0, 4));
-        button.FocusExited += () => Hover(button, 1, position);
+        void RefreshHover()
+        {
+            bool active = button.IsHovered() || button.HasFocus();
+            Hover(button, active ? 1.015f : 1, active ? position - new Vector2(0, 4) : position);
+        }
+        button.MouseEntered += RefreshHover;
+        button.MouseExited += RefreshHover;
+        button.FocusEntered += RefreshHover;
+        button.FocusExited += RefreshHover;
         button.ButtonDown += () => Hover(button, .98f, position);
-        button.ButtonUp += () => Hover(button, 1, position);
+        button.ButtonUp += RefreshHover;
         return button;
     }
     private void Hover(Control node, float scale, Vector2 position)

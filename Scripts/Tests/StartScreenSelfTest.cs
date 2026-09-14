@@ -14,6 +14,7 @@ public partial class StartScreenSelfTest : Node
 {
     private SaveService _save = null!;
     private GameController _main = null!;
+    private PackedScene? _mainScene;
     private StartScreen _screen = null!;
     private string _path = string.Empty;
     private int _passed;
@@ -35,13 +36,19 @@ public partial class StartScreenSelfTest : Node
             _save.UsePathForTests(_path);
             GetNode<JourneySettings>("/root/JourneySettings").UsePathForTests(Path.Combine(directory, "settings.cfg"));
             await Launch();
+            if (args.Contains("--focus-gallery")) { await FocusGallery(); GD.Print("BUTTON_FOCUS_GALLERY_OK"); GetTree().Quit(); return; }
+            if (args.Contains("--home-gallery")) { await HomeGallery(); GD.Print("HOME_GALLERY_OK"); GetTree().Quit(); return; }
             if (args.Contains("--gallery")) { await Gallery(); GD.Print("JOURNEY_GALLERY_OK"); GetTree().Quit(); return; }
             Check(!_save.CanContinue && !_save.RequiresNewGameConfirmation, "missing save is distinct from an empty valid save");
             Check(Find<Button>("Continue").Disabled && Find<Button>("Continue").TooltipText.Contains("暂无存档"), "continue stays visible and disabled without a save");
             Check(_main.GetNode("UI").GetChildren().OfType<Control>().Count(c => c.Visible) == 1 && _screen.Visible, "only the title page is visible at startup");
             Check(Find<Button>("NewGame").HasFocus(), "first run focuses new game");
             KeyPress(Key.Down);
+            Check(Find<Button>("WorldMap").HasFocus(), "keyboard reaches the new tabletop map entrance");
+            KeyPress(Key.Down);
             Check(Find<Button>("Settings").HasFocus(), "keyboard skips unavailable continue");
+            KeyPress(Key.Up);
+            Check(Find<Button>("WorldMap").HasFocus(), "keyboard returns through map entrance");
             KeyPress(Key.Up);
             Check(Find<Button>("NewGame").HasFocus(), "keyboard navigates back to new journey");
             await Capture("first-run");
@@ -276,6 +283,89 @@ public partial class StartScreenSelfTest : Node
         save.Free();
     }
 
+    private void AuditButtonFocus()
+    {
+        int inspected = 0;
+        foreach (var button in _main.FindChildren("*", "Button", true, false).OfType<Button>())
+        {
+            if (button.FocusMode == Control.FocusModeEnum.None) continue;
+            var normal = button.GetThemeStylebox("normal");
+            var focus = button.GetThemeStylebox("focus");
+            if (normal is StyleBoxEmpty)
+                Check(focus is StyleBoxEmpty, "image button has no rectangular focus: " + button.GetPath());
+            else if (normal is StyleBoxFlat shape && focus is StyleBoxFlat outline)
+                Check(shape.CornerRadiusTopLeft == outline.CornerRadiusTopLeft
+                    && shape.CornerRadiusTopRight == outline.CornerRadiusTopRight
+                    && shape.CornerRadiusBottomLeft == outline.CornerRadiusBottomLeft
+                    && shape.CornerRadiusBottomRight == outline.CornerRadiusBottomRight,
+                    "native focus matches button corners: " + button.GetPath());
+            inspected++;
+        }
+        GD.Print("BUTTON_FOCUS_AUDIT inspected=" + inspected);
+    }
+
+    private async Task FocusGallery()
+    {
+        AuditButtonFocus();
+        Find<Button>("NewGame").GrabFocus(); await Capture("focus-home-action");
+        Find<Button>("Settings").GrabFocus(); await Capture("focus-home-round");
+        await Click(Find<Button>("Settings"));
+        Find<Button>("Mute").GrabFocus(); await Capture("focus-settings-patch");
+        KeyPress(Key.Escape);
+        await Click(Find<Button>("WorldMap"));
+        Find<Button>("Node0").GrabFocus(); await Capture("focus-map-node");
+        AuditButtonFocus();
+        await Click(Find<Button>("Back"));
+        await Click(Find<Button>("NewGame")); await Click(Find<Button>("Skip"));
+        Find<Button>("Depart").GrabFocus(); await Capture("focus-journey-patch");
+        _save.ResetProgress(out _);
+        foreach (var city in JourneyModel.Cities)
+            if (!_save.Data.UnlockedCityIds.Contains(city.Id)) _save.Data.UnlockedCityIds.Add(city.Id);
+        foreach (string city in new[] { StableIds.Cities.Guangzhou, StableIds.Cities.Yangzhou })
+        {
+            Check(_main.OpenCity(city), "focus review opens " + city); await Frames();
+            var action = _main.FindChildren("*", "Button", true, false).OfType<Button>()
+                .First(b => b.IsVisibleInTree() && !b.Disabled && b.FocusMode != Control.FocusModeEnum.None);
+            action.GrabFocus(); await Capture("focus-hub-" + city.Replace(':', '-'));
+        }
+    }
+
+    private async Task HomeGallery()
+    {
+        Check(_screen.GetNodeOrNull("Canvas/Page/Audio") is null, "home exposes no separate mute button");
+        Check(Find<Control>("HomeMap").GetChildren().Count(n => n.Name.ToString().StartsWith("HomeCity")) == 1, "new player sees only Tianjin");
+        await Capture("home-first-run");
+        await Click(Find<Button>("WorldMap"));
+        Check(_screen.Page == JourneyPage.Map, "tabletop map opens existing map flow");
+        await Click(Find<Button>("Back"));
+        await Click(Find<Button>("WallMap"));
+        Check(_screen.Page == JourneyPage.Map, "wall map opens existing map flow");
+        await Click(Find<Button>("Back"));
+        _save.ResetProgress(out _);
+        foreach (var city in JourneyModel.Cities)
+        {
+            if (!_save.Data.UnlockedCityIds.Contains(city.Id)) _save.Data.UnlockedCityIds.Add(city.Id);
+            _save.Data.GetCity(city.Id).HighestUnlockedDay = 5;
+        }
+        _save.Data.Tianjin.Completed = true;
+        _save.Data.LastVisitedCityId = StableIds.Cities.Wuhan;
+        Check(_save.TrySave(out _), "home gallery fixture persists");
+        _screen.PresentHome(); await Frames();
+        var markers = Find<Control>("HomeMap").GetChildren().OfType<Control>().Where(n => n.Name.ToString().StartsWith("HomeCity")).ToArray();
+        Check(markers.Length == 5, "home shows all five unlocked cities");
+        Check(markers.All(a => markers.All(b => a == b || !a.GetRect().Intersects(b.GetRect()))), "five city callouts do not overlap");
+        Check(Find<Button>("Continue").TooltipText.Contains("武汉"), "continue tooltip shows actual saved city");
+        await Capture("home-five-cities");
+        await Click(Find<Button>("Settings"));
+        var settings = GetNode<JourneySettings>("/root/JourneySettings");
+        await Click(Find<Button>("Mute"));
+        Check(settings.Muted && AudioServer.IsBusMute(0), "settings mute controls all sound from home");
+        await Capture("home-settings"); KeyPress(Key.Escape);
+        await Click(Find<Button>("Help"));
+        Check(_screen.ModalOpen, "home help remains available");
+        KeyPress(Key.Escape);
+    }
+
     private async Task Gallery()
     {
         await Capture("first-run");
@@ -315,7 +405,9 @@ public partial class StartScreenSelfTest : Node
     private async Task Launch()
     {
         if (_main is not null) { RemoveChild(_main); _main.Free(); }
-        _main = ResourceLoader.Load<PackedScene>("res://Scenes/Main/Main.tscn").Instantiate<GameController>();
+        // Keep the scene's managed resources alive across the simulated restarts.
+        _mainScene ??= ResourceLoader.Load<PackedScene>("res://Scenes/Main/Main.tscn");
+        _main = _mainScene.Instantiate<GameController>();
         AddChild(_main);
         _screen = _main.GetNode<StartScreen>("UI/StartScreen");
         await Frames(3);

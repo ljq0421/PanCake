@@ -13,42 +13,46 @@ public partial class StartScreen
     }
     private void RenderHome()
     {
-        Begin(JourneyPage.Home); Ambient(); Art(_body, "LOGO", new(740, 32, 470, 220));
-        Art(_body, "世界地图墙挂底板", new(435, 220, 1140, 485));
-        var wall = new Control { Position = new(455, 257), Size = new(1100, 430), MouseFilter = MouseFilterEnum.Ignore }; _body.AddChild(wall);
-        Art(wall, "卡通世界地图母版", new(0, 0, 1100, 430));
+        // Home composition: breakfast-shop wall, overlapping left logo and three tabletop actions.
+        // Art is user supplied; layout and live progress remain independent of the textures.
+        Begin(JourneyPage.Home); Ambient();
+        HomeArt(_body, "世界地图墙挂底板", new(445, 100, 1080, 640), stretch: true);
+        var wall = new Control { Name = "HomeMap", Position = new(490, 205), Size = new(990, 470), MouseFilter = MouseFilterEnum.Ignore }; _body.AddChild(wall);
+        HomeArt(wall, "卡通世界地图母版", new(0, 0, 990, 470), stretch: true);
+        // Schematic callouts around Asia; keep all five names legible when every city is unlocked.
+        Vector2[] points = { new(715, 70), new(605, 205), new(475, 80), new(735, 335), new(870, 210) };
+        bool canContinue = _save?.CanContinue == true;
         for (int i = 0; i < JourneyModel.Cities.Length; i++)
         {
-            var city = JourneyModel.Cities[i]; bool unlocked = _save?.Data.UnlockedCityIds.Contains(city.Id) == true || i == 0;
-            Vector2 at = new(805 + (i % 2) * 80, 150 + (i / 2) * 65);
-            if (i > 0 && unlocked) Art(wall, "手绘旅行虚线路径1", new(at.X - 30, at.Y - 55, 70, 60));
-            var marker = Art(wall, "世界地图小早餐铺标记", new(at.X, at.Y, 48, 44));
-            marker.Modulate = new Color(1, 1, 1, unlocked ? 1 : .25f);
-            if (unlocked) Text(wall, "City" + i, city.Name, new(at.X - 15, at.Y + 36, 80, 30), 21, true);
-            if (_save is not null && JourneyModel.Progress(_save, city.Id).Completed) Art(wall, "已完成城市节点", new(at.X + 24, at.Y - 12, 28, 28));
-            if (unlocked && _save?.ContinueCityId == city.Id)
+            var city = JourneyModel.Cities[i];
+            bool unlocked = canContinue ? _save!.Data.UnlockedCityIds.Contains(city.Id) : i == 0;
+            if (!unlocked) continue;
+            Vector2 at = points[i];
+            var marker = new Control { Name = "HomeCity" + i, Position = at, Size = new(108, 126), MouseFilter = MouseFilterEnum.Ignore };
+            wall.AddChild(marker);
+            HomeArt(marker, JourneyModel.NodeArt(city), new(8, 0, 92, 92));
+            HomeArt(marker, "城市名称牌底板", new(0, 86, 108, 38), stretch: true);
+            Text(marker, "City" + i, city.Name, new(6, 87, 96, 34), 24, true).AddThemeColorOverride("font_color", StartScreenTheme.Cream);
+            if (canContinue && JourneyModel.Progress(_save!, city.Id).Completed)
+                HomeArt(marker, "已完成城市节点", new(80, -8, 30, 30));
+            if (canContinue && _save!.ContinueCityId == city.Id)
             {
                 var t = CreateTween().SetLoops(); _tweens.Add(t);
-                t.TweenProperty(marker, "modulate:a", .65f, 1.3); t.TweenProperty(marker, "modulate:a", 1f, 1.3);
+                t.TweenProperty(marker, "modulate:a", .78f, 1.3); t.TweenProperty(marker, "modulate:a", 1f, 1.3);
             }
         }
-        Button(_body, "WorldMap", "", new(450, 257, 1110, 440), () => PresentMap(), bare: true);
-        Text(_body, "MapHint", "把早餐铺，开遍全世界", new(605, 680, 730, 46), 29, true);
-        bool canContinue = _save?.CanContinue == true;
-        var ticket = Button(_body, "NewGame", "", new(442, 797, 430, 214), RenderOpening, bare: true);
-        Art(ticket, "闭合旅行手账封面｜新旅程入口", new(-5, -45, 235, 245));
-        Art(ticket, "存档信息小纸签", new(195, 35, 235, 120));
-        Text(ticket, "Caption", "新的旅程", new(217, 75, 190, 44), canContinue ? 28 : 30, true);
-        Text(ticket, "Hint", "从天津出发", new(217, 144, 190, 34), 22, true);
-        var card = Button(_body, "Continue", "", new(888, 750, 470, 256), RenderContinue, bare: true);
-        Art(card, "已有旅程手账封面", new(0, 0, 230, 250));
-        Art(card, "存档信息小纸签", new(210, 70, 260, 150));
+        HomeArt(_body, "LOGO", new(60, 60, 560, 258));
+        var card = HomeAction("Continue", "继续旅程", "小火车", new(400, 835, 500, 150), RenderContinue);
         var current = JourneyModel.City(_save?.ContinueCityId ?? JourneyModel.Cities[0].Id);
-        Text(card, "Caption", "继续旅程", new(237, 128, 208, 45), 30, true);
-        Text(card, "Current", canContinue ? current.Name + " · 第 " + JourneyModel.Progress(_save!, current.Id).HighestUnlockedDay + " 天" : "暂无存档", new(237, 210, 208, 38), 22, true);
         card.Disabled = !canContinue; card.Modulate = new Color(1, 1, 1, canContinue ? 1 : .68f);
-        card.TooltipText = canContinue ? string.Empty : _save?.HasLoadError == true ? "存档无法读取" : "暂无存档";
+        card.TooltipText = canContinue ? current.Name + " · 第 " + JourneyModel.Progress(_save!, current.Id).HighestUnlockedDay + " 天" : _save?.HasLoadError == true ? "存档无法读取" : "暂无存档";
+        HomeAction("NewGame", "新的旅程", "闭合旅行手账封面｜新旅程入口", new(940, 835, 500, 150), RenderOpening);
+        HomeAction("WorldMap", "世界地图", "世界地图入口图标", new(1480, 850, 310, 110), () => PresentMap(), small: true);
         Utilities(); Focus(canContinue ? "Continue" : "NewGame");
+        // The wall remains an additional map entrance, after the main actions in keyboard order.
+        var mapLink = Button(_body, "WallMap", "", new(490, 205, 990, 470), () => PresentMap(), bare: true);
+        mapLink.TooltipText = "查看世界地图";
+        _status.MoveToFront();
     }
     private void RenderOpening()
     {

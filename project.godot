@@ -16,6 +16,7 @@ config/features=PackedStringArray("4.7", "C#", "GL Compatibility")
 
 [autoload]
 
+JourneySettings="*res://Scripts/Core/JourneySettings.cs"
 DataCatalog="*res://Scripts/Core/DataCatalog.cs"
 SaveService="*res://Scripts/Core/SaveService.cs"
 

@@ -113,6 +113,10 @@ public partial class SaveService : Node
     private string _savePath = DefaultSavePath;
     private string? _legacyPath = LegacySavePath;
     public event Action? Changed;
+    // Session-only presentation queue, populated by successful settlement adapters.
+    public string? PendingJourneyCompletion { get; private set; }
+    public void QueueJourneyCompletion(string cityId) => PendingJourneyCompletion = cityId;
+    public string? TakeJourneyCompletion() { string? city = PendingJourneyCompletion; PendingJourneyCompletion = null; return city; }
     public SaveData Data { get; private set; } = new();
     public bool HasLoadError { get; private set; }
     public string LoadErrorMessage { get; private set; } = string.Empty;
@@ -147,6 +151,7 @@ public partial class SaveService : Node
 
     public void Load()
     {
+        PendingJourneyCompletion = null;
         ClearLoadError(); MigratedLegacySave = false; HasSavedGame = false;
         string absolute = ProjectSettings.GlobalizePath(_savePath);
         if (!File.Exists(absolute))
@@ -271,6 +276,7 @@ public partial class SaveService : Node
             (HasLoadError, LoadErrorMessage, CorruptBackupPath, MigratedLegacySave, HasSavedGame) = previous;
             return false;
         }
+        PendingJourneyCompletion = null;
         Changed?.Invoke(); return true;
     }
 

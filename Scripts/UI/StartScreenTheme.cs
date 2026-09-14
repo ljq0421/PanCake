@@ -5,7 +5,7 @@ namespace ProjectCake.UI;
 /// <summary>Game-wide identity: shared cartoon shapes, independent of any city skin.</summary>
 public static class StartScreenTheme
 {
-    public static readonly Color Cream = new("#FFF6E5"), Teal = new("#286354"), Ink = new("#3E382B"),
+    public static readonly Color Cream = new("#FFF6E5"), Teal = new("#795032"), Ink = new("#4A3020"),
         Apricot = new("#F2C67D"), Brick = new("#983F32"), Muted = new("#665C49");
 
     public static StyleBoxFlat Box(Color color, int border = 3, bool shadow = false) => new()

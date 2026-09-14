@@ -27,6 +27,7 @@ public partial class PancakeAudio : Node
     {
         SceneNodeBinder.Bind(this);
         if (_player is null) { _player = new AudioStreamPlayer { VolumeDb = -12 }; AddChild(_player); }
+        _player.Bus = ProjectCake.Core.JourneySettings.EffectsBus;
         _sounds[PancakeSound.BookOpen] = MakeNoise(.18, .10);
         _sounds[PancakeSound.BookStamp] = MakeNoise(.07, .18);
         _sounds[PancakeSound.PickUp] = MakeTone(720, 0.06, 0.28);

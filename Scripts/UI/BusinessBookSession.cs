@@ -58,7 +58,7 @@ public static class BusinessBookSettlement
             if (commit.EarnedStars > 0) stickers.Add($"本次评级 {new string('★', commit.EarnedStars)}");
             if (!practice)
             {
-                if (commit.NewChapterCompletion) stickers.Add($"{model.CityName}章节已点亮");
+                if (commit.NewChapterCompletion) { stickers.Add($"{model.CityName}章节已点亮"); save.QueueJourneyCompletion(config.CityId); }
                 int unlocked = save.Data.GetCity(config.CityId).UnlockedContentIds.Count(id => !before.Contains(id));
                 if (unlocked > 0) stickers.Add($"新开放 {unlocked} 项内容 · 回店查看");
                 string[] upgrades = save.AvailableBookUpgrades(config.CityId, catalog);

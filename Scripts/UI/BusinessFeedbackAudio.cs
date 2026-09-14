@@ -43,7 +43,7 @@ public partial class BusinessFeedbackAudio : Node
         {
             if (!Streams.TryGetValue(feedback.Cue, out var stream)) Streams[feedback.Cue] = stream = Make(feedback.Cue);
             player = new AudioStreamPlayer { Name = feedback.Cue.ToString(), Stream = stream,
-                Bus = "Master", VolumeDb = -16, MaxPolyphony = 3 };
+                Bus = ProjectCake.Core.JourneySettings.EffectsBus, VolumeDb = -16, MaxPolyphony = 3 };
             AddChild(player); _players.Add(feedback.Cue, player);
         }
         player.Play(); Played?.Invoke(feedback);

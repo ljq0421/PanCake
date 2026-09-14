@@ -19,7 +19,7 @@ internal sealed class WuhanCookingAudio
 
     private static AudioStreamPlayer Player(Node owner, string name, AudioStreamWav stream)
     {
-        var player = new AudioStreamPlayer { Name = name, Stream = stream, VolumeDb = -24, Bus = "Master" };
+        var player = new AudioStreamPlayer { Name = name, Stream = stream, VolumeDb = -24, Bus = ProjectCake.Core.JourneySettings.EffectsBus };
         owner.AddChild(player);
         return player;
     }

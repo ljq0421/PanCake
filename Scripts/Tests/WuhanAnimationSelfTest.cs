@@ -223,7 +223,7 @@ public partial class WuhanAnimationSelfTest : Node
         {
             var f = NewDay(level); var s = f.Screen;
             var cue = s.Workstation.GetNode<AudioStreamPlayer>("BasketReady");
-            Check(cue.Stream is AudioStreamWav { LoopMode: AudioStreamWav.LoopModeEnum.Disabled } && cue.Bus == "Master", "提篮提示为非循环音效并遵循主音量");
+            Check(cue.Stream is AudioStreamWav { LoopMode: AudioStreamWav.LoopModeEnum.Disabled } && cue.Bus == JourneySettings.EffectsBus, "提篮提示为非循环音效并遵循主音量");
             s.BasketAction(0); s._Process(.1);
             Check(!cue.Playing, $"Lv{level} 未熟时不播放提示");
             s._Process(_catalog.NoodleCookersByLevel[level].OptimalSeconds);
@@ -282,7 +282,7 @@ public partial class WuhanAnimationSelfTest : Node
             var player = owner.GetNode<AudioStreamPlayer>($"WuhanCue{sound}");
             var stream = (AudioStreamWav)player.Stream;
             Check(stream.Data.Length > 0 && stream.Data.Any(b => b != 0)
-                && stream.LoopMode == AudioStreamWav.LoopModeEnum.Disabled && player.Bus == "Master",
+                && stream.LoopMode == AudioStreamWav.LoopModeEnum.Disabled && player.Bus == JourneySettings.EffectsBus,
                 $"{sound} 有声音数据、无循环并遵循主音量");
         }
         audio.Stop();
@@ -340,7 +340,7 @@ public partial class WuhanAnimationSelfTest : Node
         int bus = AudioServer.GetBusIndex("Master"); bool muted = AudioServer.IsBusMute(bus);
         AudioServer.SetBusMute(bus, true);
         s.BasketAction(0); s._Process(.1);
-        Check(AudioServer.IsBusMute(bus) && water.Bus == "Master", "烹饪音效遵循主音量静音");
+        Check(AudioServer.IsBusMute(bus) && water.Bus == JourneySettings.EffectsBus, "烹饪音效遵循主音量静音");
         AudioServer.SetBusMute(bus, muted);
         s.Hide(); Check(!water.Playing && !pan.Playing, "离开营业清理所有烹饪声音");
         s.Show(); s.Initialize(_catalog, f.Save, f.Controller, 8);

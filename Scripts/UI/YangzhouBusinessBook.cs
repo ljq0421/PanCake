@@ -34,7 +34,7 @@ public static class YangzhouBusinessBook
             if (commit.EarnedStars > 0) stickers.Add($"本次评级 {new string('★', commit.EarnedStars)}");
             if (!practice)
             {
-                if (commit.NewChapterCompletion) stickers.Add("扬州章节已点亮");
+                if (commit.NewChapterCompletion) { stickers.Add("扬州章节已点亮"); save.QueueJourneyCompletion(ProjectCake.Data.StableIds.Cities.Yangzhou); }
                 if (save.Data.Yangzhou.EquipmentLevels.Any(p => p.Value > 0 && previousEquipment.GetValueOrDefault(p.Key) == 0)) stickers.Add("新设备：蒸笼已开放");
                 var products = catalog.Products.Where(p => p.UnlockDay > previousDay && p.UnlockDay <= save.Data.Yangzhou.HighestUnlockedDay).Select(p => p.Name).ToArray();
                 if (products.Length > 0) stickers.Add("新菜品：" + string.Join("、", products));

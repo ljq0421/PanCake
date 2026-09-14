@@ -175,7 +175,6 @@ public partial class DataCatalog : Node
 
         if (IsValid)
         {
-            GD.Print($"DataCatalog 已加载：{_recipesById.Count} 个配方，{_productsById.Count} 个商品，{_customersById.Count} 类顾客；天津 {_daysByNumber.Count} 天，武汉 {GetDays(StableIds.Cities.Wuhan).Count} 天。");
             return;
         }
 

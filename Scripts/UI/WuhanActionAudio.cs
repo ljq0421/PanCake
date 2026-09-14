@@ -30,7 +30,7 @@ internal sealed class WuhanActionAudio
         {
             if (!Streams.TryGetValue(sound, out var stream)) Streams[sound] = stream = Make(sound);
             player = new AudioStreamPlayer { Name = $"WuhanCue{sound}", Stream = stream,
-                Bus = "Master", VolumeDb = sound is WuhanSound.Mix or WuhanSound.Spread ? -23 : -16,
+                Bus = ProjectCake.Core.JourneySettings.EffectsBus, VolumeDb = sound is WuhanSound.Mix or WuhanSound.Spread ? -23 : -16,
                 MaxPolyphony = 1 };
             _owner.AddChild(player);
             _players.Add(sound, player);

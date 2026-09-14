@@ -148,6 +148,8 @@ public partial class BusinessFeedbackSelfTest : Node
         Check(played.Count == 2, "timeout chorus throttled for 500ms");
         played.Clear(); source.Delivery("final", new(DeliveryGrade.Perfect, 20, 2, 100, "")); source.Credit(22);
         Check(played.Count == 2 && audio.GetChildren().OfType<AudioStreamPlayer>().Select(p => p.Stream).Distinct().Count() >= 2, "completion and cash use independent streams");
+        Check(audio.GetChildren().OfType<AudioStreamPlayer>().All(p => p.Bus == JourneySettings.EffectsBus)
+            && AudioServer.GetBusSend(AudioServer.GetBusIndex(JourneySettings.EffectsBus)) == "Master", "all business voices follow effects and master volumes");
         active = false; audio._Process(0); source.Credit(22); active = true; audio._Process(0);
         Check(played.Count == 2 && audio.GetChildren().OfType<AudioStreamPlayer>().All(p => !p.Playing), "pause stops voices without replay on resume");
         source.Reset(); played.Clear(); source.Warn("a"); Check(played.Count == 1, "new business resets warning identities");

@@ -95,6 +95,10 @@ public partial class GameController : Node
             OpenCity(save.ContinueCityId);
         };
         _startScreen.QuitRequested += () => GetTree().Quit();
+        _startScreen.CityRequested += (cityId, preview) =>
+        {
+            if (!OpenCity(cityId, preview)) _startScreen.ShowError("无法前往该城市，请检查解锁进度或存档写入状态。");
+        };
         hub.DayRequested += day =>
         {
             dayScreen.Initialize(catalog, save, dayController, day);
@@ -161,6 +165,19 @@ public partial class GameController : Node
 
     private void ShowOnly(Control show)
     {
+        if (show is TianjinMapScreen)
+        {
+            Control? origin = _cityHubs.Values.FirstOrDefault(c => c.Visible);
+            ShowOnly(_startScreen);
+            _startScreen.PresentMap(() => { if (origin is not null) ShowOnly(origin); else _startScreen.PresentHome(); });
+            return;
+        }
+        if (_cityHubs.Values.Contains(show) && _save.TakeJourneyCompletion() is { } completedCity)
+        {
+            ShowOnly(_startScreen);
+            _startScreen.PresentCompletion(completedCity, () => ShowOnly(show));
+            return;
+        }
         foreach (Control page in GetNode("UI").GetChildren().OfType<Control>()) page.Visible = page == show;
         GetNode<Node2D>("ShopRoot").Visible = show != _startScreen;
     }

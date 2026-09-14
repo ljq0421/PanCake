@@ -1,4 +1,4 @@
-using Godot;
+﻿using Godot;
 using ProjectCake.Core;
 using ProjectCake.Data;
 using ProjectCake.Gameplay;
@@ -40,12 +40,12 @@ public partial class XianVisualCapture : Node
             var controller = new DayController(); AddChild(controller);
             _screen = ProjectCake.Core.SceneFactory.Instantiate<XianDayScreen>("res://Scenes/Gameplay/XianDayScreen.tscn");
             var authoredWorkbench = _screen.GetNode<Control>("Workbench");
-            int authoredCount = authoredWorkbench.GetChildCount();
+            Node[] authoredNodes = authoredWorkbench.GetChildren().ToArray();
             Require(authoredWorkbench.GetChildren().OfType<XianSurface>().Count(v => v.Kind == "customer") == 5
                 && authoredWorkbench.HasNode("soup_bowl") && authoredWorkbench.HasNode("CoinTray") && _screen.HasNode("CoinCollectionFeedback"),
                 "进入运行树前固定节点已完整预置");
             sceneParent.AddChild(_screen); _screen.SetProcess(false); _screen.ConnectController(controller);
-            Require(authoredWorkbench.GetChildCount() == authoredCount, "启动后不增删固定工作台节点");
+            Require(authoredNodes.All(node => node.GetParent() == authoredWorkbench), "共享 HUD 接入后仍保留全部固定工作台节点");
             Require(_screen.Initialize(catalog, save, controller, 1), "Day1初始化"); _screen.BeginDay(); Step(7);
             if (OS.GetCmdlineUserArgs().Contains("--capture-highlight"))
             {
@@ -95,9 +95,9 @@ public partial class XianVisualCapture : Node
             Require(controller.Ledger!.CompletedCustomers == 1 && _screen.Session.Sandwich.State == RoujiamoState.Empty, "肉夹馍拖给顾客完成交付");
             int revenue = controller.Ledger.Build().TotalRevenue;
             Require(_screen.CoinTray.PendingAmount == revenue && revenue > 0, "整单付款进入共享收钱展示");
-            await Click(new(1810, 47)); double before = controller.DayElapsedSeconds; _screen._Process(4);
+            await Click(new(1868, 56)); double before = controller.DayElapsedSeconds; _screen._Process(4);
             Require(controller.IsPaused && controller.DayElapsedSeconds == before, "暂停按钮冻结时间");
-            await Click(new(1515, 47)); Require(_screen.CoinTray.PendingAmount == revenue, "暂停不能收钱");
+            await Click(new(1646, 58)); Require(_screen.CoinTray.PendingAmount == revenue, "暂停不能收钱");
             await Click(new(1145, 900)); Require(_screen.Session.Sandwich.State == RoujiamoState.Empty, "暂停时制作输入无效");
             await Click(new(960, 460));
             Require(_screen.Workbench.GetNode<Control>("PauseMenu").Visible && controller.IsPaused
@@ -107,8 +107,8 @@ public partial class XianVisualCapture : Node
             await Click(new(960, 380)); Step(.1); Require(!controller.IsPaused && controller.DayElapsedSeconds > before, "继续按钮恢复营业");
             _screen._Notification((int)NotificationApplicationFocusOut); before = controller.DayElapsedSeconds; _screen._Process(4);
             Require(controller.DayElapsedSeconds == before, "失焦冻结时间"); _screen._Notification((int)NotificationApplicationFocusIn);
-            await Click(new(1515, 47)); Require(_screen.CoinTray.PendingAmount == 0 && controller.Ledger.Build().TotalRevenue == revenue, "真实点击收钱不重复记账");
-            await Click(new(1515, 47)); Require(_screen.CoinTray.PendingAmount == 0, "重复空点无收益");
+            await Click(new(1646, 58)); Require(_screen.CoinTray.PendingAmount == 0 && controller.Ledger.Build().TotalRevenue == revenue, "真实点击收钱不重复记账");
+            await Click(new(1646, 58)); Require(_screen.CoinTray.PendingAmount == 0, "重复空点无收益");
             await Click(new(945, 550)); Step(.81); Require(_screen.Session.Meat.Count == _screen.Session.Meat.Capacity, "补肉入口可用");
             controller.AbandonDay();
             Require(_screen.Initialize(catalog, save, controller, 2), "Day2初始化"); _screen.BeginDay(); Step(5);
@@ -240,7 +240,7 @@ public partial class XianVisualCapture : Node
             _screen = main.GetNode<XianDayScreen>("UI/XianDayScreen"); _screen.SetProcess(false);
             var liveController = main.GetNode<DayController>("DayController");
             Require(_screen.IsVisibleInTree() && liveController.CurrentConfig?.CityId == StableIds.Cities.Xian && !liveHub.Visible, "西安首页打开真实营业场景");
-            Step(4); await Click(new(1810, 47)); await Click(new(960, 535));
+            Step(4); await Click(new(1868, 56)); await Click(new(960, 535));
             double leavingAt = liveController.DayElapsedSeconds; _screen._Process(3);
             Require(liveController.DayElapsedSeconds == leavingAt, "退出确认期间冻结生产与来客");
             Find<ConfirmationDialog>(_screen, _ => true).GetOkButton().EmitSignal(Button.SignalName.Pressed);

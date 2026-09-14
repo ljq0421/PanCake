@@ -1,7 +1,11 @@
-## Project Scope
-如果要求生成透明背景图片，先生成绿色背景的图片，再扣出透明背景。
+## 任务范围与 Skills
 
-godot编辑器在 D:\Godot\GodotSharp 路径下
+继承上级 `AGENTS.md` 的协作确认、透明素材和 Godot 测试规则；此处只维护本项目的业务约束。
+
+- 本项目是 Godot PC 游戏。普通 C# 功能修复、数值调整、音效接线不自动进入设计、Web 动画、Figma 或 Data 工作流。
+- UI 视觉或体验是主要目标时才使用设计 Skill。Godot 控件和 Tween 以引擎实现及实际视口为准，不套用 CSS/DOM 检测、Web 组件选库或移动端模拟器要求。
+- 文档中的“详见”是按需索引；只在修改相关机制时读取对应章节，不展开所有链接。当前已确认规则优先于标记为历史记录的说明。
+- 每项改动只检查相关机制和共享影响，不顺带统一无关城市、重设计界面或重跑全项目验收。
 
 ## 各城市通用经营机制
 
@@ -12,10 +16,10 @@ godot编辑器在 D:\Godot\GodotSharp 路径下
 - 各城市最终满意度只按已完成订单的顾客计算，流失顾客不计入满意度平均值。
 - 各城市小费统一四舍五入到整数；对于非负小费，0.5 向上取整，C# 使用 `MidpointRounding.AwayFromZero`，不使用默认银行家舍入或直接向上取整。
 - 允许城市保留教学保护，以明确的教学关卡配置或策略实现，不要求教学关卡与普通营业规则完全一致。
-- 金币收取统一沿用天津与武汉已有的点击收钱机制，复用共享金币盘与收取反馈逻辑；现有说明见 `docs/天津与武汉点击收钱.md`，后续城市也遵循该机制。
-- 天津为 2026-09-11 已确认收银交互特例：三个阶段使用 `天津-煎饼*.png` 新背景，付款自动记账并飞币进入背景挂件；挂件替代桌面金币盘，点击只打开本次营业明细并暂停营业，不再点击收钱。逐单评价只保留本次营业，不写入存档。其他城市继续沿用共享点击收钱机制。
+- 收银现状：天津、武汉使用自动入账的挂件收银；西安使用共享点击收钱机制；广州、扬州保留已确认的无点击收钱入口交互。新增城市默认复用共享点击收钱机制，现有城市不因修改其他功能而迁移收银交互。`docs/天津与武汉点击收钱.md` 是历史实现及共享组件参考，不作为两城当前交互规范。
+- 天津为 2026-09-11 已确认收银交互特例：三个阶段使用 `天津-煎饼*.png` 新背景，付款自动记账并飞币进入背景挂件；挂件替代桌面金币盘，点击只打开本次营业明细并暂停营业，不再点击收钱。逐单评价只保留本次营业，不写入存档。各城市收银方式按上方现状规则执行。
 - 武汉为 2026-09-11 已确认收银交互特例：豆皮解锁前后分别使用 `武汉-热干面-v1.png`、`武汉-热干面-豆皮-蛋液-v2.png`；完全沿用天津挂件收银规则，付款自动记账并飞币进入右侧挂件，点击查看本次营业明细并暂停营业，不再点击收钱。逐单评价仅保留本次营业，不写入存档；两城复用营业明细与飞币组件。
-- 后续新增或修改城市时，以上通用机制一并适用；如需城市特例，先向用户确认。
+- 新增城市遵循通用机制；修改现有城市只检查本次涉及的机制及共享影响。已确认特例直接沿用；仅新增或改变尚未授权的城市特例时向用户确认。
 - 武汉垃圾桶沿用天津右键长按 0.45 秒拖入丢弃：面篮一篮、面碗一碗、锅内豆皮整锅、熟豆皮库存一份，含制作中与焦糊。禁止左键清理及丢弃未投入原料，详见 `docs/武汉垃圾桶与右键丢弃.md`。
 
 ## 全城市经营音效（2026-09-13 确认）
@@ -25,41 +29,3 @@ godot编辑器在 D:\Godot\GodotSharp 路径下
 - 天津、武汉每笔正金额自动入账时响；西安成功点击收钱时响。广州、扬州经用户确认保留现有无点击收钱入口的交互，订单完成、营业收入增加时响，不在本次补收钱按钮。
 - 扬州成功备餐入托盘不响顾客交付音，整盘上桌才响完成及金币音。音效不改变耐心、收入或存档规则。
 - 暂停、查看营业明细、失焦和离开城市时停止营业音效，恢复时不补播；结算账本展示收入不重复播放金币声。
-
-## Godot Headless Tests In Codex
-
-When running Godot headless tests from Codex sandbox, always pass `--log-file`
-to a writable path. Godot 4.7.1 can crash while opening the default
-`user://logs/godot*.log` under sandbox restrictions.
-
-Use a writable temp path by default:
-
-```powershell
-& "D:\Godot\Godot_v4.7.1-stable_win64_console.exe" `
-  --headless `
-  --path . `
-  --log-file "$env:TEMP\godot-headless.log" `
-  -s res://tests/mvp_self_check.gd
-```
-
-For one-off commands, replace only the script path:
-
-```powershell
-& "D:\Godot\Godot_v4.7.1-stable_win64_console.exe" `
-  --headless `
-  --path . `
-  --log-file "$env:TEMP\godot-headless.log" `
-  -s res://tests/your_self_check.gd
-```
-
-Do not use `--log-file NUL`; Godot treats `NUL` as a reserved Windows device
-name and may still crash.
-
-Run commands from the directory that contains `project.godot`, usually:
-
-```powershell
-cd D:\Project\ProjectCake\project-cake
-```
-
-If a test reports `File not found`, first verify the `res://tests/...` file
-exists before debugging game logic.

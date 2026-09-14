@@ -1,4 +1,4 @@
-using Godot;
+﻿using Godot;
 using ProjectCake.Core;
 using ProjectCake.Customers;
 using ProjectCake.Data;
@@ -106,6 +106,7 @@ public partial class TianjinDayScreen : Control
         _feedbackPanel.CustomMinimumSize = new Vector2(720, 0);
         _feedbackPanel.ResetSize();
         BuildCashPendant();
+        BuildBusinessHud();
         VisibilityChanged += () =>
         {
             if (!IsVisibleInTree()) { CloseBusinessDetails(); ClearCoinFlights(); _collectionFeedback.Clear(); }
@@ -186,7 +187,6 @@ public partial class TianjinDayScreen : Control
         _controller = controller;
         controller.StateChanged += OnStateChanged;
         controller.DayFinished += OnDayFinished;
-        controller.DeliveryCompleted += evaluation => ShowFeedback(evaluation.Message, evaluation.Grade is DeliveryGrade.Incorrect or DeliveryGrade.Rejected);
     }
 
     internal void RefreshForCapture(bool forceWorkstationActive = false)
@@ -293,7 +293,7 @@ public partial class TianjinDayScreen : Control
             _ => new DeliveryEvaluation(DeliveryGrade.Rejected, 0, 0, 0, "当前商品不可交付。"),
         };
         if (kind == ProductKind.Youtiao && (evaluation.ItemAccepted || evaluation.CompletesOrder)) _controller.Ledger?.RecordYoutiaoUsed();
-        ShowFeedback(evaluation.Message, evaluation.Grade is DeliveryGrade.Incorrect or DeliveryGrade.Rejected);
+        _sceneFeedback.Delivery(evaluation, _orderCards[slot]);
         PlayDeliveryEffects(evaluation, slot);
         return evaluation.ItemAccepted || evaluation.CompletesOrder;
     }
@@ -391,6 +391,7 @@ public partial class TianjinDayScreen : Control
         };
         if (_controller.State == DayState.Opening)
             _countdown.Text = Math.Max(1, (int)Math.Ceiling(_controller.OpeningRemainingSeconds)).ToString();
+        RenderBusinessHud();
         DayResult? progress = _controller.Ledger?.Build();
         _completedOrders.Text = $"完成订单 {progress?.CompletedCustomers ?? 0}/{_controller.CurrentConfig.CustomerCount}";
         _income.Text = $"今日收入 ¥{progress?.TotalRevenue ?? 0}";
@@ -483,16 +484,11 @@ public partial class TianjinDayScreen : Control
 
     private void ShowFeedback(string message, bool error)
     {
-        _feedback.Text = (error ? "！ " : "✓ ") + message;
-        _feedback.Modulate = error ? TianjinUi.Red : TianjinUi.Green;
-        _feedbackPanel.Visible = true;
-        _feedbackPanel.Modulate = new Color(1, 1, 1, 0.2f);
-        _feedbackPanel.Position = new Vector2(600, 94);
-        _feedbackRemaining = 2.4;
-        CreateTween().SetParallel(true).SetTrans(Tween.TransitionType.Expo).SetEase(Tween.EaseType.Out)
-            .TweenProperty(_feedbackPanel, "modulate", Colors.White, 0.18);
-        CreateTween().SetTrans(Tween.TransitionType.Expo).SetEase(Tween.EaseType.Out)
-            .TweenProperty(_feedbackPanel, "position", new Vector2(600, 100), 0.18);
+        _feedbackPanel.Hide();
+        bool essential = _controller?.State is not (DayState.Running or DayState.Closing) || message.StartsWith("停止接新客");
+        Vector2 at = message.Contains("翻面成功") ? GetGlobalTransform() * new Vector2(960, 680)
+            : essential ? GetGlobalTransform() * new Vector2(960, 490) : GetGlobalMousePosition();
+        _sceneFeedback.Report(message, error, at, essential || message.StartsWith("停止接新客"));
     }
 
     private void PlayDeliveryEffects(DeliveryEvaluation evaluation, int slot)
@@ -535,7 +531,7 @@ public partial class TianjinDayScreen : Control
     }
 
     private void SpawnFlyingCoin(Vector2 origin, Vector2 target, double delay, int index) =>
-        _paymentFeedback.Spawn(this, _art.Coin, origin, target, delay);
+        _paymentFeedback.Spawn(this, GD.Load<Texture2D>("res://resource/art/Global/HUDUI/小费飞行金币.png"), origin, target, delay);
 
     private void ClearCoinFlights() => _paymentFeedback.Clear();
 

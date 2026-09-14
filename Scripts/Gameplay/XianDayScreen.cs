@@ -1,4 +1,4 @@
-using Godot;
+﻿using Godot;
 using ProjectCake.Core;
 using ProjectCake.Customers;
 using ProjectCake.Data;
@@ -99,6 +99,7 @@ public partial class XianDayScreen : Control
         _surfaces["soup_bowl"].DragToken = soup.DragToken;
         _exitDialog.Confirmed += () => { _controller.AbandonDay(); _controller.IsPaused = false; CancelGestures(); HubRequested?.Invoke(); };
         BuildBusinessBook();
+        BuildBusinessHud();
     }
     public void ConnectController(DayController controller)
     {
@@ -185,14 +186,22 @@ public partial class XianDayScreen : Control
         int paidBefore = _controller.Ledger?.CompletedCustomers ?? 0;
         int slot = _controller.CustomerQueue?.Slots.FirstOrDefault(c => c.Id == targetId)?.SlotIndex ?? -1;
         var result = _controller.TryDeliverXianTo(targetId, item, token == "soup" ? () => Session.Soup!.TryTake() : Session.Sandwich.TryTake);
-        Feedback(result.Message, result.Grade is DeliveryGrade.Rejected or DeliveryGrade.Incorrect); Render();
+        if (slot >= 0) _sceneFeedback.Delivery(result, _orders[slot]);
+        else Feedback(result.Message, result.Grade is DeliveryGrade.Rejected or DeliveryGrade.Incorrect);
+        Render();
         if ((_controller.Ledger?.CompletedCustomers ?? 0) > paidBefore && slot >= 0 && slot < _customers.Count && CanInteract)
             CollectionFeedback.PaymentFrom(_customers[slot].GetGlobalRect().GetCenter());
         return result;
     }
     private CustomerRuntime? CustomerAt(int i) => _controller?.CustomerQueue?.CustomerAtSlot(i);
     private void Action(bool ok, string success, string failure) => Feedback(ok ? success : failure, !ok);
-    private void Feedback(string text, bool error) { if (_feedback is null) return; _feedback.Text = text; _feedback.AddThemeColorOverride("font_color", error ? new Color("#872F29") : new Color("#455D33")); _feedbackTime = 3; }
+    private void Feedback(string text, bool error)
+    {
+        _feedback.Hide();
+        bool essential = _controller?.State is not (DayState.Running or DayState.Closing);
+        _sceneFeedback.Report(text, error, essential ? Workbench.GetGlobalTransform() * new Vector2(960, 490) : GetGlobalMousePosition(), essential);
+    }
+
     private void Pause()
     {
         if (Session is null || _results.Visible || _exitDialog.Visible) return;
@@ -202,11 +211,12 @@ public partial class XianDayScreen : Control
     public void Render()
     {
         if (Session is null) return;
+        RenderBusinessHud();
         var s = Session;
         _heading.Text = $"西安 Day {s.Day} · {XianRules.Titles[s.Day - 1]}";
         _clock.Text = !_focused || _controller.IsPaused ? "已暂停" : _controller.State switch { DayState.Opening => $"开门 {_controller.OpeningRemainingSeconds:0.0}s", DayState.Closing => $"收尾 {_controller.ClosingRemainingSeconds:0.0}s", DayState.Results => "今日已打烊", _ => $"剩余 {_controller.DayRemainingSeconds:0}s  ·  ¥{_controller.Ledger?.Build().TotalRevenue ?? 0}" };
         _inventory.Text = $"熟馍 {s.Buns.Count}/{s.Buns.Capacity}" + (s.Buns.Count == 0 ? " · 缺馍" : s.Buns.Count <= 3 ? " · 记得烙馍" : "");
-        _feedback.Visible = _feedbackTime > 0;
+        _feedback.Hide();
         _buttons["pause"].Text = _controller.IsPaused ? "继续" : "暂停";
         foreach (var (id, button) in _buttons) if (id is not ("pause" or "resume" or "help" or "exit" or "result_back" or "retry_save")) button.Disabled = !CanInteract;
         _buttons["oven"].Disabled |= s.Oven is null; _batch.Editable = CanInteract && s.Oven?.State == BunOvenState.Empty;

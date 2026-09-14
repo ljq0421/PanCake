@@ -1,4 +1,4 @@
-using Godot;
+﻿using Godot;
 using ProjectCake.Core;
 using ProjectCake.Customers;
 using ProjectCake.Data;
@@ -74,6 +74,7 @@ public partial class WuhanDayScreen : Control
         CoinTray.Hide();
         CoinTray.CanCollect = () => false;
         BuildCashPendant();
+        BuildBusinessHud();
         Workstation.RaiseRequested = RaiseBasket;
         Workstation.PourRequested = ReservePour;
         Workstation.CutRequested = CutDoupi;
@@ -133,41 +134,16 @@ public partial class WuhanDayScreen : Control
         _tutorial.Visible = false;
         foreach (Label label in _basketLabels) label.Visible = false;
         _bowlStatus.Visible = _doupiStatus.Visible = _eggStatus.Visible = false;
-        var header = GetNode<PanelContainer>("@PanelContainer@312");
-        var headerStyle = (StyleBoxFlat)header.GetThemeStylebox("panel").Duplicate();
-        headerStyle.ContentMarginTop = headerStyle.ContentMarginBottom = 6;
-        header.AddThemeStyleboxOverride("panel", headerStyle);
-        header.Position = new Vector2(1236, 18);
-        header.Size = new Vector2(660, 60);
-        var row = (HBoxContainer)_day.GetParent();
-        void IconBefore(Control target, string kind)
-        {
-            var icon = new WuhanHudIcon { Kind = kind, CustomMinimumSize = new Vector2(30, 30), SizeFlagsVertical = SizeFlags.ShrinkCenter, MouseFilter = MouseFilterEnum.Ignore };
-            row.AddChild(icon); row.MoveChild(icon, target.GetIndex());
-        }
-        IconBefore(_day, "day"); IconBefore(_clock, "clock");
-        _day.AddThemeFontSizeOverride("font_size", 24);
-        _coinTarget.CustomMinimumSize = new Vector2(32, 32);
-        var close = this.FindButton("提前打烊");
-        close.Text = ""; close.TooltipText = "提前打烊";
-        close.CustomMinimumSize = new Vector2(48, 48);
-        foreach (string state in new[] { "normal", "hover", "pressed", "disabled", "focus" })
-        {
-            var style = (StyleBoxFlat)close.GetThemeStylebox(state).Duplicate();
-            style.ContentMarginLeft = style.ContentMarginRight = style.ContentMarginTop = style.ContentMarginBottom = 0;
-            close.AddThemeStyleboxOverride(state, style);
-        }
-        var exit = new WuhanHudIcon { Kind = "exit", Position = new Vector2(9, 9), Size = new Vector2(30, 30), MouseFilter = MouseFilterEnum.Ignore };
-        close.AddChild(exit);
+        GetNode<Control>("@PanelContainer@312").Hide();
 
     }
     public void ConnectController(DayController controller)
     {
         _controller = controller; controller.StateChanged += OnStateChanged; controller.DayFinished += OnFinished;
-        controller.DeliveryCompleted += OnDeliveryCompleted;
     }
     public void Initialize(DataCatalog catalog, SaveService save, DayController controller, int day)
     {
+        _hudPaused = false; _hudPauseMenu.Hide(); controller.SetPauseReason("wuhan-hud", false); _sceneFeedback.Clear();
         BusinessFeedbackAudio.Attach(this, controller.Feedback, () => controller.CurrentConfig?.CityId == StableIds.Cities.Wuhan && (CanInteract));
         CloseBusinessDetails();
         _paymentFeedback.Clear();
@@ -290,10 +266,11 @@ public partial class WuhanDayScreen : Control
             if (slot >= 0 && !WuhanWorkstationView.ReducedMotion)
             {
                 Vector2 origin = GetGlobalTransform().AffineInverse() * _portraits[slot].GetGlobalRect().GetCenter();
-                for (int i = 0; i < 3; i++) _paymentFeedback.Spawn(this, _art.Shared.Coin, origin + new Vector2(i * 13 - 13, 0), WuhanWorkbenchLayout.CashSlot, i * .08);
+                for (int i = 0; i < 3; i++) _paymentFeedback.Spawn(this, GD.Load<Texture2D>("res://resource/art/Global/HUDUI/小费飞行金币.png"), origin + new Vector2(i * 13 - 13, 0), WuhanWorkbenchLayout.CashSlot, i * .08);
             }
         }
-        Feedback(result.Message, result.Grade is DeliveryGrade.Rejected or DeliveryGrade.Incorrect, sound: false);
+        int feedbackSlot = Array.IndexOf(_deliveryCustomerIds, customerId);
+        if (feedbackSlot >= 0) _sceneFeedback.Delivery(result, _orders[feedbackSlot]);
         Render();
         return result.ItemAccepted || result.CompletesOrder;
     }
@@ -311,7 +288,12 @@ public partial class WuhanDayScreen : Control
     }
     internal bool PourDoupiBatter() => ApplyDoupi(d => d.TryPourBatter(), "空锅才能倒浆；请先处理锅中豆皮。");
     internal bool AddDoupiEgg() => ApplyDoupi(d => d.TryAddEgg(), "先从浆碗拖浆入锅，再点击蛋液容器。");
-    internal bool FlipDoupi() => ApplyDoupi(d => d.TryFlip(), "等面皮定型后，按住锅面向上划。");
+    internal bool FlipDoupi()
+    {
+        bool flipped = ApplyDoupi(d => d.TryFlip(), "等面皮定型后，按住锅面向上划。");
+        if (flipped) _sceneFeedback.Flip(GetGlobalTransform() * new Vector2(1320, 630));
+        return flipped;
+    }
     internal bool AddDoupiFilling() => ApplyDoupi(d => d.TryAddFilling(), "翻面后拖一份三鲜馅入锅，松手自动铺匀。");
     internal bool DiscardDoupi() => ApplyDoupi(d =>
     {
@@ -324,6 +306,7 @@ public partial class WuhanDayScreen : Control
         UpdatePendantState();
         Workstation.SetCookingAudioPaused(!CanInteract);
         if (_controller?.CurrentConfig is null || _cooker is null) return;
+        RenderBusinessHud();
         int day = _controller.CurrentConfig.Day;
         _day.Text = $"{day}";
         _day.TooltipText = $"武汉 Day {day} · {Subtitle(day)}\n{Tutorial(day)}";
@@ -388,19 +371,23 @@ public partial class WuhanDayScreen : Control
         return zone.ContainsPoint(GetGlobalMousePosition(), false)
             ? InteractionHighlightState.Hover : InteractionHighlightState.None;
     }
-    private void Feedback(string text,bool error,bool force=false,bool sound=true){if (error && sound) Workstation.PlaySound(WuhanSound.Error);if (!force && !error && _controller?.State is not (DayState.Opening or DayState.Closing)) return;_feedback.Text=(error?"！ ":"")+text;_feedback.Modulate=Colors.White;_feedback.AddThemeColorOverride("font_color",error?new Color("#9A3528"):WuhanUi.Ink);_feedback.Visible=true;_feedbackSeconds=2.4;}
-    private void OnStateChanged(DayState state){if(state==DayState.Running)Feedback("开始营业！做好餐品后，直接拖给对应顾客。",false);else if(state==DayState.Closing)Feedback("停止接新客，最后 15 秒完成手中订单。",false);}
-    private void OnDeliveryCompleted(DeliveryEvaluation result)
+    private void Feedback(string text, bool error, bool force = false, bool sound = true)
     {
-        Feedback(result.Message,result.Grade is DeliveryGrade.Incorrect or DeliveryGrade.Rejected, sound: false);
+        if (error && sound) Workstation.PlaySound(WuhanSound.Error);
+        _feedback.Hide();
+        bool essential = _controller?.State is not (DayState.Running or DayState.Closing) || text.StartsWith("停止接新客");
+        _sceneFeedback.Report(text, error, essential ? GetGlobalTransform() * new Vector2(960, 490) : GetGlobalMousePosition(), essential || text.StartsWith("停止接新客"));
     }
+
+    private void OnStateChanged(DayState state){if(state==DayState.Running)Feedback("开始营业！做好餐品后，直接拖给对应顾客。",false);else if(state==DayState.Closing)Feedback("停止接新客，最后 15 秒完成手中订单。",false);}
     public override void _ExitTree()
     {
+        _controller?.SetPauseReason("wuhan-hud", false);
         ClearPendantOnExit();
         CollectionFeedback.Clear();
         Workstation.CancelAnimations();
         if(_controller is null)return;
-        _controller.StateChanged-=OnStateChanged;_controller.DayFinished-=OnFinished;_controller.DeliveryCompleted-=OnDeliveryCompleted;
+        _controller.StateChanged-=OnStateChanged;_controller.DayFinished-=OnFinished;
     }
     private void OnFinished(DayResult result)
     {

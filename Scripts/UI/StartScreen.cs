@@ -90,7 +90,6 @@ public partial class StartScreen : Control
         var previous = Button(_body, "Back", "", new(72, 48, 140, 62), back, bare: true);
         Art(previous, "账本翻页箭头｜左", new(0, 7, 55, 48));
         Text(previous, "Caption", "返回", new(62, 0, 78, 62), 25);
-        previous.TooltipText = "返回上一页";
         Text(_body, "PageTitle", title, new(350, 38, 1220, 76), 42, true).AddThemeColorOverride("font_color", StartScreenTheme.Cream);
         Button(_body, "Home", "首页", new(1690, 48, 140, 62), RenderHome);
     }

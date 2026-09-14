@@ -32,7 +32,7 @@ public partial class StartScreen
                 t.TweenProperty(marker, "modulate:a", .65f, 1.3); t.TweenProperty(marker, "modulate:a", 1f, 1.3);
             }
         }
-        Button(_body, "WorldMap", "", new(450, 257, 1110, 440), () => PresentMap(), bare: true).TooltipText = "打开世界早餐地图";
+        Button(_body, "WorldMap", "", new(450, 257, 1110, 440), () => PresentMap(), bare: true);
         Text(_body, "MapHint", "把早餐铺，开遍全世界", new(605, 680, 730, 46), 29, true);
         bool canContinue = _save?.CanContinue == true;
         var ticket = Button(_body, "NewGame", "", new(442, 797, 430, 214), RenderOpening, bare: true);
@@ -47,7 +47,7 @@ public partial class StartScreen
         Text(card, "Caption", "继续旅程", new(237, 128, 208, 45), 30, true);
         Text(card, "Current", canContinue ? current.Name + " · 第 " + JourneyModel.Progress(_save!, current.Id).HighestUnlockedDay + " 天" : "暂无存档", new(237, 210, 208, 38), 22, true);
         card.Disabled = !canContinue; card.Modulate = new Color(1, 1, 1, canContinue ? 1 : .68f);
-        card.TooltipText = canContinue ? "打开旅行手账" : _save?.HasLoadError == true ? "存档无法读取" : "暂无存档";
+        card.TooltipText = canContinue ? string.Empty : _save?.HasLoadError == true ? "存档无法读取" : "暂无存档";
         Utilities(); Focus(canContinue ? "Continue" : "NewGame");
     }
     private void RenderOpening()
@@ -159,7 +159,7 @@ public partial class StartScreen
                 label.AddThemeConstantOverride("outline_size", 8);
             }
             node.Disabled = !unlocked && !DeveloperToolsVisible;
-            node.TooltipText = !unlocked ? i == 0 ? "第一站" : $"完成{JourneyModel.Cities[i - 1].Name}章节后开放" : "查看城市明信片";
+            node.TooltipText = !unlocked ? i == 0 ? "第一站" : $"完成{JourneyModel.Cities[i - 1].Name}章节后开放" : string.Empty;
             if (!unlocked) marker.Modulate = new Color(1, 1, 1, .5f);
             if (current && unlocked)
             {

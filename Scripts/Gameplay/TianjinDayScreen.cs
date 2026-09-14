@@ -486,8 +486,7 @@ public partial class TianjinDayScreen : Control
     {
         _feedbackPanel.Hide();
         bool essential = _controller?.State is not (DayState.Running or DayState.Closing) || message.StartsWith("停止接新客");
-        Vector2 at = message.Contains("翻面成功") ? GetGlobalTransform() * new Vector2(960, 680)
-            : essential ? GetGlobalTransform() * new Vector2(960, 490) : GetGlobalMousePosition();
+        Vector2 at = essential ? GetGlobalTransform() * new Vector2(960, 490) : GetGlobalMousePosition();
         _sceneFeedback.Report(message, error, at, essential || message.StartsWith("停止接新客"));
     }
 

@@ -13,6 +13,7 @@ public partial class BusinessHudSelfTest : Node
         try
         {
             bool capture = OS.GetCmdlineUserArgs().Contains("--capture");
+            string? selectedCity = OS.GetCmdlineUserArgs().FirstOrDefault(arg => arg.StartsWith("--city="))?.Split('=')[1];
             var catalog = GetNode<DataCatalog>("/root/DataCatalog");
             var save = new SaveService();
             save.UsePathForTests("res://.tmp/hud-review/fixture.json"); AddChild(save);
@@ -23,7 +24,7 @@ public partial class BusinessHudSelfTest : Node
             save.Data.Wuhan.EquipmentLevels["ingredient_station"] = 3;
             save.Data.Wuhan.EquipmentLevels["doupi_griddle"] = 3;
             foreach (int width in new[] { 1920, 1280 })
-            foreach (string city in new[] { "Tianjin", "Wuhan", "Xian" })
+            foreach (string city in new[] { "Tianjin", "Wuhan", "Xian" }.Where(city => selectedCity is null || selectedCity == city))
             {
                 var viewport = new SubViewport { Size = new(width, width * 9 / 16),
                     Size2DOverride = new(1920, 1080), Size2DOverrideStretch = true,
@@ -66,7 +67,7 @@ public partial class BusinessHudSelfTest : Node
                 var order = screen.Descendants<OrderBubbleView>().First(o => o.IsVisibleInTree());
                 feedback.Delivery(new DeliveryEvaluation(DeliveryGrade.Perfect, 10, 1, 100, "Perfect"), order);
                 feedback.Report("这份餐品不符合订单，请检查配料。", true, screen.GetGlobalTransform() * new Vector2(1300, 620));
-                if (city != "Xian") feedback.Flip(screen.GetGlobalTransform() * new Vector2(960, 670));
+                if (city == "Wuhan") feedback.Flip(screen.GetGlobalTransform() * new Vector2(960, 670));
                 if (capture) await Shot(viewport, $"{city}-{width}-feedback");
                 Require(feedback.GetChildren().OfType<Control>().All(c => c.MouseFilter == Control.MouseFilterEnum.Ignore), "feedback does not intercept input");
                 Require(feedback.Descendants<TextureRect>().All(c => c.Size.X <= 64 && c.Size.Y <= 64), "large source artwork stays within feedback icon bounds");

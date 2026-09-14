@@ -10,7 +10,7 @@ public partial class TianjinDeskGuide : Control
     {
         MouseFilter = MouseFilterEnum.Ignore;
         ZIndex = 100;
-        Visible = OS.GetCmdlineUserArgs().Contains("--dev-ui", StringComparer.Ordinal);
+        Visible = OS.GetCmdlineUserArgs().Contains("--desk-guide", StringComparer.Ordinal);
     }
 
     public override void _Draw()

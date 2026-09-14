@@ -95,7 +95,6 @@ public partial class StartScreen
         if (_audioButton is not null && GodotObject.IsInstanceValid(_audioButton))
         {
             _audioButton.GetNode<Label>("Caption").Text = _settings.Muted ? "已静音" : "声音";
-            _audioButton.TooltipText = _settings.Muted ? "恢复全部声音" : "静音全部声音";
             if (_audioIcon is not null && GodotObject.IsInstanceValid(_audioIcon)) _audioIcon.Texture = Texture(_settings.Muted ? "音效关闭" : "音效开启");
         }
         if (_settingsMessage is not null) _settingsMessage.Text = _settings.ErrorMessage;

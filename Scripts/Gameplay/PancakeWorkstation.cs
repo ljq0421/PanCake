@@ -661,7 +661,9 @@ public partial class PancakeWorkstation : Control
 
         if (command is PancakeCommand.CompleteSpread or PancakeCommand.AddEgg) _audio.Play(PancakeSound.Sizzle);
         else if (command == PancakeCommand.Flip) _audio.Play(PancakeSound.Flip);
-        Inform(result.Message, false);
+        // The food itself shows ingredient additions and flipping; avoid a popup on each action.
+        if (!IsTianjinWorkbench || (result.ConsumedIngredient is null && command != PancakeCommand.Flip))
+            Inform(result.Message, false);
         return true;
     }
     private bool CanLoadRawYoutiao() => _initialized && CanInteract && !_drag.IsDragging && FryerMachine is not null

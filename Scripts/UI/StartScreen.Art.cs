@@ -12,7 +12,6 @@ public partial class StartScreen
         Art(button, "圆形功能按钮底板", new(9, 0, 70, 70));
         var picture = Art(button, icon, new(22, 13, 44, 44));
         Text(button, "Caption", caption, new(0, 72, 88, 30), 22, true);
-        button.TooltipText = caption;
         if (name == "Audio") _audioIcon = picture;
         return button;
     }

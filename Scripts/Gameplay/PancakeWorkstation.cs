@@ -661,8 +661,9 @@ public partial class PancakeWorkstation : Control
 
         if (command is PancakeCommand.CompleteSpread or PancakeCommand.AddEgg) _audio.Play(PancakeSound.Sizzle);
         else if (command == PancakeCommand.Flip) _audio.Play(PancakeSound.Flip);
-        // The food itself shows ingredient additions and flipping; avoid a popup on each action.
-        if (!IsTianjinWorkbench || (result.ConsumedIngredient is null && command != PancakeCommand.Flip))
+        // The food itself shows ingredient additions, spreading and flipping.
+        if (!IsTianjinWorkbench || (result.ConsumedIngredient is null
+            && command is not (PancakeCommand.Flip or PancakeCommand.CompleteSpread)))
             Inform(result.Message, false);
         return true;
     }
@@ -697,7 +698,8 @@ public partial class PancakeWorkstation : Control
             if (command == FryerCommand.LoadOne) _audio.Play(PancakeSound.PickUp);
             else if (command == FryerCommand.LowerBasket) _audio.Play(PancakeSound.Sizzle);
             else if (command == FryerCommand.RaiseBasket) _audio.Play(PancakeSound.Flip);
-            Inform(result.Message, false);
+            if (!IsTianjinWorkbench || command is not (FryerCommand.LoadOne or FryerCommand.LowerBasket or FryerCommand.RaiseBasket))
+                Inform(result.Message, false);
         }
     }
     private bool CanDeliverPayload(string id) => CanInteract && id switch

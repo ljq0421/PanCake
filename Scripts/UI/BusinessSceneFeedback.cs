@@ -46,6 +46,8 @@ public partial class BusinessSceneFeedback : Control
         bool instruction = message.Contains("用完") || message.Contains("补满") || message.Contains("请")
             || message.Contains("按住") || message.Contains("拖进") || message.Contains("先");
         string art = error ? "错误反馈叉" : message.Contains("翻面成功") && _city != "西安" ? "翻面成功图标" : "正确反馈小勾";
+        // Tianjin and Wuhan reserve checkmarks for customer deliveries.
+        if (_city is "天津" or "武汉" && art == "正确反馈小勾" && !essential && !instruction) return;
         Show(!error && (essential || instruction) ? "" : art, globalPosition, error || essential || instruction ? message : null);
     }
     public void Flip(Vector2 globalPosition) => Show("翻面成功图标", globalPosition);

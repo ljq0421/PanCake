@@ -70,7 +70,20 @@ public partial class BusinessHudSelfTest : Node
                 var feedback = (BusinessSceneFeedback)screen.FindChild("SceneFeedback", true, false);
                 feedback.Clear();
                 var order = screen.Descendants<OrderBubbleView>().First(o => o.IsVisibleInTree());
+                await Frames();
+                foreach (string message in new[] { "开始抹酱。", "煎饼已折叠。", "煎饼已经装袋。", "食物已丢弃。",
+                    "切块完成，将自动补入备餐盘。", "已离火，品质锁定；继续沿其余虚线切块。", "提篮，开始沥水。" })
+                {
+                    feedback.Report(message, false, new Vector2(960, 620));
+                    Require(feedback.GetChildCount() == (city == "Xian" ? 1 : 0), "only deliveries show checkmarks in Tianjin and Wuhan");
+                    feedback.Clear(); await Frames();
+                }
+                feedback.Delivery(new DeliveryEvaluation(DeliveryGrade.Correct, 10, 0, 100, "正确"), order);
+                Require(feedback.Descendants<TextureRect>().Any(c => c.Texture?.ResourcePath.Contains("正确反馈小勾") == true), "correct delivery retains checkmark");
+                if (capture) await Shot(viewport, $"{city}-{width}-correct-delivery");
+                feedback.Clear(); await Frames();
                 feedback.Delivery(new DeliveryEvaluation(DeliveryGrade.Perfect, 10, 1, 100, "Perfect"), order);
+                Require(feedback.Descendants<TextureRect>().Any(c => c.Texture?.ResourcePath.Contains("Perfect 小星章") == true), "perfect delivery retains star");
                 feedback.Report("这份餐品不符合订单，请检查配料。", true, screen.GetGlobalTransform() * new Vector2(1300, 620));
                 if (capture) await Shot(viewport, $"{city}-{width}-feedback");
                 Require(feedback.GetChildren().OfType<Control>().All(c => c.MouseFilter == Control.MouseFilterEnum.Ignore), "feedback does not intercept input");

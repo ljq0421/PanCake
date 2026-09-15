@@ -15,6 +15,24 @@ public partial class BusinessHud : Control
     private Control _daySign = null!, _progressSign = null!, _incomeSign = null!;
     public Button PauseButton { get; } = new() { Name = "HudPause", TooltipText = "暂停营业（Esc）" };
     public Control IncomeTarget => _income;
+    private Tween? _incomeTween;
+
+    public void EmphasizeIncome()
+    {
+        ResetIncomeEmphasis();
+        if (_city != "天津" || ProjectSettings.GetSetting("accessibility/reduce_motion", false).AsBool()) return;
+        _income.PivotOffset = _income.Size * .5f;
+        _incomeTween = CreateTween();
+        _incomeTween.TweenProperty(_income, "scale", Vector2.One * 1.04f, .12);
+        _incomeTween.TweenProperty(_income, "scale", Vector2.One, .23);
+    }
+
+    public void ResetIncomeEmphasis()
+    {
+        _incomeTween?.Kill(); _incomeTween = null; _income.Scale = Vector2.One;
+    }
+
+    public override void _ExitTree() => ResetIncomeEmphasis();
 
     public BusinessHud(string city) { _city = city; Name = "BusinessHud"; }
 
@@ -100,6 +118,8 @@ public partial class BusinessHud : Control
     private Control Sign(string name, string art, Rect2 rect)
     {
         var sign = new BusinessHudSign { Name = name, Texture = LoadArt(art), MouseFilter = MouseFilterEnum.Ignore };
+        if (_city == "天津") sign.Material = new ShaderMaterial {
+            Shader = GD.Load<Shader>("res://resource/shaders/tianjin_sign_paper.gdshader") };
         Place(this, sign, rect); return sign;
     }
     private TextureRect Icon(Control parent, string art, Rect2 rect)

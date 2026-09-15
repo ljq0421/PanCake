@@ -29,7 +29,7 @@ public partial class GuangzhouVisualCapture : Node
             var hub = ProjectCake.Core.SceneFactory.Instantiate<GuangzhouHub>("res://Scenes/UI/GuangzhouHub.tscn"); AddChild(hub); hub.Initialize(catalog, save); await Shot("hub"); hub.Free();
             var controller = new DayController(); AddChild(controller);
             var day = ProjectCake.Core.SceneFactory.Instantiate<GuangzhouDayScreen>("res://Scenes/Gameplay/GuangzhouDayScreen.tscn"); AddChild(day); day.ConnectController(controller);
-            Require(day.Initialize(catalog, save, controller, 9, true), "Day9独立练习初始化"); day.SetProcess(false); day.BeginDay();
+            Require(day.Initialize(catalog, save, controller, 9), "Day9独立测试存档初始化"); day.SetProcess(false); day.BeginDay();
             var canvas = day.GetNode<Control>("Canvas");
             void Step(double seconds)
             {
@@ -107,8 +107,8 @@ public partial class GuangzhouVisualCapture : Node
             await Shot("paused"); await Click(new(1610, 56));
             day._Notification((int)NotificationApplicationFocusOut); before = controller.DayElapsedSeconds; day._Process(3); Require(controller.DayElapsedSeconds == before, "失焦冻结营业");
             day._Notification((int)NotificationApplicationFocusIn); Step(.1); await Shot("day9-workbench");
-            Step(200); Require(controller.State == DayState.Results && day.Practice, "完整收尾与练习结算"); await Shot("results");
-            Require(day.Initialize(catalog, save, controller, 12, true), "Day12家庭订单布局初始化"); day.BeginDay();
+            Step(200); Require(controller.State == DayState.Results, "完整收尾与正式结算"); await Shot("results");
+            Require(day.Initialize(catalog, save, controller, 12), "Day12家庭订单布局初始化"); day.BeginDay();
             bool familyVisible = false;
             for (int i = 0; i < 2300 && controller.State != DayState.Results; i++)
             {
@@ -133,7 +133,7 @@ public partial class GuangzhouVisualCapture : Node
             var firstDay = mainHub.FindChildren("*", "Button", true, false).OfType<Button>().Single(b => b.Text.StartsWith("DAY 01"));
             await ClickAt(firstDay.GetGlobalTransformWithCanvas() * (firstDay.Size * .5f)); await Frames(3);
             var mainDay = ui.GetChildren().OfType<GuangzhouDayScreen>().Single();
-            Require(mainDay.Visible && !mainDay.Practice && mainDay.Session.Config.Day == 1 && mainDay.Session.Trays.Count == 1, "主场景正常进入Day1并使用初始设备");
+            Require(mainDay.Visible && mainDay.Session.Config.Day == 1 && mainDay.Session.Trays.Count == 1, "主场景正常进入Day1并使用初始设备");
             Require(ui.GetChildren().OfType<Control>().Count(c => c.Visible) == 1, "广州营业时其他城市界面隐藏");
             await Shot("main-day1");
             GD.Print($"GUANGZHOU_VISUAL_RESULT checks={_checks} resolution={(small ? 720 : 1080)} path={_output}"); GetTree().Quit();

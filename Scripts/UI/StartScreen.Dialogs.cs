@@ -13,7 +13,28 @@ public partial class StartScreen
         if (kind is "confirm" or "reset-ledger" or "developer")
         {
             var panel = new Panel { Position = new(495, 275), Size = new(930, 535), MouseFilter = MouseFilterEnum.Ignore };
-            panel.AddThemeStyleboxOverride("panel", StartScreenTheme.Box(StartScreenTheme.Cream, 3, true)); _modal.AddChild(panel);
+            // Trial the illustrated frames only on the new-journey confirmation.
+            panel.AddThemeStyleboxOverride("panel", kind == "confirm"
+                ? GD.Load<StyleBoxTexture>("res://resource/art/Global/PanelUI/panel-main-v1.tres")
+                : StartScreenTheme.Box(StartScreenTheme.Cream, 3, true));
+            _modal.AddChild(panel);
+            if (kind == "confirm")
+            {
+                panel.Name = "ConfirmationPanel";
+                var group = new Panel { Name = "ConfirmationMessagePanel", Position = new(550, 445), Size = new(820, 160), MouseFilter = MouseFilterEnum.Ignore };
+                group.AddThemeStyleboxOverride("panel", GD.Load<StyleBoxTexture>("res://resource/art/Global/PanelUI/panel-group-v1.tres"));
+                _modal.AddChild(group);
+                var decorations = new Control { Name = "ConfirmationDecorations", Size = new(1920, 1080), MouseFilter = MouseFilterEnum.Ignore };
+                _modal.AddChild(decorations);
+                Art(decorations, "res://resource/art/Global/PanelUI/title-paper-v2.png", new(625, 332, 670, 94));
+                var tape = Art(decorations, "res://resource/art/Global/PanelUI/corner-tape-v2.png", new(475, 270, 145, 52));
+                tape.PivotOffset = tape.Size / 2;
+                tape.RotationDegrees = -24;
+                var stamp = Art(decorations, "res://resource/art/Global/PanelUI/bowl-stamp-v2.png", new(1320, 702, 72, 72));
+                stamp.Modulate = new Color(1, 1, 1, .60f);
+                stamp.PivotOffset = stamp.Size / 2;
+                stamp.RotationDegrees = 8;
+            }
         }
         else HomeArt(_modal, "旅行手账双页母版", BookBounds);
         foreach (var button in _buttons) button.FocusMode = FocusModeEnum.None;
@@ -31,6 +52,8 @@ public partial class StartScreen
     {
         OpenModal("settings");
         Text(_modal, "DisplayTitle", "旅途设置", new(355, 280, 490, 70), 45);
+        Button(_modal, "Language", _settings.Language == "en" ? "语言：English" : "语言：简体中文", new(1040, 849, 510, 45),
+            () => { _settings.SetLanguage(_settings.Language == "en" ? "zh_CN" : "en"); OpenSettings(); });
         Text(_modal, "DisplayCaption", "画面与窗口", new(355, 380, 490, 60), 31);
         int y = 465;
         foreach (var size in JourneySettings.AvailableSizes())
@@ -91,6 +114,11 @@ public partial class StartScreen
     }
     private void SettingsChanged()
     {
+        // Existing home buttons also need their translated text measured after a locale change.
+        if (Page == JourneyPage.Home && _body is not null)
+            foreach (string name in new[] { "Continue", "NewGame", "WorldMap" })
+                if (_body.FindChild(name, true, false)?.GetNodeOrNull<Label>("Caption") is { } caption)
+                    FitTextWidth(caption, name == "WorldMap" ? 34 : 48, name == "WorldMap" ? 25 : 32);
         RefreshChannelIcons();
         if (_audioButton is not null && GodotObject.IsInstanceValid(_audioButton))
         {
@@ -108,11 +136,23 @@ public partial class StartScreen
     }
     private void OpenHelp()
     {
+        if (ExperienceProfile.IsDemo) { OpenDemoHelp(); return; }
         OpenModal("help");
         Text(_modal, "HelpTitle", "一本早餐旅行手账", new(355, 285, 520, 80), 41);
         Text(_modal, "HelpJourney", "新的旅程\n从天津出发，建立一份新的旅行进度。\n确认重新开始后，会覆盖原有存档。\n\n继续旅程\n回到上次开张的城市早餐铺。\n选营业日、升级设备，再准备开张。\n\n世界地图\n完成一城后，下一站逐步开放。\n选择城市查看信息，再进入早餐铺。", new(350, 390, 490, 440), 27);
         Text(_modal, "HelpControlsTitle", "慢慢来，做好每份早餐", new(1040, 285, 515, 80), 36);
         Text(_modal, "HelpControls", "按各城工作台提示点击或拖动制作。\n天津、武汉：右键长按 0.45 秒，\n拖入垃圾桶可丢弃已投入制作的食物。\n\n天津、武汉自动收款；西安点击收钱。\n广州、扬州完成订单后自动入账。\n扬州先备餐，再整盘上桌。\n\nTab / 方向键选择入口\nEnter / 空格确认，Esc 返回或关闭。\n", new(1035, 390, 535, 365), 24);
         Button(_modal, "Close", "记住了", new(1220, 795, 300, 65), CloseModal, true); _modalControls[0].GrabFocus();
+    }
+
+    private void OpenDemoHelp()
+    {
+        OpenModal("help");
+        Text(_modal, "HelpTitle", "一本早餐旅行手账", new(355, 285, 520, 80), 38);
+        Text(_modal, "HelpJourney", "本次试玩：天津前三局。\n完成至少 1 单并收摊保存后开放下一局。\n零完成可以免费重试。\n\n第 3 局结束后，可以选择升级。\n从经营手账重玩第 3 局，感受变化。\n重玩只补超过历史最佳的收入差额。", new(350, 390, 490, 440), 25);
+        Text(_modal, "HelpControlsTitle", "慢慢来，做好每份早餐", new(1040, 285, 515, 80), 32);
+        Text(_modal, "HelpControls", "按住左键划动摊饼；点击鸡蛋。\n点击酱碗，按住左键刷酱。\nF：翻面、收刷、折叠或装袋。\n\n右键长按 0.45 秒后拖入垃圾桶丢弃。\n付款自动入账，点击挂件查看明细。\nEsc 暂停；教学可跳过或重看。", new(1035, 390, 535, 390), 24);
+        Button(_modal, "Close", "记住了", new(1220, 795, 300, 65), CloseModal, true);
+        _modalControls[0].GrabFocus();
     }
 }

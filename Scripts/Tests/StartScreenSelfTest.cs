@@ -36,6 +36,7 @@ public partial class StartScreenSelfTest : Node
             _save.UsePathForTests(_path);
             GetNode<JourneySettings>("/root/JourneySettings").UsePathForTests(Path.Combine(directory, "settings.cfg"));
             await Launch();
+            if (args.Contains("--panel-preview")) { await PanelPreview(); GD.Print($"PANEL_PREVIEW_OK {_passed}"); GetTree().Quit(); return; }
             if (args.Contains("--focus-gallery")) { await FocusGallery(); GD.Print("BUTTON_FOCUS_GALLERY_OK"); GetTree().Quit(); return; }
             if (args.Contains("--home-gallery")) { await HomeGallery(); GD.Print("HOME_GALLERY_OK"); GetTree().Quit(); return; }
             if (args.Contains("--gallery")) { await Gallery(); GD.Print("JOURNEY_GALLERY_OK"); GetTree().Quit(); return; }
@@ -156,6 +157,66 @@ public partial class StartScreenSelfTest : Node
         }
     }
 
+    private async Task PanelPreview()
+    {
+        Check(_save.ResetProgress(out _), "panel preview uses an isolated existing save");
+        string before = File.ReadAllText(_path);
+        await NewJourney();
+        Check(_screen.ConfirmationOpen && Find<Button>("Cancel").HasFocus(), "painted confirmation defaults to cancel");
+        var panel = Find<Panel>("ConfirmationPanel");
+        var group = Find<Panel>("ConfirmationMessagePanel");
+        var decorations = Find<Control>("ConfirmationDecorations");
+        var painted = panel.GetThemeStylebox("panel");
+        panel.AddThemeStyleboxOverride("panel", StartScreenTheme.Box(StartScreenTheme.Cream, 3, true));
+        group.Hide(); decorations.Hide();
+        await Capture("panel-before");
+        panel.AddThemeStyleboxOverride("panel", painted); group.Show(); decorations.Show();
+        await Capture("panel-after");
+        foreach (string name in new[] { "ConfirmationTitle", "ConfirmationText", "Cancel", "Confirm" })
+        {
+            var control = Find<Control>(name);
+            Check(panel.GetGlobalRect().Encloses(control.GetGlobalRect()), name + " stays inside the panel");
+        }
+        KeyPress(Key.Tab);
+        Check(Find<Button>("Confirm").HasFocus(), "Tab reaches confirmation action");
+        KeyPress(Key.Tab);
+        Check(Find<Button>("Cancel").HasFocus(), "Tab wraps inside the modal");
+        KeyPress(Key.Escape);
+        Check(!_screen.ConfirmationOpen && Find<Button>("Depart").HasFocus() && File.ReadAllText(_path) == before,
+            "Escape restores focus without modifying progress");
+        await NewJourney();
+        await Click(Find<Button>("Cancel"));
+        Check(!_screen.ConfirmationOpen && File.ReadAllText(_path) == before, "cancel button remains clickable and preserves progress");
+        File.WriteAllText(_path, "broken save"); _save.Load();
+        await NewJourney();
+        Check(Find<Label>("ConfirmationText").Text.Contains("无法读取"), "long corrupt-save message is included");
+        await Capture("panel-long-message");
+        KeyPress(Key.Escape);
+
+        // Real Godot rendering at wide, tall and compact sizes, over light and dark surfaces.
+        var gallery = new Control { Size = new(1920, 1080), MouseFilter = Control.MouseFilterEnum.Ignore };
+        _screen.GetNode("Canvas").AddChild(gallery);
+        gallery.AddChild(new ColorRect { Size = gallery.Size, Color = new Color("#332D28") });
+        gallery.AddChild(new ColorRect { Size = new(960, 1080), Color = new Color("#E9DDC7") });
+        for (int column = 0; column < 2; column++)
+        {
+            string asset = column == 0 ? "main" : "group";
+            var style = GD.Load<StyleBoxTexture>($"res://resource/art/Global/PanelUI/panel-{asset}-v1.tres");
+            var heading = new Label { Position = new(60 + column * 960, 30), Text = column == 0 ? "01 通用纸卡 · 九宫格" : "03 轻量分组 · 九宫格" };
+            heading.AddThemeFontSizeOverride("font_size", 32);
+            heading.AddThemeColorOverride("font_color", column == 0 ? new Color("#4A3024") : new Color("#FFF8E8"));
+            gallery.AddChild(heading);
+            var regions = new[] { new Rect2(60, 110, 840, 190), new Rect2(60, 350, 360, 520), new Rect2(480, 350, 310, 170) };
+            foreach (var region in regions)
+            {
+                var sample = new Panel { Position = region.Position + new Vector2(column * 960, 0), Size = region.Size };
+                sample.AddThemeStyleboxOverride("panel", style); gallery.AddChild(sample);
+            }
+        }
+        await Capture("panel-nine-slice");
+        gallery.GetParent().RemoveChild(gallery); gallery.QueueFree();
+    }
+
     private async Task NewJourney()
     {
         if (_screen.ConfirmationOpen) { Find<Button>("Depart").EmitSignal(BaseButton.SignalName.Pressed); return; }
@@ -210,6 +271,15 @@ public partial class StartScreenSelfTest : Node
         _screen.PresentHome(); await Frames();
         await Click(Find<Button>("Settings")); await Capture("settings");
         var settings = GetNode<JourneySettings>("/root/JourneySettings");
+        await Click(Find<Button>("Language"));
+        Check(settings.Language == "en" && Find<Label>("DisplayTitle").Tr("旅途设置").ToString() == "Settings", "full game language button changes displayed text to English");
+        await Capture("settings-english");
+        settings.LoadPreferences();
+        Check(settings.Language == "en" && _screen.Tr("新的旅程").ToString() == "New journey", "full game language preference persists");
+        Check(_screen.Tr("尚未翻译的城市文案").ToString() == "尚未翻译的城市文案", "missing English translation retains source text");
+        await Click(Find<Button>("Language"));
+        Check(settings.Language == "zh_CN" && _screen.Tr("旅途设置").ToString() == "旅途设置", "full game switches back to Chinese without English fallback");
+        await Capture("settings-chinese");
         Find<HSlider>("Volumemaster").Value = 63;
         Find<HSlider>("Volumemusic").Value = 28;
         Find<HSlider>("Volumeeffects").Value = 41;
@@ -260,8 +330,6 @@ public partial class StartScreenSelfTest : Node
             var plan = new DayPlan { Day = city.Days };
             var model = new BusinessBookModel { CityId = city.Id.Replace("city:", ""), Result = new DayResult
                 { Day = city.Days, PlannedCustomers = 100, CompletedCustomers = 100, PerfectOrders = 100, Satisfaction = 100, SaleRevenue = 500 } };
-            BusinessBookSettlement.Commit(model, save, plan, config, catalog, practice: true);
-            Check(save.PendingJourneyCompletion is null && !JourneyModel.Progress(save, city.Id).Completed, city.Name + " practice cannot queue chapter presentation");
             Directory.CreateDirectory(path + ".tmp");
             BusinessBookSettlement.Commit(model, save, plan, config, catalog);
             Check(save.PendingJourneyCompletion is null && !JourneyModel.Progress(save, city.Id).Completed, city.Name + " failed save cannot queue chapter presentation");
@@ -275,13 +343,11 @@ public partial class StartScreenSelfTest : Node
         }
         save.ResetProgress(out _);
         var yc = YangzhouCatalog.Load(); var session = YangzhouSelfTest.Play(yc, 12, 3, 3);
-        YangzhouBusinessBook.Commit(session, yc, save, true);
-        Check(save.PendingJourneyCompletion is null, "Yangzhou practice never queues completion");
-        Directory.CreateDirectory(path + ".tmp"); YangzhouBusinessBook.Commit(session, yc, save, false);
+        Directory.CreateDirectory(path + ".tmp"); YangzhouBusinessBook.Commit(session, yc, save);
         Check(save.PendingJourneyCompletion is null && !save.Data.Yangzhou.Completed, "Yangzhou failed save never queues completion");
-        Directory.Delete(path + ".tmp"); YangzhouBusinessBook.Commit(session, yc, save, false);
+        Directory.Delete(path + ".tmp"); YangzhouBusinessBook.Commit(session, yc, save);
         Check(save.TakeJourneyCompletion() == StableIds.Cities.Yangzhou, "Yangzhou first saved completion queues presentation");
-        YangzhouBusinessBook.Commit(session, yc, save, false);
+        YangzhouBusinessBook.Commit(session, yc, save);
         Check(save.PendingJourneyCompletion is null, "Yangzhou repeat never queues presentation");
         save.Free();
     }

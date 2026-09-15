@@ -74,7 +74,7 @@ public partial class BusinessDetailsView : Control
         RemoveUpgradeModal(); FinishAnimation(); _model = model; _filter = BookFilter.All;
         RefreshUpgradeCaptions();
         ApplyBookSkin();
-        _city.Text = $"{model.CityName} · DAY {model.Result.Day:00}" + (model.Practice ? "  /  练习营业" : "");
+        _city.Text = $"{model.CityName} · DAY {model.Result.Day:00}";
         _status.Text = model.Closing ? "已收摊" : "营业中 · 已暂停";
         _save.Text = model.SaveMessage;
         _save.Visible = _save.Text.Length > 0;

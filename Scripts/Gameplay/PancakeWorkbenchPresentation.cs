@@ -33,6 +33,10 @@ public partial class PancakeWorkstation
         Rect2 surface = TianjinWorkbenchLayout.EmbeddedSurface;
         _canvas.EmbeddedSurface = new Rect2(surface.Position - _canvas.Position, surface.Size);
         _canvas.ShowBaggedPancake = false;
+        _stroke.SpreadToolTexture = GD.Load<Texture2D>("res://resource/art/TianJin/LivingWorkbench/scraper.png");
+        _stroke.SpreadToolOnlyDuringStroke = true;
+        _stroke.SpreadToolSize = new Vector2(132, 53);
+        _stroke.SpreadToolContactAnchor = new Vector2(66, 45);
         foreach (Button button in new[] { _flip, _finishSauce, _fold, _bag, _discard })
             button.CustomMinimumSize = new Vector2(0, 48);
         foreach (Button button in new[] { _lowerBasket, _raiseBasket, _discardBatch })

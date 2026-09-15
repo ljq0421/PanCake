@@ -66,6 +66,7 @@ public partial class TianjinDayScreen : Control
     internal TianjinBusinessDetails BusinessDetails { get; private set; } = null!;
     private double _feedbackRemaining;
     private readonly CashPendantFeedback _paymentFeedback = new();
+    private TianjinLivingWorkbench _living = null!;
     private CoinCollectionFeedback _collectionFeedback = null!;
     internal IReadOnlyCollection<Control> PaymentCoins => _paymentFeedback.Coins;
 
@@ -88,14 +89,15 @@ public partial class TianjinDayScreen : Control
             _portraits[i].BindInteractionHighlight(() => CustomerHighlight(customerSlot));
             _workstation.RegisterCustomerZone(_customerDropZones[i]);
             _orderCards[i].Configure(_art);
+            _orderCards[i].ConfigureTianjinPaper();
             // Move the portrait, order card and delivery zone together at equal intervals.
             Control slot = _customerSlots[i];
             slot.Position = new Vector2(TianjinWorkbenchLayout.CustomerCenters[i]
                 - slot.GetParent<Control>().Position.X - slot.Size.X * .5f, slot.Position.Y);
             _customerDropZones[i].FixedHitRect = new Rect2(18, 0, 304, CustomerStripHeight);
             OrderBubbleView card = _orderCards[i];
-            card.CustomMinimumSize = new Vector2(304, card.CustomMinimumSize.Y);
-            card.Size = new Vector2(304, card.Size.Y);
+            card.CustomMinimumSize = new Vector2(306, card.CustomMinimumSize.Y);
+            card.Size = new Vector2(306, card.Size.Y);
             card.Resized += () => AlignOrderCard(card);
             AlignOrderCard(card);
         }
@@ -107,6 +109,16 @@ public partial class TianjinDayScreen : Control
         _feedbackPanel.ResetSize();
         BuildCashPendant();
         BuildBusinessHud();
+        _living = new TianjinLivingWorkbench { Name = "LivingWorkbench",
+            Active = () => _controller is not null && _focused && !_manualPaused && !_focusPaused && !_detailsPaused
+                && !_committed && !_controller.IsPaused && _controller.State is DayState.Running or DayState.Closing,
+            Runtime = () => _workstation.Machine?.Runtime, Spreading = () => _workstation.IsSpreading,
+            StopPaymentFeedback = () => { _paymentFeedback.Clear(); _hud.ResetIncomeEmphasis(); } };
+        AddChild(_living);
+        ((TianjinPendantButton)CashPendant).IndependentArtwork = true;
+        _living.BindPendantHighlight(() => !CashPendant.Disabled && (CashPendant.IsHovered() || CashPendant.HasFocus())
+            ? InteractionHighlightState.Hover : InteractionHighlightState.None);
+        _workstation.TianjinFlipped += _living.Flip;
         VisibilityChanged += () =>
         {
             if (!IsVisibleInTree()) { CloseBusinessDetails(); ClearCoinFlights(); _collectionFeedback.Clear(); }
@@ -134,6 +146,7 @@ public partial class TianjinDayScreen : Control
         _catalog = catalog;
         _save = save;
         _controller = controller;
+        _demoLesson?.Hide(); _demoLessonComplete = false; _demoPendingResult = null;
         _workstation.ConfigureTutorial(save.Data.Tianjin.LearnedWorkbenchActions);
         _committed = false;
         _results.Visible = false;
@@ -160,7 +173,7 @@ public partial class TianjinDayScreen : Control
         int fryerLevel = controller.CurrentConfig!.AvailableProductKinds.Contains(ProductKind.Youtiao)
             ? Math.Max(1, save.Data.PurchasedFryerLevel)
             : 0;
-        GetNode<TextureRect>("ShopBackground").Texture = _art.WorkbenchBackground(controller.CurrentConfig.AvailableProductKinds);
+        GetNode<TextureRect>("ShopBackground").Texture = _art.LivingWorkbenchBackground(controller.CurrentConfig.AvailableProductKinds);
         _workstation.Initialize(catalog, save.Data.PurchasedStoveLevel, save.Data.PurchasedIngredientStationLevel, fryerLevel, controller.CurrentConfig, _art);
         _workstation.DirectCustomerDelivery = true;
         _workstation.DeliveryRejected = () => controller.Feedback.Reject();
@@ -174,11 +187,13 @@ public partial class TianjinDayScreen : Control
     public void BeginDay()
     {
         if (_controller is null) return;
+        if (BeginDemoLesson()) return;
         if (_controller.TryStartDay(out string error))
         {
             SetManualPaused(false);
             _countdown.Visible = true;
             ShowFeedback("铺门打开，准备迎接第一位客人。", false);
+            ShowDemoContextHint();
         }
         else ShowFeedback(error, true);
     }
@@ -198,6 +213,7 @@ public partial class TianjinDayScreen : Control
             _workstation.Paused = false;
         }
         _workstation.RefreshForCapture();
+        UpdateDemoLesson();
         Render();
     }
 
@@ -210,8 +226,9 @@ public partial class TianjinDayScreen : Control
         }
         if (_controller is null || !_focused || !IsVisibleInTree()) return;
         _controller.Tick(delta);
-        _workstation.InteractionEnabled = _controller.State is DayState.Running or DayState.Closing;
+        _workstation.InteractionEnabled = !_demoLessonComplete && _controller.State is DayState.Running or DayState.Closing;
         _workstation.Tick(delta);
+        UpdateDemoLesson();
         Render();
     }
 
@@ -276,9 +293,12 @@ public partial class TianjinDayScreen : Control
     private void OnDayFinished(DayResult result)
     {
         if (_controller.CurrentConfig?.CityId != StableIds.Cities.Tianjin || _committed) return;
+        if (_controller.TutorialActive) return;
+        _demoLesson?.Hide();
         CloseBusinessDetails(); _collectionFeedback.Clear(); ClearCoinFlights();
         _committed = true; _workstation.InteractionEnabled = false; _workstation.CancelInput();
         var model = BusinessBookModel.From(StableIds.Cities.Tianjin, result, _controller.BusinessRecords, _catalog);
+        if (_save.IsDemo) { _demoPendingResult = model; RetryDemoSettlement(); return; }
         BusinessBookSettlement.Commit(model, _save, _controller.CurrentPlan!, _controller.CurrentConfig!, _catalog, allowFailedReturn: true);
         _resultBlocker.Hide(); _results.Hide(); BusinessDetails.Open(model);
     }
@@ -294,8 +314,10 @@ public partial class TianjinDayScreen : Control
             _ => new DeliveryEvaluation(DeliveryGrade.Rejected, 0, 0, 0, "当前商品不可交付。"),
         };
         if (kind == ProductKind.Youtiao && (evaluation.ItemAccepted || evaluation.CompletesOrder)) _controller.Ledger?.RecordYoutiaoUsed();
-        _sceneFeedback.Delivery(evaluation, _orderCards[slot]);
+        if (!(evaluation.CompletesOrder && evaluation.Grade is DeliveryGrade.Correct or DeliveryGrade.Perfect))
+            _sceneFeedback.Delivery(evaluation, _orderCards[slot]);
         PlayDeliveryEffects(evaluation, slot);
+        DemoLessonDelivery(evaluation, customerId);
         return evaluation.ItemAccepted || evaluation.CompletesOrder;
     }
 
@@ -377,6 +399,7 @@ public partial class TianjinDayScreen : Control
         bool paused = _manualPaused || _focusPaused || _detailsPaused;
         if (_controller is not null) _controller.IsPaused = paused;
         if (_workstation is not null) _workstation.Paused = paused;
+        if (paused) { ClearCoinFlights(); _sceneFeedback?.Clear(); _workstation?.CancelInput(); }
         _paymentFeedback.SetPaused(paused);
     }
 
@@ -421,6 +444,7 @@ public partial class TianjinDayScreen : Control
                 continue;
             }
             button.Visible = true;
+            _orderCards[index].Visible = !customer.WasServed;
             bool entering = !string.Equals(_deliveryCustomerIds[index], customer.Id, StringComparison.Ordinal);
             BindDeliveryCustomer(index, customer.Id);
             string progress = string.Join(',', customer.Order.Lines.Select((_, line) => customer.Progress.GetDeliveredQuantity(line)));
@@ -474,10 +498,11 @@ public partial class TianjinDayScreen : Control
     }
 
     private static void AlignOrderCard(OrderBubbleView card) =>
-        card.Position = new Vector2(14, TianjinWorkbenchLayout.OrderCardBottom - card.Size.Y);
+        card.Position = new Vector2((332 - card.Size.X) * .5f, TianjinWorkbenchLayout.OrderCardBottom - card.Size.Y);
 
     private void RememberWorkbenchAction(string action)
     {
+        if (_controller?.TutorialActive == true) { _demoLearned.Add(action); return; }
         if (_save is null || !_save.Data.Tianjin.LearnedWorkbenchActions.Add(action)) return;
         // Keep the session's learned action even if storage is temporarily unavailable.
         if (!_save.TrySave(out string error)) Callable.From(() => ShowFeedback(error, true)).CallDeferred();
@@ -497,50 +522,31 @@ public partial class TianjinDayScreen : Control
         Vector2 origin = GetGlobalTransform().AffineInverse() * _customerSlots[slot].GetGlobalRect().GetCenter();
         if (evaluation.Grade is DeliveryGrade.Perfect or DeliveryGrade.Correct)
         {
-            for (int index = 0; index < (evaluation.Grade == DeliveryGrade.Perfect ? 5 : 3); index++)
-                SpawnCelebration(_art.HeartEffect, origin + new Vector2((index - 2) * 28, 12), new Vector2((index - 2) * 20, -100 - index * 12), index * 0.035);
+            _living.CompleteOrder(_orderCards[slot], evaluation.Grade == DeliveryGrade.Perfect);
+            _orderCards[slot].Hide();
         }
-        if (evaluation.Grade == DeliveryGrade.Perfect)
-        {
-            for (int index = 0; index < 3; index++)
-                SpawnCelebration(_art.StarEffect, origin + new Vector2((index - 1) * 44, -20), new Vector2((index - 1) * 25, -142), 0.05 + index * 0.04);
-        }
-        if (evaluation.TotalRevenue > 0 && !ReducedMotion)
+        if (evaluation.TotalRevenue > 0 && !ReducedMotion && !_controller.TutorialActive)
         {
             Vector2 target = TianjinWorkbenchLayout.CashSlot;
             for (int index = 0; index < 3; index++) SpawnFlyingCoin(origin + new Vector2(index * 13 - 13, 0), target, index * 0.08, index);
         }
     }
 
-    private void SpawnCelebration(Texture2D texture, Vector2 position, Vector2 travel, double delay)
-    {
-        var effect = TianjinUi.Texture(texture, new Vector2(58, 58));
-        effect.Position = position - effect.Size * 0.5f;
-        effect.PivotOffset = effect.Size * 0.5f;
-        effect.Scale = new Vector2(0.35f, 0.35f);
-        effect.Modulate = new Color(1, 1, 1, 0);
-        effect.MouseFilter = MouseFilterEnum.Ignore;
-        effect.ZIndex = 86;
-        AddChild(effect);
-        Tween tween = CreateTween().SetParallel(true).SetTrans(Tween.TransitionType.Back).SetEase(Tween.EaseType.Out);
-        tween.TweenProperty(effect, "position", effect.Position + travel, 0.72).SetDelay(delay);
-        tween.TweenProperty(effect, "scale", Vector2.One, 0.34).SetDelay(delay);
-        tween.TweenProperty(effect, "modulate", Colors.White, 0.18).SetDelay(delay);
-        tween.Chain().TweenProperty(effect, "modulate", new Color(1, 1, 1, 0), 0.24).SetDelay(0.24);
-        tween.Finished += effect.QueueFree;
-    }
-
     private void SpawnFlyingCoin(Vector2 origin, Vector2 target, double delay, int index) =>
-        _paymentFeedback.Spawn(this, GD.Load<Texture2D>("res://resource/art/Global/HUDUI/小费飞行金币.png"), origin, target, delay);
+        _paymentFeedback.Spawn(this, GD.Load<Texture2D>("res://resource/art/Global/HUDUI/小费飞行金币.png"), origin, target, delay,
+            index == 2 ? () => { if (_living.Active() && !ReducedMotion) { _living.ReceivePayment(); _hud.EmphasizeIncome(); } } : null);
 
-    private void ClearCoinFlights() => _paymentFeedback.Clear();
+    private void ClearCoinFlights()
+    {
+        _paymentFeedback.Clear(); _living?.ResetMotion(); _hud?.ResetIncomeEmphasis();
+    }
 
     public override void _ExitTree() => ClearCoinFlights();
 
     private void BuildCashPendant()
     {
         Rect2 bounds = TianjinWorkbenchLayout.CashPendant;
-        CashPendant = new TianjinPendantButton { Background = () => GetNode<TextureRect>("ShopBackground").Texture,
+        CashPendant = new TianjinPendantButton { Background = () => _art.WorkbenchBackground(_controller?.CurrentConfig?.AvailableProductKinds ?? new List<ProductKind>()),
             IsOccluded = point => _orderCards.Any(card => card.IsVisibleInTree() && card.GetGlobalRect().HasPoint(point)),
             Name = "CashPendant", Position = bounds.Position, Size = bounds.Size,
             TooltipText = "查看营业明细", MouseDefaultCursorShape = CursorShape.PointingHand, ZIndex = 80 };
@@ -550,6 +556,7 @@ public partial class TianjinDayScreen : Control
         CashPendant.Pressed += OpenBusinessDetails;
         BusinessDetails = new TianjinBusinessDetails { Name = "BusinessDetails" };
         AddChild(BusinessDetails);
+        BusinessDetails.RetryRequested += RetryDemoSettlement;
         BusinessDetails.CloseRequested += () => { if (BusinessDetails.Model.Closing) { BusinessDetails.Hide(); HubRequested?.Invoke(); } else CloseBusinessDetails(); };
     }
 

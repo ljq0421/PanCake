@@ -145,12 +145,21 @@ public partial class SaveService : Node
         Changed?.Invoke();
         return true;
     }
-    public override void _Ready() => Load();
+    public override void _Ready()
+    {
+        if (ExperienceProfile.IsDemo)
+        {
+            IsDemo = true; DemoContent = GetNode<DataCatalog>("/root/DataCatalog").Demo;
+            _savePath = ExperienceProfile.SavePath; _legacyPath = null;
+        }
+        Load();
+    }
     public void UsePathForTests(string path) { _savePath = path; _legacyPath = null; Load(); }
     public void UsePathsForTests(string currentPath, string legacyPath) { _savePath = currentPath; _legacyPath = legacyPath; Load(); }
 
     public void Load()
     {
+        if (IsDemo) { LoadDemo(); return; }
         PendingJourneyCompletion = null;
         ClearLoadError(); MigratedLegacySave = false; HasSavedGame = false;
         string absolute = ProjectSettings.GlobalizePath(_savePath);
@@ -204,6 +213,7 @@ public partial class SaveService : Node
 
     public DayCommitResult CommitDay(DayResult result, DayPlan plan, DayConfig config)
     {
+        if (IsDemo) return CommitDemoDay(result, plan, config);
         SaveData snapshot = Clone(Data); CityProgressData city = Data.GetCity(config.CityId);
         bool hadBest = city.DayBestRecords.TryGetValue(result.Day, out DayBestRecord? best);
         int previousBest = hadBest ? best!.TotalRevenue : 0; int gain = Math.Max(0, result.TotalRevenue - previousBest); bool newBest = !hadBest || result.TotalRevenue > previousBest;
@@ -249,6 +259,8 @@ public partial class SaveService : Node
         out (string Equipment, int Target, int Price, string Display) offer, out string error)
     {
         offer = default;
+        if (IsDemo && (HasLoadError || !CanContinue || cityId != StableIds.Cities.Tianjin || !catalog.IsValid))
+            return Fail("试玩存档或配置无法读取，请检查后重试。", out error);
         CityProgressData city = Data.GetCity(cityId);
         if (!city.UnlockedContentIds.Contains(upgradeId, StringComparer.Ordinal)) { error = "该升级尚未开放。"; return false; }
         (string equipment, int target, int price, string display) = cityId == StableIds.Cities.Guangzhou ? ResolveGuangzhouUpgrade(upgradeId, catalog) : cityId == StableIds.Cities.Xian ? ResolveXianUpgrade(upgradeId, catalog) : cityId == StableIds.Cities.Wuhan ? ResolveWuhanUpgrade(upgradeId, catalog) : ResolveTianjinUpgrade(upgradeId, catalog);
@@ -270,12 +282,15 @@ public partial class SaveService : Node
 
     public bool ResetProgress(out string error)
     {
+        var demoSnapshot = DemoProgress;
+        if (IsDemo) DemoProgress = NewDemoProgress();
         SaveData snapshot = Clone(Data);
         var previous = (HasLoadError, LoadErrorMessage, CorruptBackupPath, MigratedLegacySave, HasSavedGame);
         Data = new SaveData(); ClearLoadError(); MigratedLegacySave = false;
         if (!TrySave(out error))
         {
             Data = snapshot;
+            DemoProgress = demoSnapshot;
             (HasLoadError, LoadErrorMessage, CorruptBackupPath, MigratedLegacySave, HasSavedGame) = previous;
             return false;
         }
@@ -289,7 +304,9 @@ public partial class SaveService : Node
         try
         {
             string absolute = ProjectSettings.GlobalizePath(_savePath); Directory.CreateDirectory(Path.GetDirectoryName(absolute)!);
-            string temporary = absolute + ".tmp"; File.WriteAllText(temporary, JsonSerializer.Serialize(Data, JsonOptions)); File.Move(temporary, absolute, true);
+            string temporary = absolute + ".tmp";
+            File.WriteAllText(temporary, IsDemo ? SerializeDemo() : JsonSerializer.Serialize(Data, JsonOptions));
+            File.Move(temporary, absolute, true);
             HasSavedGame = true; error = string.Empty; return true;
         }
         catch (Exception exception) { error = $"保存失败：{exception.Message}"; GD.PushError(error); return false; }

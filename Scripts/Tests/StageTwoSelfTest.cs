@@ -22,7 +22,7 @@ public partial class StageTwoSelfTest : Node
             RunCoverageTests();
             RunDragInteractionTests();
             RunStateMachineTests(catalog);
-            RunRecipeAndPracticeTests(catalog);
+            RunRecipeTests(catalog);
             RunSceneTests();
         }
         catch (Exception exception)
@@ -219,7 +219,7 @@ public partial class StageTwoSelfTest : Node
         }
     }
 
-    private void RunRecipeAndPracticeTests(DataCatalog catalog)
+    private void RunRecipeTests(DataCatalog catalog)
     {
         catalog.TryGetStove(2, out PancakeStoveLevelData safeStove);
         RecipeData[] recipes =
@@ -240,9 +240,6 @@ public partial class StageTwoSelfTest : Node
         var missing = new PancakeStateMachine(safeStove);
         MakeBagged(missing, Array.Empty<string>());
         Check(!missing.TryDeliver(recipes[1]).Success, "缺少薄脆的配方被拒绝");
-        var rejectedSession = new PracticeSession(new[] { recipes[1] }, 1);
-        Check(!rejectedSession.TryDeliver(missing).Success && rejectedSession.CompletedCount == 0 && rejectedSession.ErrorCount == 1,
-            "错误配方不推进目标并单独记录错误");
         var extra = new PancakeStateMachine(safeStove);
         MakeBagged(extra, new[] { StableIds.Ingredients.Crispy });
         Check(!extra.TryDeliver(recipes[0]).Success, "多余配料的配方被拒绝");
@@ -252,20 +249,6 @@ public partial class StageTwoSelfTest : Node
         duplicate.TryExecute(PancakeCommand.AddIngredient, StableIds.Ingredients.Crispy);
         Check(duplicate.TryExecute(PancakeCommand.AddIngredient, StableIds.Ingredients.Crispy).Error == PancakeActionError.DuplicateIngredient, "重复配料被拒绝且不重复消费");
 
-        var session = new PracticeSession(recipes, 30);
-        for (int index = 0; index < 30; index++)
-        {
-            RecipeData expected = recipes[index % 4];
-            Check(session.CurrentTarget.Id == expected.Id, $"第 {index + 1} 张目标循环正确");
-            var machine = new PancakeStateMachine(safeStove);
-            MakeBagged(machine, expected.ExtraIngredients);
-            PancakeDeliveryResult result = session.TryDeliver(machine);
-            Check(result.Success, $"第 {index + 1} 张确定性模拟交付成功");
-        }
-
-        Check(session.IsFinished && session.CompletedCount == 30 && session.PerfectCount == 30, "30 张练习完成且统计无残留");
-        Check(session.CurrentTarget.Id == recipes[2].Id, "完成后目标索引仍按循环确定");
-
         catalog.TryGetStove(1, out PancakeStoveLevelData burnable);
         var overdoneMachine = new PancakeStateMachine(burnable);
         AdvanceToSideACooking(overdoneMachine);
@@ -273,28 +256,18 @@ public partial class StageTwoSelfTest : Node
         overdoneMachine.TryExecute(PancakeCommand.Flip);
         overdoneMachine.Tick(1.1);
         FinishFromSideBReady(overdoneMachine, Array.Empty<string>());
-        var overdoneSession = new PracticeSession(new[] { recipes[0] }, 1);
-        Check(overdoneSession.TryDeliver(overdoneMachine).Success && overdoneSession.OverdoneCount == 1 && overdoneSession.PerfectCount == 0,
-            "偏焦正确配方计入完成但不计完美");
+        var result = overdoneMachine.TryDeliver(recipes[0]);
+        Check(result.Success && result.Quality == PancakeQuality.Overdone, "偏焦正确配方可以交付，品质保持偏焦");
     }
 
     private void RunSceneTests()
     {
-        PackedScene? labScene = ResourceLoader.Load<PackedScene>("res://Scenes/Gameplay/PancakeLab.tscn");
-        Check(labScene is not null, "PancakeLab 场景可加载");
-        if (labScene is not null)
-        {
-            Node lab = labScene.Instantiate();
-            Check(lab is PancakeLab, "PancakeLab 根节点脚本正确");
-            lab.Free();
-        }
-
         PackedScene? mainScene = ResourceLoader.Load<PackedScene>("res://Scenes/Main/Main.tscn");
         Check(mainScene is not null, "Main 场景仍可加载");
         if (mainScene is not null)
         {
             Node main = mainScene.Instantiate();
-            Check(main.HasNode("UI/PancakeLab") && main.HasNode("UI/DataDebugPanel"), "Main 同时包含实验台与数据调试台");
+            Check(!main.HasNode("UI/PancakeLab") && !main.HasNode("UI/DataDebugPanel"), "Main 已移除实验台与数据调试台");
             main.Free();
         }
     }

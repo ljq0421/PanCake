@@ -14,8 +14,6 @@ FORM: a street-shop operating board built directly from the approved Tianjin art
 public partial class MorningHub : Control
 {
     public event Action<int>? DayRequested;
-    public event Action? LabRequested;
-    public event Action? DebugRequested;
     public event Action? MapRequested;
 
     private DataCatalog _catalog = null!;
@@ -32,8 +30,6 @@ public partial class MorningHub : Control
     private TianjinLedger _ledger = null!;
     private ConfirmationDialog _resetDialog = null!;
 
-    public bool DeveloperToolsVisible => OS.GetCmdlineUserArgs().Contains("--dev-ui", StringComparer.Ordinal);
-
     public override void _Ready()
     {
         SceneNodeBinder.Bind(this);
@@ -41,10 +37,6 @@ public partial class MorningHub : Control
         _openButton.Pressed += StartPrimaryDay;
         this.FindButton("经营手账").Pressed += ShowLedger;
         this.FindButton("城市地图").Pressed += () => MapRequested?.Invoke();
-        Button? lab = this.FindOptionalButton("煎饼实验台");
-        if (lab is not null) lab.Pressed += () => LabRequested?.Invoke();
-        Button? data = this.FindOptionalButton("Day 数据");
-        if (data is not null) data.Pressed += () => DebugRequested?.Invoke();
         _ledger.DayRequested += day => DayRequested?.Invoke(day);
         _ledger.ResetRequested += () => { _ledger.ConfirmationOpen = true; _resetDialog.PopupCentered(); };
         _resetDialog.Confirmed += ResetProgress;

@@ -142,8 +142,8 @@ public partial class StageOneSelfTest : Node
             Node main = mainResource.Instantiate();
             Check(main.HasNode("DayController"), "Main 包含 DayController");
             Check(main.HasNode("ShopRoot/TianjinShop"), "Main 包含天津店铺实例");
-            Check(main.HasNode("UI/DataDebugPanel"), "Main 包含数据调试面板");
-            Check(main.HasNode("UI/PancakeLab"), "Main 包含煎饼实验台");
+            Check(!main.HasNode("UI/DataDebugPanel"), "Main 不再包含数据调试面板");
+            Check(!main.HasNode("UI/PancakeLab"), "Main 不再包含煎饼实验台");
             Check(main.HasNode("UI/MorningHub"), "Main 包含营业准备大厅");
             Check(main.HasNode("UI/TianjinDayScreen"), "Main 包含正式营业界面");
             main.Free();

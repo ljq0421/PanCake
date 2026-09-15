@@ -7,7 +7,7 @@ namespace ProjectCake.UI;
 public partial class YangzhouHub : Control
 {
     public event Action<int>? DayRequested;
-    public event Action? MapRequested, PracticeRequested;
+    public event Action? MapRequested;
     private SaveService _save = null!;
     private YangzhouCatalog _catalog = null!;
     private readonly Button[] _days = new Button[12], _upgrades = new Button[2];
@@ -29,12 +29,6 @@ public partial class YangzhouHub : Control
         }
         _open.Pressed += () => DayRequested?.Invoke(_save.Data.Yangzhou.HighestUnlockedDay);
         this.FindButton("早餐地图").Pressed += () => MapRequested?.Invoke();
-        Button? practice = this.FindOptionalButton("Day 8 练习 · Lv2设备 · 不保存");
-        if (practice is not null)
-        {
-            practice.Visible = OS.GetCmdlineUserArgs().Contains("--dev-ui");
-            practice.Pressed += () => PracticeRequested?.Invoke();
-        }
     }
     public void Initialize(YangzhouCatalog catalog, SaveService save)
     {

@@ -7,6 +7,7 @@ public partial class JourneySettings : Node
 {
     public const string EffectsBus = "Effects", MusicBus = "Music";
     public string SettingsPath { get; private set; } = "user://journey_settings.cfg";
+    public string Language { get; private set; } = "zh_CN";
     public double Master { get; private set; } = 100;
     public double Music { get; private set; } = 100;
     public double Effects { get; private set; } = 100;
@@ -22,6 +23,11 @@ public partial class JourneySettings : Node
     public override void _Ready()
     {
         ProcessMode = ProcessModeEnum.Always;
+        GameTranslation.Install();
+        if (ExperienceProfile.IsDemo)
+        {
+            SettingsPath = "user://demo/journey_settings.cfg";
+        }
         var args = OS.GetCmdlineUserArgs();
         int index = Array.IndexOf(args, "--journey-settings");
         if (index >= 0 && index + 1 < args.Length) SettingsPath = args[index + 1];
@@ -40,6 +46,8 @@ public partial class JourneySettings : Node
     public void LoadPreferences()
     {
         var cfg = new ConfigFile(); Error load = cfg.Load(SettingsPath);
+        Language = cfg.GetValue("language", "locale", "zh_CN").AsString() == "en" ? "en" : "zh_CN";
+        TranslationServer.SetLocale(Language);
         ErrorMessage = load is Error.Ok or Error.FileNotFound ? "" : "设置无法读取，已使用默认值。";
         Master = ReadVolume(cfg, "master"); Music = ReadVolume(cfg, "music"); Effects = ReadVolume(cfg, "effects");
         Muted = cfg.GetValue("audio", "muted", false).AsBool(); ApplyAudio();
@@ -104,6 +112,9 @@ public partial class JourneySettings : Node
     public bool SavePreferences()
     {
         var cfg = new ConfigFile();
+        cfg.SetValue("language", "locale", Language);
+        Error directory = DirAccess.MakeDirRecursiveAbsolute(Path.GetDirectoryName(ProjectSettings.GlobalizePath(SettingsPath))!);
+        if (directory != Error.Ok) { ErrorMessage = "设置未能保存，请检查写入权限与可用空间。"; return false; }
         cfg.SetValue("audio", "master", Master); cfg.SetValue("audio", "music", Music); cfg.SetValue("audio", "effects", Effects); cfg.SetValue("audio", "muted", Muted);
         cfg.SetValue("display", "fullscreen", (DisplayPending ? _oldMode : GetWindow().Mode) == Window.ModeEnum.Fullscreen);
         Vector2I size = DisplayPending ? _oldSize : GetWindow().Size;
@@ -113,4 +124,9 @@ public partial class JourneySettings : Node
         return result == Error.Ok;
     }
     public override void _ExitTree() => RevertDisplay();
+    public void SetLanguage(string language)
+    {
+        if (language is not ("zh_CN" or "en")) return;
+        Language = language; TranslationServer.SetLocale(language); SavePreferences(); Changed?.Invoke();
+    }
 }

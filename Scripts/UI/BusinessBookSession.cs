@@ -46,26 +46,23 @@ public sealed class BusinessBookSession
 
 public static class BusinessBookSettlement
 {
-    public static BusinessBookModel Commit(BusinessBookModel model, SaveService save, DayPlan plan, DayConfig config, DataCatalog catalog, bool practice = false, bool allowFailedReturn = false)
+    public static BusinessBookModel Commit(BusinessBookModel model, SaveService save, DayPlan plan, DayConfig config, DataCatalog catalog, bool allowFailedReturn = false)
     {
-        model.Closing = true; model.Practice = practice; model.Stickers = Array.Empty<string>(); model.Upgrades = null; model.CanClose = true; model.CanRetry = false;
+        model.Closing = true; model.Stickers = Array.Empty<string>(); model.Upgrades = null; model.CanClose = true; model.CanRetry = false;
         var before = save.Data.GetCity(config.CityId).UnlockedContentIds.ToHashSet(StringComparer.Ordinal);
         try
         {
-            var commit = practice ? new DayCommitResult(0, false, SaveService.EvaluateStars(model.Result, config)) : save.CommitDay(model.Result, plan, config);
-            model.SaveMessage = practice ? "练习结束 · 本次不保存收入、设备或章节进度" : $"已入账 ¥{commit.PermanentCoinGain} · 历史最佳收入差额" + (commit.NewBest ? " · 新纪录" : "");
+            var commit = save.CommitDay(model.Result, plan, config);
+            model.SaveMessage = $"已入账 ¥{commit.PermanentCoinGain} · 历史最佳收入差额" + (commit.NewBest ? " · 新纪录" : "");
             var stickers = new List<string>();
             if (commit.EarnedStars > 0) stickers.Add($"本次评级 {new string('★', commit.EarnedStars)}");
-            if (!practice)
-            {
-                if (commit.NewChapterCompletion) { stickers.Add($"{model.CityName}章节已点亮"); save.QueueJourneyCompletion(config.CityId); }
-                int unlocked = save.Data.GetCity(config.CityId).UnlockedContentIds.Count(id => !before.Contains(id));
-                if (unlocked > 0) stickers.Add($"新开放 {unlocked} 项内容 · 回店查看");
-                string[] upgrades = save.AvailableBookUpgrades(config.CityId, catalog);
-                if (upgrades.Length > 0) stickers.Add($"可升级：{upgrades[0]}" + (upgrades.Length > 1 ? $"等{upgrades.Length}项" : ""));
-            }
+            if (commit.NewChapterCompletion) { stickers.Add($"{model.CityName}章节已点亮"); save.QueueJourneyCompletion(config.CityId); }
+            int unlocked = save.Data.GetCity(config.CityId).UnlockedContentIds.Count(id => !before.Contains(id));
+            if (unlocked > 0) stickers.Add($"新开放 {unlocked} 项内容 · 回店查看");
+            string[] upgrades = save.AvailableBookUpgrades(config.CityId, catalog);
+            if (upgrades.Length > 0) stickers.Add($"可升级：{upgrades[0]}" + (upgrades.Length > 1 ? $"等{upgrades.Length}项" : ""));
             model.Stickers = stickers.ToArray();
-            if (!practice) model.Upgrades = new BookUpgradeSource(save, catalog, config.CityId);
+            model.Upgrades = new BookUpgradeSource(save, catalog, config.CityId);
         }
         catch (IOException e) { model.SaveMessage = "未保存 · " + e.Message + "；本次金币与进度已回退。"; model.CanRetry = !allowFailedReturn; model.CanClose = allowFailedReturn; }
         return model;

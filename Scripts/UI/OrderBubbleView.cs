@@ -37,6 +37,22 @@ public partial class OrderBubbleView : PanelContainer
     private Color _rule;
     private readonly Color _complete = new("#DCECC8");
     private OrderData? _order;
+    private bool _tianjinPaper;
+    private OrderProgress? _progress;
+    private IReadOnlyDictionary<string, RecipeData>? _recipes;
+
+    public OrderBubbleView? CreatePaperCopy(Control host)
+    {
+        if (_order is null || _progress is null || _recipes is null) return null;
+        var copy = GD.Load<PackedScene>("res://Scenes/UI/OrderBubbleView.tscn").Instantiate<OrderBubbleView>();
+        copy.Name = "CompletedOrderPaper";
+        host.AddChild(copy);
+        copy.Configure(_shared); copy.ConfigureTianjinPaper();
+        copy.Render(_order, _progress, _recipes);
+        copy.Position = host.GetGlobalTransform().AffineInverse() * GlobalPosition;
+        copy.Size = Size; copy.Patience.Hide();
+        return copy;
+    }
     public ProgressBar Patience { get; private set; } = null!;
 
     public override void _Ready()
@@ -56,13 +72,32 @@ public partial class OrderBubbleView : PanelContainer
         QueueRedraw();
     }
 
+    // Explicit opt-in: the shared Wuhan and Xi'an scene resources remain untouched.
+    public void ConfigureTianjinPaper()
+    {
+        _tianjinPaper = true;
+        _paper = new Color("#FAF2DF"); _ink = TianjinUi.BrownDark;
+        _rule = new Color("#CDB38E", .7f);
+        var panel = new StyleBoxFlat { BgColor = _paper, BorderColor = new Color("#98704E"),
+            ContentMarginLeft = 9, ContentMarginRight = 9, ContentMarginTop = 5, ContentMarginBottom = 7,
+            ShadowColor = new Color(.29f, .17f, .08f, .16f), ShadowSize = 2, ShadowOffset = new Vector2(0, 2) };
+        panel.SetBorderWidthAll(2); panel.SetCornerRadiusAll(8);
+        AddThemeStyleboxOverride("panel", panel);
+        _content.AddThemeConstantOverride("separation", 3);
+        Patience.CustomMinimumSize = new Vector2(0, 6);
+        Patience.AddThemeStyleboxOverride("background", Flat(new Color("#E2D6BF")));
+        Patience.AddThemeStyleboxOverride("fill", Flat(PatienceBarPresentation.Green));
+        CustomMinimumSize = new Vector2(306, 0); Size = new Vector2(306, Size.Y);
+        QueueRedraw();
+    }
+
     public override void _Draw()
     {
         // Draw outside the paper without letting the tail affect container sizing or input.
         float x = Size.X * .5f;
         Vector2[] tail = { new(x - 15, Size.Y - 4), new(x, Size.Y + 12), new(x + 15, Size.Y - 4) };
         DrawColoredPolygon(tail, _paper);
-        DrawPolyline(tail, _ink, 4, true);
+        DrawPolyline(tail, _tianjinPaper ? new Color("#98704E") : _ink, _tianjinPaper ? 2 : 4, true);
     }
 
     public void ConfigureXian(XianArtCatalog art)
@@ -83,6 +118,7 @@ public partial class OrderBubbleView : PanelContainer
 
     public void Render(OrderData order, OrderProgress progress, IReadOnlyDictionary<string, RecipeData> recipes)
     {
+        _progress = progress; _recipes = recipes;
         if (!ReferenceEquals(_order, order))
         {
             _order = order;
@@ -97,7 +133,7 @@ public partial class OrderBubbleView : PanelContainer
                     AddRule();
                     PanelContainer region = Region("OrderMainRow", MainHeight, lineIndex, portion);
                     var icons = new HBoxContainer { Name = "OrderIcons", MouseFilter = MouseFilterEnum.Ignore };
-                    icons.AddThemeConstantOverride("separation", 12);
+                    icons.AddThemeConstantOverride("separation", _tianjinPaper ? 8 : 12);
                     region.AddChild(icons);
                     icons.AddChild(ProductIcon(line.ProductKind, new Vector2(62, 46)));
                     if (line.ProductKind == ProductKind.Pancake && line.Sauce != SaucePreference.Normal)

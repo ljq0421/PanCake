@@ -9,7 +9,7 @@ public partial class BusinessDetailsView
     private Button? _upgradeEntry;
     private bool _buying;
     private string? _selectedUpgrade;
-    private bool CanUpgrade => _model.Closing && !_model.Practice && _model.Upgrades is not null;
+    private bool CanUpgrade => _model.Closing && _model.Upgrades is not null;
     private void RefreshUpgradeCaptions()
     {
         if (_model.Upgrades is null) return;

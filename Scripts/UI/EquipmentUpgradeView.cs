@@ -8,6 +8,8 @@ public partial class EquipmentUpgradeView : Control
     private static readonly Color Ink = new("#442818"), Muted = new("#805B3D"), Gold = new("#EDA52B"), Green = new("#276631");
     private CityEquipmentView[] _items = Array.Empty<CityEquipmentView>();
     private readonly List<Button> _cards = new();
+    private readonly List<NinePatchRect> _cardArt = new();
+    private const string ArtRoot = "res://resource/art/Global/UpgradeUI/";
     private Control _detail = null!;
     private Action<CityEquipmentView> _purchase = null!;
     private Action<string> _selection = null!;
@@ -26,9 +28,25 @@ public partial class EquipmentUpgradeView : Control
             var item = items[i];
             var card = MakeButton(this, "Select_" + item.Id, "", new(0, 84 + i * 180, 565, 167));
             _cards.Add(card);
+            foreach (string stateName in new[] { "normal", "hover", "pressed", "disabled" })
+                card.AddThemeStyleboxOverride(stateName, new StyleBoxEmpty());
+            var background = PaintedBackground(card, "设备卡片底板-普通-v1.png");
+            _cardArt.Add(background);
+            card.MouseEntered += () => background.SelfModulate = new Color(1.03f, 1.03f, 1.03f);
+            card.MouseExited += () => background.SelfModulate = Colors.White;
+            card.ButtonDown += () => background.SelfModulate = new Color(.95f, .95f, .95f);
+            card.ButtonUp += () => background.SelfModulate = Colors.White;
+            var focusBorder = Box(Colors.Transparent, Gold, 2);
+            card.AddThemeStyleboxOverride("focus", focusBorder);
             if (item.Art is not null) Picture(card, item.Art, new(18, 15, 263, 135));
             else LabelAt(card, "EquipmentWordmark", item.Name, new(24, 25, 240, 130), 34, Muted, true);
-            LabelAt(card, "EquipmentName", item.Name, new(306, 17, 240, 48), 32);
+            var equipmentName = LabelAt(card, "EquipmentName", item.Name, new(306, 17, 240, 48), 32);
+            if (ProjectCake.Core.ExperienceProfile.IsDemo)
+            {
+                int size = 32;
+                while (size > 24 && equipmentName.GetThemeFont("font").GetStringSize(equipmentName.Tr(item.Name), fontSize: size).X > 240) size--;
+                equipmentName.AddThemeFontSizeOverride("font_size", size);
+            }
             LabelAt(card, "EquipmentLevel", item.Level > 0 ? $"Lv{item.Level}" : "未开放", new(308, 65, 225, 36), 26);
             string state = item.CanBuy ? "可升级" : item.Level >= 3 ? "已满级" : item.Level == 0 ? "未开放"
                 : item.Notice.Contains("金币不足") ? "金币不足" : item.Notice.StartsWith("完成第") ? "待解锁" : item.Notice;
@@ -50,12 +68,12 @@ public partial class EquipmentUpgradeView : Control
         for (int i = 0; i < _cards.Count; i++)
         {
             bool active = _items[i].Id == id;
-            _cards[i].AddThemeStyleboxOverride("normal", Box(new(active ? "#FFF1C6" : "#FFF8EB"), active ? Gold : new("#E8D2B4"), active ? 4 : 2));
+            _cardArt[i].Texture = GD.Load<Texture2D>(ArtRoot + (active ? "设备卡片底板-选中-v1.png" : "设备卡片底板-普通-v1.png"));
             if (active && focus) _cards[i].GrabFocus();
         }
         var e = _items.Single(i => i.Id == id);
         LabelAt(_detail, "SelectedEquipmentName", e.Name, new(0, 0, 560, 60), 42);
-        LabelAt(_detail, "LevelTransition", e.TargetLevel is int next ? $"Lv{e.Level}  →  Lv{next}" : e.Level == 0 ? "设备尚未开放" : $"Lv{e.Level} · {(e.Level >= 3 ? "已满级" : "固定设备")}", new(0, 62, 560, 44), 27, Muted);
+        LabelAt(_detail, "LevelTransition", e.TargetLevel is int next ? $"Lv{e.Level}  →  Lv{next}" : e.Level == 0 ? "设备尚未开放" : $"Lv{e.Level} · {(e.Level >= 3 || e.Notice == "已升至最高等级" ? "已满级" : "固定设备")}", new(0, 62, 560, 44), 27, Muted);
         if (e.Art is not null) Picture(_detail, e.Art, new(0, 140, 270, 280));
         else LabelAt(_detail, "EquipmentWordmark", e.Name, new(0, 170, 266, 260), 40, Muted, true);
         var scroll = new ScrollContainer { Name = "UpgradeScroll", Position = new(282, 90), Size = new(278, 360), HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
@@ -73,15 +91,34 @@ public partial class EquipmentUpgradeView : Control
 
     private static void EffectPanel(VBoxContainer rows, string title, CityEquipmentView equipment, bool next)
     {
-        var panel = new PanelContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
-        panel.AddThemeStyleboxOverride("panel", Box(new(next ? "#FFF0C5" : "#F4E7D4"), new("#E5CBA6"), 2)); rows.AddChild(panel);
-        var content = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; content.AddThemeConstantOverride("separation", 8); panel.AddChild(content);
-        FlowLabel(content, title, 25, next ? Green : Ink);
+        var panel = new PanelContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill, CustomMinimumSize = new(0, 180) };
+        panel.AddThemeStyleboxOverride("panel", new StyleBoxEmpty()); rows.AddChild(panel);
+        PaintedBackground(panel, next ? "升级后效果面板底板-v1.png" : "当前效果面板底板-v1.png", 80);
+        var margins = new MarginContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; panel.AddChild(margins);
+        margins.AddThemeConstantOverride("margin_left", 16); margins.AddThemeConstantOverride("margin_right", 16);
+        margins.AddThemeConstantOverride("margin_bottom", 16);
+        var content = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; content.AddThemeConstantOverride("separation", 8); margins.AddChild(content);
+        var heading = FlowLabel(content, title, 25, next ? Green : Ink);
+        heading.CustomMinimumSize = new(0, 40); heading.VerticalAlignment = VerticalAlignment.Center;
         foreach (var effect in equipment.Effects)
         {
             var label = FlowLabel(content, effect.Name + "：" + (next ? effect.Next : effect.Current), 21, next && effect.Changed ? Green : Ink);
             label.Name = (next ? "Next_" : "Current_") + content.GetChildCount();
         }
+    }
+
+    private static NinePatchRect PaintedBackground(Control parent, string filename, int top = 32)
+    {
+        // A wrapper keeps Container layout from resetting the 2x sprite's half scale.
+        var wrapper = new Control { Name = "PaintedBackground", MouseFilter = MouseFilterEnum.Ignore };
+        parent.AddChild(wrapper); wrapper.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+        var art = new NinePatchRect { Name = "Backing", Texture = GD.Load<Texture2D>(ArtRoot + filename),
+            Scale = Vector2.One * .5f, MouseFilter = MouseFilterEnum.Ignore,
+            PatchMarginLeft = 32, PatchMarginTop = top, PatchMarginRight = 32, PatchMarginBottom = 32 };
+        wrapper.AddChild(art);
+        void Fit() => art.Size = wrapper.Size * 2;
+        wrapper.Resized += Fit; Fit();
+        return art;
     }
 
     private static Label FlowLabel(Control parent, string text, int size, Color color)

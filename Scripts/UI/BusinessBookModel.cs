@@ -25,7 +25,6 @@ public sealed class BusinessBookModel
     public DayResult Result { get; init; } = new();
     public IReadOnlyList<BookOrder> Orders { get; init; } = Array.Empty<BookOrder>();
     public bool Closing { get; set; }
-    public bool Practice { get; set; }
     public bool CanClose { get; set; } = true;
     public bool CanRetry { get; set; }
     public string SaveMessage { get; set; } = "";
@@ -63,7 +62,7 @@ public sealed class BusinessBookModel
             r.Evaluation?.SaleRevenue ?? 0, r.Evaluation?.Tip ?? 0, r.Evaluation?.SatisfactionScore,
             r.Evaluation?.Grade == DeliveryGrade.Incorrect ? r.Evaluation.Message : "")).ToArray(),
         ExtraNotes = new[] { $"最高连续正确 {result.HighestCorrectStreak} 单" }
-            .Concat(city.EndsWith("tianjin", StringComparison.Ordinal) ? new[] { $"油条使用 {result.YoutiaoUsed} 根 · 炸焦 {result.YoutiaoBurnt} 根" } : Array.Empty<string>()).ToArray(),
+            .Concat(!ExperienceProfile.IsDemo && city.EndsWith("tianjin", StringComparison.Ordinal) ? new[] { $"油条使用 {result.YoutiaoUsed} 根 · 炸焦 {result.YoutiaoBurnt} 根" } : Array.Empty<string>()).ToArray(),
     };
     private static BookProduct Product(OrderLineData line, DataCatalog catalog)
     {

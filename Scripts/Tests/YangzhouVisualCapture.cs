@@ -88,13 +88,6 @@ public partial class YangzhouVisualCapture : Node
             Step(45); await Shot("03-day12-four-tables");
             Require(_screen.Session.Waiting.Count == 4, "四桌订单同时显示");
             Step(150); Require(_screen.Session.Phase == YangzhouPhase.Results, "最终日自动结束并结算"); await Shot("04-results");
-            if (OS.GetCmdlineUserArgs().Contains("--dev-ui"))
-            {
-                string beforePractice = System.Text.Json.JsonSerializer.Serialize(save.Data);
-                Require(_screen.Initialize(catalog, save, 8, true), "开发模式允许Day8练习"); Step(200);
-                Require(beforePractice == System.Text.Json.JsonSerializer.Serialize(save.Data), "练习完成不改变真实存档");
-            }
-            else Require(!_screen.Initialize(catalog, save, 8, true), "正常模式拒绝开发练习入口");
             _screen.Hide(); save.Data.Guangzhou.Completed = true; save.Data.Guangzhou.BestStars = 1; save.TrySave(out _); save.Load();
             var map = ProjectCake.Core.SceneFactory.Instantiate<TianjinMapScreen>("res://Scenes/UI/TianjinMapScreen.tscn"); AddChild(map); map.Initialize(save); await Shot("05-map");
             Require(!Find<Button>(map, b => b.Name == "EnterYangzhou").Disabled, "广州一星后地图扬州入口开放");

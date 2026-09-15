@@ -294,13 +294,22 @@ public partial class FryerVisualView : Control
         {
             _basketAnchor.DrawTextureRect(food, EmbeddedFoodRect(basket, columns, index, food.GetSize()), false, tint);
         }
-        if (runtime.State == FryerState.Frying)
-            for (int i = 0; i < 7; i++)
+        if (runtime.State == FryerState.Frying && runtime.Quantity > 0 && !ReducedMotion)
+        {
+            for (int i = 0; i < 5; i++)
             {
                 float phase = (_effectPhase + i * .17f) % 1;
-                Vector2 point = basket.Position + basket.Size * new Vector2(.18f + i * .1f, .8f - phase * .35f);
-                _basketAnchor.DrawCircle(point, 2 + i % 2, new Color(1, .9f, .55f, .8f * (1 - phase)));
+                Vector2 point = basket.Position + basket.Size * new Vector2(.22f + i * .13f, .8f - phase * .35f);
+                _basketAnchor.DrawCircle(point, 1.6f + i % 2, new Color(1, .9f, .55f, .36f * (1 - phase)));
             }
+            for (int row = 0; row < 2; row++)
+            {
+                var points = new Vector2[17];
+                for (int n = 0; n < points.Length; n++) points[n] = basket.Position + basket.Size * new Vector2(.2f + n * .0375f,
+                    .62f + row * .13f) + new Vector2(0, Mathf.Sin(_effectPhase * 2 + n * .5f + row) * 1.1f);
+                _basketAnchor.DrawPolyline(points, new Color(1, .84f, .42f, .16f), 1, true);
+            }
+        }
         if (runtime.State is FryerState.Raised or FryerState.Draining)
             for (int i = 0; i < 3; i++)
                 _basketAnchor.DrawCircle(new Vector2(basket.Position.X + basket.Size.X * (.3f + i * .2f), basket.End.Y + 6),

@@ -14,6 +14,19 @@ public partial class PancakeCanvas : Control
     private int _stoveLevel = 1;
     private float _batterDropProgress = 1.0f;
     private bool _foodOnly;
+    private double _lastSpread;
+    private float _edgeRelaxation;
+    internal float EdgeRelaxation => _edgeRelaxation;
+
+    public void TickLivingMotion(double delta, bool active, bool spreading)
+    {
+        double coverage = _runtime?.SpreadCoverage ?? 0;
+        if (!active) _edgeRelaxation = 0;
+        else if (spreading && coverage > _lastSpread) _edgeRelaxation = .008f;
+        else _edgeRelaxation = Mathf.MoveToward(_edgeRelaxation, 0, (float)delta * .04f);
+        _lastSpread = coverage;
+        QueueRedraw();
+    }
 
     [Export] public float DisplayScale { get; set; } = 1.0f;
     [Export] public Vector2 DisplayOffset { get; set; } = Vector2.Zero;
@@ -77,6 +90,9 @@ public partial class PancakeCanvas : Control
             _ => 1f,
         };
         Rect2 pancakeRect = ScaleFromCenter(surface, scale);
+        if (EmbeddedSurface.HasValue && runtime.State == PancakeState.Spreading)
+            pancakeRect = new Rect2(pancakeRect.Position - new Vector2(pancakeRect.Size.X * _edgeRelaxation * .5f, 0),
+                pancakeRect.Size * new Vector2(1 + _edgeRelaxation, 1));
         Color reveal = qualityTint;
         if (runtime.State == PancakeState.BatterPlaced)
         {

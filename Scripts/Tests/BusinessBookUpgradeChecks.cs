@@ -46,9 +46,7 @@ public partial class BusinessBookSelfTest
 
             var model = Fixture(city); model.Closing = true; model.Upgrades = source;
             var view = new BusinessDetailsView(); AddChild(view); bool closed = false; view.CloseRequested += () => closed = true;
-            model.Practice = true; view.Open(model);
-            Check(!view.Descendants<Button>().Any(b => b.Name == "OpenBookUpgrades" || b.Name == "UpgradeSticker"), city + " affordable practice upgrades hidden");
-            model.Practice = false; model.Closing = false; view.Open(model);
+            model.Closing = false; view.Open(model);
             Check(!view.Descendants<Button>().Any(b => b.Name == "OpenBookUpgrades" || b.Name == "UpgradeSticker"), city + " affordable live upgrades hidden");
             model.Closing = true;
             Button Entry() => view.Descendants<Button>().Single(b => b.Name == (city is "tianjin" or "wuhan" or "xian" ? "OpenBookUpgrades" : "UpgradeSticker"));
@@ -132,11 +130,8 @@ public partial class BusinessBookSelfTest
             Check(view.Descendants<Label>().All(l => !l.Name.ToString().StartsWith("Next_")), city + " max detail only shows current effects");
             if (Capture) await Shot(city + "-upgrades-max");
             GetViewport().PushInput(new InputEventKey { Keycode = Key.Escape, Pressed = true }, true);
-            foreach (bool practice in new[] { true, false })
-            {
-                model.Practice = practice; model.Closing = practice; view.Open(model);
-                Check(!view.Descendants<Button>().Any(b => b.Name == "OpenBookUpgrades" || b.Name == "UpgradeSticker"), city + " practice or live no entry");
-            }
+            model.Closing = false; view.Open(model);
+            Check(!view.Descendants<Button>().Any(b => b.Name == "OpenBookUpgrades" || b.Name == "UpgradeSticker"), city + " live no entry");
             view.QueueFree(); save.QueueFree(); await Frames();
         }
     }

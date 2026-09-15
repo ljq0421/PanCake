@@ -75,6 +75,9 @@ public partial class DataCatalog : Node
         _validationIssues.Clear();
         _xianEquipment.Clear();
 
+        if (ExperienceProfile.IsDemo) { ReloadDemo(); return; }
+        Demo = null;
+
         var recipes = LoadResources<RecipeData>(RecipeDirectory, _validationIssues);
         recipes.AddRange(LoadResources<RecipeData>(WuhanRecipeDirectory, _validationIssues));
         var stoves = LoadResources<PancakeStoveLevelData>(EquipmentDirectory, _validationIssues);
@@ -234,7 +237,8 @@ public partial class DataCatalog : Node
             return resources;
         }
 
-        string[] files = DirAccess.GetFilesAt(directoryPath)
+        // ResourceLoader returns original resource names after export (.tres.remap on disk).
+        string[] files = ResourceLoader.ListDirectory(directoryPath)
             .Where(fileName => fileName.EndsWith(".tres", StringComparison.OrdinalIgnoreCase))
             .OrderBy(fileName => fileName, StringComparer.Ordinal)
             .ToArray();

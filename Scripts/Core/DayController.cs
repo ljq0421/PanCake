@@ -28,6 +28,9 @@ public partial class DayController : Node
     public event Action<DayResult>? DayFinished;
     public event Action<DeliveryEvaluation>? DeliveryCompleted;
     public BusinessFeedback Feedback { get; } = new();
+    public TutorialProtection Tutorial { get; private set; } = TutorialProtection.None;
+    // An isolated example has no business result; heat assistance alone remains a normal shift.
+    public bool TutorialActive => Tutorial.FreezeBusinessClocks && Tutorial.SuppressRevenue;
     private bool _deliveryMatches;
 
     public DayConfig? CurrentConfig { get; private set; }
@@ -62,6 +65,9 @@ public partial class DayController : Node
         => TryPrepareDay(StableIds.Cities.Tianjin, dayNumber, catalog, out error);
 
     public bool TryPrepareDay(string cityId, int dayNumber, DataCatalog catalog, out string error)
+        => PrepareDay(cityId, dayNumber, catalog, null, out error);
+
+    private bool PrepareDay(string cityId, int dayNumber, DataCatalog catalog, TutorialProtection? tutorial, out string error)
     {
         if (!catalog.IsValid)
         {
@@ -76,9 +82,20 @@ public partial class DayController : Node
         }
 
         DetachFeedbackQueue();
+        Tutorial = tutorial ?? config.Tutorial;
         Feedback.Reset();
         CurrentConfig = config;
-        CurrentPlan = new OrderGenerator().Generate(config, catalog.RecipesById, catalog.ProductsById, catalog.CustomersById);
+        CurrentPlan = catalog.Demo is { } demo
+            ? demo.Stage(dayNumber)!.Plan(catalog.RecipesById, catalog.CustomersById["normal"])
+            : new OrderGenerator().Generate(config, catalog.RecipesById, catalog.ProductsById, catalog.CustomersById);
+        if (Tutorial.FreezeBusinessClocks && CurrentPlan.Customers.FirstOrDefault() is { } example)
+            CurrentPlan = new DayPlan
+            {
+                Day = CurrentPlan.Day, RandomSeed = CurrentPlan.RandomSeed,
+                StageId = CurrentPlan.StageId, RunId = CurrentPlan.RunId,
+                Customers = new[] { new PlannedCustomer { CustomerId = example.CustomerId,
+                    CustomerTypeId = example.CustomerTypeId, ArrivalTime = 0, Order = example.Order } },
+            };
         CustomerQueue = new CustomerQueue(CurrentPlan, catalog.CustomersById, config.PatienceMultiplier, config.MaxWaitingCustomers,
             config.Constraints.PressureDelaySeconds, config.Constraints.MaxPressureDelaySeconds, config.CityId == StableIds.Cities.Xian ? config.Constraints : null);
         GuangzhouStockCount = null;
@@ -114,6 +131,9 @@ public partial class DayController : Node
         return true;
     }
 
+    public bool TryPrepareTutorial(string cityId, int dayNumber, DataCatalog catalog, out string error)
+        => PrepareDay(cityId, dayNumber, catalog, TutorialProtection.GuidedExample, out error);
+
     public void Tick(double deltaSeconds)
     {
         if (IsPaused || deltaSeconds <= 0 || CurrentConfig is null || CustomerQueue is null)
@@ -133,6 +153,15 @@ public partial class DayController : Node
 
         if (State == DayState.Running)
         {
+            if (Tutorial.FreezeBusinessClocks)
+            {
+                // Only the example at t=0 arrives; patience and business clocks do not advance.
+                CustomerQueue.Tick(0, 0, true);
+                foreach (var sample in CustomerQueue.Slots.ToArray())
+                    if (sample.State is CustomerState.Entering or CustomerState.Served or CustomerState.Leaving)
+                        sample.Tick(deltaSeconds);
+                return;
+            }
             DayElapsedSeconds = Math.Min(CurrentConfig.DurationSeconds, DayElapsedSeconds + deltaSeconds);
             CustomerQueue.Tick(DayElapsedSeconds, deltaSeconds, true);
             if (DayElapsedSeconds >= CurrentConfig.DurationSeconds)
@@ -317,6 +346,7 @@ public partial class DayController : Node
             _businessRecords.Clear();
             _recordedOrders.Clear();
             DayElapsedSeconds = 0;
+            Tutorial = TutorialProtection.None;
             SetState(DayState.Preparing);
         }
     }
@@ -401,8 +431,8 @@ public partial class DayController : Node
             ? new OrderEvaluator().EvaluateCompletedWuhan(customer.Progress, customer.PatienceProgress, customer.Type)
             : new OrderEvaluator().EvaluateCompleted(customer.Progress, customer.State, customer.Type);
         if (!CustomerQueue!.TryMarkServed(customer.Id)) return Rejected("顾客状态已经变化，本次交付未生效。");
-        Ledger!.RecordDelivery(evaluation);
-        if (CurrentConfig?.CityId is StableIds.Cities.Tianjin or StableIds.Cities.Wuhan or StableIds.Cities.Guangzhou)
+        if (!Tutorial.SuppressRevenue) Ledger!.RecordDelivery(evaluation);
+        if (!Tutorial.SuppressRevenue && CurrentConfig?.CityId is StableIds.Cities.Tianjin or StableIds.Cities.Wuhan or StableIds.Cities.Guangzhou)
             Feedback.Credit(evaluation.TotalRevenue, customer.Id);
         RecordOutcome(customer, evaluation);
         if (notify) DeliveryCompleted?.Invoke(evaluation);

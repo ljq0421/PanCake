@@ -10,7 +10,6 @@ public partial class GuangzhouHub : Control
 {
     public event Action<int>? DayRequested;
     public event Action? MapRequested;
-    public event Action? PracticeRequested;
     private DataCatalog _catalog = null!;
     private SaveService _save = null!;
     private Control _canvas = null!;
@@ -34,12 +33,6 @@ public partial class GuangzhouHub : Control
         }
         _open.Pressed += () => DayRequested?.Invoke(_save.Data.Guangzhou.HighestUnlockedDay);
         this.FindButton("早餐地图").Pressed += () => MapRequested?.Invoke();
-        Button? practice = this.FindOptionalButton("Day 9 练习 · Lv2设备 · 不保存");
-        if (practice is not null)
-        {
-            practice.Visible = OS.GetCmdlineUserArgs().Contains("--dev-ui");
-            practice.Pressed += () => PracticeRequested?.Invoke();
-        }
     }
     public void Initialize(DataCatalog catalog, SaveService save)
     {

@@ -13,6 +13,7 @@ config_version=5
 config/name="早餐铺子"
 run/main_scene="res://Scenes/Main/Main.tscn"
 config/features=PackedStringArray("4.7", "C#", "GL Compatibility")
+run/main_scene.demo_qa="res://Scenes/Tests/DemoUiSelfTest.tscn"
 
 [autoload]
 
@@ -34,7 +35,7 @@ project/assembly_name="ProjectCake"
 
 [editor]
 
-run/main_run_args="-- --dev-ui"
+run/main_run_args="-- --dev-ui --demo-pilot"
 
 [rendering]
 

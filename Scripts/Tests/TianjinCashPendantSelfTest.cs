@@ -37,7 +37,7 @@ public partial class CoinCollectionSelfTest
             controller.CustomerQueue!.Tick(1000, .4, true);
             screen.RefreshForCapture(true); await Frames();
             Check(controller.CustomerQueue.Slots.Count == 5, "pendant preserves five physical customer slots");
-            string suffix = day == 1 ? "天津-煎饼-v2.png" : day == 5 ? "天津-煎饼-炸锅-v2.png" : "天津-煎饼-炸锅-豆浆-v2.png";
+            string suffix = day == 1 ? "天津-煎饼-clean.png" : day == 5 ? "天津-煎饼-炸锅-clean.png" : "天津-煎饼-炸锅-豆浆-clean.png";
             Check(screen.GetNode<TextureRect>("ShopBackground").Texture.ResourcePath.EndsWith(suffix), "correct new stage background: " + day);
             Check(!station.CoinTray!.IsVisibleInTree() && !station.CoinTray.TryCollect(), "old Tianjin collection control stays hidden and inert");
             Check(screen.FindChildren("OrderBubble", "", true, false).OfType<OrderBubbleView>()
@@ -126,7 +126,7 @@ public partial class CoinCollectionSelfTest
         screen.OpenBusinessDetails();
         var positions = screen.PaymentCoins.ToDictionary(c => c, c => c.Position);
         await ToSignal(GetTree().CreateTimer(.15), SceneTreeTimer.SignalName.Timeout);
-        Check(positions.All(p => p.Key.Position == p.Value), "detail modal pauses in-flight payments");
+        Check(screen.PaymentCoins.Count == 0 && positions.Count == 0, "detail modal clears in-flight payments without replay");
         screen.CloseBusinessDetails();
         foreach (var customer in controller.CustomerQueue.Slots.Where(c => !c.WasServed)) customer.WaitSeconds = customer.LeaveAtSeconds;
         controller.CustomerQueue.Tick(1000, .1, false);

@@ -52,6 +52,9 @@ public partial class PancakeWorkstation : Control
     };
     private DragService _drag = null!;
     internal bool IsDragging => _drag.IsDragging;
+    internal bool IsSpreading => _stroke.IsSpreading;
+    internal event Action? TianjinFlipped;
+    private bool _soyCupHeld;
     private DragItem _batterItem = null!;
     private StrokeInteractor _stroke = null!;
     private DropZone _stoveDropZone = null!;
@@ -205,6 +208,8 @@ public partial class PancakeWorkstation : Control
 
         _drag.Configure(this);
         _drag.DragStarted += _ => _audio.Play(PancakeSound.PickUp);
+        _drag.DragStarted += payload => { if (IsTianjinWorkbench && payload == SoyMilkPayload) { _soyCupHeld = true; Render(); } };
+        _drag.DragEnded += _ => { if (_soyCupHeld) { _soyCupHeld = false; if (_initialized) Render(); } };
         _drag.DragEnded += OnDragEnded;
         _drag.DragEnded += _ => { _trashSourceValid = null; _trashCommit = null; };
         var rawYoutiaoSlot = _rawYoutiaoInput.GetParent().GetParent() as WorkstationSlotView
@@ -342,6 +347,7 @@ public partial class PancakeWorkstation : Control
     public void Initialize(DataCatalog catalog, int stoveLevel, int stationLevel, int fryerLevel = 0, DayConfig? config = null, TianjinArtCatalog? art = null)
     {
         CancelInput();
+        Tutorial = config?.Tutorial ?? TutorialProtection.None;
         foreach ((Control target, Tween tween) in _interactionTweens)
         {
             tween.Kill();
@@ -390,12 +396,14 @@ public partial class PancakeWorkstation : Control
         if (!_initialized) return;
         if (Paused || !InteractionEnabled)
         {
+            _canvas.TickLivingMotion(0, false, false);
             foreach (StockGesture gesture in _stockGestures) gesture.Cancel();
             _rawYoutiaoInput?.Cancel();
             if (IsTianjinWorkbench) CancelInput();
             return;
         }
-        Machine.Tick(deltaSeconds);
+        Machine.Tick(TutorialCookingDelta(deltaSeconds));
+        _canvas.TickLivingMotion(deltaSeconds, IsTianjinWorkbench && !ReducedMotion, _stroke.IsSpreading);
         TickBagTransfer(deltaSeconds);
         Inventory.Tick(deltaSeconds);
         FryerMachine?.Tick(deltaSeconds);
@@ -410,6 +418,7 @@ public partial class PancakeWorkstation : Control
 
     public void CancelInput()
     {
+        _canvas?.TickLivingMotion(0, false, false);
         CancelRightFoodPress();
         foreach (StockGesture gesture in _stockGestures) gesture.Cancel();
         _rawYoutiaoInput?.Cancel();
@@ -651,6 +660,7 @@ public partial class PancakeWorkstation : Control
         }
 
         LearnPancakeAction(command, id);
+        if (IsTianjinWorkbench && command == PancakeCommand.Flip) TianjinFlipped?.Invoke();
         if (command == PancakeCommand.CompleteSauce) _stroke.CancelStroke();
 
         if (consumedYoutiao is YoutiaoQuality quality)
@@ -915,6 +925,7 @@ public partial class PancakeWorkstation : Control
         if (SoyMilkTray is not null)
         {
             int shownCups = SoyMilkTray.Quantity;
+            if (IsTianjinWorkbench && _soyCupHeld && !SoyMilkTray.IsTaking) shownCups = Math.Max(0, shownCups - 1);
             if (SoyMilkTray.IsRefilling)
                 shownCups += (int)Math.Floor((SoyMilkTray.Capacity - shownCups) * SoyMilkTray.RefillProgress);
             _soyStockArt?.RenderQuantity(shownCups);

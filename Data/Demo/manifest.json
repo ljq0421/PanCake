@@ -1,0 +1,42 @@
+{
+  "profileId": "demo_pilot",
+  "contentRevision": 1,
+  "stages": [
+    {
+      "id": "demo_tj_01",
+      "day": 1,
+      "titleZh": "第一张煎饼",
+      "titleEn": "Your first jianbing",
+      "durationSeconds": 75,
+      "patienceMultiplier": 1.6,
+      "arrivals": [0, 16, 34, 52],
+      "recipes": ["pancake_basic", "pancake_basic", "pancake_basic", "pancake_basic"],
+      "availableRecipes": ["pancake_basic"],
+      "completionUnlocks": []
+    },
+    {
+      "id": "demo_tj_02",
+      "day": 2,
+      "titleZh": "看清这份早餐",
+      "titleEn": "Read the order",
+      "durationSeconds": 90,
+      "patienceMultiplier": 1.4,
+      "arrivals": [0, 12, 25, 40, 54, 68],
+      "recipes": ["pancake_basic", "pancake_crispy", "pancake_crispy", "pancake_basic", "pancake_crispy", "pancake_crispy"],
+      "availableRecipes": ["pancake_basic", "pancake_crispy"],
+      "completionUnlocks": []
+    },
+    {
+      "id": "demo_tj_03",
+      "day": 3,
+      "titleZh": "找到自己的顺序",
+      "titleEn": "Find your rhythm",
+      "durationSeconds": 105,
+      "patienceMultiplier": 1.25,
+      "arrivals": [0, 12, 25, 33, 46, 60, 70, 82],
+      "recipes": ["pancake_basic", "pancake_scallion", "pancake_crispy", "pancake_scallion_crispy", "pancake_scallion", "pancake_crispy", "pancake_scallion_crispy", "pancake_scallion"],
+      "availableRecipes": ["pancake_basic", "pancake_crispy", "pancake_scallion", "pancake_scallion_crispy"],
+      "completionUnlocks": ["equipment:ingredient_station_lv2", "equipment:pancake_stove_lv2"]
+    }
+  ]
+}

@@ -85,6 +85,7 @@ public sealed class DayConfig
 
     public List<StarGoalConfig> StarGoals { get; set; } = new();
     public GuangzhouDaySettings? Guangzhou { get; set; }
+    public TutorialProtection Tutorial { get; set; } = TutorialProtection.None;
 }
 
 public sealed class GuangzhouDaySettings

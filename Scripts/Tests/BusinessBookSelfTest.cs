@@ -38,7 +38,7 @@ public partial class BusinessBookSelfTest : Node
             Check(ym.Orders.Select(o=>o.Id).Distinct().Count()==count,"unique Yangzhou IDs");
             var save = new SaveService(); save.UsePathForTests("res://.tmp/book-tests/"+Guid.NewGuid()+".json"); AddChild(save);
             save.Data.Yangzhou.HighestUnlockedDay=2;
-            var yzUnlock=YangzhouBusinessBook.Commit(ys,yc,save,false);
+            var yzUnlock=YangzhouBusinessBook.Commit(ys,yc,save);
             Check(yzUnlock.Stickers.Any(t=>t.Contains("新设备"))&&yzUnlock.Stickers.Any(t=>t.Contains("新菜品")),"Yangzhou only announces actual new equipment and menu");
             foreach(var id in new[]{StableIds.Cities.Tianjin,StableIds.Cities.Wuhan,StableIds.Cities.Xian,StableIds.Cities.Guangzhou,YangzhouCatalog.CityId}) save.Data.GetCity(id).HighestUnlockedDay=15;
             foreach(string city in new[]{"Tianjin","Wuhan","Xian","Guangzhou","Yangzhou"})
@@ -132,7 +132,6 @@ public partial class BusinessBookSelfTest : Node
             save.UsePathForTests("res://.tmp/book-tests/retry-"+Guid.NewGuid()+".json");int before=save.Data.Coins;
             var good=BusinessBookSettlement.Commit(Fixture("xian"),save,plan,d,catalog);Check(good.CanClose&&!good.CanRetry,"retry saves");int after=save.Data.Coins;
             BusinessBookSettlement.Commit(Fixture("xian"),save,plan,d,catalog);Check(save.Data.Coins==after&&after>=before,"replay only pays best delta");
-            BusinessBookSettlement.Commit(Fixture("guangzhou"),save,plan,d,catalog,practice:true);Check(save.Data.Coins==after,"practice doesn't save");
             await CheckCompactPresentation();
             await CheckBookUpgrades(catalog, yc);
             GD.Print($"BUSINESS_BOOK_TEST_RESULT passed={_checks} failed=0");GetTree().Quit();
@@ -234,9 +233,6 @@ public partial class BusinessBookSelfTest : Node
         ProjectSettings.SetSetting("accessibility/reduce_motion",false);view.SelectPage(false);
         bool closed=false;view.CloseRequested+=()=>{closed=true;view.Hide();};Click(view.CloseButton);await Frames();
         Check(closed&&!view.Visible,"close interrupts navigation");
-        var practice=Fixture("yangzhou");practice.Practice=true;practice.SaveMessage="练习营业 · 不保存进度";
-        view.Open(practice);view.FinishAnimation();await Frames();
-        Check(view.Descendants<Label>().Any(l=>l.IsVisibleInTree()&&l.Text.Contains("练习营业")),"practice remains visible");
         ProjectSettings.SetSetting("accessibility/reduce_motion",reduced);view.QueueFree();await Frames();
     }
 

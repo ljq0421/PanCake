@@ -46,6 +46,7 @@ public partial class StartScreen
         HomeArt(button, icon, small ? new(14, -12, 110, 112) : new(18, -34, 180, 178));
         var label = Text(button, "Caption", caption,
             small ? new(122, 18, 175, 66) : new(200, 30, 275, 88), small ? 34 : 48, true);
+        FitTextWidth(label, small ? 34 : 48, small ? 25 : 32);
         label.AddThemeColorOverride("font_outline_color", StartScreenTheme.Cream);
         label.AddThemeConstantOverride("outline_size", 4);
         return button;

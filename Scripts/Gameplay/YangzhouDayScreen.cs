@@ -9,7 +9,6 @@ public partial class YangzhouDayScreen : Control
 {
     public event Action? HubRequested;
     public YangzhouSession Session { get; private set; } = null!;
-    public bool Practice { get; private set; }
     private SaveService _save = null!;
     private YangzhouCatalog _catalog = null!;
     private Control _canvas = null!, _resultPanel = null!;
@@ -121,13 +120,12 @@ public partial class YangzhouDayScreen : Control
         _return.Pressed += ReturnAfterResult;
         foreach (var button in _workButtons.Concat(_refills.Values)) ButtonContourHighlight.Attach(button);
     }
-    public bool Initialize(YangzhouCatalog catalog, SaveService save, int day, bool practice = false)
+    public bool Initialize(YangzhouCatalog catalog, SaveService save, int day)
     {
-        if (practice && !OS.GetCmdlineUserArgs().Contains("--dev-ui")) return false;
-        if (!practice && !save.PrepareYangzhou(day, out _)) return false;
-        _catalog = catalog; _save = save; Practice = practice;
+        if (!save.PrepareYangzhou(day, out _)) return false;
+        _catalog = catalog; _save = save;
         var city = save.Data.Yangzhou;
-        Session = new(catalog, day, practice ? 2 : city.EquipmentLevels.GetValueOrDefault(YangzhouCatalog.BoardId, 1), practice ? 2 : city.EquipmentLevels.GetValueOrDefault(YangzhouCatalog.SteamerId, 1));
+        Session = new(catalog, day, city.EquipmentLevels.GetValueOrDefault(YangzhouCatalog.BoardId, 1), city.EquipmentLevels.GetValueOrDefault(YangzhouCatalog.SteamerId, 1));
         BusinessFeedbackAudio.Attach(this, Session.Feedback, CanWork);
         _book.Reset(); _committed = _focusLost = false; _resultPanel.Hide(); _leave.Hide(); _return.Text = "收好收入 · 返回经营首页";
         _feedback.Text = ""; Render(); return true;
@@ -233,7 +231,7 @@ public partial class YangzhouDayScreen : Control
     private bool SaveResult()
     {
         if (_committed) return true;
-        var model = YangzhouBusinessBook.Commit(Session, _catalog, _save, Practice);
+        var model = YangzhouBusinessBook.Commit(Session, _catalog, _save);
         _committed = !model.CanRetry; _book.ShowResult(model); return _committed;
     }
     private void ReturnAfterResult() { if (SaveResult()) HubRequested?.Invoke(); }

@@ -20,30 +20,27 @@ public static class YangzhouBusinessBook
             ExtraNotes = new[] { $"Perfect 干丝 {r.PerfectGansi} 份" },
         };
     }
-    public static BusinessBookModel Commit(YangzhouSession session, YangzhouCatalog catalog, SaveService save, bool practice)
+    public static BusinessBookModel Commit(YangzhouSession session, YangzhouCatalog catalog, SaveService save)
     {
-        var model = Snapshot(session, catalog); model.Closing = true; model.Practice = practice;
+        var model = Snapshot(session, catalog); model.Closing = true;
         var before = save.Data.Yangzhou.UnlockedCollectibleIds.ToHashSet();
         int previousDay = save.Data.Yangzhou.HighestUnlockedDay;
         var previousEquipment = new Dictionary<string, int>(save.Data.Yangzhou.EquipmentLevels);
         try
         {
-            var commit = practice ? new DayCommitResult(0, false, session.Result().Stars) : save.CommitYangzhou(session);
-            model.SaveMessage = practice ? "练习营业 · 本次不保存收入、设备或章节进度" : $"已入账 ¥{commit.PermanentCoinGain} · 历史最佳收入差额" + (commit.NewBest ? " · 新纪录" : "");
+            var commit = save.CommitYangzhou(session);
+            model.SaveMessage = $"已入账 ¥{commit.PermanentCoinGain} · 历史最佳收入差额" + (commit.NewBest ? " · 新纪录" : "");
             var stickers = new List<string>();
             if (commit.EarnedStars > 0) stickers.Add($"本次评级 {new string('★', commit.EarnedStars)}");
-            if (!practice)
-            {
-                if (commit.NewChapterCompletion) { stickers.Add("扬州章节已点亮"); save.QueueJourneyCompletion(ProjectCake.Data.StableIds.Cities.Yangzhou); }
-                if (save.Data.Yangzhou.EquipmentLevels.Any(p => p.Value > 0 && previousEquipment.GetValueOrDefault(p.Key) == 0)) stickers.Add("新设备：蒸笼已开放");
-                var products = catalog.Products.Where(p => p.UnlockDay > previousDay && p.UnlockDay <= save.Data.Yangzhou.HighestUnlockedDay).Select(p => p.Name).ToArray();
-                if (products.Length > 0) stickers.Add("新菜品：" + string.Join("、", products));
-                if (save.Data.Yangzhou.UnlockedCollectibleIds.Any(id => !before.Contains(id))) stickers.Add("获得新收藏 · 回店查看");
-                var upgrades = save.AvailableYangzhouBookUpgrades(catalog);
-                if (upgrades.Length > 0) stickers.Add("可升级：" + string.Join("、", upgrades));
-            }
+            if (commit.NewChapterCompletion) { stickers.Add("扬州章节已点亮"); save.QueueJourneyCompletion(ProjectCake.Data.StableIds.Cities.Yangzhou); }
+            if (save.Data.Yangzhou.EquipmentLevels.Any(p => p.Value > 0 && previousEquipment.GetValueOrDefault(p.Key) == 0)) stickers.Add("新设备：蒸笼已开放");
+            var products = catalog.Products.Where(p => p.UnlockDay > previousDay && p.UnlockDay <= save.Data.Yangzhou.HighestUnlockedDay).Select(p => p.Name).ToArray();
+            if (products.Length > 0) stickers.Add("新菜品：" + string.Join("、", products));
+            if (save.Data.Yangzhou.UnlockedCollectibleIds.Any(id => !before.Contains(id))) stickers.Add("获得新收藏 · 回店查看");
+            var upgrades = save.AvailableYangzhouBookUpgrades(catalog);
+            if (upgrades.Length > 0) stickers.Add("可升级：" + string.Join("、", upgrades));
             model.Stickers = stickers.ToArray();
-            if (!practice) model.Upgrades = new BookUpgradeSource(save, catalog);
+            model.Upgrades = new BookUpgradeSource(save, catalog);
         }
         catch (Exception e) { model.SaveMessage = "未保存 · " + e.Message + "；收入与进度已回退。"; model.CanClose = false; model.CanRetry = true; }
         return model;

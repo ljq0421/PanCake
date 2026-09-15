@@ -9,12 +9,6 @@ public partial class GameController : Node
     [Export]
     public NodePath DayControllerPath { get; set; } = new("DayController");
 
-    [Export]
-    public NodePath DebugPanelPath { get; set; } = new("UI/DataDebugPanel");
-
-    [Export]
-    public NodePath PancakeLabPath { get; set; } = new("UI/PancakeLab");
-
     [Export] public NodePath HubPath { get; set; } = new("UI/MorningHub");
     [Export] public NodePath TianjinDayPath { get; set; } = new("UI/TianjinDayScreen");
     [Export] public NodePath MapPath { get; set; } = new("UI/TianjinMapScreen");
@@ -34,10 +28,9 @@ public partial class GameController : Node
 
     public override void _Ready()
     {
+        if (ExperienceProfile.IsDemo) { InitializeDemo(); return; }
         var catalog = GetNode<DataCatalog>("/root/DataCatalog");
         var dayController = GetNode<DayController>(DayControllerPath);
-        var debugPanel = GetNode<DataDebugPanel>(DebugPanelPath);
-        var pancakeLab = GetNode<PancakeLab>(PancakeLabPath);
         var hub = GetNode<MorningHub>(HubPath);
         var dayScreen = GetNode<TianjinDayScreen>(TianjinDayPath);
         var mapScreen = GetNode<TianjinMapScreen>(MapPath);
@@ -65,14 +58,8 @@ public partial class GameController : Node
             if (!_yangzhouDay.Initialize(yangzhouCatalog, save, day)) { _yangzhouHub.ShowError("无法开店，请检查日期解锁和存档状态。"); return; }
             ShowOnly(_yangzhouDay);
         };
-        _yangzhouHub.PracticeRequested += () =>
-        {
-            if (_yangzhouDay.Initialize(yangzhouCatalog, save, 8, true)) ShowOnly(_yangzhouDay);
-        };
         _yangzhouHub.MapRequested += () => { mapOriginCity = Data.StableIds.Cities.Yangzhou; ShowOnly(mapScreen); };
         _yangzhouDay.HubRequested += () => { _yangzhouHub.Render(); ShowOnly(_yangzhouHub); };
-        debugPanel.Initialize(catalog, dayController);
-        pancakeLab.Initialize(catalog);
         hub.Initialize(catalog, save);
         dayScreen.ConnectController(dayController);
         mapScreen.Initialize(save);
@@ -95,14 +82,6 @@ public partial class GameController : Node
             _startScreen.RefreshCityPage();
             _startScreen.ShowError(ok ? "设备已升级，下次营业生效。" : error);
         };
-        _startScreen.DeveloperRequested += id =>
-        {
-            if (!_startScreen.DeveloperToolsVisible) return;
-            if (id == "lab") ShowOnly(pancakeLab);
-            else if (id == "data") ShowOnly(debugPanel);
-            else if (id == Data.StableIds.Cities.Guangzhou && _guangzhouDay.Initialize(catalog, save, dayController, 9, true)) { ShowOnly(_guangzhouDay); _guangzhouDay.BeginDay(); }
-            else if (id == Data.StableIds.Cities.Yangzhou && _yangzhouDay.Initialize(yangzhouCatalog, save, 8, true)) ShowOnly(_yangzhouDay);
-        };
         _startScreen.NewGameRequested += () =>
         {
             if (!save.ResetProgress(out string error)) { _startScreen.ShowError(error); return; }
@@ -120,13 +99,7 @@ public partial class GameController : Node
             ShowOnly(dayScreen);
             dayScreen.BeginDay();
         };
-        hub.LabRequested += () => ShowOnly(pancakeLab);
-        hub.DebugRequested += () => ShowOnly(debugPanel);
         hub.MapRequested += () => { mapOriginCity = Data.StableIds.Cities.Tianjin; ShowOnly(mapScreen); };
-        pancakeLab.HubRequested += () => ShowOnly(hub);
-        pancakeLab.DataDebugRequested += () => ShowOnly(debugPanel);
-        debugPanel.PancakeLabRequested += () => ShowOnly(pancakeLab);
-        debugPanel.HubRequested += () => ShowOnly(hub);
         dayScreen.HubRequested += () => ShowOnly(hub);
         wuhanHub.DayRequested += day => { wuhanDay.Initialize(catalog, save, dayController, day); ShowOnly(wuhanDay); wuhanDay.BeginDay(); };
         wuhanHub.MapRequested += () => { mapOriginCity = Data.StableIds.Cities.Wuhan; ShowOnly(mapScreen); };
@@ -137,12 +110,6 @@ public partial class GameController : Node
         _guangzhouHub.DayRequested += day =>
         {
             if (!_guangzhouDay.Initialize(catalog, save, dayController, day)) return;
-            ShowOnly(_guangzhouDay);
-            _guangzhouDay.BeginDay();
-        };
-        _guangzhouHub.PracticeRequested += () =>
-        {
-            if (!_guangzhouDay.Initialize(catalog, save, dayController, 9, true)) return;
             ShowOnly(_guangzhouDay);
             _guangzhouDay.BeginDay();
         };
@@ -173,6 +140,8 @@ public partial class GameController : Node
 
     public bool StartCityBusiness(string cityId, int day)
     {
+        if (_save.IsDemo && !_save.CanEnter(cityId, day))
+        { _startScreen.ShowError("本次试玩尚未开放该营业日。"); return false; }
         var catalog = GetNode<DataCatalog>("/root/DataCatalog");
         var controller = GetNode<DayController>(DayControllerPath);
         if (!_save.CanContinue || !catalog.IsValid || !_save.Data.UnlockedCityIds.Contains(cityId)
@@ -191,6 +160,7 @@ public partial class GameController : Node
             default: screen = _yangzhouDay; ready = _yangzhouDay.Initialize(ProjectCake.Yangzhou.YangzhouCatalog.Load(), _save, day); break;
         }
         if (!ready) { _startScreen.ShowError("营业准备失败，请检查配置或存档写入权限后重试。"); return false; }
+        if (!_save.TryRecordDemoStart(day, out string demoError)) { _startScreen.ShowError(demoError); return false; }
         if (!_save.TryRecordCityVisit(cityId, out string error)) { _startScreen.ShowError(error); return false; }
         ShowOnly(screen);
         if (screen is TianjinDayScreen td) td.BeginDay();

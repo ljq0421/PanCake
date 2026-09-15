@@ -12,7 +12,6 @@ public partial class GuangzhouDayScreen : Control
 {
     public event Action? HubRequested;
     public GuangzhouSession Session { get; private set; } = null!;
-    public bool Practice { get; private set; }
     public IReadOnlyList<GuangzhouTrayView> TrayViews => _trays;
     private DataCatalog _catalog = null!;
     private SaveService _save = null!;
@@ -151,18 +150,17 @@ public partial class GuangzhouDayScreen : Control
     }
     public override void _ExitTree() { if (_controller is not null) _controller.DayFinished -= OnFinished; }
 
-    public bool Initialize(DataCatalog catalog, SaveService save, DayController controller, int day, bool practice = false)
+    public bool Initialize(DataCatalog catalog, SaveService save, DayController controller, int day)
     {
         BusinessFeedbackAudio.Attach(this, controller.Feedback, () => controller.CurrentConfig?.CityId == StableIds.Cities.Guangzhou && (CanInteract));
         _catalog = catalog; _save = save;
         if (_controller != controller) ConnectController(controller);
         if (!catalog.TryGetDay(StableIds.Cities.Guangzhou, day, out var config)) return false;
-        if (!practice && (save.HasLoadError || day > save.Data.Guangzhou.HighestUnlockedDay)) return false;
-        if (!practice && !save.ApplyStartUnlocks(config, out string saveError)) { Feedback(saveError); return false; }
+        if ((save.HasLoadError || day > save.Data.Guangzhou.HighestUnlockedDay)) return false;
+        if (!save.ApplyStartUnlocks(config, out string saveError)) { Feedback(saveError); return false; }
         if (!controller.TryPrepareDay(StableIds.Cities.Guangzhou, day, catalog, out string error)) { Feedback(error); return false; }
-        var city = practice ? SaveService.NewGuangzhouProgress() : save.Data.Guangzhou;
-        if (practice) foreach (string id in GuangzhouRules.Equipment) city.EquipmentLevels[id] = 2;
-        Session = new(catalog, city, config); Practice = practice;
+        var city = save.Data.Guangzhou;
+        Session = new(catalog, city, config);
         controller.GuangzhouStockCount = Session.DimSum.Count;
         _book.Reset(); _selectedTray = 0; _tool = ""; _committed = _manuallyPaused = false; _pendingResult = null;
         _focused = true; _overlay.Visible = false; _abandon.Hide(); controller.IsPaused = false;
@@ -171,7 +169,7 @@ public partial class GuangzhouDayScreen : Control
             _trays[i].CancelGesture(); _trays[i].Visible = i < Session.Trays.Count;
             if (_trays[i].Visible) _trays[i].Tray = Session.Trays[i];
         }
-        _title.Text = $"广州 · 蒸汽早茶    /    DAY {day:00}" + (practice ? "    练习 · 不保存" : "");
+        _title.Text = $"广州 · 蒸汽早茶    /    DAY {day:00}";
         _tutorial.Text = Tutorial(day);
         _stoveTitle.Text = $"肠粉主操作    {Session.StoveData.DisplayName}";
         _cabinetTitle.Text = Session.Cabinet is null ? "点心蒸柜 · Day 5 开放" : $"点心蒸柜 · Lv{Session.CabinetData.Level}";
@@ -336,7 +334,7 @@ public partial class GuangzhouDayScreen : Control
     {
         if (_pendingResult is not { } result || _committed) return;
         var model = BusinessBookModel.From(StableIds.Cities.Guangzhou, result, _controller.BusinessRecords, _catalog);
-        BusinessBookSettlement.Commit(model, _save, _controller.CurrentPlan!, Session.Config, _catalog, Practice);
+        BusinessBookSettlement.Commit(model, _save, _controller.CurrentPlan!, Session.Config, _catalog);
         _committed = !model.CanRetry; _book.ShowResult(model);
     }
     public static string Tutorial(int day) => day switch

@@ -3,8 +3,6 @@
 [ext_resource type="Script" uid="uid://wkfpts60lubl" path="res://Scripts/Core/GameController.cs" id="1_game"]
 [ext_resource type="Script" uid="uid://c1gj46sxjw0rr" path="res://Scripts/Core/DayController.cs" id="2_day"]
 [ext_resource type="PackedScene" path="res://Scenes/Shop/TianjinShop.tscn" id="3_shop"]
-[ext_resource type="PackedScene" path="res://Scenes/UI/DataDebugPanel.tscn" id="4_debug"]
-[ext_resource type="PackedScene" path="res://Scenes/Gameplay/PancakeLab.tscn" id="5_lab"]
 [ext_resource type="PackedScene" path="res://Scenes/UI/MorningHub.tscn" id="6_hub"]
 [ext_resource type="PackedScene" path="res://Scenes/Gameplay/TianjinDayScreen.tscn" id="7_day_screen"]
 [ext_resource type="PackedScene" path="res://Scenes/UI/TianjinMapScreen.tscn" id="8_map"]
@@ -80,14 +78,6 @@ grow_vertical = 2
 visible = false
 grow_horizontal = 2
 grow_vertical = 2
-
-[node name="PancakeLab" parent="UI" unique_id=1379997859 instance=ExtResource("5_lab")]
-visible = false
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="DataDebugPanel" parent="UI" unique_id=1885766851 instance=ExtResource("4_debug")]
-visible = false
 
 [node name="StartScreen" parent="UI" instance=ExtResource("17_start")]
 

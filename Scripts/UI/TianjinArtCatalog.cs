@@ -119,6 +119,12 @@ public sealed class TianjinArtCatalog
         Get(products.Contains(ProjectCake.Data.ProductKind.SoyMilk) ? "background_soy"
             : products.Contains(ProjectCake.Data.ProductKind.Youtiao) ? "background_fryer" : "background_pancake");
     public Texture2D EmbeddedBasket => Get("embedded_basket");
+    public Texture2D LivingWorkbenchBackground(IEnumerable<ProjectCake.Data.ProductKind> products)
+    {
+        string stem = products.Contains(ProjectCake.Data.ProductKind.SoyMilk) ? "天津-煎饼-炸锅-豆浆"
+            : products.Contains(ProjectCake.Data.ProductKind.Youtiao) ? "天津-煎饼-炸锅" : "天津-煎饼";
+        return GD.Load<Texture2D>($"res://resource/art/TianJin/LivingWorkbench/{stem}-clean.png");
+    }
     public Texture2D WorkbenchStoveIcon => Get("workbench_stove_icon");
     public Texture2D WorkbenchFryerIcon => Get("workbench_fryer_icon");
     public Texture2D LedgerOfficeCustomer => Get("ledger_office_customer");

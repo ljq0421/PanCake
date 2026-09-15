@@ -241,7 +241,6 @@ public partial class StageThreeSelfTest : Node
             "res://Scenes/UI/GuangzhouHub.tscn",
             "res://Scenes/UI/YangzhouHub.tscn",
             "res://Scenes/UI/TianjinMapScreen.tscn",
-            "res://Scenes/UI/DataDebugPanel.tscn",
             "res://Scenes/UI/OrderBubbleView.tscn",
             "res://Scenes/UI/CustomerPortraitView.tscn",
             "res://Scenes/UI/CoinTrayView.tscn",
@@ -251,9 +250,7 @@ public partial class StageThreeSelfTest : Node
             "res://Scenes/Gameplay/XianDayScreen.tscn",
             "res://Scenes/Gameplay/GuangzhouDayScreen.tscn",
             "res://Scenes/Gameplay/YangzhouDayScreen.tscn",
-            "res://Scenes/Gameplay/PancakeLab.tscn",
             "res://Scenes/Gameplay/PancakeWorkstation.tscn",
-            "res://Scenes/Gameplay/PancakeLabWorkstation.tscn",
             "res://Scenes/Shop/TianjinShop.tscn",
             "res://Scenes/Main/Main.tscn",
         };
@@ -270,8 +267,8 @@ public partial class StageThreeSelfTest : Node
             && main.HasNode("UI/GuangzhouHub") && main.HasNode("UI/YangzhouHub")
             && main.HasNode("UI/TianjinDayScreen") && main.HasNode("UI/WuhanDayScreen")
             && main.HasNode("UI/XianDayScreen") && main.HasNode("UI/GuangzhouDayScreen")
-            && main.HasNode("UI/YangzhouDayScreen") && main.HasNode("UI/PancakeLab")
-            && main.HasNode("UI/DataDebugPanel"), "Main 固定包含五城首页、五城营业页、实验台和数据调试入口");
+            && main.HasNode("UI/YangzhouDayScreen") && !main.HasNode("UI/PancakeLab")
+            && !main.HasNode("UI/DataDebugPanel"), "Main 包含五城首页和营业页，已移除实验台和数据调试入口");
         main.Free();
 
         string relative = $"res://.tmp/stage3-screen-{Guid.NewGuid():N}.json";
@@ -313,11 +310,10 @@ public partial class StageThreeSelfTest : Node
             "res://Scripts/UI/MorningHub.cs", "res://Scripts/UI/WuhanHub.cs",
             "res://Scripts/UI/XianHub.cs", "res://Scripts/UI/GuangzhouHub.cs",
             "res://Scripts/UI/YangzhouHub.cs", "res://Scripts/UI/TianjinMapScreen.cs",
-            "res://Scripts/UI/DataDebugPanel.cs", "res://Scripts/UI/TianjinLedger.cs",
+            "res://Scripts/UI/TianjinLedger.cs",
             "res://Scripts/UI/WuhanLedger.cs", "res://Scripts/Gameplay/TianjinDayScreen.cs",
             "res://Scripts/Gameplay/WuhanDayScreen.cs", "res://Scripts/Gameplay/XianDayScreen.cs",
             "res://Scripts/Gameplay/GuangzhouDayScreen.cs", "res://Scripts/Gameplay/YangzhouDayScreen.cs",
-            "res://Scripts/Gameplay/PancakeLab.cs",
         };
         string[] forbiddenStaticBuilders =
         {

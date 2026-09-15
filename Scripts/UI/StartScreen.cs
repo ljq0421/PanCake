@@ -14,7 +14,7 @@ public partial class StartScreen : Control
     public JourneyPage Page { get; private set; }
     public bool ConfirmationOpen => ModalOpen && _modalKind == "confirm";
     public bool ModalOpen => _modal is not null && _modal.Visible;
-    public bool DeveloperToolsVisible => OS.GetCmdlineUserArgs().Contains("--dev-ui");
+    public bool DeveloperToolsVisible => !ExperienceProfile.IsDemo && OS.GetCmdlineUserArgs().Contains("--dev-ui");
     private SaveService? _save;
     private JourneySettings _settings = null!;
     private Control _canvas = null!, _body = null!, _modal = null!;
@@ -147,7 +147,7 @@ public partial class StartScreen : Control
         if (!ModalOpen && Page == JourneyPage.Ledger && key.Keycode != Key.Tab && GetViewport().GuiGetFocusOwner()?.Name.ToString() is { } dateName && dateName.StartsWith("Date") && int.TryParse(dateName[4..], out int date))
         {
             int offset = key.Keycode == Key.Up ? -3 : key.Keycode == Key.Down ? 3 : key.Keycode == Key.Left ? -1 : 1;
-            Focus("Date" + Math.Clamp(date + offset, 1, JourneyModel.City(_city).Days)); GetViewport().SetInputAsHandled(); return;
+            Focus("Date" + Math.Clamp(date + offset, 1, _save!.ChapterLength(_city))); GetViewport().SetInputAsHandled(); return;
         }
         if (GetViewport().GuiGetFocusOwner() is HSlider && key.Keycode is Key.Left or Key.Right) return;
         Control[] candidates = ModalOpen ? _modalControls.Where(c => c.IsVisibleInTree() && (c is not BaseButton b || !b.Disabled)).ToArray()

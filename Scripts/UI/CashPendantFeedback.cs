@@ -9,7 +9,7 @@ public sealed class CashPendantFeedback
     private bool _paused;
     public IReadOnlyCollection<Control> Coins => _flights.Keys;
 
-    public void Spawn(Control host, Texture2D texture, Vector2 origin, Vector2 target, double delay)
+    public void Spawn(Control host, Texture2D texture, Vector2 origin, Vector2 target, double delay, Action? arrived = null)
     {
         var coin = TianjinUi.Texture(texture, new Vector2(38, 38));
         coin.Name = "FlyingPaymentCoin";
@@ -25,7 +25,7 @@ public sealed class CashPendantFeedback
         tween.Parallel().TweenProperty(coin, "scale", Vector2.One * .65f, .62).SetDelay(delay);
         tween.TweenProperty(coin, "scale", Vector2.One * .15f, .12);
         tween.Parallel().TweenProperty(coin, "modulate", new Color(1, 1, 1, 0), .12);
-        tween.Finished += () => { _flights.Remove(coin); coin.QueueFree(); };
+        tween.Finished += () => { _flights.Remove(coin); coin.QueueFree(); arrived?.Invoke(); };
         if (_paused) tween.Pause();
     }
 

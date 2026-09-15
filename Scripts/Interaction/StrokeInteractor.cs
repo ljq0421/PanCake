@@ -30,12 +30,16 @@ public partial class StrokeInteractor : Control
     public Action? InvalidStroke { get; set; }
     public Func<EllipseGeometry>? ResolveSpreadGeometry { get; set; }
     public Texture2D? SpreadToolTexture { get; set; }
+    public bool SpreadToolOnlyDuringStroke { get; set; }
+    public Vector2 SpreadToolSize { get; set; } = new(116, 116);
+    public Vector2 SpreadToolContactAnchor { get; set; } = new(47, 79);
     public Texture2D? SauceToolTexture { get; set; }
     public Func<bool>? IsToolHeld { get; set; }
     public float PancakeRadius { get; set; } = 180;
 
     public double SpreadProgress => _spread.Progress;
     public double SauceProgress => _sauce.Progress;
+    public bool IsSpreading => _dragging && _activeMode == StrokeMode.Spread;
 
     public override void _Ready()
     {
@@ -100,11 +104,14 @@ public partial class StrokeInteractor : Control
     public void RefreshVisualState()
     {
         bool held = IsToolHeld?.Invoke() == true;
-        bool show = IsVisibleInTree() && (_pointerInside || held)
-            && ResolveMode?.Invoke() is StrokeMode.Spread or StrokeMode.Sauce;
-        ZIndex = held ? 88 : 0;
+        StrokeMode mode = ResolveMode?.Invoke() ?? StrokeMode.None;
+        bool activeSpreadTool = SpreadToolOnlyDuringStroke && _dragging && mode == StrokeMode.Spread;
+        bool show = IsVisibleInTree() && (_pointerInside || held || activeSpreadTool)
+            && mode is StrokeMode.Spread or StrokeMode.Sauce
+            && (!SpreadToolOnlyDuringStroke || mode != StrokeMode.Spread || _dragging);
+        ZIndex = held || activeSpreadTool ? 88 : 0;
         SetToolVisible(show);
-        if (show)
+        if (show && !(SpreadToolOnlyDuringStroke && _dragging))
         {
             UpdateTool(GetLocalMousePosition());
         }
@@ -127,6 +134,7 @@ public partial class StrokeInteractor : Control
 
         _activeMode = mode;
         _dragging = true;
+        if (SpreadToolOnlyDuringStroke) RefreshVisualState();
         if (mode == StrokeMode.Spread)
         {
             EllipseGeometry geometry = GetSpreadGeometry();
@@ -204,7 +212,7 @@ public partial class StrokeInteractor : Control
             float sweep = Mathf.Tau * (float)_spread.Progress * direction;
             DrawPolyline(EllipsePoints(geometry, -Mathf.Pi / 2.0f, sweep, Math.Max(8, Mathf.CeilToInt(72 * (float)_spread.Progress))), new Color("#F5B83D"), 10.0f, true);
         }
-        DrawTool(SpreadToolTexture, new Vector2(116, 116), new Vector2(47, 79));
+        DrawTool(SpreadToolTexture, SpreadToolSize, SpreadToolContactAnchor);
     }
 
     private EllipseGeometry GetSpreadGeometry() => ResolveSpreadGeometry?.Invoke()

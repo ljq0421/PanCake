@@ -51,7 +51,7 @@ public sealed class CityPageModel(DataCatalog? catalog, SaveService save, Yangzh
         }
         return Array.Empty<string>();
     }
-    public string DayTitle(string city, int day) => city switch
+    public string DayTitle(string city, int day) => save.IsDemo ? save.DemoContent?.Stage(day)?.TitleZh ?? "" : city switch
     {
         StableIds.Cities.Tianjin => MorningHub.DaySubtitle(day),
         StableIds.Cities.Wuhan => WuhanHub.DaySubtitle(day),
@@ -62,6 +62,9 @@ public sealed class CityPageModel(DataCatalog? catalog, SaveService save, Yangzh
 
     public CityEquipmentView[] Equipment(string city)
     {
+        if (save.IsDemo) return city == StableIds.Cities.Tianjin
+            ? new[] { Describe(city, "pancake_stove"), Describe(city, "ingredient_station") }
+            : Array.Empty<CityEquipmentView>();
         string[] ids = city switch
         {
             StableIds.Cities.Tianjin => new[] { "pancake_stove", "fryer", "ingredient_station" },
@@ -77,7 +80,8 @@ public sealed class CityPageModel(DataCatalog? catalog, SaveService save, Yangzh
     {
         var progress = JourneyModel.Progress(save, city);
         int level = progress.EquipmentLevels.GetValueOrDefault(id);
-        int target = Math.Min(3, Math.Max(1, level) + 1), price = 0, after = 0;
+        int maximum = save.IsDemo ? 2 : 3;
+        int target = Math.Min(maximum, Math.Max(1, level) + 1), price = 0, after = 0;
         string name = id, detail = "", purchase = $"equipment:{id}_lv{target}";
         string? art = null;
         const string root = "res://resource/art/";
@@ -87,7 +91,7 @@ public sealed class CityPageModel(DataCatalog? catalog, SaveService save, Yangzh
             case StableIds.Cities.Tianjin:
                 if (id == "pancake_stove") { var d = Catalog.StovesByLevel[target]; name = "煎饼炉"; price = d.UpgradePrice; detail = $"{(d.CanBurn ? "手动控温" : "恒温不焦")}\n正面 {d.SideAReadySeconds:0.##} 秒成熟"; art = root + "TianJin/BusinessSign/stove.png"; }
                 else if (id == "fryer") { var d = Catalog.FryersByLevel[target]; name = "油条锅"; price = d.UpgradePrice; detail = $"容量 {d.Capacity} 根\n{(d.AutoRaise ? "自动抬篮" : "手动抬篮")}"; art = root + "TianJin/BusinessSign/fryer.png"; }
-                else { var d = Catalog.IngredientStationsByLevel[target]; name = "配料台"; price = d.UpgradePrice; detail = $"鸡蛋 {d.EggCapacity} · 薄脆 {d.CrispyCapacity}\n香葱 {d.ScallionCapacity} · 火腿 {d.HamCapacity}"; art = root + "TianJin/薄脆火腿托盘-B型-v1.png"; }
+                else { var d = Catalog.IngredientStationsByLevel[target]; name = "配料台"; price = d.UpgradePrice; detail = $"鸡蛋 {d.EggCapacity} · 薄脆 {d.CrispyCapacity}\n香葱 {d.ScallionCapacity} · 火腿 {d.HamCapacity}"; art = root + "TianJin/升级小料.png"; }
                 break;
             case StableIds.Cities.Wuhan:
                 if (id == "noodle_cooker") { var d = Catalog.NoodleCookersByLevel[target]; name = "煮面锅"; price = d.UpgradePrice; detail = $"{d.BasketCount} 个面篮 · {d.OptimalSeconds:0.##} 秒\n{(d.AutoRaise ? "自动提篮" : "手动提篮")}"; art = root + $"Wuhan/煮面锅 Lv{Math.Max(1, level)} {new[] { "基础锅体", "自动提篮版锅体", "双漏勺快热版锅体" }[Math.Max(1, level)-1]}_v2.png"; }
@@ -110,13 +114,13 @@ public sealed class CityPageModel(DataCatalog? catalog, SaveService save, Yangzh
                 break;
         }
         if (after == 0 && city != StableIds.Cities.Yangzhou)
-            for (int day = 1; day <= SaveService.ChapterDays(city); day++)
+            for (int day = 1; day <= save.ChapterLength(city); day++)
                 if (Catalog.TryGetDay(city, day, out var config) && config.CompletionUnlocks.Contains(purchase)) { after = day; break; }
         bool available = !save.HasLoadError && save.Data.UnlockedCityIds.Contains(city) && (city == StableIds.Cities.Yangzhou || Catalog.IsValid);
         string notice = "";
         if (fixedStation) { available = false; notice = "生面无限供应"; }
         else if (level == 0) { available = false; notice = "对应营业日开张时免费开放"; }
-        else if (level >= 3) { available = false; notice = "已升至最高等级"; }
+        else if (level >= maximum) { available = false; notice = "已升至最高等级"; }
         else if (city == StableIds.Cities.Yangzhou) { available &= save.CanPurchaseYangzhou(id, Yangzhou, out notice); }
         else { available &= save.CanPurchase(city, purchase, Catalog, out notice); }
         if (level > 0 && level < 3 && !fixedStation && after > 0 && !progress.DayBestRecords.ContainsKey(after)) notice = $"完成第 {after} 天后开放";
@@ -125,6 +129,6 @@ public sealed class CityPageModel(DataCatalog? catalog, SaveService save, Yangzh
         var effects = fixedStation ? new[] { new EquipmentEffect("生面供应", "无限供应", "无限供应") }
             : BookUpgradeEffects.Compare(new(city, purchase, id, name, current, level == 0 ? current : target, price), catalog, yangzhou);
         return new(id, name, level, art, detail, price, purchase, available, notice)
-        { TargetLevel = fixedStation || level == 0 || level >= 3 ? null : target, Effects = effects };
+        { TargetLevel = fixedStation || level == 0 || level >= maximum ? null : target, Effects = effects };
     }
 }

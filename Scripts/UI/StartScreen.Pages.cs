@@ -1,4 +1,6 @@
 using Godot;
+using ProjectCake.Core;
+using ProjectCake.Data;
 
 namespace ProjectCake.UI;
 
@@ -22,7 +24,7 @@ public partial class StartScreen
         // Schematic callouts around Asia; keep all five names legible when every city is unlocked.
         Vector2[] points = { new(715, 70), new(605, 205), new(475, 80), new(735, 335), new(870, 210) };
         bool canContinue = _save?.CanContinue == true;
-        for (int i = 0; i < JourneyModel.Cities.Length; i++)
+        for (int i = 0; i < (ExperienceProfile.IsDemo ? 3 : JourneyModel.Cities.Length); i++)
         {
             var city = JourneyModel.Cities[i];
             bool unlocked = canContinue ? _save!.Data.UnlockedCityIds.Contains(city.Id) : i == 0;
@@ -42,6 +44,8 @@ public partial class StartScreen
             }
         }
         HomeArt(_body, "LOGO", new(60, 60, 560, 258));
+        if (ExperienceProfile.IsDemo)
+            Text(_body, "DemoScope", "本次试玩包含天津前三局，可购买升级并再次营业。", new(390, 747, 1140, 58), 27, true);
         var card = HomeAction("Continue", "继续旅程", "小火车", new(400, 835, 500, 150), RenderContinue);
         var current = JourneyModel.City(_save?.ContinueCityId ?? JourneyModel.Cities[0].Id);
         card.Disabled = !canContinue; card.Modulate = new Color(1, 1, 1, canContinue ? 1 : .68f);
@@ -107,7 +111,8 @@ public partial class StartScreen
     }
     private void Foods(Control parent, JourneyCity city, Vector2 position, float step, float scale = 1)
     {
-        for (int i = 0; i < city.Foods.Length; i++)
+        int count = _save!.IsDemo && city.Id == StableIds.Cities.Tianjin ? 1 : city.Foods.Length;
+        for (int i = 0; i < count; i++)
         {
             var food = city.Foods[i]; var at = position + new Vector2(step * i, 0);
             if (food.Art is not null) Art(parent, food.Art, new(at + new Vector2((135 - 135 * scale) / 2, 0), new Vector2(135, 155) * scale));
@@ -119,7 +124,7 @@ public partial class StartScreen
     private void RenderMap()
     {
         Begin(JourneyPage.Map); Chrome(() => (_mapReturn ?? RenderHome)(), "世界早餐地图"); DrawMap();
-        DrawMapSummary(); Utilities(); Focus("Node" + Math.Max(0, Array.FindIndex(JourneyModel.Cities, c => c.Id == _city)));
+        DrawMapSummary(); Focus("Node" + Math.Max(0, Array.FindIndex(JourneyModel.Cities, c => c.Id == _city)));
     }
     private void DrawMap(bool reveal = false)
     {
@@ -131,14 +136,14 @@ public partial class StartScreen
         Text(_body, "Explore", "还有更多早餐，等着与你相遇。", new(310, 813, 650, 50), 25);
         if (_save is not null && JourneyModel.Cities.All(c => JourneyModel.Progress(_save, c.Id).Completed))
             Art(_body, "中国阶段完成纪念章", new(430, 530, 210, 210));
-        for (int i = 1; i < MapPoints.Length; i++)
+        for (int i = 1; i < (ExperienceProfile.IsDemo ? 3 : MapPoints.Length); i++)
         {
             var from = MapPoints[i-1] + new Vector2(50, 36); var to = MapPoints[i] + new Vector2(50, 36);
             var route = Art(_body, "手绘旅行虚线路径1", new(from, new Vector2(from.DistanceTo(to), 20)));
             route.Rotation = (to-from).Angle(); route.Modulate = new Color(1,1,1,.4f);
             if (reveal) { var t = CreateTween(); _tweens.Add(t); route.Scale = new(0,1); t.TweenProperty(route,"scale:x",1f,1.2); }
         }
-        for (int i = 0; i < JourneyModel.Cities.Length; i++)
+        for (int i = 0; i < (ExperienceProfile.IsDemo ? 3 : JourneyModel.Cities.Length); i++)
         {
             var city = JourneyModel.Cities[i]; bool unlocked = _save?.Data.UnlockedCityIds.Contains(city.Id) == true || i == 0;
             bool completed = _save is not null && JourneyModel.Progress(_save, city.Id).Completed;
@@ -160,12 +165,13 @@ public partial class StartScreen
         Text(_body,"SummaryCity",city.Name+"早餐铺",new(1430,289,380,55),32);
         CityPicture(_body,city,new(1430,360,380,205));
         Text(_body,"SummaryProgress",JourneyModel.State(_save!,city),new(1430,585,380,55),25);
-        Text(_body,"SummaryGoal",_save!.Data.UnlockedCityIds.Contains(city.Id) ? JourneyModel.Goal(_save,city) : $"完成{JourneyModel.Cities[Math.Max(0,Array.IndexOf(JourneyModel.Cities,city)-1)].Name}章节后开放",new(1430,650,380,105),25);
+        Text(_body,"SummaryGoal",_save!.IsDemo || _save.Data.UnlockedCityIds.Contains(city.Id) ? JourneyModel.Goal(_save,city) : $"完成{JourneyModel.Cities[Math.Max(0,Array.IndexOf(JourneyModel.Cities,city)-1)].Name}章节后开放",new(1430,650,380,105),25);
         var enter = Button(_body,"EnterCity",_save.CanContinue ? "前往"+city.Name+"早餐铺" : "开始新的旅程",new(1430,787,380,67),()=> { if (!_save.CanContinue) RenderOpening(); else OpenCard(city.Id); },true);
         enter.Disabled = _save.CanContinue && !_save.Data.UnlockedCityIds.Contains(city.Id) && !DeveloperToolsVisible;
     }
     public void OpenCard(string cityId)
     {
+        if (_save?.IsDemo == true && cityId != ProjectCake.Data.StableIds.Cities.Tianjin) return;
         if (_save is null || (!DeveloperToolsVisible && !_save.Data.UnlockedCityIds.Contains(cityId))) return;
         PresentCity(cityId, RenderMap);
     }

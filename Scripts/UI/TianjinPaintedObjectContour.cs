@@ -128,6 +128,7 @@ internal static class TianjinPaintedObjectContour
 
 internal partial class TianjinPendantButton : Button
 {
+    internal bool IndependentArtwork { get; set; }
     internal Func<Texture2D> Background { get; set; } = null!;
     internal Func<Vector2, bool>? IsOccluded { get; set; }
     private TianjinPendantOutline _outline = null!;
@@ -153,7 +154,7 @@ internal partial class TianjinPendantOutline : Control
     internal TianjinPendantButton Button { get; set; } = null!;
     public override void _Draw()
     {
-        if (!Button.Disabled && (Button.IsHovered() || Button.HasFocus()))
+        if (!Button.IndependentArtwork && !Button.Disabled && (Button.IsHovered() || Button.HasFocus()))
             TianjinPaintedObjectContour.Draw(this, Button.Background(), TianjinPaintedObject.Pendant, InteractionHighlightState.Hover, Button.Position);
     }
 }

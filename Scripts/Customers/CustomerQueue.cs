@@ -196,7 +196,7 @@ public sealed class CustomerQueue
 
         foreach (CustomerRuntime customer in _slots.ToArray())
         {
-            if (!customer.WasServed)
+            if (!customer.WasServed && customer.Order.Status != OrderStatus.Lost)
             {
                 customer.Order.Status = OrderStatus.Lost;
                 lost.Add(customer);

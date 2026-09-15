@@ -178,13 +178,16 @@ public partial class PancakeWorkstation : Control
         _ => false,
     };
 
-    public bool DeliverToCustomer(string payload, Func<bool> deliver)
+    public bool DeliverToCustomer(string payload, Func<bool> deliver, Func<bool>? teachesDelivery = null)
     {
         if (!CanDeliverProduct(payload)) { if (CanInteract) DeliveryRejected?.Invoke(); return false; }
         if (!deliver()) return false;
-        LearnWorkbenchAction($"deliver:{payload}");
-        if (payload == SoyMilkPayload) LearnWorkbenchAction("take:soy_milk");
-        if (payload == StoredYoutiaoPayload) LearnWorkbenchAction("take:youtiao");
+        if (teachesDelivery?.Invoke() != false)
+        {
+            LearnWorkbenchAction($"deliver:{payload}");
+            if (payload == SoyMilkPayload) LearnWorkbenchAction("take:soy_milk");
+            if (payload == StoredYoutiaoPayload) LearnWorkbenchAction("take:youtiao");
+        }
         if (payload == "finished_pancake" && !UseServingTray)
         {
             Machine.TryExecute(PancakeCommand.Discard);

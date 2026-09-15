@@ -113,10 +113,47 @@ public partial class ArtContourHighlight : Control
         _material.SetShaderParameter(prefix + "_clip", new Vector4(clip.Position.X, clip.Position.Y, clip.End.X, clip.End.Y));
     }
 
-    private static Texture2D ResolveTexture(Texture2D texture) => texture is AtlasTexture
+    private string? _focusKey;
+    private Texture2D? _focusMatte;
+    private Rect2 _focusBounds;
+    internal IEnumerable<TutorialFocusTarget> FocusTargets()
+    {
+        var layers = new[] { _source, _unionSource }.Where(s => s?.IsVisibleInTree() == true && s.Texture is not null).Cast<TextureRect>().ToArray();
+        if (layers.Length == 0) yield break;
+        var shapes = layers.Select(s => (View: s, Rect: FittedRect(s.Texture!.GetSize(), s.Size, s.StretchMode),
+            Transform: _source.GetGlobalTransform().AffineInverse() * s.GetGlobalTransform())).ToArray();
+        string key = string.Join(';', shapes.Select(s => $"{s.View.Texture!.GetInstanceId()}:{s.Rect}:{s.Transform}:{s.View.FlipH}:{s.View.FlipV}:{s.View.StretchMode}"));
+        if (_focusKey != key)
+        {
+            Rect2 bounds = shapes.Select(s => s.Transform * s.Rect).Aggregate((a,b) => a.Merge(b));
+            bounds = new Rect2(bounds.Position.Floor(), bounds.End.Ceil() - bounds.Position.Floor());
+            using Image matte = Image.CreateEmpty(Math.Max(1, (int)bounds.Size.X), Math.Max(1, (int)bounds.Size.Y), false, Image.Format.Rgba8);
+            foreach (var shape in shapes)
+            {
+                using Image pixels = shape.View.Texture!.GetImage();
+                Transform2D inverse = shape.Transform.AffineInverse();
+                for (int y = 0; y < matte.GetHeight(); y++)
+                for (int x = 0; x < matte.GetWidth(); x++)
+                {
+                    Vector2 local = inverse * (bounds.Position + new Vector2(x + .5f, y + .5f));
+                    if (shape.View.StretchMode == TextureRect.StretchModeEnum.KeepAspectCovered && !new Rect2(Vector2.Zero, shape.View.Size).HasPoint(local)) continue;
+                    Vector2 uv = (local - shape.Rect.Position) / shape.Rect.Size;
+                    if (uv.X < 0 || uv.Y < 0 || uv.X >= 1 || uv.Y >= 1) continue;
+                    if (shape.View.FlipH) uv.X = 1 - uv.X;
+                    if (shape.View.FlipV) uv.Y = 1 - uv.Y;
+                    float alpha = pixels.GetPixel(Math.Clamp((int)(uv.X * pixels.GetWidth()), 0, pixels.GetWidth()-1), Math.Clamp((int)(uv.Y * pixels.GetHeight()), 0, pixels.GetHeight()-1)).A;
+                    if (alpha > matte.GetPixel(x,y).A) matte.SetPixel(x,y,new Color(1,1,1,alpha));
+                }
+            }
+            _focusMatte = ImageTexture.CreateFromImage(matte); _focusBounds = bounds; _focusKey = key;
+        }
+        yield return TutorialFocusTarget.Sprite(_source, _focusMatte!, _focusBounds);
+    }
+
+    internal static Texture2D ResolveTexture(Texture2D texture) => texture is AtlasTexture
         ? AtlasImages.GetValue(texture, source => ImageTexture.CreateFromImage(source.GetImage())) : texture;
 
-    private static Rect2 FittedRect(Vector2 texture, Vector2 size, TextureRect.StretchModeEnum mode)
+    internal static Rect2 FittedRect(Vector2 texture, Vector2 size, TextureRect.StretchModeEnum mode)
     {
         if (mode is TextureRect.StretchModeEnum.Scale or TextureRect.StretchModeEnum.Tile)
             return new Rect2(Vector2.Zero, size);

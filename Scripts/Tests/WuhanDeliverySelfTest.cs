@@ -91,7 +91,7 @@ public partial class WuhanDeliverySelfTest : Node
             queue.Tick(140, .4, true); Step(.001); await Frames();
             Check(queue.Slots.Count == 5 && queue.DoorQueue.Count == 0,
                 "fixed-position fixture has five customers and no pending arrival");
-            const int vacancy = 2;
+            const int vacancy = 3;
             var departing = queue.CustomerAtSlot(vacancy)!;
             var survivors = Enumerable.Range(0, 5).Where(slot => slot != vacancy).ToDictionary(slot => slot, slot =>
             {
@@ -168,7 +168,7 @@ public partial class WuhanDeliverySelfTest : Node
         _screen.DoupiStock.TryAddBatch(4); Step(.001);
         Check(_screen.DoupiStock.Count == 4, "finished doupi supply remains available without text hints");
         var first = _controller.CustomerQueue!.Slots[0];
-        await Drop(ProductKind.Doupi, 0); Step(.001);
+        await Drop(ProductKind.Doupi, first.SlotIndex); Step(.001);
         Check(view.PendingDoupiDemand == 2 && _screen.DoupiStock.Count == 2,
             "delivered doupi reduces demand immediately");
         _screen.DoupiStock.TryTake(2, out _); Step(.001);
@@ -183,7 +183,7 @@ public partial class WuhanDeliverySelfTest : Node
         for (int elapsed=100;elapsed<=140;elapsed+=2) queue.Tick(elapsed,0,true);
         queue.Tick(140,.4,true);Step(.001);await Frames();
         int delivered = 0;
-        foreach (int slot in new[] { 0, 1, 3, 4 })
+        foreach (int slot in new[] { 0, 1, 2, 4 })
         {
             var customer = queue.CustomerAtSlot(slot)!;
             for (int cup=0;cup<2;cup++)
@@ -297,9 +297,9 @@ public partial class WuhanDeliverySelfTest : Node
         Check(_screen.Bowl.State == NoodleBowlState.Ready && !_screen.Workstation.Busy("bowl"), "miss returns intact bowl and releases lock");
         Press(ProductKind.Doupi); GetViewport().PushInput(new InputEventKey { Keycode = Key.Escape, Pressed = true }, true);
         Check(_screen.DoupiStock.Count == 8 && !_screen.DeliveryDrag.IsDragging, "Escape retains stock and cancels drag");
-        await Drop(ProductKind.Doupi, 2);
+        await Drop(ProductKind.Doupi, 3);
         Check(_screen.DoupiStock.Count == 8, "customer without matching product rejects without consumption");
-        await Drop(ProductKind.HotDryNoodles, 0);
+        await Drop(ProductKind.HotDryNoodles, 2);
         Check(first.Progress.GetDeliveredQuantity(0) == 1 && _screen.Bowl.State == NoodleBowlState.Empty, "unselected customer receives exactly one bowl");
         Check(first.Progress.HasNoodlesOvercooked && first.Progress.HasRecipeMismatch, "actual recipe and low quality follow existing scoring rules");
         Check(!first.Progress.IsComplete, "partial delivery keeps multi-item order active");
@@ -315,14 +315,14 @@ public partial class WuhanDeliverySelfTest : Node
         for (int i = 0; i < 5; i++) { Move(center + new Vector2(i % 2 == 0 ? 60 : -60, 0), true); Step(.001); }
         Check(_screen.Bowl.State == NoodleBowlState.Ready && !_screen.DeliveryDrag.IsDragging, "mix completion does not turn held gesture into delivery");
         Button(center, false); Step(.001); await Frames(); Press(ProductKind.HotDryNoodles); _screen.Workstation.CancelInput();
-        await Drop(ProductKind.HotDryNoodles, 0);
+        await Drop(ProductKind.HotDryNoodles, 2);
         Check(!first.Progress.IsComplete && first.Progress.GetDeliveredQuantity(0) == 2, "quantity-two line completes independently of other foods");
         // Completion must be atomic even if the target changes during the snap animation.
         Press(ProductKind.Doupi); Vector2 target = Target(1); Move(target, true); Button(target, false);
         second.State = CustomerState.Leaving; Step(.5); await Settled();
         Check(_screen.DoupiStock.Count == 6 && second.Progress.GetDeliveredQuantity(1) == 2, "satisfied or departing customer cannot consume additional pieces");
         ProjectSettings.SetSetting("accessibility/reduce_motion", true);
-        await Drop(ProductKind.Doupi, 0);
+        await Drop(ProductKind.Doupi, 2);
         Check(_screen.DoupiStock.Count == 4, "reduced motion commits the two missing pieces once");
         ProjectSettings.SetSetting("accessibility/reduce_motion", false);
     }
@@ -335,12 +335,12 @@ public partial class WuhanDeliverySelfTest : Node
         _screen.DoupiStock.TryAddBatch(2, DoupiQuality.Normal);
         Step(.001); await Frames();
         int notifications = 0; _controller.DeliveryCompleted += _ => notifications++;
-        Press(ProductKind.Doupi); Move(Target(0), true); Step(.001); await Frames();
+        Press(ProductKind.Doupi); Move(Target(2), true); Step(.001); await Frames();
         Check(_screen.DoupiStock.Count == 3 && first.Progress.DeliveredItems.Count == 0, "hover reserves no stock or order quantity");
-        var preview = (Label)_screen.FindChild("DoupiDeliveryQuantity1", true, false);
+        var preview = (Label)_screen.FindChild($"DoupiDeliveryQuantity{first.SlotIndex + 1}", true, false);
         Check(preview.Visible && preview.Text == "豆皮×3", "hover preview sums remaining quantity across order lines");
         if (_capture) await Shot("07-batch-preview");
-        Button(Target(0), false); await Settled(); Step(.001);
+        Button(Target(2), false); await Settled(); Step(.001);
         Check(_screen.DoupiStock.Count == 0 && first.Progress.GetDeliveredQuantity(0) == 1 && first.Progress.GetDeliveredQuantity(1) == 2, "one drop fills multiple doupi lines without overdelivery");
         Check(first.Progress.DeliveredItems[0].WuhanQuality == WuhanFoodQuality.DoupiOverbrowned
             && first.Progress.DeliveredItems.Skip(1).All(item => item.WuhanQuality == WuhanFoodQuality.None), "batch preserves each piece quality in FIFO order");
@@ -349,7 +349,7 @@ public partial class WuhanDeliverySelfTest : Node
         Check(!_screen.DeliverToCustomer(first.Id, ProductKind.Doupi) && notifications == 1, "duplicate batch cannot settle twice");
         await NewDay(true); first = _controller.CustomerQueue!.Slots[0];
         _screen.DoupiStock.TryAddBatch(1); Step(.001); await Frames();
-        await Drop(ProductKind.Doupi, 0);
+        await Drop(ProductKind.Doupi, 2);
         Check(first.Progress.DeliveredItems.Count == 1 && !first.Progress.IsComplete && _screen.DoupiStock.Count == 0, "insufficient stock delivers available piece and leaves remaining demand");
         _screen.DoupiStock.TryAddBatch(3); Step(.001); await Frames();
         Press(ProductKind.Doupi); Move(Target(1), true); Button(Target(1), false);
@@ -414,11 +414,11 @@ public partial class WuhanDeliverySelfTest : Node
         var hub = ProjectCake.Core.SceneFactory.Instantiate<WuhanHub>("res://Scenes/UI/WuhanHub.tscn"); AddChild(hub); hub.Initialize(_catalog, _save);
         await Shot("01-hub"); hub.Free(); _screen.Show();
         PrepareFood(NoodleQuality.Overcooked, true); await Frames(); await Shot("02-workbench");
-        Press(ProductKind.HotDryNoodles); Move(Target(0), true); await Shot("03-drag-noodles"); _screen.Workstation.CancelInput();
+        Press(ProductKind.HotDryNoodles); Move(Target(2), true); await Shot("03-drag-noodles"); _screen.Workstation.CancelInput();
         Press(ProductKind.Doupi); Move(Target(1), true); await Shot("04-drag-doupi"); _screen.Workstation.CancelInput();
-        Press(ProductKind.Doupi); Move(Target(2), true); await Shot("05-invalid-target"); _screen.Workstation.CancelInput();
-        await Drop(ProductKind.HotDryNoodles, 0);
-        for (int i=0;i<2;i++) { PrepareFood(); await Frames(); if(i==0) await Drop(ProductKind.HotDryNoodles,0); await Drop(ProductKind.Doupi,0); }
+        Press(ProductKind.Doupi); Move(Target(3), true); await Shot("05-invalid-target"); _screen.Workstation.CancelInput();
+        await Drop(ProductKind.HotDryNoodles, 2);
+        for (int i=0;i<2;i++) { PrepareFood(); await Frames(); if(i==0) await Drop(ProductKind.HotDryNoodles,2); await Drop(ProductKind.Doupi,2); }
         _controller.Tick(1000); _controller.Tick(16); _screen._Process(.001); await Shot("06-receipt");
     }
     private async Task Shot(string name)

@@ -165,7 +165,14 @@ public partial class CityPagesSelfTest : Node
             Check(Find<TextureRect>("SharedBook").GetRect() == StartScreen.BookBounds, "completion uses same book bounds");
             Check(Find<TextureRect>("SharedBook").Material is null, "completion book remains original");
             await Capture("completion"); Click("Skip"); Check(_screen.SelectedCityId == StableIds.Cities.Wuhan, "completion goes to next city");
-            _screen.PresentLedger(); Click("ResetLedgerProgress"); Click("Cancel"); Check(_save.Data.Coins == 153, "reset cancel preserves progress");
+            _screen.PresentLedger(); Click("ResetLedgerProgress");
+            var resetPanel = Find<Panel>("ResetLedgerPanel");
+            Check(resetPanel.GetThemeStylebox("panel") is StyleBoxTexture
+                && Find<Panel>("ResetLedgerMessagePanel").Visible
+                && Find<Control>("ResetLedgerDecorations").Visible,
+                "reset confirmation uses the shared illustrated panel treatment");
+            await Capture("reset-confirmation");
+            Click("Cancel"); Check(_save.Data.Coins == 153, "reset cancel preserves progress");
             File.WriteAllText(_path, "broken save"); _save.Load(); _screen.PresentCity(StableIds.Cities.Tianjin); _screen.PresentLedger();
             Check(Find<Button>("StartSelectedDay").Disabled, "corrupt save cannot start"); await Capture("ledger-corrupt");
             Click("ResetLedgerProgress"); Click("Confirm"); Check(!_save.HasLoadError && _screen.Page == JourneyPage.City, "confirmed reset restores valid city hub");

@@ -166,7 +166,7 @@ public partial class XianSelfTest : Node
         five.Tick(10, .4, true);
         Check(five.Slots.Count == 5 && five.Slots.Select(c => c.SlotIndex).Distinct().Count() == 5, "五个稳定位置入场，第六名等待");
         five.TryMarkServed("p1"); five.Tick(11, 1, false); five.Tick(12, 1, true);
-        Check(five.CustomerAtSlot(2)?.Id == "p2" && five.CustomerAtSlot(1)?.Id == "p5", "离场后只补空位，其他顾客不移动");
+        Check(five.CustomerAtSlot(2)?.Id == "p0" && five.CustomerAtSlot(1)?.Id == "p5", "离场后只补空位，其他顾客不移动");
     }
     private void TestSave()
     {

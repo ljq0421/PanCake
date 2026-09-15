@@ -51,9 +51,9 @@ public partial class YangzhouDayScreen : Control
         {
             int index = i;
             CustomerInteractionPresentation.BindButtonHighlight(_customers[i], () =>
-                CanWork() && index < Session.Waiting.Count && Session.Selected == Session.Waiting[index]
+                CanWork() && Session.CustomerAtSlot(index) is { } customer && Session.Selected == customer
                     ? InteractionHighlightState.Selected : InteractionHighlightState.None);
-            _customers[i].Pressed += () => { if (CanWork() && index < Session.Waiting.Count) Session.Select(Session.Waiting[index].Plan.Id); Render(); };
+            _customers[i].Pressed += () => { if (CanWork() && Session.CustomerAtSlot(index) is { } customer) Session.Select(customer.Plan.Id); Render(); };
         }
         for (int i = 0; i < _steam.Length; i++)
         {
@@ -181,7 +181,7 @@ public partial class YangzhouDayScreen : Control
         foreach (var button in _workButtons) button.Disabled = !CanWork();
         for (int i = 0; i < _customers.Length; i++)
         {
-            var order = i < s.Waiting.Count ? s.Waiting[i] : null;
+            var order = s.CustomerAtSlot(i);
             _customers[i].Disabled = order is null || !CanWork();
             _customers[i].Text = order is null ? "静候下一桌茶客" : $"{(order == s.Selected ? "当前托盘 · " : "")}{order.Type.Name} #{order.Plan.Id}  {order.Mood}\n{order.Template.Name} · ¥{order.Price}\n" + string.Join("\n", order.Template.Items.Select(item => $"{_catalog.Product(item.Key).Name}  {order.Count(item.Key)}/{item.Value}"));
             _patience[i].Visible = order is not null;

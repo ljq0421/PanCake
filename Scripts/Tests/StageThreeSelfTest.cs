@@ -19,9 +19,18 @@ public partial class StageThreeSelfTest : Node
         try
         {
             DataCatalog catalog = GetNode<DataCatalog>("/root/DataCatalog");
+            if (OS.GetCmdlineUserArgs().Contains("--customer-slots-only"))
+            {
+                TestCustomers(catalog);
+                TestCenterSlots(catalog);
+                GD.Print($"CUSTOMER_SLOTS_RESULT passed={_passed} failed={_failed}");
+                GetTree().Quit(_failed == 0 ? 0 : 1);
+                return;
+            }
             TestCatalog(catalog);
             TestGenerator(catalog);
             TestCustomers(catalog);
+            TestCenterSlots(catalog);
             TestDeliveryAndLedger(catalog);
             TestSharedSettlementRules(catalog);
             TestDayController(catalog);
@@ -75,6 +84,27 @@ public partial class StageThreeSelfTest : Node
         }
     }
 
+    private void TestCenterSlots(DataCatalog catalog)
+    {
+        var queue = new CustomerQueue(MakePlan(9, "normal", catalog.RecipesById[StableIds.Recipes.Basic]), catalog.CustomersById, 1, 5);
+        queue.Tick(0, .4, true);
+        var originals = queue.Slots.ToArray();
+        Check(originals.Select(c => c.SlotIndex).SequenceEqual(new[] { 2, 1, 3, 0, 4 }), "center-out arrival order");
+        foreach (var c in originals.Where(c => c.SlotIndex != 4)) queue.TryMarkServed(c.Id);
+        queue.Tick(0, .2, false);
+        Check(queue.Slots.Count == 5 && queue.DoorQueue.Count == 4, "departing customers retain occupied slots");
+        queue.Tick(0, .25, false);
+        Check(queue.Slots.Skip(1).Select(c => c.SlotIndex).SequenceEqual(new[] { 2, 1, 3, 0 }), "multiple vacancies refill center-out in FIFO order");
+        Check(queue.CustomerAtSlot(4) == originals[4], "survivor stays in its physical slot");
+        queue.Tick(0, .4, false);
+        foreach (var c in queue.Slots.Where(c => c.SlotIndex != 4).ToArray()) queue.TryMarkServed(c.Id);
+        queue.Tick(0, .45, false);
+        Check(queue.Slots.Count == 1 && queue.CustomerAtSlot(4) == originals[4], "lone remaining side customer does not move");
+        var single = new CustomerQueue(MakePlan(1, "normal", catalog.RecipesById[StableIds.Recipes.Basic]), catalog.CustomersById, 1, 5);
+        single.Tick(0, .4, true);
+        Check(single.CustomerAtSlot(2) == single.Slots.Single(), "empty counter admits its first customer in the center");
+    }
+
     private void TestCustomers(DataCatalog catalog)
     {
         CustomerTypeData normal = catalog.CustomersById["normal"];
@@ -90,7 +120,7 @@ public partial class StageThreeSelfTest : Node
         Check(queue.Slots.All(customer => customer.State == CustomerState.Happy), "进店 0.35 秒后进入 Happy");
         CustomerRuntime first = queue.Slots[0];
         var originalSlots = queue.Slots.ToDictionary(customer => customer.Id, customer => customer.SlotIndex);
-        Check(queue.Slots.Select(customer => customer.SlotIndex).SequenceEqual(Enumerable.Range(0, 5)), "首批顾客按 1–5 号固定站位");
+        Check(queue.Slots.Select(customer => customer.SlotIndex).SequenceEqual(new[] { 2, 1, 3, 0, 4 }), "首批顾客按 3→2→4→1→5 号固定站位");
         queue.Tick(0, 18, false);
         Check(first.State == CustomerState.Normal, "Day 1 倍率后 18 秒进入 Normal");
         queue.Tick(0, 18, false);
@@ -101,9 +131,10 @@ public partial class StageThreeSelfTest : Node
         Check(queue.TryMarkServed(first.Id) && queue.SelectedCustomerId is null, "出餐后取消顾客选择");
         queue.Tick(0, .45, false);
         Check(queue.Slots.Count == 5 && queue.Slots[^1].Id == door.Id, "离场 0.45 秒后门外顾客 FIFO 补位");
-        Check(queue.CustomerAtSlot(0) == door && queue.Slots.Where(customer => customer != door)
-            .All(customer => customer.SlotIndex == originalSlots[customer.Id]), "新顾客补入 1 号空位，其余顾客保持原位");
+        Check(queue.CustomerAtSlot(2) == door && queue.Slots.Where(customer => customer != door)
+            .All(customer => customer.SlotIndex == originalSlots[customer.Id]), "新顾客补入 3 号空位，其余顾客保持原位");
         CustomerRuntime middle = queue.CustomerAtSlot(2)!;
+        queue.Tick(0, CustomerQueue.EnterDurationSeconds, false);
         Check(queue.TryMarkServed(middle.Id), "中间位置顾客可正常出餐离场");
         queue.Tick(0, .45, false);
         Check(queue.CustomerAtSlot(2) is null && queue.CustomerAtSlot(3)?.SlotIndex == 3

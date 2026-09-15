@@ -49,6 +49,7 @@ public partial class WuhanDayScreen : Control
         TextureFilter = TextureFilterEnum.LinearWithMipmaps;
         SceneNodeBinder.Bind(this);
         ConfigurePresentation();
+        BuildTeachingFocus();
         _art = new WuhanArtCatalog();
         DeliveryDrag.Configure(GetNode<Control>("WuhanDragOverlay"));
         DeliveryDrag.DragEnded += result =>
@@ -84,11 +85,14 @@ public partial class WuhanDayScreen : Control
         Workstation.EggRequested = AddDoupiEgg;
         Workstation.FillingRequested = AddDoupiFilling;
         Workstation.FlipRequested = FlipDoupi;
-        Workstation.FoodDiscarded += () => { Workstation.PlaySound(WuhanSound.Discard); Feedback("食物已丢弃。", false, true); Render(); };
+        Workstation.FoodDiscarded += () => { LearnTeachingAction("discard"); Workstation.PlaySound(WuhanSound.Discard); Feedback("食物已丢弃。", false, true); Render(); };
         Workstation.MixMoved += distance =>
         {
             if (CanInteract && !Workstation.Busy("bowl") && _bowl.AddMixDistance(distance))
+            {
                 Workstation.PlaySound(_bowl.State == NoodleBowlState.Ready ? WuhanSound.Ready : WuhanSound.Mix);
+                if (_bowl.State == NoodleBowlState.Ready) LearnTeachingAction("mix:noodles");
+            }
         };
         Workstation.GestureRejected += message => Feedback(message, true);
         GetNode<Button>("@PanelContainer@312/@HBoxContainer@313/@Button@319").Pressed += () => { Workstation.CancelInput(); _abandon.PopupCentered(); };
@@ -143,6 +147,7 @@ public partial class WuhanDayScreen : Control
     }
     public bool Initialize(DataCatalog catalog, SaveService save, DayController controller, int day)
     {
+        TeachingFocus.ResetSession(); _teachingDoupiLast = false;
         _hudPaused = false; _hudPauseMenu.Hide(); controller.SetPauseReason("wuhan-hud", false); _sceneFeedback.Clear();
         BusinessFeedbackAudio.Attach(this, controller.Feedback, () => controller.CurrentConfig?.CityId == StableIds.Cities.Wuhan && (CanInteract));
         CloseBusinessDetails();
@@ -183,7 +188,7 @@ public partial class WuhanDayScreen : Control
     {
         if (!CanInteract || Workstation.Busy($"basket{index}")) return false;
         bool raised = _cooker.TryRaise(index);
-        if (raised) Workstation.PlayBasket(index, NoodleBasketState.Ready, _cooker.Baskets[index].Quality);
+        if (raised) { LearnTeachingAction("raise:noodles"); Workstation.PlayBasket(index, NoodleBasketState.Ready, _cooker.Baskets[index].Quality); }
         return raised;
     }
     internal bool ReservePour(int index)
@@ -194,13 +199,17 @@ public partial class WuhanDayScreen : Control
     internal bool CutDoupi(DoupiCutLine direction)
     {
         if (!CanInteract || Workstation.Busy("pan") || _doupi?.TryCut(direction) != true) return false;
+        if (_doupi.State == DoupiState.Cut) LearnTeachingAction("doupi:cut");
         ClearDoupiFeedback(); Workstation.PlayCut(direction); Feedback(_doupi.State == DoupiState.Cut ? "切块完成，将自动补入备餐盘。" : "已离火，品质锁定；继续沿其余虚线切块。", false); Render(); return true;
     }
     private void AdvanceAutomaticTransfers()
     {
         if (!CanInteract) return;
         if (!Workstation.Busy("bowl") && _cooker.TryCompletePendingPour(out int basket, out NoodleQuality quality))
+        {
+            LearnTeachingAction("pour:noodles");
             Workstation.PlayBasket(basket, NoodleBasketState.Drained, quality, Workstation.PourPosition);
+        }
         if (_doupi is not null && !Workstation.Busy("pan") && !Workstation.Busy("stock"))
         {
             int start = _doupiStock.Count;
@@ -221,7 +230,11 @@ public partial class WuhanDayScreen : Control
         else if(item.State is NoodleBasketState.Raised or NoodleBasketState.Draining){message="自然沥水中，可拖到空碗上方等待。";}
         else if(item.State==NoodleBasketState.Drained){if(!Workstation.Busy("bowl")&&_cooker.TryTransferTo(index,_bowl)){ok=true;message="熟面倒入碗中。";}else message="拌面碗还没有空出来。";}
         else message="面还在烫，等到最佳窗口再提篮。";
-        if(ok)Workstation.PlayBasket(index,before,quality);
+        if(ok)
+        {
+            LearnTeachingAction(before == NoodleBasketState.Empty ? "take:noodles" : before == NoodleBasketState.Drained ? "pour:noodles" : "raise:noodles");
+            Workstation.PlayBasket(index,before,quality);
+        }
         if (!ok || before is not (NoodleBasketState.Empty or NoodleBasketState.Drained)) Feedback(message, !ok);
         Render();
     }
@@ -229,7 +242,7 @@ public partial class WuhanDayScreen : Control
     {
         if(!CanInteract||Workstation.Busy("bowl")||!_ingredients.IsUnlimited(id))return;
         bool ok=id==StableIds.Ingredients.WuhanBaseSeasoning?_bowl.TryAddBaseSeasoning():_bowl.TryAddTopping(id);
-        if(ok){_ingredients.TryConsume(id);Workstation.PlayIngredient(id);}
+        if(ok){LearnTeachingAction("take:" + id);_ingredients.TryConsume(id);Workstation.PlayIngredient(id);}
         else
         {
             string message = _bowl.Toppings.Contains(id) ? "这份配料已经加入了。"
@@ -271,6 +284,8 @@ public partial class WuhanDayScreen : Control
                 for (int i = 0; i < 3; i++) _paymentFeedback.Spawn(this, GD.Load<Texture2D>("res://resource/art/Global/HUDUI/小费飞行金币.png"), origin + new Vector2(i * 13 - 13, 0), WuhanWorkbenchLayout.CashSlot, i * .08);
             }
         }
+        if ((result.ItemAccepted || result.CompletesOrder) && result.Grade != DeliveryGrade.Incorrect)
+            LearnTeachingAction(kind == ProductKind.Doupi ? "deliver:doupi" : "deliver:hot_dry_noodles");
         int feedbackSlot = Array.IndexOf(_deliveryCustomerIds, customerId);
         if (feedbackSlot >= 0) _sceneFeedback.Delivery(result, _orders[feedbackSlot]);
         Render();
@@ -284,7 +299,15 @@ public partial class WuhanDayScreen : Control
         DoupiState before = _doupi.State;
         bool ok = action(_doupi);
         if (ok) { ClearDoupiFeedback(); if (!animate) Workstation.PlaySound(_doupi.State == DoupiState.Empty ? WuhanSound.Discard : WuhanSound.Topping); }
-        if (ok && animate) Workstation.PlayDoupi(before);
+        if (ok && animate)
+        {
+            string? actionId = _doupi.State switch {
+                DoupiState.Batter => "doupi:batter", DoupiState.SkinCooking => "doupi:egg",
+                DoupiState.Flipped => "doupi:flip", DoupiState.SecondCooking => "doupi:filling", _ => null,
+            };
+            if (actionId is not null) LearnTeachingAction(actionId);
+            Workstation.PlayDoupi(before);
+        }
         if (!ok) Feedback(hint, true);
         Render(); return ok;
     }

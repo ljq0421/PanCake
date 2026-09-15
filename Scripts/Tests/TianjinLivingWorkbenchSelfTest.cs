@@ -115,7 +115,8 @@ public partial class TianjinLivingWorkbenchSelfTest : Node
 
                 // Feed two real customers a one-cup order to cover immediate money and queued flights.
                 int beforeIncome = controller.Ledger!.Build().TotalRevenue;
-                foreach (var customer in controller.CustomerQueue.Slots.Take(2).ToArray())
+                var paymentCustomers = controller.CustomerQueue.Slots.Take(3).ToArray();
+                foreach (var customer in paymentCustomers.Take(2))
                 {
                     var zone = (DropZone)screen.FindChild($"CustomerDropZone{customer.SlotIndex + 1}", true, false);
                     Check(zone.TryAccept("soy_milk_cup"), "real cup delivery completes the fixture order");
@@ -125,7 +126,7 @@ public partial class TianjinLivingWorkbenchSelfTest : Node
                 await Shot($"payment-{width}");
                 await Delay(1.05);
                 Check(screen.PaymentCoins.Count == 0, "flight callbacks clean up their coins");
-                var thirdZone = (DropZone)screen.FindChild("CustomerDropZone3", true, false);
+                var thirdZone = (DropZone)screen.FindChild($"CustomerDropZone{paymentCustomers[2].SlotIndex + 1}", true, false);
                 Check(thirdZone.TryAccept("soy_milk_cup") && screen.PaymentCoins.Count == 3, "third payment begins a fresh flight");
                 living.ReceivePayment(); hud.EmphasizeIncome();
                 ProjectSettings.SetSetting("accessibility/reduce_motion", true); await Frames();
@@ -142,9 +143,9 @@ public partial class TianjinLivingWorkbenchSelfTest : Node
                 Check(living.CompletedPaperCount <= 5, "completion copies have a bounded lifetime and count");
                 await Shot($"completion-{width}");
                 living.ReceivePayment(); hud.EmphasizeIncome(); await Frames(4);
-                Check(Math.Abs(living.PendantRotation) <= 2.01f && Math.Abs(living.PendantRotation) > .01f, "payment swing stays within two degrees");
+                Check(Math.Abs(living.PendantRotation) <= 4.01f && Math.Abs(living.PendantRotation) > .01f, "payment swing stays within four degrees");
                 living.ReceivePayment(); await Frames(3);
-                Check(Math.Abs(living.PendantRotation) <= 2.01f, "consecutive payment replaces swing");
+                Check(Math.Abs(living.PendantRotation) <= 4.01f, "consecutive payment replaces swing");
                 screen.OpenBusinessDetails(); await Frames();
                 Check(living.CompletedPaperCount == 0 && living.ToolsAtRest && living.PendantRotation == 0, "modal clears transient feedback and restores tools");
                 Check(hud.IncomeTarget.Scale == Vector2.One && screen.PaymentCoins.Count == 0, "modal clears income emphasis and flights");

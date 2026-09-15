@@ -92,6 +92,10 @@ public partial class TianjinDayScreen
         _demoLessonAction!.Disabled = _manualPaused || _focusPaused || _detailsPaused;
         _demoLessonTitle!.Text = _demoLessonComplete ? "第一份早餐，做好了！" : "跟着做一份煎饼";
         _demoLessonAction.Text = _demoLessonSaveError.Length > 0 ? "重试保存" : _demoLessonComplete ? "开始营业" : "跳过教学";
+        bool showSummary = _demoLessonComplete || _demoLessonSaveError.Length > 0;
+        _demoLessonHint!.Visible = showSummary;
+        _demoLesson.Size = new Vector2(475, showSummary ? 270 : 150);
+        _demoLessonAction.Position = new Vector2(24, showSummary ? 195 : 78);
         var r = _workstation.Machine.Runtime;
         _demoLessonHint!.Text = _demoLessonSaveError.Length > 0 ? _demoLessonSaveError
             : _demoLessonComplete ? "接下来自己试试。营业时留意火候，并按订单添加配料。"

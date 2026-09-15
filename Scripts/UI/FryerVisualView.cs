@@ -242,6 +242,17 @@ public partial class FryerVisualView : Control
             _loweredProgress);
     }
 
+    internal TutorialFocusTarget TeachingBasketTarget()
+    {
+        if (_art is null || EmbeddedOpening is not Rect2 opening) return TutorialFocusTarget.Control(this);
+        Rect2 mouth = EmbeddedBasketRect(opening);
+        Vector2 full = new(mouth.Size.X, mouth.Size.Y / .82f);
+        float height = Mathf.Clamp(opening.End.Y - mouth.Position.Y, 0, full.Y);
+        return TutorialFocusTarget.Sprite(_basketContour, DrawnArtContour.WithoutGreen(_art.EmbeddedBasket),
+            new Rect2(mouth.Position, new Vector2(full.X, height)),
+            new Rect2(Vector2.Zero, _art.EmbeddedBasket.GetSize() * new Vector2(1, height / full.Y)));
+    }
+
     private Rect2 EmbeddedBasketRect(Rect2 opening)
     {
         // This is the mouth plane, not the complete sprite including its front

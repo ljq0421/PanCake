@@ -306,7 +306,8 @@ public partial class WuhanGestureSelfTest : Node
             Move(P(1630, 400), true); Button(P(1630, 400), false);
             await ToSignal(GetTree().CreateTimer(.4), SceneTreeTimer.SignalName.Timeout); Step(.001);
             Check(_screen.Bowl.State == NoodleBowlState.Ready && !_screen.DeliveryDrag.IsDragging, "missed delivery preserves finished noodles");
-            var zone = (Control)_screen.FindChild("WuhanCustomerDropZone1", true, false);
+            // Customers are centered in the five-slot strip; slot 1 may be empty.
+            var zone = _screen.Descendants<ProjectCake.Interaction.DropZone>().First(z => z.CanAccept(WuhanWorkstationView.DeliveryPayload(ProductKind.HotDryNoodles)));
             Vector2 target = View.GetGlobalTransformWithCanvas().AffineInverse() * (zone.GetGlobalTransformWithCanvas() * (zone.Size * .5f));
             Drag(bowl, target);
             await ToSignal(GetTree().CreateTimer(.4), SceneTreeTimer.SignalName.Timeout); Step(.001);
@@ -406,7 +407,7 @@ public partial class WuhanGestureSelfTest : Node
         var budgetCustomers = controller.CustomerQueue.Slots.ToArray();
         bool reduced=WuhanWorkstationView.ReducedMotion;ProjectSettings.SetSetting("accessibility/reduce_motion",true);
         void Deliver(Vector2 source,int slot) {
-            var zone=(Control)_screen.FindChild($"WuhanCustomerDropZone{slot+1}",true,false);
+            var zone=(Control)_screen.FindChild($"WuhanCustomerDropZone{budgetCustomers[slot].SlotIndex+1}",true,false);
             Vector2 target=View.GetGlobalTransformWithCanvas().AffineInverse()*(zone.GetGlobalTransformWithCanvas()*(zone.Size*.5f));
             Drag(source,target);Step(.001);
         }

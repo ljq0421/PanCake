@@ -17,6 +17,13 @@ public static class BackgroundArtContour
         Rect2 backgroundRect, InteractionHighlightState state, bool preferDarkInk = false, int edgeSearchRadius = 10)
     {
         if (state == InteractionHighlightState.None || guide.Length < 3) return;
+        var matte = Resolve(background, guide, backgroundRect, preferDarkInk, edgeSearchRadius);
+        DrawnArtContour.Draw(canvas, matte.Texture, matte.Bounds, state);
+    }
+
+    internal static (Texture2D Texture, Rect2 Bounds) Resolve(Texture2D background, Vector2[] guide,
+        Rect2 backgroundRect, bool preferDarkInk = false, int edgeSearchRadius = 10)
+    {
         Vector2 imageSize = background.GetSize();
         Vector2[] source = guide.Select(p => (p - backgroundRect.Position) / backgroundRect.Size * imageSize).ToArray();
         string identity = string.Join(';', source.Select(p => $"{MathF.Round(p.X, 2).ToString(CultureInfo.InvariantCulture)},{MathF.Round(p.Y, 2).ToString(CultureInfo.InvariantCulture)}"));
@@ -25,8 +32,7 @@ public static class BackgroundArtContour
         if (!Mattes.TryGetValue((background, identity), out Matte? matte))
             Mattes[(background, identity)] = matte = Build(background, source, preferDarkInk, edgeSearchRadius);
         Vector2 scale = backgroundRect.Size / imageSize;
-        DrawnArtContour.Draw(canvas, matte.Texture,
-            new Rect2(backgroundRect.Position + matte.Bounds.Position * scale, matte.Bounds.Size * scale), state);
+        return (matte.Texture, new Rect2(backgroundRect.Position + matte.Bounds.Position * scale, matte.Bounds.Size * scale));
     }
 
     private static Matte Build(Texture2D texture, Vector2[] guide, bool preferDarkInk, int edgeSearchRadius)

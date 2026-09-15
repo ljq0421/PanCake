@@ -13,11 +13,30 @@ public partial class YangzhouSelfTest : Node
     private string _root = $"res://.tmp/yangzhou-tests/{Guid.NewGuid():N}";
     public override void _Ready()
     {
-        try { _catalog = YangzhouCatalog.Load(); DataTests(); ProductionTests(); OrderTests(); ChapterTests(); SaveTests(); }
+        try { _catalog = YangzhouCatalog.Load(); DataTests(); SlotTests(); ProductionTests(); OrderTests(); ChapterTests(); SaveTests(); }
         catch (Exception exception) { _failed++; GD.PushError(exception.ToString()); }
         GD.Print($"YANGZHOU_TEST_RESULT passed={_passed} failed={_failed}"); GetTree().Quit(_failed == 0 ? 0 : 1);
     }
     private void Check(bool condition, string name) { if (condition) { _passed++; GD.Print("PASS " + name); } else { _failed++; GD.PushError("FAIL " + name); } }
+    private void SlotTests()
+    {
+        var session = new YangzhouSession(_catalog, 2, 3, 3);
+        var plan = (List<YangzhouPlannedOrder>)session.Plan;
+        for (int i = 0; i < plan.Count; i++) plan[i] = plan[i] with { Arrival = 0, TemplateId = "B", CustomerId = "ordinary" };
+        session.Tick(5 + session.Plan[0].Arrival + 10);
+        Check(session.Waiting.Select(o => o.SlotIndex).SequenceEqual(new[] { 2, 1, 3, 0, 4 }), "扬州按中间优先填满五个固定位置");
+        var survivor = session.CustomerAtSlot(4)!;
+        foreach (var order in session.Waiting.Where(o => o != survivor).ToArray())
+        {
+            session.Select(order.Plan.Id);
+            session.Kitchen.TakeTea(); session.Kitchen.Tick(.31);
+            Check(session.Stage("T01") && session.Serve(), "固定位置订单整盘上桌");
+        }
+        Check(session.Waiting.Count == 1 && session.CustomerAtSlot(4) == survivor, "扬州只剩侧边顾客时保持原位");
+        session.Tick(.05);
+        Check(session.CustomerAtSlot(2) is not null && session.CustomerAtSlot(4) == survivor, "扬州新顾客优先补中间且不移动旧顾客");
+    }
+
     private void DataTests()
     {
         Check(_catalog.Days.Count == 12 && _catalog.Day(12).Customers == 20 && _catalog.Day(12).Duration == 180, "12天完整配置与最终日20组180秒");

@@ -24,6 +24,7 @@ public partial class PancakeWorkstation
 
     public void ConfigureTutorial(IEnumerable<string>? learned)
     {
+        _focusLastChannel = "pancake";
         _tutorialMemory = true;
         _learnedActions.Clear();
         if (learned is not null) _learnedActions.UnionWith(learned);
@@ -32,6 +33,7 @@ public partial class PancakeWorkstation
 
     public void LearnWorkbenchAction(string action)
     {
+        _focusLastChannel = action.StartsWith("fryer:") ? "fryer" : "pancake";
         if (!_tutorialMemory || !_learnedActions.Add(action)) return;
         WorkbenchActionLearned?.Invoke(action);
         Render();

@@ -80,22 +80,11 @@ public partial class WuhanWorkstationView
         }
         if (_doupi is not null)
         {
-            SourcePath(new Vector2[] { new(1282, 834), new(1288, 750), new(1301, 735), new(1467, 735),
-                new(1484, 746), new(1498, 839), new(1486, 871), new(1305, 872), new(1288, 861) }, State("stock"), radius: 2);
-            SourcePath(new Vector2[] { new(1502, 750), new(1514, 736), new(1605, 736), new(1623, 749),
-                new(1650, 856), new(1637, 878), new(1531, 880), new(1517, 866) },
-                IsKnifeHeld ? InteractionHighlightState.Selected : State("knife"), radius: 2);
-            SourcePath(new Vector2[] { new(1070, 775), new(1074, 748), new(1094, 723), new(1130, 707),
-                new(1172, 704), new(1217, 715), new(1251, 735), new(1268, 759), new(1270, 827),
-                new(1255, 850), new(1220, 868), new(1171, 876), new(1123, 868), new(1088, 848), new(1070, 821) }, State("filling"));
-            SourcePath(new Vector2[] { new(1466,629), new(1466,618), new(1470,610), new(1479,604),
-                new(1490,602), new(1530,602), new(1570,602), new(1605,602), new(1618,603), new(1624,607),
-                new(1631,617), new(1635,630), new(1642,650), new(1648,667), new(1647,678), new(1642,697), new(1637,708), new(1630,714),
-                new(1616,717), new(1500,717), new(1487,712), new(1480,703), new(1476,688) }, State("doupi_egg"), radius: 2);
-            SourcePath(new Vector2[] { new(1451,514), new(1452,506), new(1458,499), new(1469,496),
-                new(1585,496), new(1596,500), new(1604,509), new(1610,528), new(1626,563),
-                new(1628,573), new(1625,586), new(1621,597), new(1618,601), new(1480,601),
-                new(1471,596), new(1466,587), new(1462,570) }, State("batter"), radius: 2);
+            SourcePath(EquipmentSilhouette("stock"), State("stock"), radius: 2);
+            SourcePath(EquipmentSilhouette("knife"), IsKnifeHeld ? InteractionHighlightState.Selected : State("knife"), radius: 2);
+            SourcePath(EquipmentSilhouette("filling"), State("filling"));
+            SourcePath(EquipmentSilhouette("doupi_egg"), State("doupi_egg"), radius: 2);
+            SourcePath(EquipmentSilhouette("batter"), State("batter"), radius: 2);
             if (_gesture != "batter" && (ReducedMotion || Find("pan")?.Kind != "batter"))
                 SpriteContour("doupi_ladle", _layout.BatterLadle, State("batter"));
             if (ReducedMotion || Find("pan")?.Kind != "egg") SpriteContour("egg_ladle", _layout.DoupiEggFood, State("doupi_egg"));

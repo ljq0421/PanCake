@@ -94,6 +94,15 @@ public partial class BusinessHudSelfTest : Node
                 controller.Tick(2);
                 Require(controller.IsPaused && controller.DayRemainingSeconds == remaining, "pause freezes time");
                 await Frames(); Require(feedback.GetChildCount() == 0, "pause clears scene feedback");
+                var pausePanel = city switch
+                {
+                    "Tianjin" => screen.FindChild("PausePanel", true, false) as Control,
+                    "Wuhan" => screen.FindChild("HudPausePanel", true, false) as Control,
+                    _ => screen.GetNode<Control>("Workbench/PauseMenu/Panel"),
+                };
+                Require(pausePanel?.GetThemeStylebox("panel") is StyleBoxTexture
+                    && screen.FindChild(city + "PauseTitleTape", true, false) is Control { Visible: true },
+                    "pause uses the shared illustrated panel treatment");
                 if (capture) await Shot(viewport, $"{city}-{width}-paused");
                 if (screen is WuhanDayScreen)
                 {

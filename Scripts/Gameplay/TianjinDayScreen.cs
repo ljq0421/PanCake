@@ -56,6 +56,7 @@ public partial class TianjinDayScreen : Control
     private ConfirmationDialog _abandonDialog = null!;
     private ColorRect _pauseBlocker = null!;
     private PanelContainer _pausePanel = null!;
+    private Control _pauseTitleTape = null!;
     private bool _committed;
     private bool _focused = true;
     private bool _manualPaused;
@@ -77,6 +78,7 @@ public partial class TianjinDayScreen : Control
         TextureFilter = TextureFilterEnum.LinearWithMipmaps;
         SceneNodeBinder.Bind(this);
         StyleAbandonDialog();
+        BuildTeachingFocus();
         _art = new TianjinArtCatalog();
         _workstation.Feedback += ShowFeedback;
         _workstation.WorkbenchActionLearned += RememberWorkbenchAction;
@@ -109,6 +111,7 @@ public partial class TianjinDayScreen : Control
         _feedbackPanel.ResetSize();
         BuildCashPendant();
         BuildBusinessHud();
+        StylePausePanel();
         _living = new TianjinLivingWorkbench { Name = "LivingWorkbench",
             Active = () => _controller is not null && _focused && !_manualPaused && !_focusPaused && !_detailsPaused
                 && !_committed && !_controller.IsPaused && _controller.State is DayState.Running or DayState.Closing,
@@ -134,12 +137,18 @@ public partial class TianjinDayScreen : Control
             SetManualPaused(false);
             HubRequested?.Invoke();
         };
-        _abandonDialog.Canceled += () => { if (_manualPaused) _pausePanel.Visible = true; };
+        _abandonDialog.Canceled += () =>
+        {
+            if (!_manualPaused) return;
+            _pausePanel.Visible = true;
+            _pauseTitleTape.Visible = true;
+        };
     }
 
     public bool Initialize(DataCatalog catalog, SaveService save, DayController controller, int day)
     {
         BusinessFeedbackAudio.Attach(this, controller.Feedback, () => controller.CurrentConfig?.CityId == StableIds.Cities.Tianjin && (IsVisibleInTree() && _focused && !_manualPaused && !_focusPaused && !_detailsPaused && !_abandonDialog.Visible && !controller.IsPaused && controller.State is DayState.Running or DayState.Closing));
+        TeachingFocus.ResetSession();
         CloseBusinessDetails();
         ClearCoinFlights();
         _collectionFeedback.Clear();
@@ -314,6 +323,7 @@ public partial class TianjinDayScreen : Control
             _ => new DeliveryEvaluation(DeliveryGrade.Rejected, 0, 0, 0, "当前商品不可交付。"),
         };
         if (kind == ProductKind.Youtiao && (evaluation.ItemAccepted || evaluation.CompletesOrder)) _controller.Ledger?.RecordYoutiaoUsed();
+        _deliveryTeaches = evaluation.Grade != DeliveryGrade.Incorrect && (evaluation.ItemAccepted || evaluation.CompletesOrder);
         if (!(evaluation.CompletesOrder && evaluation.Grade is DeliveryGrade.Correct or DeliveryGrade.Perfect))
             _sceneFeedback.Delivery(evaluation, _orderCards[slot]);
         PlayDeliveryEffects(evaluation, slot);
@@ -329,7 +339,7 @@ public partial class TianjinDayScreen : Control
             payload => _workstation.CanDeliverProduct(payload)
                 && PancakeWorkstation.DeliveryProduct(payload) is ProductKind kind
                 && _controller.CanDeliverTo(customerId, kind),
-            payload => _workstation.DeliverToCustomer(payload, () => SubmitToCustomer(customerId, slot, payload)),
+            payload => _workstation.DeliverToCustomer(payload, () => SubmitToCustomer(customerId, slot, payload), () => _deliveryTeaches),
             _ => _portraits[slot].GetGlobalRect().GetCenter());
     }
 
@@ -391,7 +401,16 @@ public partial class TianjinDayScreen : Control
         bool active = _controller?.State is DayState.Opening or DayState.Running or DayState.Closing;
         _pauseBlocker.Visible = paused && active;
         _pausePanel.Visible = paused && active && !_abandonDialog.Visible;
+        _pauseTitleTape.Visible = _pausePanel.Visible;
         ApplyPauseState();
+    }
+
+    private void StylePausePanel()
+    {
+        IllustratedPanelChrome.ApplyMainFrame(_pausePanel);
+        _pausePanel.Descendants<Label>().First(label => label.Text == "营业暂停").ZIndex = 2;
+        _pauseTitleTape = IllustratedPanelChrome.AddTitleTape(this, "TianjinPauseTitleTape", new(760, 344, 400, 62), 93);
+        _pauseTitleTape.Visible = false;
     }
 
     private void ApplyPauseState()

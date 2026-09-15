@@ -30,6 +30,7 @@ public partial class WuhanDayScreen
     private BusinessSceneFeedback _sceneFeedback = null!;
     private Control _hudPauseMenu = null!;
     private Button _hudResume = null!;
+    private Control _hudPauseTitleTape = null!;
     private bool _hudPaused;
     private void BuildBusinessHud()
     {
@@ -42,11 +43,16 @@ public partial class WuhanDayScreen
         AddChild(_hudPauseMenu); _hudPauseMenu.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         var dim = new ColorRect { Color = new Color(0.12f, 0.08f, 0.04f, .46f) };
         _hudPauseMenu.AddChild(dim); dim.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
-        var panel = TianjinUi.Panel(TianjinUi.Paper);
+        var panel = new PanelContainer { Name = "HudPausePanel" };
+        IllustratedPanelChrome.ApplyMainFrame(panel);
         _hudPauseMenu.AddChild(panel); panel.SetAnchorsAndOffsetsPreset(LayoutPreset.Center);
         panel.Position = new(740, 365); panel.Size = new(440, 310);
         var column = new VBoxContainer(); column.AddThemeConstantOverride("separation", 20); panel.AddChild(column);
-        column.AddChild(TianjinUi.Label("歇一会儿", 32, alignment: HorizontalAlignment.Center));
+        var title = TianjinUi.Label("歇一会儿", 32, alignment: HorizontalAlignment.Center);
+        title.ZIndex = 2;
+        column.AddChild(title);
+        _hudPauseTitleTape = IllustratedPanelChrome.AddTitleTape(_hudPauseMenu, "WuhanPauseTitleTape", new(795, 382, 330, 52), 1);
+        _hudPauseTitleTape.Visible = false;
         _hudResume = TianjinUi.Button("继续营业", minimumSize: new(380, 64));
         column.AddChild(_hudResume); _hudResume.Pressed += () => SetHudPaused(false);
         var abandon = TianjinUi.Button("放弃本日", minimumSize: new(380, 64));
@@ -63,6 +69,7 @@ public partial class WuhanDayScreen
         _hudPaused = paused;
         _controller?.SetPauseReason("wuhan-hud", paused);
         _hudPauseMenu.Visible = paused;
+        _hudPauseTitleTape.Visible = paused;
         _hud.PauseButton.Disabled = paused;
         Workstation.CancelInput(); Workstation.SetCookingAudioPaused(!CanInteract);
         UpdatePendantState();

@@ -31,7 +31,7 @@ public partial class YangzhouVisualCapture : Node
                 Require(_screen.Initialize(catalog, save, 12), "设备高亮完整解锁初始化");
                 Step(6);
                 for (int i = 0; i < 30 && _screen.Session.Waiting.Count == 0; i++) Step(1);
-                var customerCard = _screen.GetNode<Button>("Canvas/Customer0");
+                var customerCard = _screen.GetNode<Button>($"Canvas/Customer{_screen.Session.Waiting[0].SlotIndex}");
                 Require(!customerCard.Disabled, "高亮验证时有实际等待顾客");
                 await Click(customerCard.Position + customerCard.Size * .5f);
                 Require(customerCard.GetChildren().OfType<ButtonContourHighlight>().Single().ResolveState()

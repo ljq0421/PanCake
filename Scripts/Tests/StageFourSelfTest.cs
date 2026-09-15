@@ -23,6 +23,13 @@ public partial class StageFourSelfTest : Node
         try
         {
             DataCatalog catalog = GetNode<DataCatalog>("/root/DataCatalog");
+            if (OS.GetCmdlineUserArgs().Contains("--customer-slots-only"))
+            {
+                await TestDirectDelivery(catalog);
+                GD.Print($"TIANJIN_CUSTOMER_SLOTS_RESULT passed={_passed} failed={_failed}");
+                GetTree().Quit(_failed == 0 ? 0 : 1);
+                return;
+            }
             if (OS.GetCmdlineUserArgs().Contains("--shortcuts-only", StringComparer.Ordinal))
             {
                 await TestProductionShortcuts(catalog);
@@ -555,7 +562,7 @@ public partial class StageFourSelfTest : Node
             && workstation.Machine.Runtime.State == PancakeState.Empty,
             "未点击顾客时拖到最后一位只交给该顾客，并清空成品位");
 
-        CustomerRuntime leftCustomer = controller.CustomerQueue.Slots.First();
+        CustomerRuntime leftCustomer = controller.CustomerQueue.CustomerAtSlot(0)!;
         var leftCustomerZone = (DropZone)screen.FindChild("CustomerDropZone1", true, false);
         RecipeData leftRecipe = catalog.RecipesById[leftCustomer.Order.Lines.First(line => line.ProductKind == ProductKind.Pancake).DefinitionId];
         MakeBagged(workstation.Machine, leftRecipe);

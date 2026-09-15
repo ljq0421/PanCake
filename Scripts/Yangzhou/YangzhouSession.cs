@@ -1,4 +1,5 @@
 using ProjectCake.Gameplay;
+using ProjectCake.Customers;
 using ProjectCake.Orders;
 
 namespace ProjectCake.Yangzhou;
@@ -34,6 +35,7 @@ public sealed class YangzhouSession
     public YangzhouKitchen Kitchen { get; }
     public IReadOnlyList<YangzhouPlannedOrder> Plan { get; }
     public IReadOnlyList<YangzhouOrder> Waiting => _waiting;
+    public YangzhouOrder? CustomerAtSlot(int slotIndex) => _waiting.FirstOrDefault(order => order.SlotIndex == slotIndex);
     public IReadOnlyList<YangzhouOrder> Served => _served;
     public YangzhouOrder? Selected => _waiting.FirstOrDefault(o => o.Plan.Id == SelectedId);
     public int SelectedId { get; private set; }
@@ -149,7 +151,8 @@ public sealed class YangzhouSession
         {
             _delay += 2; PressureDelays++; _nextAt = Elapsed + 2; return;
         }
-        _waiting.Add(new(next, _catalog, Day.Day == 1)); _next++;
+        int slot = CustomerSlotPlacement.FindAvailable(5, index => CustomerAtSlot(index) is not null);
+        _waiting.Add(new(next, _catalog, Day.Day == 1) { SlotIndex = slot }); _next++;
         _delay = 0; _nextAt = _next < Plan.Count ? Math.Max(Plan[_next].Arrival, Elapsed + .25) : double.PositiveInfinity; SelectFirst();
     }
     private void SelectFirst() { if (Selected is null) SelectedId = _waiting.FirstOrDefault()?.Plan.Id ?? 0; }

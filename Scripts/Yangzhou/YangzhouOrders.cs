@@ -56,6 +56,7 @@ public sealed class YangzhouOrder
         Patience = Type.Patience * (tutorial ? 1.2 : 1); Price = catalog.Price(Template);
     }
     public YangzhouPlannedOrder Plan { get; }
+    public int SlotIndex { get; internal set; } = -1;
     public YangzhouTemplate Template { get; }
     public YangzhouCustomerType Type { get; }
     public double Patience { get; }

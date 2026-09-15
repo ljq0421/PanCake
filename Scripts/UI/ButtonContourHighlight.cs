@@ -69,12 +69,8 @@ public partial class ButtonContourHighlight : Control
         DrawContour(this, source, new Rect2(Vector2.Zero, Size), state);
     }
 
-    public static void DrawContour(CanvasItem canvas, StyleBoxFlat source, Rect2 rect, InteractionHighlightState state)
+    internal static Vector2[] ContourPoints(StyleBoxFlat source, Rect2 rect)
     {
-        if (state == InteractionHighlightState.None) return;
-        if (InteractionHighlightTheme.Applies(canvas, state))
-        {
-            // Build the original rounded silhouette, then dilate only its exterior.
             var points = new List<Vector2>();
             int[] radii = { source.CornerRadiusTopLeft, source.CornerRadiusTopRight,
                 source.CornerRadiusBottomRight, source.CornerRadiusBottomLeft };
@@ -90,7 +86,16 @@ public partial class ButtonContourHighlight : Control
                 for (int i = 0; i <= 12; i++)
                     points.Add(center + Vector2.FromAngle(Mathf.Pi + corner * Mathf.Pi / 2 + i * Mathf.Pi / 24) * radius);
             }
-            DrawnArtContour.DrawPolygon(canvas, points.ToArray(), state);
+        return points.ToArray();
+    }
+
+    public static void DrawContour(CanvasItem canvas, StyleBoxFlat source, Rect2 rect, InteractionHighlightState state)
+    {
+        if (state == InteractionHighlightState.None) return;
+        if (InteractionHighlightTheme.Applies(canvas, state))
+        {
+            // Build the original rounded silhouette, then dilate only its exterior.
+            DrawnArtContour.DrawPolygon(canvas, ContourPoints(source, rect), state);
             return;
         }
         var outline = (StyleBoxFlat)source.Duplicate();

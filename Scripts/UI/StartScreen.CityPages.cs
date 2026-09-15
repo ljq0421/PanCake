@@ -74,8 +74,13 @@ public partial class StartScreen
             Text(b, "Caption", tab.Caption, new(40, 18, 194, 64), 28, true);
         }
     }
-    private bool CanOpenDay(int day) => _save is { CanContinue: true } && _save.Data.UnlockedCityIds.Contains(_city)
-        && day >= 1 && day <= JourneyModel.Progress(_save, _city).HighestUnlockedDay;
+    private bool CanOpenDay(int day)
+    {
+        bool cityAvailable = _save is not null && (_save.Data.UnlockedCityIds.Contains(_city)
+            || DeveloperToolsVisible && _city == StableIds.Cities.Wuhan);
+        return _save is { CanContinue: true } && cityAvailable
+            && day >= 1 && day <= JourneyModel.Progress(_save, _city).HighestUnlockedDay;
+    }
     private void RequestBusiness(int day)
     {
         if (!CanOpenDay(day)) { ShowError("该城市或营业日尚未开放，无法开张。"); return; }

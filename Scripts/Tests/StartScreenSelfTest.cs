@@ -233,7 +233,14 @@ public partial class StartScreenSelfTest : Node
         await Capture("map-first");
         string before = File.ReadAllText(_path);
         _screen.OpenCard(StableIds.Cities.Wuhan);
-        Check(_screen.Page == JourneyPage.Map && File.ReadAllText(_path) == before, "locked card cannot open or mutate save");
+        if (_screen.DeveloperToolsVisible)
+        {
+            Check(_screen.Page == JourneyPage.City && Find<Button>("OpenBusiness").Disabled == false && File.ReadAllText(_path) == before,
+                "developer preview opens locked Wuhan Day 1 without changing the save");
+            _screen.PresentMap(); await Frames();
+        }
+        else
+            Check(_screen.Page == JourneyPage.Map && File.ReadAllText(_path) == before, "locked card cannot open or mutate save");
         await Click(Find<Button>("Node0"));
         Check(_screen.Page == JourneyPage.Map, "node selects map summary");
         await Click(Find<Button>("EnterCity"));
@@ -294,8 +301,13 @@ public partial class StartScreenSelfTest : Node
         Find<HSlider>("Volumemusic").Value = 0;
         Check(Find<TextureRect>("ChannelIconmusic").Texture.ResourcePath.Contains("音乐关闭") && Find<TextureRect>("ChannelIconeffects").Texture.ResourcePath.Contains("音效开启"), "zero music volume leaves effects icon active");
         Vector2I oldSize = GetWindow().Size;
-        await Click(Find<Button>("Fullscreen")); await Capture("display-confirmation");
+        await Click(Find<Button>(_width == 1280 ? "Size1280" : "Fullscreen")); await Capture("display-confirmation");
         Check(settings.DisplayPending, "display asks for confirmation");
+        Check(Find<Panel>("DisplayConfirmationPanel").GetThemeStylebox("panel") is StyleBoxTexture
+            && Find<Panel>("DisplayConfirmationMessagePanel").Visible
+            && Find<Control>("DisplayConfirmationDecorations").Visible
+            && Find<Label>("DisplayConfirmationTitle").Text == "保留这个显示设置？",
+            "display confirmation uses the shared illustrated panel treatment");
         settings._Process(16);
         Check(!settings.DisplayPending && GetWindow().Size == oldSize, "display timeout restores original dimensions");
         KeyPress(Key.Escape);

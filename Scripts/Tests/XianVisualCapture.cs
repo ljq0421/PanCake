@@ -91,7 +91,8 @@ public partial class XianVisualCapture : Node
                     $"顾客{state}切换共享表情");
             }
             customer!.State = ProjectCake.Customers.CustomerState.Happy; _screen.Render();
-            await Drag(new(1145, 900), new(215, 350));
+            var firstSurface = _screen.Surfaces[$"customer{controller.CustomerQueue!.Slots.First().SlotIndex}"];
+            await Drag(new(1145, 900), firstSurface.Position + firstSurface.Size * .5f);
             Require(controller.Ledger!.CompletedCustomers == 1 && _screen.Session.Sandwich.State == RoujiamoState.Empty, "肉夹馍拖给顾客完成交付");
             int revenue = controller.Ledger.Build().TotalRevenue;
             Require(_screen.CoinTray.PendingAmount == revenue && revenue > 0, "整单付款进入共享收钱展示");
@@ -136,15 +137,17 @@ public partial class XianVisualCapture : Node
                 {
                     await Click(new(1635, 650)); Step(.61); Require(_screen.Session.Soup!.HasBowl, "点击汤锅完成盛汤");
                     Step(10);
-                    var combo = controller.CustomerQueue!.CustomerAtSlot(0)!;
+                    var combo = controller.CustomerQueue!.Slots.First();
+                    var comboSurface = _screen.Surfaces[$"customer{combo.SlotIndex}"];
+                    var comboTarget = comboSurface.Position + comboSurface.Size * .5f;
                     double patience = combo.PatienceProgress;
-                    await Drag(new(1635, 900), new(215, 350));
+                    await Drag(new(1635, 900), comboTarget);
                     Require(!combo.Progress.IsComplete && !_screen.Session.Soup.HasBowl && Math.Abs(combo.PatienceProgress - Math.Max(0, patience - .15)) < .002,
                         "托盘拖汤部分交付恢复15%耐心");
                     Require(controller.Ledger!.CompletedCustomers == 0 && _screen.CoinTray.PendingAmount == 0, "部分交付不结账");
-                    Require(_screen.Surfaces["customer0"].GetNode<CustomerPortraitView>("Portrait").HeadTexture
+                    Require(comboSurface.GetNode<CustomerPortraitView>("Portrait").HeadTexture
                         == art.CustomerPortrait(combo.AppearanceId, combo.State, combo.WasServed).Head, "部分交付立即同步恢复后的表情");
-                    await Click(new(1635, 650)); Step(.61); await Drag(new(1635, 900), new(215, 350));
+                    await Click(new(1635, 650)); Step(.61); await Drag(new(1635, 900), comboTarget);
                     Require(_screen.Session.Soup.HasBowl, "重复汤交付被拒绝并保留汤碗");
                     await Click(new(1530, 1020)); Step(.81);
                     Require(_screen.Session.Soup.Stock.Count == _screen.Session.Soup.Stock.Capacity, "补汤入口可用");

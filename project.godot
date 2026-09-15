@@ -35,7 +35,7 @@ project/assembly_name="ProjectCake"
 
 [editor]
 
-run/main_run_args="-- --dev-ui --demo-pilot"
+run/main_run_args="-- --dev-ui"
 
 [rendering]
 

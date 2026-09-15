@@ -84,8 +84,8 @@ public partial class TianjinLivingWorkbench : Control
         if (!Active() || Reduced || !IsVisibleInTree()) return;
         _pendantTween?.Kill(); _pendant.RotationDegrees = 0;
         _pendantTween = CreateTween().SetTrans(Tween.TransitionType.Sine).SetEase(Tween.EaseType.InOut);
-        _pendantTween.TweenProperty(_pendant, "rotation_degrees", 2f, .09);
-        _pendantTween.TweenProperty(_pendant, "rotation_degrees", -1f, .13);
+        _pendantTween.TweenProperty(_pendant, "rotation_degrees", 4f, .09);
+        _pendantTween.TweenProperty(_pendant, "rotation_degrees", -2f, .13);
         _pendantTween.TweenProperty(_pendant, "rotation_degrees", 0f, .18);
     }
 

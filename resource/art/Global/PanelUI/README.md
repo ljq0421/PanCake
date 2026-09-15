@@ -6,7 +6,36 @@
 
 只在 `StartScreen.OpenModal("confirm")` 的“重新翻开一本旅行手账？”弹窗使用。主面板 930×535，内部说明区在 v2 调整为 820×160、向下移 15px，为标题纸签留出间隔（1920×1080 设计坐标）。文字、按钮、存档处理和焦点逻辑沿用原实现。
 
-## v2 手账装饰（用户确认）
+## 当前版本：胶带描边收细
+
+用户最终确认：蒸汽碗使用 `bowl-stamp-v2.png`，保留 60% 不透明度、72×72 显示范围和 8° 旋转。其余确认 OK：主/分组边框、细描边胶带及浅色标题沿用下述版本。最终确认截图为 `preview-confirmed-bowl-v2-1280.png`。
+
+标题与左上角现在共用 `corner-tape-v4.png`（256×63）。内置 imagegen 编辑 v3 绿底源图，收细深棕描边；在最终 256px 素材中央列测量，上下各约 5px 的深色描边收至各约 3px。透明像素 1881，半透明抗锯齿像素 811，绿色溢色为 0。完整编辑提示词及源图见 [生成记录](../../../../docs/art-concepts/panel-frames/tape-v4-prompt.md)。
+
+标题仍保留 55% 局部浅色混合，小碗保留 60% 不透明度。没有推广到其他弹窗或城市。最终截图为 `preview-thin-tape-1920.png`、`preview-thin-tape-1280.png`、`long-message-thin-tape-1280.png`。
+
+本轮完整构建 0 警告、0 错误，前轮 RecipeId 编译阻塞已不再出现。1920×1080、1280×720 的真实游戏弹窗专项均 `PANEL_PREVIEW_OK 20`，实际截图已检查；本轮覆盖了前轮尚未完成的浅色标题与淡化小碗完整游戏验收。
+
+## 上轮调整记录：浅色胶带标题与淡化小碗
+
+用户要求恢复小碗淡化，标题停用 `title-paper-v3.png`，改用颜色更浅的 `corner-tape-v3.png`。
+
+- 标题直接复用胶带 PNG，用 NinePatchRect 固定左右各 50px，按 94px 高度等比显示两端，中段延伸至 670px 宽。
+- `resource/shaders/panel_tape_lighten.gdshader` 将亮纸色向奶油色混合 55%，保留深暖棕描边及 alpha；不修改原 PNG，也不把整张素材变透明。左上角胶带继续使用原色。
+- 小碗不透明度恢复 60%。
+- 当前使用范围仍只有 `StartScreen.OpenModal("confirm")`，尚未推广到各城市页面。建议未来共享造型、纸面与描边，仅对标题/页签/装饰使用城市强调色；全局设置和跨城市确认弹窗维持通用暖色。城市配色没有在本次修改。
+
+验证限制：完整 C# 构建被工作区已有的 `Scripts/Gameplay/PancakeWorkbenchFocus.cs` 第 43/70/81 行 `PreparedPancake.RecipeId` 不存在错误阻断，本次未改动该玩法文件。独立 Godot OpenGL 预览已验证实际 PNG、九宫格、着色器和淡化效果，截图为 `material-preview-v4-1280.png`；不将独立材质预览视为完整游戏弹窗验收。
+
+## v3 历史装饰：粗线卡通修正
+
+用户指出 v2 装饰与游戏整体粗线卡通画风不一致，当前替换为 `title-paper-v3.png`（768×116）、`corner-tape-v3.png`（256×64）、`bowl-stamp-v3.png`（256×263）。采用更粗的深暖棕轮廓、圆钝缺口和大色块；碗图案不再使用 60% 透明度淡化。胶带显示范围改为 `(480,270,135,45)`，其余位置沿用 v2。仍然只试装当前确认弹窗。
+
+以实际游戏主/次级按钮作为风格依据，内置 imagegen 重绘；最终绿底源图和 [完整提示词](../../../../docs/art-concepts/panel-frames/decorations-v3-prompts.md) 保留于设计记录目录。三张素材抠图后绿色溢色均为 0，抗锯齿半透明像素分别为 2001、815、1331。最终截图保存为 `preview-v3-1920.png`、`preview-v3-1280.png`、`long-message-v3-1280.png`。
+
+v3 验证：`dotnet build --no-restore` 0 警告、0 错误；1920×1080 与 1280×720 实际视口各 `PANEL_PREVIEW_OK 20`，正常/长提示、取消、Tab/Esc 均通过。最终截图已人工检查，确认标题、装饰与按钮无重叠。
+
+## v2 历史装饰（已由 v3 替换）
 
 在 v1 两款边框上叠加三张独立透明素材：
 

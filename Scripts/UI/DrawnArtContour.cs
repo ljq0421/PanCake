@@ -41,11 +41,11 @@ public static class DrawnArtContour
     }
 
     public static void Draw(CanvasItem canvas, Texture2D texture, Rect2 destination,
-        InteractionHighlightState state, Rect2? source = null, bool keyGreen = false, Color? tint = null)
+        InteractionHighlightState state, Rect2? source = null, bool keyGreen = false, Color? tint = null, Transform2D? drawingTransform = null)
     {
         float opacity = InteractionHighlightTheme.HoverOpacity(canvas, (texture.GetInstanceId(), destination, source), state);
         if (state == InteractionHighlightState.None || destination.Size.X <= 0 || destination.Size.Y <= 0) return;
-        Transform2D transform = InteractionHighlightPresentation.PixelTransform(canvas);
+        Transform2D transform = InteractionHighlightPresentation.PixelTransform(canvas) * (drawingTransform ?? Transform2D.Identity);
         float sx = transform.X.Length(), sy = transform.Y.Length();
         if (sx < .001f || sy < .001f) return;
         int width = Math.Max(1, (int)MathF.Ceiling(destination.Size.X * sx)) * Samples;
@@ -72,14 +72,16 @@ public static class DrawnArtContour
         }
     }
 
-    private static Texture2D Build(Key key)
+    private static readonly Dictionary<Texture2D, Texture2D> GreenTextures = new();
+    internal static Texture2D WithoutGreen(Texture2D texture)
     {
-        using Image original = key.Texture.GetImage();
-        using Image cropped = original.GetRegion(key.Region);
-        cropped.Convert(Image.Format.Rgba8);
-        cropped.ClearMipmaps();
-        if (key.Green)
-        {
+        if (GreenTextures.TryGetValue(texture, out var cached)) return cached;
+        using Image image = texture.GetImage(); image.Convert(Image.Format.Rgba8); image.ClearMipmaps();
+        RemoveGreen(image);
+        return GreenTextures[texture] = ImageTexture.CreateFromImage(image);
+    }
+    private static void RemoveGreen(Image cropped)
+    {
             byte[] rgba = cropped.GetData();
             for (int i = 0; i < rgba.Length; i += 4)
             {
@@ -88,6 +90,17 @@ public static class DrawnArtContour
                 rgba[i + 3] = (byte)(rgba[i + 3] * (1 - t * t * (3 - 2 * t)));
             }
             cropped.SetData(cropped.GetWidth(), cropped.GetHeight(), false, Image.Format.Rgba8, rgba);
+    }
+
+    private static Texture2D Build(Key key)
+    {
+        using Image original = key.Texture.GetImage();
+        using Image cropped = original.GetRegion(key.Region);
+        cropped.Convert(Image.Format.Rgba8);
+        cropped.ClearMipmaps();
+        if (key.Green)
+        {
+            RemoveGreen(cropped);
         }
         cropped.Resize(key.Width, key.Height, Image.Interpolation.Lanczos);
         byte[] pixels = cropped.GetData();

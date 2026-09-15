@@ -144,7 +144,9 @@ public partial class GameController : Node
         { _startScreen.ShowError("本次试玩尚未开放该营业日。"); return false; }
         var catalog = GetNode<DataCatalog>("/root/DataCatalog");
         var controller = GetNode<DayController>(DayControllerPath);
-        if (!_save.CanContinue || !catalog.IsValid || !_save.Data.UnlockedCityIds.Contains(cityId)
+        bool cityAvailable = _save.Data.UnlockedCityIds.Contains(cityId)
+            || _startScreen.DeveloperToolsVisible && cityId == Data.StableIds.Cities.Wuhan;
+        if (!_save.CanContinue || !catalog.IsValid || !cityAvailable
             || !JourneyModel.Cities.Any(c => c.Id == cityId) || day < 1 || day > SaveService.ChapterDays(cityId)
             || day > JourneyModel.Progress(_save, cityId).HighestUnlockedDay)
         { _startScreen.ShowError("无法开张，请检查营业日、城市解锁和存档状态。"); return false; }

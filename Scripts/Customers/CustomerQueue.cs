@@ -217,7 +217,7 @@ public sealed class CustomerQueue
         while (_slots.Count < _capacity && _pending.Count > 0)
         {
             CustomerRuntime customer = _pending.Dequeue();
-            customer.SlotIndex = Enumerable.Range(0, _capacity).First(index => CustomerAtSlot(index) is null);
+            customer.SlotIndex = CustomerSlotPlacement.FindAvailable(_capacity, index => CustomerAtSlot(index) is not null);
             var unavailableAppearances = _slots.Select(item => item.AppearanceId).ToHashSet(StringComparer.Ordinal);
             customer.AppearanceId = CustomerAppearanceCatalog.Select(
                 customer.Type.Id,

@@ -13,6 +13,7 @@ public partial class TianjinDayScreen
     private Panel? _demoLesson;
     private Label? _demoLessonTitle, _demoLessonHint;
     private Button? _demoLessonAction;
+    private Panel? _demoLessonActionFrame;
     private Panel? _demoGesture;
     private Label? _demoGestureLabel;
     private ProgressBar? _demoGestureBar;
@@ -54,17 +55,20 @@ public partial class TianjinDayScreen
         if (_demoLesson is not null) return;
         _demoLesson = new Panel { Name = "DemoLesson", Position = new(40, 635), Size = new(475, 270), ZIndex = 90,
             MouseFilter = MouseFilterEnum.Ignore };
-        _demoLesson.AddThemeStyleboxOverride("panel", TianjinUi.Box(TianjinUi.Paper, 16, 3, true));
+        TianjinTeachingUi.ApplyPanel(_demoLesson);
         AddChild(_demoLesson);
-        _demoLessonTitle = new Label { Position = new(24, 18), Size = new(427, 45), MouseFilter = MouseFilterEnum.Ignore };
-        _demoLessonTitle.AddThemeFontSizeOverride("font_size", 28);
+        _demoLessonTitle = new Label { Position = new(68, 29), Size = new(205, 62), VerticalAlignment = VerticalAlignment.Center, MouseFilter = MouseFilterEnum.Ignore };
+        _demoLessonTitle.AddThemeFontSizeOverride("font_size", 24);
+        _demoLessonTitle.AddThemeColorOverride("font_color", TianjinUi.BrownText);
         _demoLesson.AddChild(_demoLessonTitle);
-        _demoLessonHint = new Label { Position = new(24, 77), Size = new(427, 105), AutowrapMode = TextServer.AutowrapMode.WordSmart,
+        _demoLessonHint = new Label { Position = new(68, 90), Size = new(340, 82), AutowrapMode = TextServer.AutowrapMode.WordSmart,
             MouseFilter = MouseFilterEnum.Ignore };
-        _demoLessonHint.AddThemeFontSizeOverride("font_size", 25);
+        _demoLessonHint.AddThemeFontSizeOverride("font_size", 21);
+        _demoLessonHint.AddThemeColorOverride("font_color", TianjinUi.BrownText);
         _demoLesson.AddChild(_demoLessonHint);
-        _demoLessonAction = TianjinUi.Button("跳过教学", minimumSize: new(240, 56));
-        _demoLessonAction.Position = new(24, 195); _demoLesson.AddChild(_demoLessonAction);
+        _demoLessonAction = new Button { Text = "跳过教学", FocusMode = Control.FocusModeEnum.All };
+        _demoLessonActionFrame = TianjinTeachingUi.ActionFrame(_demoLessonAction, new(285, 46), new(160, 58));
+        _demoLesson.AddChild(_demoLessonActionFrame);
         _demoLessonAction.Pressed += () => { if (_controller.TutorialActive) FinishDemoLesson(); else _demoLesson.Hide(); };
         _demoGesture = new Panel { Name = "DemoGestureProgress", Position = new(40, 940), Size = new(475, 76), MouseFilter = MouseFilterEnum.Ignore };
         _demoGesture.AddThemeStyleboxOverride("panel", TianjinUi.Box(TianjinUi.Paper, 12, 2, false)); AddChild(_demoGesture);
@@ -95,7 +99,7 @@ public partial class TianjinDayScreen
         bool showSummary = _demoLessonComplete || _demoLessonSaveError.Length > 0;
         _demoLessonHint!.Visible = showSummary;
         _demoLesson.Size = new Vector2(475, showSummary ? 270 : 150);
-        _demoLessonAction.Position = new Vector2(24, showSummary ? 195 : 78);
+        _demoLessonActionFrame!.Position = new Vector2(285, showSummary ? 190 : 46);
         var r = _workstation.Machine.Runtime;
         _demoLessonHint!.Text = _demoLessonSaveError.Length > 0 ? _demoLessonSaveError
             : _demoLessonComplete ? "接下来自己试试。营业时留意火候，并按订单添加配料。"

@@ -291,6 +291,10 @@ public sealed partial class OrderGenerator
             }
         }
         arrivals.Sort();
+        // Match Demo: the first Tianjin customer arrives as soon as business starts.
+        // Keep all random draws so later arrivals and generated orders stay unchanged.
+        if (config.CityId == StableIds.Cities.Tianjin && arrivals.Count > 0)
+            arrivals[0] = 0;
         return arrivals;
     }
 

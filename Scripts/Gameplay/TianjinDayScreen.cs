@@ -345,42 +345,7 @@ public partial class TianjinDayScreen : Control
 
     private void StyleAbandonDialog()
     {
-        Theme theme = TianjinUi.CreateTheme();
-        var panel = TianjinUi.Box(TianjinUi.Paper, 16, 4, false);
-        panel.ContentMarginLeft = panel.ContentMarginRight = 28;
-        panel.ContentMarginTop = panel.ContentMarginBottom = 24;
-        theme.SetStylebox("panel", "AcceptDialog", panel);
-
-        var border = TianjinUi.Box(TianjinUi.BrownDark, 16);
-        border.ExpandMarginTop = 44;
-        theme.SetStylebox("embedded_border", "Window", border);
-        theme.SetStylebox("embedded_unfocused_border", "Window", border);
-        theme.SetColor("title_color", "Window", TianjinUi.Paper);
-        theme.SetFontSize("title_font_size", "Window", 26);
-        theme.SetConstant("title_height", "Window", 44);
-        theme.SetConstant("close_v_offset", "Window", 28);
-        theme.SetConstant("close_h_offset", "Window", 32);
-        theme.SetConstant("buttons_separation", "AcceptDialog", 20);
-        theme.SetConstant("buttons_min_height", "AcceptDialog", 60);
-        theme.SetFontSize("font_size", "Label", 22);
-        _abandonDialog.Theme = theme;
-        _abandonDialog.GetLabel().HorizontalAlignment = HorizontalAlignment.Center;
-        _abandonDialog.GetLabel().AutowrapMode = TextServer.AutowrapMode.WordSmart;
-        _abandonDialog.GetLabel().CustomMinimumSize = new Vector2(600, 100);
-
-        foreach (Button button in new[] { _abandonDialog.GetOkButton(), _abandonDialog.GetCancelButton() })
-        {
-            Color fill = button == _abandonDialog.GetCancelButton() ? TianjinUi.Yellow : TianjinUi.Cream;
-            button.CustomMinimumSize = new Vector2(220, 60);
-            button.AddThemeFontSizeOverride("font_size", 22);
-            button.AddThemeColorOverride("font_focus_color", TianjinUi.BrownText);
-            button.AddThemeColorOverride("font_disabled_color", new Color("#826F5D"));
-            button.AddThemeStyleboxOverride("normal", TianjinUi.Box(fill, 14));
-            button.AddThemeStyleboxOverride("hover", TianjinUi.Box(fill.Lightened(.09f), 14));
-            button.AddThemeStyleboxOverride("pressed", TianjinUi.Box(fill.Darkened(.08f), 14, 4, false));
-            button.AddThemeStyleboxOverride("disabled", TianjinUi.Box(TianjinUi.CreamMuted, 14, 3, false));
-            button.AddThemeStyleboxOverride("focus", TianjinUi.Box(Colors.Transparent, 14, 6, false));
-        }
+        CityDialogChrome.ApplyConfirmation(_abandonDialog, StableIds.Cities.Tianjin);
     }
 
     private void RequestAbandon()
@@ -389,6 +354,7 @@ public partial class TianjinDayScreen : Control
         {
             SetManualPaused(true);
             _pausePanel.Visible = false;
+            _pauseTitleTape.Visible = false;
             _abandonDialog.PopupCentered();
         }
         else HubRequested?.Invoke();
@@ -407,9 +373,9 @@ public partial class TianjinDayScreen : Control
 
     private void StylePausePanel()
     {
-        IllustratedPanelChrome.ApplyMainFrame(_pausePanel);
+        CityDialogChrome.ApplyPausePanel(_pausePanel, StableIds.Cities.Tianjin);
         _pausePanel.Descendants<Label>().First(label => label.Text == "营业暂停").ZIndex = 2;
-        _pauseTitleTape = IllustratedPanelChrome.AddTitleTape(this, "TianjinPauseTitleTape", new(760, 344, 400, 62), 93);
+        _pauseTitleTape = CityDialogChrome.AddTitleTape(this, "TianjinPauseTitleTape", new(760, 356, 400, 66), StableIds.Cities.Tianjin, 93);
         _pauseTitleTape.Visible = false;
     }
 

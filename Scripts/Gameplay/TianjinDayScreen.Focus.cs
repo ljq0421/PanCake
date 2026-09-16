@@ -12,7 +12,7 @@ public partial class TianjinDayScreen
     private void BuildTeachingFocus()
     {
         _workstation.BindFocusDrag();
-        TeachingFocus = new TutorialFocusLayer { Resolve = ResolveTeachingFocus, KeepClear = TeachingClearAreas };
+        TeachingFocus = new TutorialFocusLayer { CardSkin = TutorialFocusCardSkin.Tianjin, Resolve = ResolveTeachingFocus, KeepClear = TeachingClearAreas };
         AddChild(TeachingFocus);
     }
     private IEnumerable<TutorialFocusTarget> TeachingClearAreas()

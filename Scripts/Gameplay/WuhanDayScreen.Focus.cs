@@ -13,7 +13,7 @@ public partial class WuhanDayScreen
     private bool _teachingDoupiLast;
     private void BuildTeachingFocus()
     {
-        TeachingFocus = new TutorialFocusLayer { Resolve = ResolveTeachingFocus, KeepClear = () => Workstation.TeachingClearAreas() };
+        TeachingFocus = new TutorialFocusLayer { CardSkin = TutorialFocusCardSkin.Wuhan, Resolve = ResolveTeachingFocus, KeepClear = () => Workstation.TeachingClearAreas() };
         AddChild(TeachingFocus);
     }
     private void LearnTeachingAction(string action)

@@ -1,4 +1,5 @@
 using Godot;
+using ProjectCake.Data;
 using ProjectCake.Gameplay;
 using ProjectCake.UI;
 
@@ -40,7 +41,7 @@ public partial class GameController : Node
         _save = save;
         _startScreen = GetNode<StartScreen>("UI/StartScreen");
         _navigationError = GetNode<AcceptDialog>("NavigationError");
-        _navigationError.Theme = StartScreenTheme.Create();
+        CityDialogChrome.ApplyConfirmation(_navigationError, StableIds.Cities.Tianjin);
         var yangzhouCatalog = ProjectCake.Yangzhou.YangzhouCatalog.Load();
         _yangzhouHub = GetNode<YangzhouHub>("UI/YangzhouHub");
         _yangzhouDay = GetNode<YangzhouDayScreen>("UI/YangzhouDayScreen");
@@ -132,10 +133,33 @@ public partial class GameController : Node
 
     public bool OpenCity(string cityId, bool allowDeveloperPreview = false)
     {
-        if (!_cityHubs.TryGetValue(cityId, out Control? target)) return false;
-        if (!_save.Data.UnlockedCityIds.Contains(cityId) && !allowDeveloperPreview) return false;
+        if (!_cityHubs.TryGetValue(cityId, out Control? target))
+        {
+            ShowNavigationError(cityId, "这座城市暂时无法前往，请返回地图后重试。");
+            return false;
+        }
+        if (!_save.Data.UnlockedCityIds.Contains(cityId) && !allowDeveloperPreview)
+        {
+            ShowNavigationError(cityId, "这座城市尚未解锁，完成当前城市的营业后再出发吧。");
+            return false;
+        }
         ShowOnly(target);
         return true;
+    }
+
+    private void ShowNavigationError(string cityId, string message)
+    {
+        // Guangzhou and Yangzhou remain outside this visual pass.
+        if (cityId is not (StableIds.Cities.Tianjin or StableIds.Cities.Wuhan or StableIds.Cities.Xian)) return;
+        if (_navigationError is null)
+        {
+            _startScreen.ShowError(message);
+            return;
+        }
+        CityDialogChrome.ApplyConfirmation(_navigationError, cityId);
+        _navigationError.Title = "暂时无法前往";
+        _navigationError.DialogText = message;
+        _navigationError.PopupCentered(new Vector2I(680, 300));
     }
 
     public bool StartCityBusiness(string cityId, int day)

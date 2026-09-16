@@ -48,6 +48,7 @@ public partial class WuhanDayScreen : Control
         // Order icons and the drag overlay are siblings of the workbench.
         TextureFilter = TextureFilterEnum.LinearWithMipmaps;
         SceneNodeBinder.Bind(this);
+        CityDialogChrome.ApplyConfirmation(_abandon, StableIds.Cities.Wuhan);
         ConfigurePresentation();
         BuildTeachingFocus();
         _art = new WuhanArtCatalog();
@@ -106,11 +107,14 @@ public partial class WuhanDayScreen : Control
     private void ConfigurePresentation()
     {
         var strip = GetNode<Control>("WuhanCustomerStrip");
-        strip.Position = new Vector2(32, 190);
-        strip.Size = new Vector2(1650, 370);
+        // Reserve the ornaments above the cards while preserving every customer's
+        // world position and the existing counter crop at the bottom of the strip.
+        const float ornamentRoom = 24;
+        strip.Position = new Vector2(32, 190 - ornamentRoom);
+        strip.Size = new Vector2(1650, 370 + ornamentRoom);
         for (int i = 0; i < _customers.Length; i++)
         {
-            _customers[i].Position = new Vector2(i * 330, 0);
+            _customers[i].Position = new Vector2(i * 330, ornamentRoom);
             _customers[i].Size = new Vector2(350, 430);
             _customers[i].Scale = Vector2.One * .86f;
             _customers[i].ZIndex = 0;

@@ -41,7 +41,7 @@ public partial class XianDayScreen : Control
             surface.CanInteract = () => CanInteract;
         }
         foreach (Button button in this.Descendants<Button>())
-            if (!string.IsNullOrEmpty(button.Name)) _buttons[button.Name] = button;
+            if (!string.IsNullOrEmpty(button.Name) && button.GetWindow() == GetWindow()) _buttons[button.Name] = button;
         _buttons["oven"] = Workbench.GetNode<Button>("OvenAction");
 
         void Wire(string id, Action action, bool gameplay = true)

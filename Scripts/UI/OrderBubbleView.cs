@@ -31,10 +31,15 @@ public partial class OrderBubbleView : PanelContainer
     private TianjinArtCatalog _shared = null!;
     private WuhanArtCatalog? _wuhan;
     private XianArtCatalog? _xian;
-    private StyleBoxFlat? _xianPanel;
+    private bool _xianSelected;
     private Color _paper;
     private Color _ink;
     private Color _rule;
+    private Color _frameInk;
+    private StyleBoxTexture _frame = null!;
+    private StyleBoxFlat? _selectionOutline;
+    private const float FrameScale = .4f;
+    private const float OrnamentOverhang = 24;
     private readonly Color _complete = new("#DCECC8");
     private OrderData? _order;
     private bool _tianjinPaper;
@@ -69,6 +74,7 @@ public partial class OrderBubbleView : PanelContainer
         _paper = wuhan is null ? TianjinUi.Paper : WuhanUi.Paper;
         _ink = wuhan is null ? TianjinUi.BrownDark : WuhanUi.Ink;
         _rule = wuhan is null ? new Color("#CDB38E") : new Color("#BAC9B8");
+        ApplyFrame(wuhan is null ? "tianjin" : "wuhan", _ink);
         QueueRedraw();
     }
 
@@ -78,42 +84,75 @@ public partial class OrderBubbleView : PanelContainer
         _tianjinPaper = true;
         _paper = new Color("#FAF2DF"); _ink = TianjinUi.BrownDark;
         _rule = new Color("#CDB38E", .7f);
-        var panel = new StyleBoxFlat { BgColor = _paper, BorderColor = new Color("#98704E"),
-            ContentMarginLeft = 9, ContentMarginRight = 9, ContentMarginTop = 5, ContentMarginBottom = 7,
-            ShadowColor = new Color(.29f, .17f, .08f, .16f), ShadowSize = 2, ShadowOffset = new Vector2(0, 2) };
-        panel.SetBorderWidthAll(2); panel.SetCornerRadiusAll(8);
-        AddThemeStyleboxOverride("panel", panel);
-        _content.AddThemeConstantOverride("separation", 3);
-        Patience.CustomMinimumSize = new Vector2(0, 6);
-        Patience.AddThemeStyleboxOverride("background", Flat(new Color("#E2D6BF")));
-        Patience.AddThemeStyleboxOverride("fill", Flat(PatienceBarPresentation.Green));
+        ApplyFrame("tianjin", TianjinUi.BrownDark);
         CustomMinimumSize = new Vector2(306, 0); Size = new Vector2(306, Size.Y);
         QueueRedraw();
     }
 
     public override void _Draw()
     {
-        // Draw outside the paper without letting the tail affect container sizing or input.
+        // Slice beyond the complete ornaments and corner curves, then draw at UI scale.
+        // Only straight edges and paper stretch; ornaments sit above the content box.
+        DrawSetTransform(new Vector2(0, -OrnamentOverhang), 0, Vector2.One * FrameScale);
+        Vector2 frameSize = new(Size.X / FrameScale, (Size.Y + OrnamentOverhang) / FrameScale);
+        DrawStyleBox(_frame, new Rect2(Vector2.Zero, frameSize));
+        // The Wuhan source has a cut-out at the old tail. Use an intact straight strip
+        // for the entire lower middle, keeping all three cities continuous at any width.
+        float left = _frame.TextureMarginLeft, right = _frame.TextureMarginRight;
+        float bottom = _frame.TextureMarginBottom;
+        DrawTextureRectRegion(_frame.Texture,
+            new Rect2(left, frameSize.Y - bottom, frameSize.X - left - right, bottom),
+            new Rect2(left, _frame.Texture.GetHeight() - bottom, 64, bottom));
+        DrawSetTransform(Vector2.Zero);
         float x = Size.X * .5f;
-        Vector2[] tail = { new(x - 15, Size.Y - 4), new(x, Size.Y + 12), new(x + 15, Size.Y - 4) };
+        Vector2[] tail = { new(x - 15, Size.Y - 9), new(x, Size.Y + 12), new(x + 15, Size.Y - 9) };
         DrawColoredPolygon(tail, _paper);
-        DrawPolyline(tail, _tianjinPaper ? new Color("#98704E") : _ink, _tianjinPaper ? 2 : 4, true);
+        DrawPolyline(tail, _frameInk, 3, true);
+        if (_xianSelected)
+        {
+            Color selected = new("#DB922E");
+            if (_selectionOutline is null)
+            {
+                _selectionOutline = new StyleBoxFlat { BgColor = Colors.Transparent, BorderColor = selected };
+                _selectionOutline.SetBorderWidthAll(2);
+                _selectionOutline.SetCornerRadiusAll(12);
+            }
+            DrawStyleBox(_selectionOutline, new Rect2(6, 0, Size.X - 12, Size.Y - 6));
+        }
     }
 
     public void ConfigureXian(XianArtCatalog art)
     {
         _xian = art;
-        _xianPanel = (StyleBoxFlat)GetThemeStylebox("panel").Duplicate();
-        _xianPanel.BgColor = _paper;
-        _xianPanel.BorderColor = _ink;
-        AddThemeStyleboxOverride("panel", _xianPanel);
+        _paper = new Color("#FFF1D9"); _ink = new Color("#513D32"); _rule = new Color("#D7B98B");
+        ApplyFrame("xian", new Color("#873F38"));
         Patience.AddThemeStyleboxOverride("fill", Patience.GetThemeStylebox("fill").Duplicate() as StyleBox);
     }
 
     public void RenderXianState(double remaining, bool selected)
     {
         PatienceBarPresentation.Render(Patience, remaining);
-        if (_xianPanel is not null) _xianPanel.BorderColor = selected ? new Color("#db922e") : _ink;
+        _xianSelected = selected;
+        QueueRedraw();
+    }
+
+    private void ApplyFrame(string city, Color frameInk)
+    {
+        _frameInk = frameInk;
+        _frame = GD.Load<StyleBoxTexture>($"res://resource/art/OrderBubbleUI/frame-{city}.tres");
+        using Image paperImage = _frame.Texture.GetImage();
+        _paper = paperImage.GetPixel(130, paperImage.GetHeight() - 40);
+        AddThemeStyleboxOverride("panel", new StyleBoxEmpty {
+            ContentMarginLeft = 18, ContentMarginRight = 18,
+            ContentMarginTop = 18, ContentMarginBottom = 12,
+        });
+        _content.AddThemeConstantOverride("separation", 3);
+        Patience.CustomMinimumSize = new Vector2(0, 6);
+        var track = Flat(new Color("#E2D6BF")); track.SetCornerRadiusAll(3);
+        var fill = Flat(PatienceBarPresentation.Green); fill.SetCornerRadiusAll(3);
+        Patience.AddThemeStyleboxOverride("background", track);
+        Patience.AddThemeStyleboxOverride("fill", fill);
+        QueueRedraw();
     }
 
     public void Render(OrderData order, OrderProgress progress, IReadOnlyDictionary<string, RecipeData> recipes)
@@ -193,7 +232,9 @@ public partial class OrderBubbleView : PanelContainer
         {
             int delivered = progress.GetDeliveredQuantity(entry.Line);
             bool done = entry.Portion >= 0 ? delivered > entry.Portion : delivered >= order.Lines[entry.Line].Quantity;
-            ((StyleBoxFlat)entry.Region.GetThemeStylebox("panel")).BgColor = done ? _complete : _paper;
+            // The illustrated paper remains visible below incomplete rows. This leaves the
+            // stretchable outer frame unobscured while completed portions still read green.
+            ((StyleBoxFlat)entry.Region.GetThemeStylebox("panel")).BgColor = done ? _complete : Colors.Transparent;
             entry.Region.SetMeta("complete", done);
             if (entry.Quantity is not null) entry.Quantity.Text = $"{delivered}/{order.Lines[entry.Line].Quantity}";
         }
@@ -204,7 +245,7 @@ public partial class OrderBubbleView : PanelContainer
     private PanelContainer Region(string name, float height, int line, int portion)
     {
         var region = new PanelContainer { Name = $"{name}_{line}_{portion}", CustomMinimumSize = new Vector2(0, height), MouseFilter = MouseFilterEnum.Ignore };
-        StyleBoxFlat style = Flat(_paper);
+        StyleBoxFlat style = Flat(Colors.Transparent);
         style.ContentMarginLeft = style.ContentMarginRight = 6;
         style.ContentMarginTop = style.ContentMarginBottom = 4;
         region.AddThemeStyleboxOverride("panel", style);

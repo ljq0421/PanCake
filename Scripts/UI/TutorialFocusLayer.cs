@@ -43,11 +43,15 @@ public sealed record TutorialFocusTarget(CanvasItem Owner, Vector2[] Points, boo
     }
 }
 
+/// <summary>City-owned presentation only; focus targets and teaching progress remain shared.</summary>
+public enum TutorialFocusCardSkin { Tianjin, Wuhan }
+
 /// <summary>Pass-through spotlight. A small offscreen mask preserves arbitrary incumbent art contours.</summary>
 public partial class TutorialFocusLayer : Control
 {
     public Func<TutorialFocusStep?> Resolve { get; set; } = () => null;
     public Func<IEnumerable<TutorialFocusTarget>> KeepClear { get; set; } = () => Array.Empty<TutorialFocusTarget>();
+    public TutorialFocusCardSkin CardSkin { get; init; } = TutorialFocusCardSkin.Tianjin;
     public bool Dismissed { get; private set; }
     public string? CurrentAction { get; private set; }
     internal string CurrentText => _hint.Text;
@@ -72,14 +76,34 @@ public partial class TutorialFocusLayer : Control
             Material = material, MouseFilter = MouseFilterEnum.Ignore };
         AddChild(_shade);
         _card = new Panel { Position = new Vector2(540, 32), Size = new Vector2(840, 124), MouseFilter = MouseFilterEnum.Ignore };
-        _card.AddThemeStyleboxOverride("panel", TianjinUi.Box(TianjinUi.Paper, 12, 2, false)); AddChild(_card);
-        _hint = new Label { Position = new Vector2(24, 16), Size = new Vector2(620, 92), AutowrapMode = TextServer.AutowrapMode.WordSmart,
-            VerticalAlignment = VerticalAlignment.Center, MouseFilter = MouseFilterEnum.Ignore };
-        _hint.AddThemeFontSizeOverride("font_size", 24); _hint.AddThemeColorOverride("font_color", TianjinUi.BrownText); _card.AddChild(_hint);
-        var close = TianjinUi.Button("本次关闭", minimumSize: new Vector2(148, 48));
-        close.Position = new Vector2(668, 38); close.Size = new Vector2(148, 48); close.Pressed += Dismiss; _card.AddChild(close);
+        AddChild(_card);
+        BuildCardChrome();
         AddChild(new TutorialFocusOutline { Layer = this });
         Hide();
+    }
+
+    private void BuildCardChrome()
+    {
+        if (CardSkin == TutorialFocusCardSkin.Tianjin)
+        {
+            TianjinTeachingUi.ApplyPanel(_card);
+            _hint = new Label { Position = new Vector2(72, 20), Size = new Vector2(540, 76), AutowrapMode = TextServer.AutowrapMode.WordSmart,
+                VerticalAlignment = VerticalAlignment.Center, MouseFilter = MouseFilterEnum.Ignore };
+            _hint.AddThemeFontSizeOverride("font_size", 24); _hint.AddThemeColorOverride("font_color", TianjinUi.BrownText); _card.AddChild(_hint);
+            var close = new Button { Text = "本次关闭", FocusMode = FocusModeEnum.All };
+            close.Pressed += Dismiss;
+            _card.AddChild(TianjinTeachingUi.ActionFrame(close, new Vector2(638, 35), new Vector2(150, 54)));
+            return;
+        }
+
+        WuhanTeachingUi.ApplyPanel(_card);
+        // Align to the paper body below the raised steam decoration (local center Y = 74).
+        _hint = new Label { Position = new Vector2(72, 36), Size = new Vector2(540, 76), AutowrapMode = TextServer.AutowrapMode.WordSmart,
+            VerticalAlignment = VerticalAlignment.Center, MouseFilter = MouseFilterEnum.Ignore };
+        _hint.AddThemeFontSizeOverride("font_size", 24); _hint.AddThemeColorOverride("font_color", WuhanUi.Text); _card.AddChild(_hint);
+        var wuhanClose = new Button { Text = "本次关闭", FocusMode = FocusModeEnum.All };
+        wuhanClose.Pressed += Dismiss;
+        _card.AddChild(WuhanTeachingUi.ActionFrame(wuhanClose, new Vector2(638, 47), new Vector2(150, 54)));
     }
 
     public void ResetSession() { Dismissed = false; Clear(); }
@@ -104,7 +128,9 @@ public partial class TutorialFocusLayer : Control
         if (_outlines.Count == 0) { Clear(); return; }
         CurrentAction = step.ActionId; _hint.Text = step.Text;
         // The card lives above the workbench and does not follow the pointer across click targets.
-        polygons.Add(TutorialFocusTarget.Rectangle(new Rect2(_card.Position, _card.Size)));
+        // Wuhan's transparent decoration is drawn above the shade; do not punch a bright rectangle around it.
+        if (CardSkin == TutorialFocusCardSkin.Tianjin)
+            polygons.Add(TutorialFocusTarget.Rectangle(new Rect2(_card.Position, _card.Size)));
         if (_ink.SetImages(images) | _ink.SetPolygons(polygons)) _mask.RenderTargetUpdateMode = SubViewport.UpdateMode.Once;
         Show(); QueueRedraw();
     }

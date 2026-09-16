@@ -158,17 +158,57 @@ public partial class StartScreen
     }
     private void DrawMapSummary()
     {
-        var city = JourneyModel.City(_city); var p = JourneyModel.Progress(_save!, _city);
-        var panel = new Panel { Position = new(1400, 195), Size = new(440, 690), MouseFilter = MouseFilterEnum.Ignore };
-        panel.AddThemeStyleboxOverride("panel", StartScreenTheme.Box(StartScreenTheme.Cream, 3, true)); _body.AddChild(panel);
-        Text(_body,"MapSelection", city.Id == _save?.ContinueCityId ? "当前旅程" : "城市一览",new(1430,225,380,60),37);
-        Text(_body,"SummaryCity",city.Name+"早餐铺",new(1430,289,380,55),32);
-        CityPicture(_body,city,new(1430,360,380,205));
-        Text(_body,"SummaryProgress",JourneyModel.State(_save!,city),new(1430,585,380,55),25);
-        Text(_body,"SummaryGoal",_save!.IsDemo || _save.Data.UnlockedCityIds.Contains(city.Id) ? JourneyModel.Goal(_save,city) : $"完成{JourneyModel.Cities[Math.Max(0,Array.IndexOf(JourneyModel.Cities,city)-1)].Name}章节后开放",new(1430,650,380,105),25);
-        var enter = Button(_body,"EnterCity",_save.CanContinue ? "前往"+city.Name+"早餐铺" : "开始新的旅程",new(1430,787,380,67),()=> { if (!_save.CanContinue) RenderOpening(); else OpenCard(city.Id); },true);
+        var city = JourneyModel.City(_city);
+        var panel = new Panel { Name = "MapJourneyCard", Position = new(1392, 145), Size = new(456, 790), MouseFilter = MouseFilterEnum.Ignore };
+        IllustratedPanelChrome.ApplyMainFrame(panel); _body.AddChild(panel);
+
+        // The loose title strip deliberately sits above the card edge, matching the travel-note hierarchy.
+        Art(panel, "res://resource/art/Global/PanelUI/corner-tape-v4.png", new(52, -30, 352, 86)).Name = "MapJourneyTitlePlate";
+        Text(panel, "MapSelection", city.Id == _save?.ContinueCityId ? "当前旅程" : "城市一览", new(76, -17, 304, 52), 34, true);
+        Text(panel, "SummaryCity", city.Name + "早餐铺", new(40, 70, 376, 56), 39, true);
+        DrawMapPostcard(panel, city, new(35, 132, 386, 236));
+
+        AddMapDivider(panel, 397);
+        var calendar = new Panel { Name = "MapCalendarIcon", Position = new(42, 420), Size = new(46, 46), MouseFilter = MouseFilterEnum.Ignore };
+        calendar.AddThemeStyleboxOverride("panel", StartScreenTheme.Box(new Color("#FFE6B7"), 2, true)); panel.AddChild(calendar);
+        Text(calendar, "Day", "日", new(0, 0, 46, 46), 24, true);
+        Text(panel, "SummaryProgress", JourneyModel.State(_save!, city), new(103, 413, 302, 62), 24);
+
+        Art(panel, "res://resource/art/Global/BookUI/奖励章中心符号｜星星.png", new(40, 490, 50, 50)).Name = "MapGoalStar";
+        string goal = _save!.IsDemo || _save.Data.UnlockedCityIds.Contains(city.Id)
+            ? JourneyModel.Goal(_save, city)
+            : $"完成{JourneyModel.Cities[Math.Max(0, Array.IndexOf(JourneyModel.Cities, city) - 1)].Name}章节后开放";
+        Text(panel, "SummaryGoal", goal, new(103, 477, 304, 128), 23);
+
+        var enter = Button(panel, "EnterCity", _save.CanContinue ? "≫  前往" + city.Name + "早餐铺" : "开始新的旅程", new(37, 674, 382, 72),
+            () => { if (!_save.CanContinue) RenderOpening(); else OpenCard(city.Id); }, true);
         enter.Disabled = _save.CanContinue && !_save.Data.UnlockedCityIds.Contains(city.Id) && !DeveloperToolsVisible;
     }
+
+    private void DrawMapPostcard(Control parent, JourneyCity city, Rect2 rect)
+    {
+        if (city.Art is not null)
+        {
+            CityPicture(parent, city, rect);
+            return;
+        }
+
+        // Guangzhou and Yangzhou do not yet have dedicated city postcards. Keep the reserved illustration area
+        // visually complete with the shared travel card until their city art is supplied.
+        Art(parent, "城市章节页明信片母版", rect).Name = "MapGenericPostcard";
+        Art(parent, "世界地图小早餐铺标记", new(rect.Position + new Vector2(128, 34), new Vector2(130, 105))).Name = "MapGenericCityMark";
+        Text(parent, "MapGenericCaption", city.Name + "早餐铺", new(rect.Position + new Vector2(30, 155), new Vector2(rect.Size.X - 60, 45)), 30, true);
+    }
+
+    private static void AddMapDivider(Control parent, float y)
+        => parent.AddChild(new ColorRect
+        {
+            Name = "MapJourneyDivider",
+            Position = new(42, y),
+            Size = new(372, 2),
+            Color = new Color(0.74f, 0.45f, 0.21f, 0.28f),
+            MouseFilter = Control.MouseFilterEnum.Ignore,
+        });
     public void OpenCard(string cityId)
     {
         if (_save?.IsDemo == true && cityId != ProjectCake.Data.StableIds.Cities.Tianjin) return;

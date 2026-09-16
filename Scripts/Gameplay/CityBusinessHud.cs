@@ -1,5 +1,6 @@
 using Godot;
 using ProjectCake.Core;
+using ProjectCake.Data;
 using ProjectCake.UI;
 using ProjectCake.Xian;
 
@@ -44,22 +45,30 @@ public partial class WuhanDayScreen
         var dim = new ColorRect { Color = new Color(0.12f, 0.08f, 0.04f, .46f) };
         _hudPauseMenu.AddChild(dim); dim.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         var panel = new PanelContainer { Name = "HudPausePanel" };
-        IllustratedPanelChrome.ApplyMainFrame(panel);
+        CityDialogChrome.ApplyPausePanel(panel, StableIds.Cities.Wuhan);
         _hudPauseMenu.AddChild(panel); panel.SetAnchorsAndOffsetsPreset(LayoutPreset.Center);
         panel.Position = new(740, 365); panel.Size = new(440, 310);
         var column = new VBoxContainer(); column.AddThemeConstantOverride("separation", 20); panel.AddChild(column);
         var title = TianjinUi.Label("歇一会儿", 32, alignment: HorizontalAlignment.Center);
         title.ZIndex = 2;
         column.AddChild(title);
-        _hudPauseTitleTape = IllustratedPanelChrome.AddTitleTape(_hudPauseMenu, "WuhanPauseTitleTape", new(795, 382, 330, 52), 1);
+        _hudPauseTitleTape = CityDialogChrome.AddTitleTape(_hudPauseMenu, "WuhanPauseTitleTape", new(795, 394, 330, 56), StableIds.Cities.Wuhan, 1);
         _hudPauseTitleTape.Visible = false;
         _hudResume = TianjinUi.Button("继续营业", minimumSize: new(380, 64));
         column.AddChild(_hudResume); _hudResume.Pressed += () => SetHudPaused(false);
         var abandon = TianjinUi.Button("放弃本日", minimumSize: new(380, 64));
         column.AddChild(abandon); abandon.Pressed += () => _abandon.PopupCentered();
+        // These controls are created after the frame, so apply Wuhan's hierarchy last.
+        CityDialogChrome.ApplyPauseAction(_hudResume, StableIds.Cities.Wuhan, primary: true);
+        CityDialogChrome.ApplyPauseAction(abandon, StableIds.Cities.Wuhan, destructive: true);
         _hudResume.FocusNext = _hudResume.FocusPrevious = _hudResume.GetPathTo(abandon);
         abandon.FocusNext = abandon.FocusPrevious = abandon.GetPathTo(_hudResume);
         _abandon.Canceled += () => _hudResume.GrabFocus();
+        _abandon.AboutToPopup += () => { panel.Hide(); _hudPauseTitleTape.Hide(); };
+        _abandon.VisibilityChanged += () =>
+        {
+            if (!_abandon.Visible && _hudPaused) { panel.Show(); _hudPauseTitleTape.Show(); _hudResume.GrabFocus(); }
+        };
         _abandon.Confirmed += () => SetHudPaused(false);
         VisibilityChanged += () => { if (!IsVisibleInTree()) SetHudPaused(false); };
     }
@@ -69,6 +78,7 @@ public partial class WuhanDayScreen
         _hudPaused = paused;
         _controller?.SetPauseReason("wuhan-hud", paused);
         _hudPauseMenu.Visible = paused;
+        _hudPauseMenu.GetNode<Control>("HudPausePanel").Visible = paused && !_abandon.Visible;
         _hudPauseTitleTape.Visible = paused;
         _hud.PauseButton.Disabled = paused;
         Workstation.CancelInput(); Workstation.SetCookingAudioPaused(!CanInteract);

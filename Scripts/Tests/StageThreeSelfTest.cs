@@ -60,6 +60,7 @@ public partial class StageThreeSelfTest : Node
         foreach (DayConfig config in catalog.DaysByNumber.Values)
         {
             DayPlan plan = generator.Generate(config, catalog.RecipesById);
+            Check(plan.Customers[0].ArrivalTime == 0, $"Day {config.Day} 首位顾客在营业第 0 秒到店");
             int[] counts = OrderGenerator.AllocateByLargestRemainder(config.CustomerCount,
                 config.ArrivalSegments.Select(segment => segment.CustomerRatio).ToArray());
             double shortestInterval = config.ArrivalSegments.Select((segment, index) => counts[index] == 0
@@ -75,7 +76,7 @@ public partial class StageThreeSelfTest : Node
             Check(first.Customers.Count == config.CustomerCount, $"Day {config.Day} 生成顾客数准确");
             Check(first.Customers.Select(customer => customer.CustomerId).Distinct().Count() == config.CustomerCount, $"Day {config.Day} 顾客 ID 唯一");
             Check(first.Customers.SequenceEqual(first.Customers.OrderBy(customer => customer.ArrivalTime)), $"Day {config.Day} 到店时间有序");
-            Check(first.Customers.All(customer => customer.ArrivalTime > 0 && customer.ArrivalTime < config.DurationSeconds), $"Day {config.Day} 到店时间位于营业期内");
+            Check(first.Customers.All(customer => customer.ArrivalTime >= 0 && customer.ArrivalTime < config.DurationSeconds), $"Day {config.Day} 到店时间位于营业期内");
             Check(first.Customers.All(customer => config.AvailableRecipeIds.Contains(customer.Order.PancakeRecipeId)), $"Day {config.Day} 只引用可用配方");
             Check(first.Customers.All(customer => customer.CustomerTypeId == "normal" && customer.Order.Lines.Count == 1 && customer.Order.Lines[0].Quantity == 1), $"Day {config.Day} 仅生成普通顾客单张煎饼");
             int[] expected = OrderGenerator.AllocateByLargestRemainder(config.CustomerCount, config.ArrivalSegments.Select(segment => segment.CustomerRatio).ToArray());
@@ -209,6 +210,7 @@ public partial class StageThreeSelfTest : Node
         Check(controller.TryStartDay(out _) && controller.State == DayState.Opening, "点击开店进入 Opening");
         controller.Tick(2.99); Check(controller.State == DayState.Opening, "3 秒倒计时结束前保持 Opening");
         controller.Tick(.01); Check(controller.State == DayState.Running, "3 秒倒计时后进入 Running");
+        controller.Tick(.001); Check(controller.CustomerQueue!.Slots.Count == 1, "倒计时结束后的首个营业帧立即出现首位顾客");
         controller.Tick(60); Check(controller.State == DayState.Closing, "营业计时归零进入 Closing");
         controller.Tick(14.99); Check(controller.State == DayState.Closing, "15 秒保护期结束前保持 Closing");
         controller.Tick(.01); Check(controller.State == DayState.Results && controller.Ledger!.Build().LostCustomers == 6, "15 秒结束强制流失并结算");

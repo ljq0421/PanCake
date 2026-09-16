@@ -55,6 +55,20 @@ public partial class CityPagesSelfTest : Node
             }
             _save.Data.PurchasedIngredientStationLevel = 3; _save.TrySave(out _);
             var model = new CityPageModel(catalog, _save, yz);
+            _screen.PresentMap(); await Frames();
+            for (int i = 0; i < JourneyModel.Cities.Length; i++)
+            {
+                var city = JourneyModel.Cities[i];
+                Click("Node" + i); await Frames();
+                var mapCard = Find<Panel>("MapJourneyCard");
+                Check(mapCard.GetThemeStylebox("panel") is StyleBoxTexture, "map uses illustrated journey card " + city.Name);
+                Check(Find<Control>("MapJourneyTitlePlate").IsVisibleInTree(), "map keeps title plate " + city.Name);
+                Check(Find<Label>("SummaryCity").Text == city.Name + "早餐铺", "map card selects city " + city.Name);
+                Check(Find<Button>("EnterCity").GetParent() == mapCard, "map action stays inside card " + city.Name);
+                if (city.Art is null)
+                    Check(Find<TextureRect>("MapGenericPostcard").IsVisibleInTree(), "map uses shared postcard placeholder " + city.Name);
+                await Capture("map-card-" + city.Name);
+            }
             foreach (var city in JourneyModel.Cities)
             {
                 string before = File.ReadAllText(_path);

@@ -1919,5 +1919,6 @@ metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScree
 title = "提前打烊？"
 theme = SubResource("Theme_o3bxv")
 ok_button_text = "打烊并返回"
+cancel_button_text = "继续营业"
 dialog_text = "本日收入和成绩不会保存。"
 metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_abandon")

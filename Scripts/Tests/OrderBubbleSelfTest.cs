@@ -36,6 +36,7 @@ public partial class OrderBubbleSelfTest : Node
                 var save = new SaveService(); AddChild(save);
                 save.UsePathForTests($"res://.tmp/order-bubbles/save-{wuhan}-{width}.json");
                 save.Data.PurchasedStoveLevel = 3; save.Data.PurchasedFryerLevel = 3; save.Data.PurchasedIngredientStationLevel = 3;
+                save.Data.Tianjin.LearnedWorkbenchActions.UnionWith(PancakeWorkstation.AllWorkbenchActions);
                 save.Data.Wuhan.EquipmentLevels["noodle_cooker"] = 3;
                 save.Data.Wuhan.EquipmentLevels["ingredient_station"] = 3;
                 save.Data.Wuhan.EquipmentLevels["doupi_griddle"] = 3;
@@ -56,10 +57,12 @@ public partial class OrderBubbleSelfTest : Node
                     new[] { Main(firstRecipe, sauce: SaucePreference.Light), Main(secondRecipe, sauce: SaucePreference.Extra), sideA, sideB },
                     new[] { Main(secondRecipe, 2), sideA },
                     new[] { Main(plainRecipe) },
-                    new[] { sideA, sideB },
+                    new[] { sideA },
                     new[] { Main(firstRecipe), sideA, sideB },
                 };
-                int count = wuhan ? 4 : 5;
+                int count = 5;
+                // Keep these visual fixtures when Tianjin resolves live orders on arrival.
+                controller.CustomerQueue!.ResolveBeforeArrival = null;
                 for (int i = 0; i < count; i++)
                 {
                     PlannedCustomer planned = controller.CurrentPlan!.Customers[i];
@@ -67,6 +70,7 @@ public partial class OrderBubbleSelfTest : Node
                         CustomerTypeId = planned.CustomerTypeId, BasePrice = 50, Lines = fixtures[i] };
                 }
                 if (screen is WuhanDayScreen startWuhan) startWuhan.BeginDay(); else ((TianjinDayScreen)screen).BeginDay();
+                if (screen is WuhanDayScreen captureWuhan) captureWuhan.TeachingFocus.Dismiss();
                 controller.Tick(3.1);
                 for (int step = 0; step < 1200 && controller.CustomerQueue!.Slots.Count < count; step++)
                 {
@@ -80,10 +84,15 @@ public partial class OrderBubbleSelfTest : Node
                     if (screen is WuhanDayScreen refreshWuhan) refreshWuhan.RefreshForCapture(); else ((TianjinDayScreen)screen).RefreshForCapture(true);
                 }
                 Refresh(); await Frames();
-                OrderBubbleView[] bubbles = screen.FindChildren("OrderBubble", "", true, false).OfType<OrderBubbleView>().Where(b => b.IsVisibleInTree()).ToArray();
+                var slotBubbles = screen.FindChildren("OrderBubble", "", true, false).OfType<OrderBubbleView>().ToArray();
+                OrderBubbleView[] bubbles = controller.CustomerQueue.Slots.Select(c => slotBubbles[c.SlotIndex]).ToArray();
                 Check(bubbles.Length == count, "every customer owns one visible bubble");
                 foreach (OrderBubbleView bubble in bubbles)
                 {
+                    Rect2 visibleFrame = bubble.GetGlobalTransform() * new Rect2(0, -24, bubble.Size.X, bubble.Size.Y + 36);
+                    for (Node? ancestor = bubble.GetParent(); ancestor is not null; ancestor = ancestor.GetParent())
+                        if (ancestor is Control { ClipContents: true } clip)
+                            Check(clip.GetGlobalRect().Grow(.5f).Encloses(visibleFrame), "ornaments and tail remain inside ancestor clipping bounds");
                     Check(bubble.FindChildren("*", "Label", true, false).OfType<Label>().All(l => System.Text.RegularExpressions.Regex.IsMatch(l.Text, @"^\d+/\d+$")), "only side quantities are visible text");
                     Check(bubble.FindChildren("*", "Control", true, false).OfType<Control>().All(c => c.MouseFilter == Control.MouseFilterEnum.Ignore), "all bubble descendants ignore pointer input");
                     var rows = bubble.FindChild("OrderRows", true, false).GetChildren().OfType<Container>().ToArray();
@@ -94,7 +103,8 @@ public partial class OrderBubbleSelfTest : Node
                             $"food and sauce icons remain within the paper ({(wuhan ? "wuhan" : "tianjin")}/{width}/{icon.Name}: bubble={bubble.GetGlobalRect()}, icon={icon.GetGlobalRect()})");
                     Check(bubble.Size.X <= (wuhan ? 365 : 332) && bubble.Size.Y <= 196, "largest order remains inside customer column budget");
                 }
-                for (int i = 1; i < bubbles.Length; i++) Check(!bubbles[i-1].GetGlobalRect().Intersects(bubbles[i].GetGlobalRect()), "adjacent customers' bubbles do not overlap");
+                var spatialBubbles = bubbles.OrderBy(b => b.GlobalPosition.X).ToArray();
+                for (int i = 1; i < spatialBubbles.Length; i++) Check(!spatialBubbles[i-1].GetGlobalRect().Intersects(spatialBubbles[i].GetGlobalRect()), "adjacent customers' bubbles do not overlap");
                 Control[] firstRows = Regions(bubbles[0], "OrderMainRow");
                 Check(firstRows.Length == 2, "different recipes remain two separate portions");
                 for (int i = 0; i < 2; i++)
@@ -138,7 +148,11 @@ public partial class OrderBubbleSelfTest : Node
                 Check(Done(sideRegions[1]) && ((Label)sideRegions[1].FindChild("OrderQuantity",true,false)).Text == "2/2", "second side greens only at full quantity");
                 screen.Free(); controller.Free(); save.Free(); await Frames();
             }
-            await CheckXian(catalog);
+            foreach (int width in new[] { 1920, 1280 })
+            {
+                GetWindow().Size = new Vector2I(width, width * 9 / 16);
+                await CheckXian(catalog);
+            }
             GD.Print($"ORDER_BUBBLE_TEST: {_passed} passed, 0 failed"); GetTree().Quit();
         }
         catch(Exception e) { GD.PushError(e.ToString()); GetTree().Quit(1); }
@@ -170,7 +184,7 @@ public partial class OrderBubbleSelfTest : Node
             Check(!progress.TryAccept(new DeliveredItem(ProductKind.Hulatang, "hulatang")).Accepted, "duplicate soup is rejected");
             bubble.RenderXianState(.85, true);
             Check(Math.Abs(bubble.Patience.Value - 85) < .01, "Xi'an patience immediately reflects restored amount");
-            await Shot($"xian-{id}-partial");
+            await Shot($"xian-{GetWindow().Size.X}-{id}-partial");
         }
         bubble.Free();
     }

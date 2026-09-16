@@ -1,0 +1,16 @@
+[gd_resource type="StyleBoxTexture" load_steps=2 format=3]
+
+[ext_resource type="Texture2D" path="res://resource/art/TianJin/TutorialUI/teaching-panel-v1.png" id="1"]
+
+[resource]
+content_margin_left = 64.0
+content_margin_top = 34.0
+content_margin_right = 40.0
+content_margin_bottom = 34.0
+texture = ExtResource("1")
+texture_margin_left = 58.0
+texture_margin_top = 46.0
+texture_margin_right = 58.0
+texture_margin_bottom = 46.0
+axis_stretch_horizontal = 0
+axis_stretch_vertical = 0

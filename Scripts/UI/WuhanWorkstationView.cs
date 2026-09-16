@@ -129,6 +129,7 @@ public partial class WuhanWorkstationView : Control
         return root;
     }
 
+    public IReadOnlySet<string>? AllowedIngredients { get; set; }
     public static readonly string[] IngredientIds = { StableIds.Ingredients.WuhanBaseSeasoning,
         StableIds.Ingredients.WuhanScallion, StableIds.Ingredients.WuhanChiliOil, StableIds.Ingredients.WuhanBraisedBeef };
     private readonly Polygon2D[] _basketWater = new Polygon2D[2];
@@ -435,7 +436,7 @@ public partial class WuhanWorkstationView : Control
     {
         if (_cooker is null) return "";
         if (InBowl(p)) return "bowl";
-        for (int i = 0; i < 4; i++) if (IngredientRect(i).HasPoint(p)) return $"ingredient{i}";
+        for (int i = 0; i < 4; i++) if ((AllowedIngredients is null || AllowedIngredients.Contains(IngredientIds[i])) && IngredientRect(i).HasPoint(p)) return $"ingredient{i}";
         if (BowlRect.HasPoint(p)) return "bowl";
         for (int i = 0; i < _cooker.Baskets.Count; i++)
             if (BasketRect(i).HasPoint(p)) return $"basket{i}";

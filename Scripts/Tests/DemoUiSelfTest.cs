@@ -63,6 +63,11 @@ public partial class DemoUiSelfTest : Node
             var settings = GetNode<JourneySettings>("/root/JourneySettings"); settings.UsePathForTests(Path.Combine(dir, "settings.cfg")); settings.SetLanguage(english ? "en" : "zh_CN");
             var main = GD.Load<PackedScene>("res://Scenes/Main/Main.tscn").Instantiate<GameController>(); AddChild(main);
             _screen = main.GetNode<StartScreen>("UI/StartScreen"); await Frames();
+            if (args.Contains("--help-only"))
+            {
+                await HelpPageChecks.Run(_screen, save, settings, name => Capture(name, _screen));
+                GD.Print("HELP_DEMO_SELF_TEST_OK"); GetTree().Quit(); return;
+            }
             CheckLanguage(settings.Language);
             _screen.PresentHome(); await Capture("home", _screen);
             await Click("Settings"); Check(_screen.ModalOpen, "viewport click opens settings"); await Capture("settings", _screen);
@@ -71,17 +76,18 @@ public partial class DemoUiSelfTest : Node
             settings.LoadPreferences(); await Frames(); CheckLanguage(settings.Language);
             await Click("Language"); CheckLanguage(settings.Language); await Click("Close");
             Check(main.OpenCity(StableIds.Cities.Tianjin), "Tianjin hub opens"); await Capture("hub", _screen);
+            CheckContinueOverview(catalog, save, Path.Combine(dir, "save.json"));
             await Click("LedgerTab");
-            Check(_screen.Descendants<Button>().Count(b => b.Name.ToString().StartsWith("Date")) == 3, "calendar exposes exactly three shifts");
+            Check(_screen.Descendants<Button>().Count(b => b.Name.ToString().StartsWith("Date")) == save.ChapterLength(StableIds.Cities.Tianjin), "calendar exposes configured shifts");
             await Click("Date3"); Check(_screen.Descendants<Button>().Single(b => b.Name == "StartSelectedDay").Disabled, "locked shift cannot start via viewport");
             GetViewport().PushInput(new InputEventKey { Keycode = Key.Right, Pressed = true }, true);
             await Frames();
-            Check(GetViewport().GuiGetFocusOwner()?.Name == "Date3", "Demo keyboard navigation stays inside three dates");
-            foreach (var stage in catalog.Demo!.Stages)
-                save.CommitDay(new() { Day = stage.Day, SaleRevenue = new[] { 28, 46, 65 }[stage.Day - 1], CompletedCustomers = stage.Recipes.Length }, stage.Plan(catalog.RecipesById, catalog.CustomersById["normal"]), stage.Config(catalog.RecipesById));
+            Check(GetViewport().GuiGetFocusOwner()?.Name == "Date" + Math.Min(4, save.ChapterLength(StableIds.Cities.Tianjin)), "Demo keyboard navigation follows configured dates");
+            foreach (var stage in catalog.Demo!.Stages.Take(3))
+                save.CommitDay(new() { Day = stage.Day, SaleRevenue = new[] { 28, 46, 65 }[stage.Day - 1], CompletedCustomers = stage.ExplicitOrders.Length }, stage.Plan(catalog.RecipesById, catalog.CustomersById["normal"]), stage.Config(catalog.RecipesById));
             _screen.PresentLedger(); await Capture("ledger", _screen);
             await Click("UpgradeTab"); await Capture("upgrades", _screen);
-            Check(_screen.Descendants<Button>().Count(b => b.Name.ToString().StartsWith("Select_")) == 2, "only two pilot upgrades appear");
+            Check(_screen.Descendants<Button>().Count(b => b.Name.ToString().StartsWith("Select_")) == (save.ChapterLength(StableIds.Cities.Tianjin) > 3 ? 3 : 2), "only configured Demo upgrades appear");
             await Click("UpgradeEquipment");
             Check(save.Data.PurchasedStoveLevel == 2 && save.Data.Coins == 19, "viewport purchase applies correct upgrade and cost");
             await Capture("purchased", _screen);
@@ -97,5 +103,26 @@ public partial class DemoUiSelfTest : Node
             GD.Print($"DEMO_UI_SELF_TEST_OK {_checks}"); GetTree().Quit();
         }
         catch (Exception error) { GD.PushError(error.ToString()); GetTree().Quit(1); }
+    }
+    private void CheckContinueOverview(DataCatalog catalog, SaveService save, string savePath)
+    {
+        var model = new CityPageModel(catalog, save, null);
+        foreach (string city in new[] { StableIds.Cities.Tianjin, StableIds.Cities.Wuhan })
+        {
+            var stages = save.DemoContent!.CityStages(city);
+            if (stages.Length == 0) continue;
+            var progress = save.Data.GetCity(city); int highest = progress.HighestUnlockedDay;
+            progress.HighestUnlockedDay = stages[^1].Day;
+            var latest = model.Overview(city, stages[^1].Day);
+            var replay = model.Overview(city, 1);
+            Check(latest.TotalDays == stages.Length && replay.Day == 1, "demo overview respects configured length and replay day " + city);
+            Check(latest.LatestUnlocks.Select(u => u.Id).SequenceEqual(replay.LatestUnlocks.Select(u => u.Id)), "replay does not roll back latest unlock " + city);
+            var allowedRecipes = stages.SelectMany(s => s.AvailableRecipes).Select(id => "recipe:" + id).ToHashSet();
+            Check(latest.LatestUnlocks.Where(u => u.Id.StartsWith("recipe:")).All(u => allowedRecipes.Contains(u.Id)), "demo overview contains only demo recipes " + city);
+            progress.HighestUnlockedDay = highest;
+        }
+        string before = File.ReadAllText(savePath);
+        _screen.RefreshCityPage();
+        Check(File.ReadAllText(savePath) == before, "demo overview refresh does not write progress");
     }
 }

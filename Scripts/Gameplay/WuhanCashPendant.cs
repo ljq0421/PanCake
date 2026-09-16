@@ -33,6 +33,7 @@ public partial class WuhanDayScreen
         CashPendant.Pressed += OpenBusinessDetails;
         BusinessDetails = new BusinessDetailsView { Name = "BusinessDetails" };
         AddChild(BusinessDetails);
+        BusinessDetails.RetryRequested += RetryWuhanDemoSettlement;
         BusinessDetails.PageChanged += () => _bookAudio.Play(WuhanSound.Page);
         BusinessDetails.CloseRequested += () => { if (BusinessDetails.Model.Closing) { _bookAudio.Play(WuhanSound.BookClose); BusinessDetails.Hide(); HubRequested?.Invoke(); } else CloseBusinessDetails(); };
     }

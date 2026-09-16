@@ -5,6 +5,8 @@ using ProjectCake.Data;
 namespace ProjectCake.UI;
 
 public sealed record JourneyFood(string Name, string Visual, string? Art = null);
+public sealed record MapJourneyView(JourneyCity City, JourneyCity? NextCity, bool IsCurrent,
+    bool IsPreview, bool NextIsPreview, int LitCities, int TotalCities, string Goal, bool CanView);
 public sealed record JourneyCity(string Id, string Name, string? Art, JourneyFood[] Foods)
 {
     public int Days => SaveService.ChapterDays(Id);
@@ -35,10 +37,32 @@ public static class JourneyModel
     public static CityProgressData Progress(SaveService save, string id) =>
         save.Data.Cities.TryGetValue(id, out var progress) ? progress : new CityProgressData();
     public static JourneyCity? Next(string id) => Cities.SkipWhile(c => c.Id != id).Skip(1).FirstOrDefault();
+    public static bool MapCityUnlocked(SaveService? save, JourneyCity city) => save?.CanContinue == true
+        ? save.Data.UnlockedCityIds.Contains(city.Id) : city.Id == Cities[0].Id;
+
+    public static MapJourneyView MapSummary(SaveService save, JourneyCity city, bool developerPreview = false)
+    {
+        var playable = Cities.Where(c => save.ChapterLength(c.Id) > 0).ToArray();
+        bool preview = save.IsDemo && save.ChapterLength(city.Id) == 0;
+        bool unlocked = MapCityUnlocked(save, city);
+        var next = preview ? null : Next(city.Id);
+        string goal;
+        if (preview) goal = "下一站预告 · 本次不可营业";
+        else if (!unlocked)
+            goal = $"完成{Cities[Math.Max(0, Array.IndexOf(Cities, city) - 1)].Name}章节后开放";
+        else if (playable.Length > 0 && playable.All(c => Progress(save, c.Id).Completed))
+            goal = save.IsDemo ? "本站试玩已完成。可回访营业，继续早餐旅程。" : "五城旅程已完成，回访喜欢的早餐铺。";
+        // The destination already has its own column; keep the goal line for the actual requirement.
+        else goal = Goal(save, city).Split('\n')[0];
+        return new(city, next, city.Id == (save.CanContinue ? save.ContinueCityId : Cities[0].Id),
+            preview, next is not null && save.IsDemo && save.ChapterLength(next.Id) == 0,
+            playable.Count(c => MapCityUnlocked(save, c)), playable.Length, goal,
+            !preview && (!save.CanContinue || unlocked || developerPreview));
+    }
     public static string State(SaveService save, JourneyCity city)
     {
         if (save.IsDemo)
-            return city.Id == StableIds.Cities.Tianjin ? $"天津试玩 · 已开放 {save.Data.Tianjin.HighestUnlockedDay} / {save.ChapterLength(city.Id)} 局" : "下一站预告 · 本次不可营业";
+            return save.ChapterLength(city.Id) > 0 ? $"{city.Name}试玩 · 已开放 {save.Data.GetCity(city.Id).HighestUnlockedDay} / {save.ChapterLength(city.Id)} 局" : "下一站预告 · 本次不可营业";
         if (!save.Data.UnlockedCityIds.Contains(city.Id)) return "尚未抵达";
         var p = Progress(save, city.Id);
         return p.Completed ? "章节已完成" : $"已开放至第 {p.HighestUnlockedDay} / {city.Days} 天";
@@ -47,9 +71,9 @@ public static class JourneyModel
     {
         if (save.IsDemo)
         {
-            if (city.Id != StableIds.Cities.Tianjin) return "新城市的早餐，留待下一段旅程。";
-            return save.DemoContent is { } demo && save.DemoProgress.CompletedStages.Contains(demo.Stages[^1].Id)
-                ? "天津试玩已完成。选择升级，再次营业感受变化。"
+            if (save.ChapterLength(city.Id) == 0) return "新城市的早餐，留待下一段旅程。";
+            return save.DemoContent is { } demo && save.DemoProgress.CompletedStages.Contains(demo.CityStages(city.Id)[^1].Id)
+                ? "本站试玩已完成。可回访营业，继续早餐旅程。"
                 : "完成至少 1 单并收摊保存后开放下一局。";
         }
         var next = Next(city.Id);

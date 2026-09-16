@@ -48,6 +48,7 @@ public sealed class DoupiInventory
 public sealed class DoupiStateMachine
 {
     private readonly DoupiGriddleLevelData _data;
+    public bool ProtectTeachingHeat { get; set; }
     private double _seconds;
     private readonly HashSet<DoupiCutLine> _cuts = new();
     public long Generation { get; private set; }
@@ -115,7 +116,7 @@ public sealed class DoupiStateMachine
     }
     private void AdvanceHeat(double delta, double speed)
     {
-        _seconds += delta * speed;
+        _seconds = ProtectTeachingHeat ? Math.Min(SecondSide ? _data.SecondStageReadySeconds : _data.StageSeconds, _seconds + delta * speed) : _seconds + delta * speed;
         if (SecondSide ? HasFilling : HasEgg) _ingredientSeconds += delta;
         // Burn takes precedence over newly reached ingredient/readiness requirements.
         if (_data.CanBurn && _seconds > (SecondSide ? _data.SecondStageBurnSeconds : _data.BurnSeconds) + 1e-9)

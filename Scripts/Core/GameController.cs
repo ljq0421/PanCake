@@ -186,7 +186,7 @@ public partial class GameController : Node
             default: screen = _yangzhouDay; ready = _yangzhouDay.Initialize(ProjectCake.Yangzhou.YangzhouCatalog.Load(), _save, day); break;
         }
         if (!ready) { _startScreen.ShowError("营业准备失败，请检查配置或存档写入权限后重试。"); return false; }
-        if (!_save.TryRecordDemoStart(day, out string demoError)) { _startScreen.ShowError(demoError); return false; }
+        if (!_save.TryRecordDemoStart(cityId, day, out string demoError)) { _startScreen.ShowError(demoError); return false; }
         if (!_save.TryRecordCityVisit(cityId, out string error)) { _startScreen.ShowError(error); return false; }
         ShowOnly(screen);
         if (screen is TianjinDayScreen td) td.BeginDay();

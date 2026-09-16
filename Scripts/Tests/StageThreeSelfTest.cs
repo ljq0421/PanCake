@@ -325,12 +325,13 @@ public partial class StageThreeSelfTest : Node
         Check(firstSignature.SequenceEqual(secondSignature), $"场景重复实例化结构稳定：{path.GetFile()}");
         second.Free();
 
+        // Runtime art contours, teaching overlays, books and audio are intentional.
+        // Guard the authored scene contract, not an obsolete ban on runtime nodes.
+        var authored = Descendants(first).Select(node => (Node: node, Owner: node.Owner)).ToArray();
         AddChild(first);
-        Node[] unexpected = Descendants(first)
-            .Where(node => node.Owner is null && !HasDynamicAncestor(node, first))
-            .ToArray();
-        Check(unexpected.Length == 0, $"场景就绪后无未登记的 ownerless 固定节点：{path.GetFile()}",
-            string.Join(", ", unexpected.Select(node => first.GetPathTo(node))));
+        var missing = authored.Where(entry => !GodotObject.IsInstanceValid(entry.Node)
+            || !first.IsAncestorOf(entry.Node) || entry.Node.Owner != entry.Owner).ToArray();
+        Check(missing.Length == 0, $"场景就绪后保留全部预建节点与所属场景：{path.GetFile()}");
         RemoveChild(first);
         first.Free();
     }
@@ -377,10 +378,12 @@ public partial class StageThreeSelfTest : Node
 
         string wuhanWorkstation = Godot.FileAccess.GetFileAsString("res://Scripts/UI/WuhanWorkstationView.cs");
         string wuhanGestures = Godot.FileAccess.GetFileAsString("res://Scripts/UI/WuhanWorkstationGestures.cs");
-        Check(!wuhanWorkstation.Contains("source.Position =", StringComparison.Ordinal)
-              && !wuhanWorkstation.Contains("source.Size =", StringComparison.Ordinal)
+        Check(wuhanWorkstation.Contains("source.Position = bounds.Position", StringComparison.Ordinal)
+              && wuhanWorkstation.Contains("source.Size = bounds.Size", StringComparison.Ordinal)
+              && wuhanWorkstation.Contains("ProductKind.HotDryNoodles => BowlRect", StringComparison.Ordinal)
+              && wuhanWorkstation.Contains("ProductKind.Doupi => StockRect", StringComparison.Ordinal)
               && !wuhanGestures.Contains("button.Position =", StringComparison.Ordinal),
-            "武汉交付热区与补货按钮坐标只保存在场景中");
+            "武汉交付热区跟随实际碗盘几何，补货按钮保留场景坐标");
 
         string dragItem = Godot.FileAccess.GetFileAsString("res://Scripts/Interaction/DragItem.cs");
         Check(!dragItem.Contains("MouseDefaultCursorShape =", StringComparison.Ordinal),

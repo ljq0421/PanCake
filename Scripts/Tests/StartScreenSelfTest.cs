@@ -36,6 +36,12 @@ public partial class StartScreenSelfTest : Node
             _save.UsePathForTests(_path);
             GetNode<JourneySettings>("/root/JourneySettings").UsePathForTests(Path.Combine(directory, "settings.cfg"));
             await Launch();
+            if (args.Contains("--help-only"))
+            {
+                await HelpPageChecks.Run(_screen, _save, GetNode<JourneySettings>("/root/JourneySettings"), Capture);
+                GD.Print("HELP_FULL_SELF_TEST_OK"); GetTree().Quit(); return;
+            }
+            if (args.Contains("--journey-preview")) { await JourneyPreview(); GD.Print($"JOURNEY_PREVIEW_OK {_passed}"); GetTree().Quit(); return; }
             if (args.Contains("--panel-preview")) { await PanelPreview(); GD.Print($"PANEL_PREVIEW_OK {_passed}"); GetTree().Quit(); return; }
             if (args.Contains("--focus-gallery")) { await FocusGallery(); GD.Print("BUTTON_FOCUS_GALLERY_OK"); GetTree().Quit(); return; }
             if (args.Contains("--home-gallery")) { await HomeGallery(); GD.Print("HOME_GALLERY_OK"); GetTree().Quit(); return; }
@@ -217,6 +223,23 @@ public partial class StartScreenSelfTest : Node
         gallery.GetParent().RemoveChild(gallery); gallery.QueueFree();
     }
 
+    private async Task JourneyPreview()
+    {
+        await Click(Find<Button>("NewGame"));
+        await Click(Find<Button>("Skip"));
+        await Capture("new-journey");
+        await Click(Find<Button>("JournalMap"));
+        Check(_screen.Page == JourneyPage.Map, "journey map tab accepts viewport input");
+        await Click(Find<Button>("Back"));
+        Check(_screen.Page == JourneyPage.NewJourney && Find<Button>("Depart").HasFocus(), "map returns to journey with departure focus");
+        await Click(Find<Button>("Depart"));
+        Check(_save.CanContinue && _screen.Page == JourneyPage.City, "new departure artwork starts the journey through viewport input");
+        await NewJourney();
+        Check(_screen.ConfirmationOpen, "departure still protects existing progress");
+        KeyPress(Key.Escape);
+        Check(!_screen.ConfirmationOpen && Find<Button>("Depart").HasFocus(), "cancel restores departure focus");
+    }
+
     private async Task NewJourney()
     {
         if (_screen.ConfirmationOpen) { Find<Button>("Depart").EmitSignal(BaseButton.SignalName.Pressed); return; }
@@ -242,9 +265,7 @@ public partial class StartScreenSelfTest : Node
         else
             Check(_screen.Page == JourneyPage.Map && File.ReadAllText(_path) == before, "locked card cannot open or mutate save");
         await Click(Find<Button>("Node0"));
-        Check(_screen.Page == JourneyPage.Map, "node selects map summary");
-        await Click(Find<Button>("EnterCity"));
-        Check(_screen.Page == JourneyPage.City, "summary opens shared city hub");
+        Check(_screen.Page == JourneyPage.City && _screen.SelectedCityId == StableIds.Cities.Tianjin, "Tianjin node directly opens shared city hub");
         await Capture("city-tianjin");
         await Click(Find<Button>("Back"));
         await Click(Find<Button>("Back"));

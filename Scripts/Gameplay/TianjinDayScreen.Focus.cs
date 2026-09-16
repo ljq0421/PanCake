@@ -32,7 +32,9 @@ public partial class TianjinDayScreen
             return _deliveryCustomerIds.Select((id, i) => (id, i)).Where(p => p.id is not null && ids.Contains(p.id))
                 .SelectMany(p => TutorialFocusTarget.Artwork(_customerSlots[p.i])).ToArray();
         }
-        var step = _workstation.ResolveFocus(orders, Recipients);
+        IReadOnlyList<TutorialOrder> focusOrders = _controller.TutorialActive && _demoTeachingDay == 6 && orders.Any(o => o.Kind == ProductKind.SoyMilk)
+            ? orders.Where(o => o.Kind == ProductKind.SoyMilk).ToArray() : orders;
+        var step = _workstation.ResolveFocus(focusOrders, Recipients);
         // The guided example keeps its existing skip/completion controls and one source of step copy.
         if (step is not null && _demoLesson?.Visible == true && _controller.TutorialActive)
             _demoLessonHint!.Text = step.Text;

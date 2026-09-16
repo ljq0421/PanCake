@@ -38,7 +38,11 @@ try {
     if (Select-String -LiteralPath $log -Pattern 'Export .NET Project:|Failed to export project|Failed to build project' -Quiet) {
         throw 'The exporter reported a .NET build failure. Do not distribute this output.'
     }
-    if (-not $Qa) { Copy-Item -LiteralPath 'docs/Demo-Pilot试玩说明.md' -Destination (Join-Path $output 'README.md') }
+    if (-not $Qa) {
+        Copy-Item -LiteralPath 'docs/Demo-Pilot试玩说明.md' -Destination (Join-Path $output 'README.md')
+        Copy-Item -LiteralPath 'docs/Demo-Music-Credits.md' -Destination (Join-Path $output 'MUSIC-CREDITS.md')
+        Copy-Item -LiteralPath 'docs/Demo-TwoCities-ReleaseNotes.md' -Destination (Join-Path $output 'RELEASE-NOTES.md')
+    }
     Write-Output ('Exported: ' + (Join-Path $output ($name + '.exe')))
 } finally {
     $env:APPDATA = $previousAppData

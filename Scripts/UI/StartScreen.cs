@@ -3,7 +3,7 @@ using ProjectCake.Core;
 
 namespace ProjectCake.UI;
 
-public enum JourneyPage { Splash, Home, Opening, NewJourney, Continue, Map, City, Completion, Ledger, Upgrades }
+public enum JourneyPage { Splash, Home, Opening, NewJourney, Continue, Map, City, Completion, Ledger, Upgrades, Collection }
 
 /// <summary>Travel navigation uses a single fitted canvas, independent of gameplay views.</summary>
 public partial class StartScreen : Control
@@ -84,12 +84,13 @@ public partial class StartScreen : Control
     { foreach (Node child in parent.GetChildren()) { parent.RemoveChild(child); child.QueueFree(); } }
     private void Focus(string name)
     { (_body.Descendants<Button>().FirstOrDefault(b => b.Name == name && !b.Disabled) ?? _buttons.FirstOrDefault(b => !b.Disabled))?.GrabFocus(); }
-    private void Chrome(Action back, string title)
+    private void Chrome(Action back, string? title = null)
     {
         var previous = Button(_body, "Back", "", new(72, 48, 140, 62), back, bare: true);
         Art(previous, "账本翻页箭头｜左", new(0, 7, 55, 48));
         Text(previous, "Caption", "返回", new(62, 0, 78, 62), 25);
-        Text(_body, "PageTitle", title, new(350, 38, 1220, 76), 42, true).AddThemeColorOverride("font_color", StartScreenTheme.Cream);
+        if (!string.IsNullOrEmpty(title))
+            Text(_body, "PageTitle", title, new(350, 38, 1220, 76), 42, true).AddThemeColorOverride("font_color", StartScreenTheme.Cream);
         Button(_body, "Home", "首页", new(1690, 48, 140, 62), RenderHome);
     }
     private void Utilities()
@@ -135,9 +136,10 @@ public partial class StartScreen : Control
         if (key.Keycode == Key.Escape)
         {
             if (ModalOpen) { if (_settings.DisplayPending) _settings.RevertDisplay(); else CloseModal(); }
+            else if (Page == JourneyPage.Opening && _save?.IsDemo == true && _save.Data.UnlockedCityIds.Contains(ProjectCake.Data.StableIds.Cities.Wuhan)) PresentCity(ProjectCake.Data.StableIds.Cities.Wuhan);
             else if (Page == JourneyPage.Opening) RenderNewJourney();
             else if (Page == JourneyPage.Completion) FinishCompletion();
-            else if (Page is JourneyPage.Ledger or JourneyPage.Upgrades) RenderCity();
+            else if (Page is JourneyPage.Ledger or JourneyPage.Upgrades or JourneyPage.Collection) RenderCity();
             else if (Page == JourneyPage.City) (_cityReturn ?? RenderHome)();
             else if (Page == JourneyPage.Map) (_mapReturn ?? RenderHome)();
             else RenderHome();

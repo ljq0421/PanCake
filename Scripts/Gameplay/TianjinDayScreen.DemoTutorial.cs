@@ -20,6 +20,8 @@ public partial class TianjinDayScreen
     private bool _demoLessonComplete;
     private string _demoLessonSaveError = "";
     private int _demoBusinessDay;
+    private int _demoTeachingDay;
+    private bool _demoPartialSeeded;
     private readonly HashSet<string> _demoLearned = new(StringComparer.Ordinal);
     private BusinessBookModel? _demoPendingResult;
     internal bool DemoLessonVisible => _demoLesson?.Visible == true;
@@ -30,17 +32,19 @@ public partial class TianjinDayScreen
     {
         if (!_save.IsDemo) return false;
         _demoBusinessDay = _controller.CurrentConfig!.Day;
-        string first = _save.DemoContent!.Stages[0].Id;
-        bool requested = ForceDemoTutorial || _demoBusinessDay == 1
-            && !_save.DemoProgress.CompletedTutorials.Contains(first) && !_save.DemoProgress.SkippedTutorials.Contains(first);
+        var stage = _save.DemoContent!.Stage(_demoBusinessDay)!;
+        _demoTeachingDay = ForceDemoTutorial && stage.Tutorial.Length == 0 ? 1 : _demoBusinessDay;
+        var lesson = _save.DemoContent.Stage(_demoTeachingDay)!;
+        bool requested = ForceDemoTutorial || lesson.Tutorial.Length > 0
+            && !_save.DemoProgress.CompletedTutorials.Contains(lesson.Id) && !_save.DemoProgress.SkippedTutorials.Contains(lesson.Id);
         ForceDemoTutorial = false;
         if (!requested) return false;
-        if (!_controller.TryPrepareTutorial(StableIds.Cities.Tianjin, 1, _catalog, out string error)) { ShowFeedback(error, true); return true; }
-        _workstation.Initialize(_catalog, 1, 1, 0, _controller.CurrentConfig!, _art);
+        if (!_controller.TryPrepareTutorial(StableIds.Cities.Tianjin, _demoTeachingDay, _catalog, out string error)) { ShowFeedback(error, true); return true; }
+        _workstation.Initialize(_catalog, 1, 1, _demoTeachingDay >= 4 ? 1 : 0, _controller.CurrentConfig!, _art);
         _workstation.ConfigureTutorial(null);
         _workstation.ResetForDay();
         _workstation.Tutorial = _controller.Tutorial;
-        _demoLessonComplete = false; _demoLessonSaveError = ""; _demoLearned.Clear();
+        _demoLessonComplete = false; _demoPartialSeeded = false; _demoLessonSaveError = ""; _demoLearned.Clear();
         EnsureDemoLesson();
         _demoLesson!.Show(); _demoLessonAction!.Disabled = false;
         _controller.TryStartDay(out _);
@@ -57,8 +61,8 @@ public partial class TianjinDayScreen
             MouseFilter = MouseFilterEnum.Ignore };
         TianjinTeachingUi.ApplyPanel(_demoLesson);
         AddChild(_demoLesson);
-        _demoLessonTitle = new Label { Position = new(68, 29), Size = new(205, 62), VerticalAlignment = VerticalAlignment.Center, MouseFilter = MouseFilterEnum.Ignore };
-        _demoLessonTitle.AddThemeFontSizeOverride("font_size", 24);
+        _demoLessonTitle = new Label { Position = new(68, 29), Size = new(205, 82), AutowrapMode = TextServer.AutowrapMode.WordSmart, VerticalAlignment = VerticalAlignment.Center, MouseFilter = MouseFilterEnum.Ignore };
+        _demoLessonTitle.AddThemeFontSizeOverride("font_size", 22);
         _demoLessonTitle.AddThemeColorOverride("font_color", TianjinUi.BrownText);
         _demoLesson.AddChild(_demoLessonTitle);
         _demoLessonHint = new Label { Position = new(68, 90), Size = new(340, 82), AutowrapMode = TextServer.AutowrapMode.WordSmart,
@@ -93,8 +97,12 @@ public partial class TianjinDayScreen
             }
         }
         if (_demoLesson?.Visible != true || !_controller.TutorialActive) return;
+        if (_demoTeachingDay == 6 && !_demoPartialSeeded && _controller.CustomerQueue!.Slots.FirstOrDefault(c => c.State == ProjectCake.Customers.CustomerState.Happy) is { } example)
+        {
+            example.WaitSeconds = example.LeaveAtSeconds * .4; example.Tick(0); _demoPartialSeeded = true;
+        }
         _demoLessonAction!.Disabled = _manualPaused || _focusPaused || _detailsPaused;
-        _demoLessonTitle!.Text = _demoLessonComplete ? "第一份早餐，做好了！" : "跟着做一份煎饼";
+        _demoLessonTitle!.Text = _demoLessonComplete ? "第一份早餐，做好了！" : _save.DemoContent!.Stage(_demoTeachingDay)!.TitleZh;
         _demoLessonAction.Text = _demoLessonSaveError.Length > 0 ? "重试保存" : _demoLessonComplete ? "开始营业" : "跳过教学";
         bool showSummary = _demoLessonComplete || _demoLessonSaveError.Length > 0;
         _demoLessonHint!.Visible = showSummary;
@@ -124,7 +132,7 @@ public partial class TianjinDayScreen
     internal void FinishDemoLesson()
     {
         if (!_controller.TutorialActive || _manualPaused || _focusPaused || _detailsPaused) return;
-        string stageId = _save.DemoContent!.Stages[0].Id;
+        string stageId = _save.DemoContent!.Stage(_demoTeachingDay)!.Id;
         var oldActions = _save.Data.Tianjin.LearnedWorkbenchActions.ToHashSet();
         if (_demoLessonComplete) _save.Data.Tianjin.LearnedWorkbenchActions.UnionWith(_demoLearned);
         if (!_save.SaveDemoTutorial(stageId, !_demoLessonComplete, out string error))
@@ -144,12 +152,13 @@ public partial class TianjinDayScreen
     {
         if (!_save.IsDemo) return;
         EnsureDemoLesson();
-        if (_controller.CurrentConfig!.Day == 1) return;
+        if (_controller.CurrentConfig!.Day is 1 or 4 or 6) return;
         var stage = _save.DemoContent!.Stage(_controller.CurrentConfig.Day)!;
         if (_save.DemoProgress.CompletedTutorials.Contains(stage.Id)) return;
         EnsureDemoLesson(); _demoLesson!.Show(); _demoLessonAction!.Disabled = false;
         _demoLessonTitle!.Text = stage.TitleZh; _demoLessonAction.Text = "收起提示";
-        _demoLessonHint!.Text = stage.Day == 2
+        _demoLessonHint!.Visible = true; _demoLesson.Size = new(475, 270); _demoLessonActionFrame!.Position = new(285, 190);
+        _demoLessonHint!.Text = stage.Day >= 4 ? stage.Day == 5 ? "订单里的油条：夹进煎饼与单独交付是两回事。组合商品可分别送出。" : "利用加热空档补货；先送出需要的商品，可以恢复顾客耐心。" : stage.Day == 2
             ? "看清订单里的薄脆图标。刷完酱后，将薄脆拖进煎饼，再折叠装袋。"
             : "订单需要葱时，刷完酱再点击香葱。料盒不足时可长按补货，留意空档。";
     }

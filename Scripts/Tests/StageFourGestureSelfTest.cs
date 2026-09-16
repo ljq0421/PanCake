@@ -74,15 +74,13 @@ public partial class StageFourSelfTest
                 reduceMotion ? "减少动态效果时直接入账，不播放金币飞行" : "完成订单准确入账，仅播放一组挂件付款动画");
             ProjectSettings.SetSetting("accessibility/reduce_motion", originalMotion);
         }
-        screen._Notification((int)NotificationApplicationFocusOut);
-        var positions = screen.PaymentCoins.ToDictionary(coin => coin, coin => coin.Position);
-        await WaitForAnimation(.2);
-        Check(positions.All(entry => entry.Key.Position.IsEqualApprox(entry.Value)), "失焦暂停金币飞行动画");
-        screen._Notification((int)NotificationApplicationFocusIn);
         await WaitForAnimation(.68);
         Vector2 target = TianjinWorkbenchLayout.CashSlot;
         Check(screen.PaymentCoins.Count > 0 && screen.PaymentCoins.All(coin => coin.Position.DistanceTo(target - new Vector2(19, 19)) < 60),
             "付款金币飞向挂件投币口");
+        screen._Notification((int)NotificationApplicationFocusOut);
+        Check(screen.PaymentCoins.Count == 0, "失焦清理付款动画");
+        screen._Notification((int)NotificationApplicationFocusIn);
         int ledgerRevenue = controller.Ledger!.Build().TotalRevenue;
         await WaitForAnimation(.5);
         Check(screen.PaymentCoins.Count == 0 && controller.Ledger.Build().TotalRevenue == ledgerRevenue,

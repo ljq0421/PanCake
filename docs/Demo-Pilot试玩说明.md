@@ -1,38 +1,59 @@
-# 早餐铺子 · 天津试玩
+# 早餐铺子 · 两城 Demo RC1
 
-解压整个文件夹，运行 **BreakfastDemo.exe**。请保留旁边的 `.pck` 文件与 `data_ProjectCake_windows_x86_64` 文件夹；不需要安装 Godot 或 .NET。
+Windows x64 · 2026-09-16 · 内容版本 3 / 存档结构 2
 
-本次内容：首份煎饼教学、天津前三局、两种设备升级，以及第 3 局重玩。武汉与西安仅能在地图中预览。
+解压整个文件夹，运行 **BreakfastDemo.exe**。保留旁边的 .pck 文件和 data_ProjectCake_windows_x86_64 文件夹；无需安装 Godot 或 .NET。
 
-## 开始试玩
+包含天津 7 局、武汉 6 局：煎饼果子、油条、豆浆、热干面、三鲜豆皮；独立制作教学、可选设备升级、五张早餐收藏卡和两城纪念结尾。西安只有预告，本版未接入商店或反馈入口。
 
-1. 首页“设置”可切换简体中文 / English，并设置窗口和音量。
-2. 选择“新的旅程”，从天津开始；首次教学可跳过，也可以在早餐铺重看。
-3. 至少完成 1 单并正常收摊、保存成功后开放下一局。零完成可以免费重试。
-4. 第 3 局结束后选择升级，从“经营手账”再次营业，体验设备带来的变化。重玩只补发超过历史最佳的收入差额。
+## 开始与继续
 
-面糊拖入炉面；按住左键划动摊饼；点击鸡蛋。点击酱碗拿刷子，按住左键刷酱。F 可翻面、收刷、折叠或装袋。装好后直接拖给对应顾客。
+1. 首页“设置”切换简体中文 / English、窗口、音乐和音效音量。
+2. “新的旅程”从天津开始；教学可跳过，准备页可重看。确认新建会覆盖现有 Demo 进度。
+3. 至少完成 1 单，正常收摊并保存成功后开放下一局。零完成可免费重试，升级不是推进条件。
+4. T7 完成并保存后开放武汉；经营手账可选择已开放营业日重玩。
+5. 重玩只补超过历史最佳的收入差额。收藏可以在未刷新收入时获得。
+6. “继续旅程”回到上次选择或新开放的准备页，未结算营业重新开始。
 
-按 Esc 暂停；失焦也会暂停。付款自动入账，点击右侧挂件可查看本次营业明细。右键长按 0.45 秒后，将已投入制作的食物拖入垃圾桶丢弃。
+## 制作与交付
 
-试玩存档与正式版分开。退出后从“继续旅程”回到准备页，未结算营业会重新开始。首次完成后默认准备下一局；重玩保留所选营业日。
+- 天津：拖面糊入炉；按住左键划动摊饼，点击鸡蛋。点酱碗拿刷子后划动刷酱。F 翻面、收刷、折叠或装袋。
+- 油条：长按装入，G 下锅／提篮；金黄时提篮后沥油。订单里的夹入油条和单卖油条不同。
+- 豆浆是供应商品。组合订单可分次交付；每件正确商品恢复耐心总量的 15%，最多回满。
+- 武汉：生面入篮、提篮沥水、倒入面碗、调味并划动拌匀。豆皮倒浆加蛋、翻面放馅、成熟切块后入盘；按工作台提示操作。
+- 两城均自动入账。点击收银挂件查看本次营业明细并暂停。
+- 右键长按 0.45 秒，将已投入制作的食物拖入垃圾桶丢弃。左键不丢弃。
+- Esc 暂停；切出窗口暂停营业与配乐。恢复不补播经营提示音。
 
-这是内部测试包。请记录卡住的位置、看不懂的提示、升级前后的操作变化，以及语言、分辨率和声音问题。真人验收、完整两城内容与配乐仍在后续阶段。
+## 收藏与声音
+
+五张卡从合格且匹配的交付记录获得，收摊保存成功后入册。豆浆卡是供应记录。放弃与保存失败不会提前入册，失败后可在结算页重试保存。
+
+曲目经试听确认：Wholesome / Carefree / Local Forecast - Elevator。署名与许可见 MUSIC-CREDITS.md，游戏内“帮助 → 配乐与署名”也有说明。
+
+## 存档
+
+Demo 与正式版分开，默认位置：
+%APPDATA%/Godot/app_userdata/早餐铺子/demo/project_cake_demo_pilot_v1.json
+
+文件名保留兼容，内部结构已升级为版本 2。迁移前保留 .before-v2-r3.bak 原档。天津前三局旧档保留金币、设备、教学、最佳成绩；已完成 T3 可继续 T4，不重复发奖。请勿手工合并正式版存档。
+
+这是 Release 候选包。此前首批真人试玩已按用户确认完成；**新增两城全路线的时长、疲劳与手感仍需真人试玩**。自动验证和源码状态机检查不能替代这些结论。详细实现、自动验证、人工待验与校验值见 RELEASE-NOTES.md 和 SHA256SUMS.txt。
 
 ---
 
-# Tianjin breakfast demo
+# Breakfast Shops · Two-city Demo RC1
 
-Extract the whole folder and run **BreakfastDemo.exe**. Keep the `.pck` file and `data_ProjectCake_windows_x86_64` folder beside it. Godot and .NET do not need to be installed.
+Extract everything and run **BreakfastDemo.exe**. Keep the .pck and data folder together. No Godot or .NET installation is required.
 
-This build includes the first jianbing lesson, three Tianjin shifts, two equipment upgrades and replays. Wuhan and Xi'an are previews only.
-
-- Choose **Settings** for English, display and volume options. Choose **New journey** to begin.
-- Finish at least one order, close normally and save to unlock the next shift. A zero-order shift can be retried for free.
-- After Day 3, choose an upgrade and replay Day 3 from the journal. Only income above your previous best is added.
-- Drag batter onto the griddle. Hold left mouse and move to spread it; click an egg. Click the sauce bowl, then hold left mouse to brush.
-- Press **F** to flip, finish brushing, fold or bag. Drag the bagged food to the matching customer.
-- **Esc** pauses. Losing focus also pauses. Payments are automatic; click the pendant to view shift details.
-- Hold right mouse for 0.45 seconds, then drag food to the bin to discard it.
-
-Demo progress is separate from the full game. Continue returns to the preparation page; unfinished shifts restart. This is an internal playtest build. Please note unclear steps, problems and changes you notice after upgrading.
+- 7 Tianjin shifts and 6 Wuhan shifts, five food records, optional upgrades and a two-city ending.
+- Complete at least one order, close normally and save to unlock the next shift. Upgrades are optional; zero-order retries are free.
+- Complete Tianjin to open Wuhan. Replay from the journal; only income above the previous best is credited.
+- Follow the workstation lessons. F handles pancake actions; G lowers/lifts the fryer. Drag food to matching customers.
+- Combo items can be served separately. Each correct item restores 15% of maximum patience.
+- Hold right mouse for 0.45 seconds, then drag prepared or cooking food to the bin.
+- Payments are automatic. The cash pendant opens shift details. Esc and focus loss pause play.
+- Food records commit with a successful shift save, even without new best earnings. Abandoning a shift discards its pending records.
+- Settings offer English, display and separate music/effects volume. See MUSIC-CREDITS.md for music attribution.
+- Old three-shift Demo progress migrates with a backup; full-game saves are separate.
+- The complete route still needs human duration, fatigue and feel evaluation. See RELEASE-NOTES.md for verified scope.

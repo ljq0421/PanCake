@@ -37,7 +37,7 @@ public partial class StartScreen
                 stamp.RotationDegrees = 8;
             }
         }
-        else HomeArt(_modal, "旅行手账双页母版", BookBounds);
+        else HomeArt(_modal, "旅行手账双页母版", kind == "help" ? HelpBookBounds : BookBounds);
         foreach (var button in _buttons) button.FocusMode = FocusModeEnum.None;
     }
     private void AddPanelTitleTape(Control parent, string name, Rect2 bounds)
@@ -79,7 +79,7 @@ public partial class StartScreen
         Text(_modal, "DisplayHint", "切换后 15 秒内确认，超时自动恢复。", new(355, 813, 500, 48), 23);
         Text(_modal, "AudioTitle", "声音", new(1040, 280, 460, 70), 45);
         Volume("master", "主音量", _settings.Master, 390);
-        Volume("music", "音乐 · 暂无背景音乐", _settings.Music, 510);
+        Volume("music", ExperienceProfile.IsDemo ? "音乐" : "音乐 · 暂无背景音乐", _settings.Music, 510);
         Volume("effects", "音效", _settings.Effects, 630);
         Button(_modal, "Mute", _settings.Muted ? "取消静音" : "全部静音", new(1040, 780, 245, 62), () => { _settings.ToggleMute(); RefreshMute(); }).AddThemeFontSizeOverride("font_size", 25);
         Button(_modal, "Close", "完成", new(1360, 780, 190, 62), CloseModal, true).AddThemeFontSizeOverride("font_size", 26);
@@ -158,25 +158,13 @@ public partial class StartScreen
             _modalControls.FirstOrDefault(c => c.Name == "Fullscreen")?.GrabFocus();
         }
     }
-    private void OpenHelp()
+    private void OpenDemoMusicCredits()
     {
-        if (ExperienceProfile.IsDemo) { OpenDemoHelp(); return; }
-        OpenModal("help");
-        Text(_modal, "HelpTitle", "一本早餐旅行手账", new(355, 285, 520, 80), 41);
-        Text(_modal, "HelpJourney", "新的旅程\n从天津出发，建立一份新的旅行进度。\n确认重新开始后，会覆盖原有存档。\n\n继续旅程\n回到上次开张的城市早餐铺。\n选营业日、升级设备，再准备开张。\n\n世界地图\n完成一城后，下一站逐步开放。\n选择城市查看信息，再进入早餐铺。", new(350, 390, 490, 440), 27);
-        Text(_modal, "HelpControlsTitle", "慢慢来，做好每份早餐", new(1040, 285, 515, 80), 36);
-        Text(_modal, "HelpControls", "按各城工作台提示点击或拖动制作。\n天津、武汉：右键长按 0.45 秒，\n拖入垃圾桶可丢弃已投入制作的食物。\n\n天津、武汉自动收款；西安点击收钱。\n广州、扬州完成订单后自动入账。\n扬州先备餐，再整盘上桌。\n\nTab / 方向键选择入口\nEnter / 空格确认，Esc 返回或关闭。\n", new(1035, 390, 535, 365), 24);
-        Button(_modal, "Close", "记住了", new(1220, 795, 300, 65), CloseModal, true); _modalControls[0].GrabFocus();
-    }
-
-    private void OpenDemoHelp()
-    {
-        OpenModal("help");
-        Text(_modal, "HelpTitle", "一本早餐旅行手账", new(355, 285, 520, 80), 38);
-        Text(_modal, "HelpJourney", "本次试玩：天津前三局。\n完成至少 1 单并收摊保存后开放下一局。\n零完成可以免费重试。\n\n第 3 局结束后，可以选择升级。\n从经营手账重玩第 3 局，感受变化。\n重玩只补超过历史最佳的收入差额。", new(350, 390, 490, 440), 25);
-        Text(_modal, "HelpControlsTitle", "慢慢来，做好每份早餐", new(1040, 285, 515, 80), 32);
-        Text(_modal, "HelpControls", "按住左键划动摊饼；点击鸡蛋。\n点击酱碗，按住左键刷酱。\nF：翻面、收刷、折叠或装袋。\n\n右键长按 0.45 秒后拖入垃圾桶丢弃。\n付款自动入账，点击挂件查看明细。\nEsc 暂停；教学可跳过或重看。", new(1035, 390, 535, 390), 24);
+        OpenModal("music-credits");
+        Text(_modal, "CreditsTitle", "配乐与署名", new(355, 285, 490, 70), 42);
+        Text(_modal, "CreditsComposer", "配乐：Kevin MacLeod（incompetech.com）", new(355, 400, 480, 110), 26);
+        Text(_modal, "CreditsLicense", "使用 CC BY 4.0；曲目与许可详见随包 MUSIC-CREDITS.md。", new(355, 560, 480, 180), 25);
+        Text(_modal, "CreditsTracks", "Wholesome\nCarefree\nLocal Forecast - Elevator\n\nhttps://creativecommons.org/licenses/by/4.0/\n\nMix: -18 dB; loop and scene fades.", new(1030, 320, 490, 450), 25);
         Button(_modal, "Close", "记住了", new(1220, 795, 300, 65), CloseModal, true);
-        _modalControls[0].GrabFocus();
     }
 }

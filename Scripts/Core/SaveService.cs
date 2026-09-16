@@ -259,7 +259,7 @@ public partial class SaveService : Node
         out (string Equipment, int Target, int Price, string Display) offer, out string error)
     {
         offer = default;
-        if (IsDemo && (HasLoadError || !CanContinue || cityId != StableIds.Cities.Tianjin || !catalog.IsValid))
+        if (IsDemo && (HasLoadError || !CanContinue || ChapterLength(cityId) == 0 || !Data.UnlockedCityIds.Contains(cityId) || !catalog.IsValid))
             return Fail("试玩存档或配置无法读取，请检查后重试。", out error);
         CityProgressData city = Data.GetCity(cityId);
         if (!city.UnlockedContentIds.Contains(upgradeId, StringComparer.Ordinal)) { error = "该升级尚未开放。"; return false; }

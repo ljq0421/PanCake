@@ -50,6 +50,7 @@ public static class BusinessBookSettlement
     {
         model.Closing = true; model.Stickers = Array.Empty<string>(); model.Upgrades = null; model.CanClose = true; model.CanRetry = false;
         var before = save.Data.GetCity(config.CityId).UnlockedContentIds.ToHashSet(StringComparer.Ordinal);
+        var collected = save.IsDemo ? save.DemoProgress.BreakfastRecords.Keys.ToHashSet() : new HashSet<string>();
         try
         {
             var commit = save.CommitDay(model.Result, plan, config);
@@ -61,6 +62,8 @@ public static class BusinessBookSettlement
             if (unlocked > 0) stickers.Add($"新开放 {unlocked} 项内容 · 回店查看");
             string[] upgrades = save.AvailableBookUpgrades(config.CityId, catalog);
             if (upgrades.Length > 0) stickers.Add($"可升级：{upgrades[0]}" + (upgrades.Length > 1 ? $"等{upgrades.Length}项" : ""));
+            if (save.IsDemo) foreach (var card in DemoBreakfastCollection.Cards.Where(c => !collected.Contains(c.Id) && save.DemoProgress.BreakfastRecords.ContainsKey(c.Id)))
+                stickers.Add("早餐新记录：" + card.Name);
             model.Stickers = stickers.ToArray();
             model.Upgrades = new BookUpgradeSource(save, catalog, config.CityId);
         }

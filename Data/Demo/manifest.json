@@ -1,6 +1,6 @@
 {
   "profileId": "demo_pilot",
-  "contentRevision": 1,
+  "contentRevision": 3,
   "stages": [
     {
       "id": "demo_tj_01",
@@ -9,10 +9,59 @@
       "titleEn": "Your first jianbing",
       "durationSeconds": 75,
       "patienceMultiplier": 1.6,
-      "arrivals": [0, 16, 34, 52],
-      "recipes": ["pancake_basic", "pancake_basic", "pancake_basic", "pancake_basic"],
-      "availableRecipes": ["pancake_basic"],
-      "completionUnlocks": []
+      "arrivals": [
+        0,
+        16,
+        34,
+        52
+      ],
+      "availableRecipes": [
+        "pancake_basic"
+      ],
+      "completionUnlocks": [],
+      "tutorial": "pancake",
+      "orders": [
+        {
+          "customerTypeId": "normal",
+          "lines": [
+            {
+              "productKind": "Pancake",
+              "definitionId": "pancake_basic",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "normal",
+          "lines": [
+            {
+              "productKind": "Pancake",
+              "definitionId": "pancake_basic",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "normal",
+          "lines": [
+            {
+              "productKind": "Pancake",
+              "definitionId": "pancake_basic",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "normal",
+          "lines": [
+            {
+              "productKind": "Pancake",
+              "definitionId": "pancake_basic",
+              "quantity": 1
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "demo_tj_02",
@@ -21,10 +70,82 @@
       "titleEn": "Read the order",
       "durationSeconds": 90,
       "patienceMultiplier": 1.4,
-      "arrivals": [0, 12, 25, 40, 54, 68],
-      "recipes": ["pancake_basic", "pancake_crispy", "pancake_crispy", "pancake_basic", "pancake_crispy", "pancake_crispy"],
-      "availableRecipes": ["pancake_basic", "pancake_crispy"],
-      "completionUnlocks": []
+      "arrivals": [
+        0,
+        12,
+        25,
+        40,
+        54,
+        68
+      ],
+      "availableRecipes": [
+        "pancake_basic",
+        "pancake_crispy"
+      ],
+      "completionUnlocks": [],
+      "tutorial": "toppings",
+      "orders": [
+        {
+          "customerTypeId": "normal",
+          "lines": [
+            {
+              "productKind": "Pancake",
+              "definitionId": "pancake_basic",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "normal",
+          "lines": [
+            {
+              "productKind": "Pancake",
+              "definitionId": "pancake_crispy",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "normal",
+          "lines": [
+            {
+              "productKind": "Pancake",
+              "definitionId": "pancake_crispy",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "normal",
+          "lines": [
+            {
+              "productKind": "Pancake",
+              "definitionId": "pancake_basic",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "normal",
+          "lines": [
+            {
+              "productKind": "Pancake",
+              "definitionId": "pancake_crispy",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "normal",
+          "lines": [
+            {
+              "productKind": "Pancake",
+              "definitionId": "pancake_crispy",
+              "quantity": 1
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "demo_tj_03",
@@ -33,10 +154,1579 @@
       "titleEn": "Find your rhythm",
       "durationSeconds": 105,
       "patienceMultiplier": 1.25,
-      "arrivals": [0, 12, 25, 33, 46, 60, 70, 82],
-      "recipes": ["pancake_basic", "pancake_scallion", "pancake_crispy", "pancake_scallion_crispy", "pancake_scallion", "pancake_crispy", "pancake_scallion_crispy", "pancake_scallion"],
-      "availableRecipes": ["pancake_basic", "pancake_crispy", "pancake_scallion", "pancake_scallion_crispy"],
-      "completionUnlocks": ["equipment:ingredient_station_lv2", "equipment:pancake_stove_lv2"]
+      "arrivals": [
+        0,
+        12,
+        25,
+        33,
+        46,
+        60,
+        70,
+        82
+      ],
+      "availableRecipes": [
+        "pancake_basic",
+        "pancake_crispy",
+        "pancake_scallion",
+        "pancake_scallion_crispy"
+      ],
+      "completionUnlocks": [
+        "equipment:ingredient_station_lv2",
+        "equipment:pancake_stove_lv2"
+      ],
+      "orders": [
+        {
+          "customerTypeId": "normal",
+          "lines": [
+            {
+              "productKind": "Pancake",
+              "definitionId": "pancake_basic",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "normal",
+          "lines": [
+            {
+              "productKind": "Pancake",
+              "definitionId": "pancake_scallion",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "normal",
+          "lines": [
+            {
+              "productKind": "Pancake",
+              "definitionId": "pancake_crispy",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "normal",
+          "lines": [
+            {
+              "productKind": "Pancake",
+              "definitionId": "pancake_scallion_crispy",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "normal",
+          "lines": [
+            {
+              "productKind": "Pancake",
+              "definitionId": "pancake_scallion",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "normal",
+          "lines": [
+            {
+              "productKind": "Pancake",
+              "definitionId": "pancake_crispy",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "normal",
+          "lines": [
+            {
+              "productKind": "Pancake",
+              "definitionId": "pancake_scallion_crispy",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "normal",
+          "lines": [
+            {
+              "productKind": "Pancake",
+              "definitionId": "pancake_scallion",
+              "quantity": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "demo_tj_04",
+      "cityId": "city:tianjin",
+      "day": 4,
+      "titleZh": "油条下锅",
+      "titleEn": "Into the fryer",
+      "durationSeconds": 105,
+      "patienceMultiplier": 1.4,
+      "arrivals": [
+        0,
+        14,
+        28,
+        37,
+        51,
+        65,
+        74,
+        83
+      ],
+      "orders": [
+        {
+          "customerTypeId": "normal",
+          "lines": [
+            {
+              "productKind": "Youtiao",
+              "definitionId": "youtiao",
+              "quantity": 2
+            }
+          ]
+        },
+        {
+          "customerTypeId": "normal",
+          "lines": [
+            {
+              "productKind": "Pancake",
+              "definitionId": "pancake_basic",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "normal",
+          "lines": [
+            {
+              "productKind": "Youtiao",
+              "definitionId": "youtiao",
+              "quantity": 2
+            }
+          ]
+        },
+        {
+          "customerTypeId": "normal",
+          "lines": [
+            {
+              "productKind": "Pancake",
+              "definitionId": "pancake_crispy",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "normal",
+          "lines": [
+            {
+              "productKind": "Youtiao",
+              "definitionId": "youtiao",
+              "quantity": 2
+            }
+          ]
+        },
+        {
+          "customerTypeId": "normal",
+          "lines": [
+            {
+              "productKind": "Pancake",
+              "definitionId": "pancake_scallion",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "normal",
+          "lines": [
+            {
+              "productKind": "Youtiao",
+              "definitionId": "youtiao",
+              "quantity": 2
+            }
+          ]
+        },
+        {
+          "customerTypeId": "normal",
+          "lines": [
+            {
+              "productKind": "Pancake",
+              "definitionId": "pancake_scallion_crispy",
+              "quantity": 1
+            }
+          ]
+        }
+      ],
+      "availableRecipes": [
+        "pancake_basic",
+        "pancake_crispy",
+        "pancake_scallion",
+        "pancake_scallion_crispy"
+      ],
+      "availableProducts": [
+        "Pancake",
+        "Youtiao"
+      ],
+      "startUnlocks": [
+        "equipment:fryer_lv1",
+        "product:youtiao"
+      ],
+      "completionUnlocks": [],
+      "tutorial": "youtiao"
+    },
+    {
+      "id": "demo_tj_05",
+      "cityId": "city:tianjin",
+      "day": 5,
+      "titleZh": "一口酥脆",
+      "titleEn": "A crispy bite",
+      "durationSeconds": 120,
+      "patienceMultiplier": 1.25,
+      "arrivals": [
+        0,
+        12,
+        24,
+        34,
+        44,
+        56,
+        66,
+        78,
+        87,
+        96
+      ],
+      "orders": [
+        {
+          "customerTypeId": "normal",
+          "lines": [
+            {
+              "productKind": "Pancake",
+              "definitionId": "pancake_youtiao",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "normal",
+          "lines": [
+            {
+              "productKind": "Youtiao",
+              "definitionId": "youtiao",
+              "quantity": 2
+            }
+          ]
+        },
+        {
+          "customerTypeId": "regular",
+          "lines": [
+            {
+              "productKind": "Pancake",
+              "definitionId": "pancake_scallion_youtiao",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "normal",
+          "lines": [
+            {
+              "productKind": "Pancake",
+              "definitionId": "pancake_basic",
+              "quantity": 1
+            },
+            {
+              "productKind": "Youtiao",
+              "definitionId": "youtiao",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "normal",
+          "lines": [
+            {
+              "productKind": "Pancake",
+              "definitionId": "pancake_youtiao",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "normal",
+          "lines": [
+            {
+              "productKind": "Pancake",
+              "definitionId": "pancake_crispy",
+              "quantity": 1
+            },
+            {
+              "productKind": "Youtiao",
+              "definitionId": "youtiao",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "normal",
+          "lines": [
+            {
+              "productKind": "Pancake",
+              "definitionId": "pancake_scallion_youtiao",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "normal",
+          "lines": [
+            {
+              "productKind": "Youtiao",
+              "definitionId": "youtiao",
+              "quantity": 2
+            }
+          ]
+        },
+        {
+          "customerTypeId": "normal",
+          "lines": [
+            {
+              "productKind": "Pancake",
+              "definitionId": "pancake_youtiao",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "normal",
+          "lines": [
+            {
+              "productKind": "Pancake",
+              "definitionId": "pancake_scallion",
+              "quantity": 1
+            },
+            {
+              "productKind": "Youtiao",
+              "definitionId": "youtiao",
+              "quantity": 1
+            }
+          ]
+        }
+      ],
+      "availableRecipes": [
+        "pancake_basic",
+        "pancake_crispy",
+        "pancake_scallion",
+        "pancake_scallion_crispy",
+        "pancake_youtiao",
+        "pancake_scallion_youtiao"
+      ],
+      "availableProducts": [
+        "Pancake",
+        "Youtiao"
+      ],
+      "startUnlocks": [
+        "equipment:fryer_lv1",
+        "product:youtiao"
+      ],
+      "completionUnlocks": [
+        "equipment:fryer_lv2"
+      ],
+      "tutorial": ""
+    },
+    {
+      "id": "demo_tj_06",
+      "cityId": "city:tianjin",
+      "day": 6,
+      "titleZh": "先递一杯豆浆",
+      "titleEn": "Serve the drink first",
+      "durationSeconds": 135,
+      "patienceMultiplier": 1.15,
+      "arrivals": [
+        0,
+        12,
+        22,
+        32,
+        43,
+        55,
+        66,
+        76,
+        88,
+        96,
+        106,
+        112
+      ],
+      "orders": [
+        {
+          "customerTypeId": "normal",
+          "lines": [
+            {
+              "productKind": "Pancake",
+              "definitionId": "pancake_youtiao",
+              "quantity": 1
+            },
+            {
+              "productKind": "SoyMilk",
+              "definitionId": "soy_milk",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "normal",
+          "lines": [
+            {
+              "productKind": "Pancake",
+              "definitionId": "pancake_crispy",
+              "quantity": 1
+            },
+            {
+              "productKind": "SoyMilk",
+              "definitionId": "soy_milk",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "office_worker",
+          "lines": [
+            {
+              "productKind": "SoyMilk",
+              "definitionId": "soy_milk",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "normal",
+          "lines": [
+            {
+              "productKind": "Pancake",
+              "definitionId": "pancake_scallion",
+              "quantity": 1
+            },
+            {
+              "productKind": "SoyMilk",
+              "definitionId": "soy_milk",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "normal",
+          "lines": [
+            {
+              "productKind": "Youtiao",
+              "definitionId": "youtiao",
+              "quantity": 2
+            },
+            {
+              "productKind": "SoyMilk",
+              "definitionId": "soy_milk",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "normal",
+          "lines": [
+            {
+              "productKind": "Pancake",
+              "definitionId": "pancake_scallion_youtiao",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "normal",
+          "lines": [
+            {
+              "productKind": "SoyMilk",
+              "definitionId": "soy_milk",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "normal",
+          "lines": [
+            {
+              "productKind": "Pancake",
+              "definitionId": "pancake_basic",
+              "quantity": 1
+            },
+            {
+              "productKind": "SoyMilk",
+              "definitionId": "soy_milk",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "normal",
+          "lines": [
+            {
+              "productKind": "Pancake",
+              "definitionId": "pancake_youtiao",
+              "quantity": 1
+            },
+            {
+              "productKind": "SoyMilk",
+              "definitionId": "soy_milk",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "normal",
+          "lines": [
+            {
+              "productKind": "Youtiao",
+              "definitionId": "youtiao",
+              "quantity": 2
+            }
+          ]
+        },
+        {
+          "customerTypeId": "normal",
+          "lines": [
+            {
+              "productKind": "Pancake",
+              "definitionId": "pancake_scallion",
+              "quantity": 1
+            },
+            {
+              "productKind": "SoyMilk",
+              "definitionId": "soy_milk",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "normal",
+          "lines": [
+            {
+              "productKind": "Pancake",
+              "definitionId": "pancake_scallion_crispy",
+              "quantity": 1
+            },
+            {
+              "productKind": "SoyMilk",
+              "definitionId": "soy_milk",
+              "quantity": 1
+            }
+          ]
+        }
+      ],
+      "availableRecipes": [
+        "pancake_basic",
+        "pancake_crispy",
+        "pancake_scallion",
+        "pancake_scallion_crispy",
+        "pancake_youtiao",
+        "pancake_scallion_youtiao"
+      ],
+      "availableProducts": [
+        "Pancake",
+        "Youtiao",
+        "SoyMilk"
+      ],
+      "startUnlocks": [
+        "equipment:fryer_lv1",
+        "product:youtiao",
+        "product:soy_milk"
+      ],
+      "completionUnlocks": [],
+      "tutorial": "partial"
+    },
+    {
+      "id": "demo_tj_07",
+      "cityId": "city:tianjin",
+      "day": 7,
+      "titleZh": "天津的早高峰",
+      "titleEn": "Tianjin morning rush",
+      "durationSeconds": 150,
+      "patienceMultiplier": 1.1,
+      "arrivals": [
+        0,
+        11,
+        21,
+        30,
+        40,
+        50,
+        61,
+        72,
+        82,
+        92,
+        102,
+        111,
+        118,
+        126
+      ],
+      "orders": [
+        {
+          "customerTypeId": "normal",
+          "lines": [
+            {
+              "productKind": "Pancake",
+              "definitionId": "pancake_basic",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "normal",
+          "lines": [
+            {
+              "productKind": "Pancake",
+              "definitionId": "pancake_crispy",
+              "quantity": 1
+            },
+            {
+              "productKind": "SoyMilk",
+              "definitionId": "soy_milk",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "normal",
+          "lines": [
+            {
+              "productKind": "Youtiao",
+              "definitionId": "youtiao",
+              "quantity": 2
+            }
+          ]
+        },
+        {
+          "customerTypeId": "regular",
+          "lines": [
+            {
+              "productKind": "Pancake",
+              "definitionId": "pancake_scallion_youtiao",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "office_worker",
+          "lines": [
+            {
+              "productKind": "SoyMilk",
+              "definitionId": "soy_milk",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "normal",
+          "lines": [
+            {
+              "productKind": "Pancake",
+              "definitionId": "pancake_youtiao",
+              "quantity": 1
+            },
+            {
+              "productKind": "SoyMilk",
+              "definitionId": "soy_milk",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "normal",
+          "lines": [
+            {
+              "productKind": "Pancake",
+              "definitionId": "pancake_scallion",
+              "quantity": 1
+            },
+            {
+              "productKind": "Youtiao",
+              "definitionId": "youtiao",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "normal",
+          "lines": [
+            {
+              "productKind": "Pancake",
+              "definitionId": "pancake_scallion_crispy",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "normal",
+          "lines": [
+            {
+              "productKind": "Youtiao",
+              "definitionId": "youtiao",
+              "quantity": 2
+            },
+            {
+              "productKind": "SoyMilk",
+              "definitionId": "soy_milk",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "normal",
+          "lines": [
+            {
+              "productKind": "Pancake",
+              "definitionId": "pancake_scallion_youtiao",
+              "quantity": 1
+            },
+            {
+              "productKind": "SoyMilk",
+              "definitionId": "soy_milk",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "normal",
+          "lines": [
+            {
+              "productKind": "Pancake",
+              "definitionId": "pancake_crispy",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "normal",
+          "lines": [
+            {
+              "productKind": "Pancake",
+              "definitionId": "pancake_youtiao",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "normal",
+          "lines": [
+            {
+              "productKind": "Pancake",
+              "definitionId": "pancake_scallion",
+              "quantity": 1
+            },
+            {
+              "productKind": "SoyMilk",
+              "definitionId": "soy_milk",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "normal",
+          "lines": [
+            {
+              "productKind": "Pancake",
+              "definitionId": "pancake_basic",
+              "quantity": 1
+            },
+            {
+              "productKind": "Youtiao",
+              "definitionId": "youtiao",
+              "quantity": 1
+            }
+          ]
+        }
+      ],
+      "availableRecipes": [
+        "pancake_basic",
+        "pancake_crispy",
+        "pancake_scallion",
+        "pancake_scallion_crispy",
+        "pancake_youtiao",
+        "pancake_scallion_youtiao"
+      ],
+      "availableProducts": [
+        "Pancake",
+        "Youtiao",
+        "SoyMilk"
+      ],
+      "startUnlocks": [
+        "equipment:fryer_lv1",
+        "product:youtiao",
+        "product:soy_milk"
+      ],
+      "completionUnlocks": [],
+      "tutorial": ""
+    },
+    {
+      "id": "demo_wh_01",
+      "cityId": "city:wuhan",
+      "day": 1,
+      "titleZh": "第一碗热干面",
+      "titleEn": "Your first hot dry noodles",
+      "durationSeconds": 90,
+      "patienceMultiplier": 1.6,
+      "arrivals": [
+        0,
+        15,
+        30,
+        47,
+        65
+      ],
+      "orders": [
+        {
+          "customerTypeId": "wuhan_normal",
+          "lines": [
+            {
+              "productKind": "HotDryNoodles",
+              "definitionId": "hot_dry_noodles_classic",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "wuhan_normal",
+          "lines": [
+            {
+              "productKind": "HotDryNoodles",
+              "definitionId": "hot_dry_noodles_classic",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "wuhan_normal",
+          "lines": [
+            {
+              "productKind": "HotDryNoodles",
+              "definitionId": "hot_dry_noodles_classic",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "wuhan_normal",
+          "lines": [
+            {
+              "productKind": "HotDryNoodles",
+              "definitionId": "hot_dry_noodles_classic",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "wuhan_normal",
+          "lines": [
+            {
+              "productKind": "HotDryNoodles",
+              "definitionId": "hot_dry_noodles_classic",
+              "quantity": 1
+            }
+          ]
+        }
+      ],
+      "availableRecipes": [
+        "hot_dry_noodles_classic"
+      ],
+      "availableProducts": [
+        "HotDryNoodles"
+      ],
+      "startUnlocks": [],
+      "completionUnlocks": [],
+      "tutorial": "noodles"
+    },
+    {
+      "id": "demo_wh_02",
+      "cityId": "city:wuhan",
+      "day": 2,
+      "titleZh": "葱香与辣香",
+      "titleEn": "Scallion and chili",
+      "durationSeconds": 105,
+      "patienceMultiplier": 1.35,
+      "arrivals": [
+        0,
+        13,
+        26,
+        40,
+        52,
+        66,
+        80
+      ],
+      "orders": [
+        {
+          "customerTypeId": "wuhan_normal",
+          "lines": [
+            {
+              "productKind": "HotDryNoodles",
+              "definitionId": "hot_dry_noodles_classic",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "wuhan_normal",
+          "lines": [
+            {
+              "productKind": "HotDryNoodles",
+              "definitionId": "hot_dry_noodles_scallion",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "wuhan_normal",
+          "lines": [
+            {
+              "productKind": "HotDryNoodles",
+              "definitionId": "hot_dry_noodles_chili",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "wuhan_normal",
+          "lines": [
+            {
+              "productKind": "HotDryNoodles",
+              "definitionId": "hot_dry_noodles_scallion",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "wuhan_normal",
+          "lines": [
+            {
+              "productKind": "HotDryNoodles",
+              "definitionId": "hot_dry_noodles_chili",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "wuhan_normal",
+          "lines": [
+            {
+              "productKind": "HotDryNoodles",
+              "definitionId": "hot_dry_noodles_classic",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "wuhan_normal",
+          "lines": [
+            {
+              "productKind": "HotDryNoodles",
+              "definitionId": "hot_dry_noodles_scallion_chili",
+              "quantity": 1
+            }
+          ]
+        }
+      ],
+      "availableRecipes": [
+        "hot_dry_noodles_classic",
+        "hot_dry_noodles_scallion",
+        "hot_dry_noodles_chili",
+        "hot_dry_noodles_scallion_chili"
+      ],
+      "availableProducts": [
+        "HotDryNoodles"
+      ],
+      "startUnlocks": [],
+      "completionUnlocks": [],
+      "tutorial": ""
+    },
+    {
+      "id": "demo_wh_03",
+      "cityId": "city:wuhan",
+      "day": 3,
+      "titleZh": "面篮有余地",
+      "titleEn": "Room to breathe",
+      "durationSeconds": 120,
+      "patienceMultiplier": 1.2,
+      "arrivals": [
+        0,
+        12,
+        24,
+        35,
+        47,
+        61,
+        73,
+        84,
+        96
+      ],
+      "orders": [
+        {
+          "customerTypeId": "wuhan_normal",
+          "lines": [
+            {
+              "productKind": "HotDryNoodles",
+              "definitionId": "hot_dry_noodles_classic",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "wuhan_normal",
+          "lines": [
+            {
+              "productKind": "HotDryNoodles",
+              "definitionId": "hot_dry_noodles_scallion",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "wuhan_normal",
+          "lines": [
+            {
+              "productKind": "HotDryNoodles",
+              "definitionId": "hot_dry_noodles_chili",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "wuhan_normal",
+          "lines": [
+            {
+              "productKind": "HotDryNoodles",
+              "definitionId": "hot_dry_noodles_scallion_chili",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "wuhan_office_worker",
+          "lines": [
+            {
+              "productKind": "HotDryNoodles",
+              "definitionId": "hot_dry_noodles_classic",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "wuhan_normal",
+          "lines": [
+            {
+              "productKind": "HotDryNoodles",
+              "definitionId": "hot_dry_noodles_scallion",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "wuhan_normal",
+          "lines": [
+            {
+              "productKind": "HotDryNoodles",
+              "definitionId": "hot_dry_noodles_chili",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "wuhan_normal",
+          "lines": [
+            {
+              "productKind": "HotDryNoodles",
+              "definitionId": "hot_dry_noodles_scallion_chili",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "wuhan_normal",
+          "lines": [
+            {
+              "productKind": "HotDryNoodles",
+              "definitionId": "hot_dry_noodles_classic",
+              "quantity": 1
+            }
+          ]
+        }
+      ],
+      "availableRecipes": [
+        "hot_dry_noodles_classic",
+        "hot_dry_noodles_scallion",
+        "hot_dry_noodles_chili",
+        "hot_dry_noodles_scallion_chili"
+      ],
+      "availableProducts": [
+        "HotDryNoodles"
+      ],
+      "startUnlocks": [],
+      "completionUnlocks": [
+        "equipment:noodle_cooker_lv2"
+      ],
+      "tutorial": ""
+    },
+    {
+      "id": "demo_wh_04",
+      "cityId": "city:wuhan",
+      "day": 4,
+      "titleZh": "豆皮开锅",
+      "titleEn": "The first pan of doupi",
+      "durationSeconds": 120,
+      "patienceMultiplier": 1.4,
+      "arrivals": [
+        0,
+        16,
+        31,
+        43,
+        58,
+        73,
+        87,
+        96
+      ],
+      "orders": [
+        {
+          "customerTypeId": "wuhan_regular",
+          "lines": [
+            {
+              "productKind": "Doupi",
+              "definitionId": "doupi",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "wuhan_normal",
+          "lines": [
+            {
+              "productKind": "HotDryNoodles",
+              "definitionId": "hot_dry_noodles_classic",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "wuhan_normal",
+          "lines": [
+            {
+              "productKind": "Doupi",
+              "definitionId": "doupi",
+              "quantity": 2
+            }
+          ]
+        },
+        {
+          "customerTypeId": "wuhan_normal",
+          "lines": [
+            {
+              "productKind": "HotDryNoodles",
+              "definitionId": "hot_dry_noodles_scallion",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "wuhan_normal",
+          "lines": [
+            {
+              "productKind": "Doupi",
+              "definitionId": "doupi",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "wuhan_normal",
+          "lines": [
+            {
+              "productKind": "HotDryNoodles",
+              "definitionId": "hot_dry_noodles_chili",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "wuhan_normal",
+          "lines": [
+            {
+              "productKind": "Doupi",
+              "definitionId": "doupi",
+              "quantity": 2
+            }
+          ]
+        },
+        {
+          "customerTypeId": "wuhan_normal",
+          "lines": [
+            {
+              "productKind": "HotDryNoodles",
+              "definitionId": "hot_dry_noodles_classic",
+              "quantity": 1
+            }
+          ]
+        }
+      ],
+      "availableRecipes": [
+        "hot_dry_noodles_classic",
+        "hot_dry_noodles_scallion",
+        "hot_dry_noodles_chili",
+        "hot_dry_noodles_scallion_chili"
+      ],
+      "availableProducts": [
+        "HotDryNoodles",
+        "Doupi"
+      ],
+      "startUnlocks": [
+        "equipment:doupi_griddle_lv1",
+        "product:doupi"
+      ],
+      "completionUnlocks": [
+        "equipment:doupi_griddle_lv2"
+      ],
+      "tutorial": "doupi"
+    },
+    {
+      "id": "demo_wh_05",
+      "cityId": "city:wuhan",
+      "day": 5,
+      "titleZh": "双灶配合",
+      "titleEn": "Working two stations",
+      "durationSeconds": 135,
+      "patienceMultiplier": 1.2,
+      "arrivals": [
+        0,
+        14,
+        27,
+        39,
+        51,
+        63,
+        76,
+        89,
+        101,
+        111
+      ],
+      "orders": [
+        {
+          "customerTypeId": "wuhan_normal",
+          "lines": [
+            {
+              "productKind": "HotDryNoodles",
+              "definitionId": "hot_dry_noodles_classic",
+              "quantity": 1
+            },
+            {
+              "productKind": "Doupi",
+              "definitionId": "doupi",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "wuhan_normal",
+          "lines": [
+            {
+              "productKind": "Doupi",
+              "definitionId": "doupi",
+              "quantity": 2
+            }
+          ]
+        },
+        {
+          "customerTypeId": "wuhan_normal",
+          "lines": [
+            {
+              "productKind": "HotDryNoodles",
+              "definitionId": "hot_dry_noodles_scallion",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "wuhan_office_worker",
+          "lines": [
+            {
+              "productKind": "HotDryNoodles",
+              "definitionId": "hot_dry_noodles_classic",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "wuhan_normal",
+          "lines": [
+            {
+              "productKind": "HotDryNoodles",
+              "definitionId": "hot_dry_noodles_chili",
+              "quantity": 1
+            },
+            {
+              "productKind": "Doupi",
+              "definitionId": "doupi",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "wuhan_normal",
+          "lines": [
+            {
+              "productKind": "Doupi",
+              "definitionId": "doupi",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "wuhan_normal",
+          "lines": [
+            {
+              "productKind": "HotDryNoodles",
+              "definitionId": "hot_dry_noodles_scallion_chili",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "wuhan_normal",
+          "lines": [
+            {
+              "productKind": "HotDryNoodles",
+              "definitionId": "hot_dry_noodles_classic",
+              "quantity": 1
+            },
+            {
+              "productKind": "Doupi",
+              "definitionId": "doupi",
+              "quantity": 2
+            }
+          ]
+        },
+        {
+          "customerTypeId": "wuhan_normal",
+          "lines": [
+            {
+              "productKind": "HotDryNoodles",
+              "definitionId": "hot_dry_noodles_scallion",
+              "quantity": 1
+            },
+            {
+              "productKind": "Doupi",
+              "definitionId": "doupi",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "wuhan_normal",
+          "lines": [
+            {
+              "productKind": "Doupi",
+              "definitionId": "doupi",
+              "quantity": 2
+            }
+          ]
+        }
+      ],
+      "availableRecipes": [
+        "hot_dry_noodles_classic",
+        "hot_dry_noodles_scallion",
+        "hot_dry_noodles_chili",
+        "hot_dry_noodles_scallion_chili"
+      ],
+      "availableProducts": [
+        "HotDryNoodles",
+        "Doupi"
+      ],
+      "startUnlocks": [
+        "equipment:doupi_griddle_lv1",
+        "product:doupi"
+      ],
+      "completionUnlocks": [],
+      "tutorial": ""
+    },
+    {
+      "id": "demo_wh_06",
+      "cityId": "city:wuhan",
+      "day": 6,
+      "titleZh": "武汉的清晨",
+      "titleEn": "A morning in Wuhan",
+      "durationSeconds": 150,
+      "patienceMultiplier": 1.1,
+      "arrivals": [
+        0,
+        13,
+        25,
+        38,
+        49,
+        61,
+        73,
+        85,
+        97,
+        108,
+        117,
+        126
+      ],
+      "orders": [
+        {
+          "customerTypeId": "wuhan_normal",
+          "lines": [
+            {
+              "productKind": "HotDryNoodles",
+              "definitionId": "hot_dry_noodles_classic",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "wuhan_normal",
+          "lines": [
+            {
+              "productKind": "HotDryNoodles",
+              "definitionId": "hot_dry_noodles_scallion",
+              "quantity": 1
+            },
+            {
+              "productKind": "Doupi",
+              "definitionId": "doupi",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "wuhan_regular",
+          "lines": [
+            {
+              "productKind": "Doupi",
+              "definitionId": "doupi",
+              "quantity": 2
+            }
+          ]
+        },
+        {
+          "customerTypeId": "wuhan_normal",
+          "lines": [
+            {
+              "productKind": "HotDryNoodles",
+              "definitionId": "hot_dry_noodles_chili",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "wuhan_normal",
+          "lines": [
+            {
+              "productKind": "HotDryNoodles",
+              "definitionId": "hot_dry_noodles_scallion_chili",
+              "quantity": 1
+            },
+            {
+              "productKind": "Doupi",
+              "definitionId": "doupi",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "wuhan_normal",
+          "lines": [
+            {
+              "productKind": "HotDryNoodles",
+              "definitionId": "hot_dry_noodles_classic",
+              "quantity": 1
+            },
+            {
+              "productKind": "Doupi",
+              "definitionId": "doupi",
+              "quantity": 2
+            }
+          ]
+        },
+        {
+          "customerTypeId": "wuhan_normal",
+          "lines": [
+            {
+              "productKind": "HotDryNoodles",
+              "definitionId": "hot_dry_noodles_scallion",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "wuhan_normal",
+          "lines": [
+            {
+              "productKind": "Doupi",
+              "definitionId": "doupi",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "wuhan_normal",
+          "lines": [
+            {
+              "productKind": "HotDryNoodles",
+              "definitionId": "hot_dry_noodles_chili",
+              "quantity": 1
+            },
+            {
+              "productKind": "Doupi",
+              "definitionId": "doupi",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "wuhan_office_worker",
+          "lines": [
+            {
+              "productKind": "HotDryNoodles",
+              "definitionId": "hot_dry_noodles_classic",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "wuhan_normal",
+          "lines": [
+            {
+              "productKind": "HotDryNoodles",
+              "definitionId": "hot_dry_noodles_scallion_chili",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "wuhan_normal",
+          "lines": [
+            {
+              "productKind": "HotDryNoodles",
+              "definitionId": "hot_dry_noodles_scallion",
+              "quantity": 1
+            },
+            {
+              "productKind": "Doupi",
+              "definitionId": "doupi",
+              "quantity": 2
+            }
+          ]
+        }
+      ],
+      "availableRecipes": [
+        "hot_dry_noodles_classic",
+        "hot_dry_noodles_scallion",
+        "hot_dry_noodles_chili",
+        "hot_dry_noodles_scallion_chili"
+      ],
+      "availableProducts": [
+        "HotDryNoodles",
+        "Doupi"
+      ],
+      "startUnlocks": [
+        "equipment:doupi_griddle_lv1",
+        "product:doupi"
+      ],
+      "completionUnlocks": [],
+      "tutorial": ""
     }
   ]
 }

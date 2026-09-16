@@ -19,13 +19,14 @@ public partial class WuhanDayScreen
     private void LearnTeachingAction(string action)
     {
         _teachingDoupiLast = action.StartsWith("doupi:");
+        if (_controller.TutorialActive) { _demoLearned.Add(action); return; }
         if (_save is null || !_save.Data.Wuhan.LearnedWorkbenchActions.Add(action)) return;
         if (!_save.TrySave(out string error)) Callable.From(() => Feedback(error, true)).CallDeferred();
     }
     private TutorialFocusStep? ResolveTeachingFocus()
     {
         if (!CanInteract || _controller.CurrentConfig?.CityId != StableIds.Cities.Wuhan || _cooker is null) return null;
-        var learned = _save.Data.Wuhan.LearnedWorkbenchActions;
+        var learned = _controller.TutorialActive ? new HashSet<string>() : _save.Data.Wuhan.LearnedWorkbenchActions;
         var orders = TutorialOrders.Pending(_controller, _catalog);
         TutorialFocusStep? Step(string action, string text, params string[] targets) => learned.Contains(action) ? null
             : new(action, text, targets.Select(Workstation.TeachingTarget).ToArray());

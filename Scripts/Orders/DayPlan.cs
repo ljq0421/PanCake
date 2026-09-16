@@ -2,6 +2,8 @@ namespace ProjectCake.Orders;
 
 public sealed class DayPlan
 {
+    [System.Text.Json.Serialization.JsonIgnore]
+    public HashSet<string> PendingBreakfastRecords { get; } = new(StringComparer.Ordinal);
     [System.Text.Json.Serialization.JsonIgnore] public string StageId { get; init; } = string.Empty;
     [System.Text.Json.Serialization.JsonIgnore] public string RunId { get; init; } = string.Empty;
     public int Day { get; init; }

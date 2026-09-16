@@ -14,12 +14,17 @@ public sealed record CityEquipmentView(string Id, string Name, int Level, string
 }
 
 /// <summary>Read-only presentation adapter; purchases still use the city's save service.</summary>
-public sealed class CityPageModel(DataCatalog? catalog, SaveService save, YangzhouCatalog? yangzhou)
+public sealed partial class CityPageModel(DataCatalog? catalog, SaveService save, YangzhouCatalog? yangzhou)
 {
     private DataCatalog Catalog => catalog ?? throw new InvalidOperationException("该城市缺少设备配置。");
     private YangzhouCatalog Yangzhou => yangzhou ?? throw new InvalidOperationException("扬州缺少设备配置。");
     public string[] LedgerArt(string city, int day)
     {
+        if (save.IsDemo && save.DemoContent?.Stage(city, day) is { } stage)
+            return stage.AvailableProducts.Select(kind => kind switch {
+                ProductKind.Pancake => "TianJin/装袋后的通用煎饼果子", ProductKind.Youtiao => "TianJin/熟油条",
+                ProductKind.SoyMilk => "TianJin/成品豆浆杯", ProductKind.HotDryNoodles => "Wuhan/热干面完整成品",
+                _ => "Wuhan/DoupiPieces_v1/piece-01" }).Select(p => "res://resource/art/" + p + ".png").ToArray();
         if (city == StableIds.Cities.Tianjin)
         {
             string[] names = day switch {
@@ -51,7 +56,7 @@ public sealed class CityPageModel(DataCatalog? catalog, SaveService save, Yangzh
         }
         return Array.Empty<string>();
     }
-    public string DayTitle(string city, int day) => save.IsDemo ? save.DemoContent?.Stage(day)?.TitleZh ?? "" : city switch
+    public string DayTitle(string city, int day) => save.IsDemo ? save.DemoContent?.Stage(city, day)?.TitleZh ?? "" : city switch
     {
         StableIds.Cities.Tianjin => MorningHub.DaySubtitle(day),
         StableIds.Cities.Wuhan => WuhanHub.DaySubtitle(day),
@@ -63,8 +68,8 @@ public sealed class CityPageModel(DataCatalog? catalog, SaveService save, Yangzh
     public CityEquipmentView[] Equipment(string city)
     {
         if (save.IsDemo) return city == StableIds.Cities.Tianjin
-            ? new[] { Describe(city, "pancake_stove"), Describe(city, "ingredient_station") }
-            : Array.Empty<CityEquipmentView>();
+            ? new[] { Describe(city, "pancake_stove"), Describe(city, "ingredient_station") }.Concat(save.ChapterLength(city) > 3 ? new[] { Describe(city, "fryer") } : Array.Empty<CityEquipmentView>()).ToArray()
+            : city == StableIds.Cities.Wuhan ? new[] { Describe(city, "noodle_cooker"), Describe(city, "doupi_griddle") } : Array.Empty<CityEquipmentView>();
         string[] ids = city switch
         {
             StableIds.Cities.Tianjin => new[] { "pancake_stove", "fryer", "ingredient_station" },

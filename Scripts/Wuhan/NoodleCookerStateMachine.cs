@@ -25,6 +25,7 @@ public sealed class NoodleCookerStateMachine
         _baskets = Enumerable.Range(0, data.BasketCount).Select(_ => new NoodleBasketRuntime()).ToList();
     }
 
+    public bool ProtectTeachingHeat { get; set; }
     public IReadOnlyList<NoodleBasketRuntime> Baskets => _baskets;
     internal NoodleCookerLevelData Level => _data;
     public int? PendingPourBasket { get; private set; }
@@ -63,7 +64,7 @@ public sealed class NoodleCookerStateMachine
         {
             if (item.State is NoodleBasketState.Cooking or NoodleBasketState.Ready or NoodleBasketState.Soft)
             {
-                item.CookSeconds += delta;
+                item.CookSeconds = ProtectTeachingHeat ? Math.Min(_data.OptimalSeconds, item.CookSeconds + delta) : item.CookSeconds + delta;
                 if (_data.AutoLockOptimal && item.CookSeconds + .0001 >= _data.OptimalSeconds)
                 {
                     item.Quality = NoodleQuality.Optimal;

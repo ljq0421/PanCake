@@ -34,6 +34,12 @@ public partial class CityPagesSelfTest : Node
                 await ReviewBusinessNote();
                 GD.Print($"CITY_NOTE_TEST_RESULT passed={_passed} failed=0"); GetTree().Quit(); return;
             }
+            if (args.Contains("--map-only"))
+            {
+                GetNode<JourneySettings>("/root/JourneySettings").SetLanguage(args.Contains("--english") ? "en" : "zh_CN");
+                await ReviewWorldMap();
+                GD.Print($"WORLD_MAP_TEST_RESULT passed={_passed} failed=0"); GetTree().Quit(); return;
+            }
             _main.OpenCity(StableIds.Cities.Tianjin);
             _screen.PresentMap(); await Capture("map-locked");
             _main.OpenCity(StableIds.Cities.Tianjin);
@@ -55,18 +61,22 @@ public partial class CityPagesSelfTest : Node
             }
             _save.Data.PurchasedIngredientStationLevel = 3; _save.TrySave(out _);
             var model = new CityPageModel(catalog, _save, yz);
+            CheckOverviewModel(model);
             _screen.PresentMap(); await Frames();
             for (int i = 0; i < JourneyModel.Cities.Length; i++)
             {
                 var city = JourneyModel.Cities[i];
                 Click("Node" + i); await Frames();
-                var mapCard = Find<Panel>("MapJourneyCard");
-                Check(mapCard.GetThemeStylebox("panel") is StyleBoxTexture, "map uses illustrated journey card " + city.Name);
-                Check(Find<Control>("MapJourneyTitlePlate").IsVisibleInTree(), "map keeps title plate " + city.Name);
-                Check(Find<Label>("SummaryCity").Text == city.Name + "早餐铺", "map card selects city " + city.Name);
-                Check(Find<Button>("EnterCity").GetParent() == mapCard, "map action stays inside card " + city.Name);
-                if (city.Art is null)
-                    Check(Find<TextureRect>("MapGenericPostcard").IsVisibleInTree(), "map uses shared postcard placeholder " + city.Name);
+                if (city.Id == StableIds.Cities.Tianjin)
+                {
+                    Check(_screen.Page == JourneyPage.City && _screen.SelectedCityId == city.Id, "Tianjin node directly opens city page");
+                    Click("Back"); await Frames();
+                }
+                var mapCard = Find<Panel>("MapJourneyStrip");
+                Check(Find<TextureRect>("MapJourneyStripArt").Texture is AtlasTexture, "map uses supplied three-column strip " + city.Name);
+                Check(Find<Label>("MapLitCount").Text == "5/5", "map counts unlocked cities " + city.Name);
+                Check(Find<Label>("SummaryCity").Text == city.Name, "map strip selects city " + city.Name);
+                Check(Find<Button>("EnterCity").Position.X > mapCard.Position.X + mapCard.Size.X, "map action sits beside strip " + city.Name);
                 await Capture("map-card-" + city.Name);
             }
             foreach (var city in JourneyModel.Cities)
@@ -197,27 +207,37 @@ public partial class CityPagesSelfTest : Node
     private async Task ReviewBusinessNote()
     {
         var model = new CityPageModel(GetNode<DataCatalog>("/root/DataCatalog"), _save, YangzhouCatalog.Load());
+        CheckOverviewModel(model);
         foreach (var city in JourneyModel.Cities)
         {
             if (!_save.Data.UnlockedCityIds.Contains(city.Id)) _save.Data.UnlockedCityIds.Add(city.Id);
             var progress = _save.Data.GetCity(city.Id);
-            foreach (string state in new[] { "first", "long-title", "complete" })
+            foreach (string state in new[] { "first", "unlocks", "long-title", "complete" })
             {
-                progress.HighestUnlockedDay = state == "first" ? 1 : state == "complete" ? city.Days :
+                progress.HighestUnlockedDay = state == "first" ? 1 : state == "unlocks" ? 3 : state == "complete" ? city.Days :
                     Enumerable.Range(1, city.Days).OrderByDescending(d => model.DayTitle(city.Id, d).Length).First();
                 progress.Completed = state == "complete";
+                progress.DayBestRecords.Clear();
+                for (int day = 1; day < progress.HighestUnlockedDay; day++) progress.DayBestRecords[day] = new() { TotalRevenue = 100 + day * 10 };
+                if (progress.Completed) progress.DayBestRecords[city.Days] = new() { TotalRevenue = int.MaxValue };
                 _save.Data.Coins = state == "first" ? 0 : int.MaxValue;
                 if (progress.Completed && city.Id == StableIds.Cities.Yangzhou)
                     progress.UnlockedCollectibleIds.Add("collectible:yangzhou_crab_soup_bun");
                 _screen.PresentCity(city.Id); await Frames();
                 var note = Find<Control>("BusinessNote");
                 CheckBookTheme(city.Id);
-                Check(note.Size == new Vector2(430, 400), "note stays within page " + city.Name + state);
+                Check(note.Size == new Vector2(460, 380) && note.GetChildCount() == 5, "five rows stay within note " + city.Name + state);
+                Check(_screen.FindChildren("PageTitle", "Label", true, false).Count == 0
+                    && _screen.FindChildren("CityTitle", "Label", true, false).Count == 0
+                    && _screen.FindChildren("Food0", "Label", true, false).Count == 0, "old heading and food list removed");
+                Check(Find<Label>("PostcardCity").Text == city.Name, "postcard identifies city");
+                Check(Find<Label>("DayTitle").Text == $"第{progress.HighestUnlockedDay}天 {model.DayTitle(city.Id, progress.HighestUnlockedDay)}", "day ribbon matches business destination");
                 foreach (var node in note.FindChildren("*", "Label", true, false))
                 {
                     var label = (Label)node;
                     Check(label.Size.X <= note.Size.X, "label fits note width " + label.Name);
                     Check(label.GetLineCount() <= label.GetVisibleLineCount(), "all lines visible " + label.Name);
+                    Check(label.Position.Y + label.Size.Y <= ((Control)label.GetParent()).Size.Y + 1, "row text fits height " + label.Name);
                 }
                 foreach (var node in Find<Control>("JourneyGoals").FindChildren("*", "Label", true, false))
                 {
@@ -227,9 +247,54 @@ public partial class CityPagesSelfTest : Node
                 Check(Find<Label>("Coins").GetLineCount() == 1, "coin amount fits one row");
                 var button = Find<Button>("OpenBusiness");
                 Check(!button.Disabled && button.HasFocus(), "primary action available and focused");
-                Check(button.Text.StartsWith(progress.Completed ? "再次营业" : "开张"), "primary action reflects completion");
+                Check(button.Text == "继续营业" && button.Position.X + button.Size.X / 2 == StartScreen.BookBounds.GetCenter().X, "primary action centered on book");
+                string before = File.ReadAllText(_path);
+                _screen.RefreshCityPage(); await Frames();
+                Check(File.ReadAllText(_path) == before, "overview refresh leaves save untouched");
                 await Capture(city.Name + "-note-" + state);
             }
+            int requests = 0; string requestedCity = ""; int requestedDay = 0;
+            void ObserveBusiness(string id, int day) { requests++; requestedCity = id; requestedDay = day; }
+            _screen.BusinessRequested += ObserveBusiness;
+            var open = Find<Button>("OpenBusiness");
+            Vector2 point = open.GetGlobalTransformWithCanvas() * (open.Size / 2);
+            GetViewport().PushInput(new InputEventMouseMotion { Position = point, GlobalPosition = point }, true);
+            GetViewport().PushInput(new InputEventMouseButton { Position = point, GlobalPosition = point, ButtonIndex = MouseButton.Left, Pressed = true }, true);
+            GetViewport().PushInput(new InputEventMouseButton { Position = point, GlobalPosition = point, ButtonIndex = MouseButton.Left, Pressed = false }, true);
+            await Frames();
+            Check(requests == 1 && requestedCity == city.Id && requestedDay == city.Days, "central button click starts displayed city/day " + city.Name);
+            open.EmitSignal(BaseButton.SignalName.Pressed);
+            Check(requests == 1, "duplicate business activation ignored " + city.Name);
+            _screen.BusinessRequested -= ObserveBusiness;
+            _main.OpenCity(city.Id);
+        }
+    }
+    private void CheckOverviewModel(CityPageModel model)
+    {
+        var city = _save.Data.GetCity(StableIds.Cities.Tianjin);
+        int highest = city.HighestUnlockedDay;
+        var records = city.DayBestRecords;
+        city.DayBestRecords = new(); city.HighestUnlockedDay = 1;
+        var first = model.Overview(StableIds.Cities.Tianjin, 1);
+        Check(first.CompletedDays == 0 && first.BestDay is null && first.BestRevenue is null, "new city has no invented record");
+        city.HighestUnlockedDay = 5;
+        city.DayBestRecords[2] = new() { TotalRevenue = 453 };
+        city.DayBestRecords[4] = new() { TotalRevenue = 453 };
+        city.DayBestRecords[16] = new() { TotalRevenue = int.MaxValue };
+        var ready = model.Overview(StableIds.Cities.Tianjin, 1);
+        Check(ready.Day == 5 && ready.CompletedDays == 2 && ready.BestDay == 2 && ready.BestRevenue == 453, "valid records counted; income ties use earlier day");
+        Check(ready.LatestUnlocks.Select(u => u.Name).SequenceEqual(new[] { "油条" }), "next open day exposes oil sticks before business starts");
+        city.HighestUnlockedDay = 3;
+        var batch = model.Overview(StableIds.Cities.Tianjin, 1).LatestUnlocks;
+        Check(batch.Count > 1 && batch.Select(u => u.Id).Distinct().Count() == batch.Count && batch.All(u => !u.Id.StartsWith("equipment:")), "same-day food and ingredient batch is distinct and excludes upgrades");
+        city.HighestUnlockedDay = highest; city.DayBestRecords = records;
+        foreach (var destination in JourneyModel.Cities)
+        {
+            var p = _save.Data.GetCity(destination.Id); int old = p.HighestUnlockedDay;
+            p.HighestUnlockedDay = destination.Days;
+            var overview = model.Overview(destination.Id, 1);
+            Check(overview.LatestUnlocks.Count > 0 && overview.TotalDays == destination.Days, "overview uses city content " + destination.Name);
+            p.HighestUnlockedDay = old;
         }
     }
     private void CheckBookTheme(string city)

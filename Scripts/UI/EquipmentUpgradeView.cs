@@ -30,7 +30,7 @@ public partial class EquipmentUpgradeView : Control
             _cards.Add(card);
             foreach (string stateName in new[] { "normal", "hover", "pressed", "disabled" })
                 card.AddThemeStyleboxOverride(stateName, new StyleBoxEmpty());
-            var background = PaintedBackground(card, "设备卡片底板-普通-v1.png");
+            var background = PaintedBackground(card, "设备卡片底板-普通-v2.png", 110, 110);
             _cardArt.Add(background);
             card.MouseEntered += () => background.SelfModulate = new Color(1.03f, 1.03f, 1.03f);
             card.MouseExited += () => background.SelfModulate = Colors.White;
@@ -50,9 +50,10 @@ public partial class EquipmentUpgradeView : Control
             LabelAt(card, "EquipmentLevel", item.Level > 0 ? $"Lv{item.Level}" : "未开放", new(308, 65, 225, 36), 26);
             string state = item.CanBuy ? "可升级" : item.Level >= 3 ? "已满级" : item.Level == 0 ? "未开放"
                 : item.Notice.Contains("金币不足") ? "金币不足" : item.Notice.StartsWith("完成第") ? "待解锁" : item.Notice;
-            var chip = new Panel { Position = new(303, 103), Size = new(240, 52), MouseFilter = MouseFilterEnum.Ignore };
-            chip.AddThemeStyleboxOverride("panel", Box(new(item.CanBuy ? "#FFDA75" : "#EDDFCD"), new("#DCBE96"), 1)); card.AddChild(chip);
-            LabelAt(chip, "EquipmentState", state, new(10, 3, 220, 46), state.Length > 11 ? 16 : 22, item.CanBuy ? Ink : Muted, true);
+            var chip = new Panel { Position = new(303, 103), Size = new(214, 52), MouseFilter = MouseFilterEnum.Ignore };
+            chip.AddThemeStyleboxOverride("panel", item.CanBuy ? new StyleBoxEmpty() : Box(new("#EDDFCD"), new("#C8A681"), 2)); card.AddChild(chip);
+            if (item.CanBuy) Sprite(chip, "UpgradeChipArt", "res://resource/art/Global/BookUI/可升级提示贴片.png", new(0, 0, 214, 52), true);
+            LabelAt(chip, "EquipmentState", state, new(10, 3, item.CanBuy ? 148 : 194, 46), state.Length > 11 ? 16 : 22, item.CanBuy ? Ink : Muted, true);
             card.Pressed += () => { if (!_submitted && card.IsVisibleInTree()) Select(item.Id, true); };
         }
         _detail = new Control { Name = "EquipmentDetail", Position = new(700, 0), Size = new(560, 620), MouseFilter = MouseFilterEnum.Ignore };
@@ -68,25 +69,27 @@ public partial class EquipmentUpgradeView : Control
         for (int i = 0; i < _cards.Count; i++)
         {
             bool active = _items[i].Id == id;
-            _cardArt[i].Texture = GD.Load<Texture2D>(ArtRoot + (active ? "设备卡片底板-选中-v1.png" : "设备卡片底板-普通-v1.png"));
+            _cardArt[i].Texture = GD.Load<Texture2D>(ArtRoot + (active ? "设备卡片底板-选中-v2.png" : "设备卡片底板-普通-v2.png"));
             if (active && focus) _cards[i].GrabFocus();
         }
         var e = _items.Single(i => i.Id == id);
         LabelAt(_detail, "SelectedEquipmentName", e.Name, new(0, 0, 560, 60), 42);
         LabelAt(_detail, "LevelTransition", e.TargetLevel is int next ? $"Lv{e.Level}  →  Lv{next}" : e.Level == 0 ? "设备尚未开放" : $"Lv{e.Level} · {(e.Level >= 3 || e.Notice == "已升至最高等级" ? "已满级" : "固定设备")}", new(0, 62, 560, 44), 27, Muted);
+        Sprite(_detail, "EquipmentDoodle", ArtRoot + "设备涂鸦背景-v1.png", new(0, 138, 274, 292));
         if (e.Art is not null) Picture(_detail, e.Art, new(0, 140, 270, 280));
         else LabelAt(_detail, "EquipmentWordmark", e.Name, new(0, 170, 266, 260), 40, Muted, true);
-        var scroll = new ScrollContainer { Name = "UpgradeScroll", Position = new(282, 90), Size = new(278, 360), HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
+        var scroll = new ScrollContainer { Name = "UpgradeScroll", Position = new(282, 90), Size = new(278, 350), HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
         _detail.AddChild(scroll);
         var rows = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; rows.AddThemeConstantOverride("separation", 14); scroll.AddChild(rows);
         EffectPanel(rows, e.Level == 0 ? "开放后 Lv1" : $"当前等级  Lv{e.Level}", e, false);
         if (e.TargetLevel is int target) EffectPanel(rows, $"升级后  Lv{target}", e, true);
-        LabelAt(_detail, "UpgradePrice", e.TargetLevel is not null ? $"{e.Price} 金币" : e.Level >= 3 ? "当前可用的最好设备" : e.Notice, new(0, 460, 560, 48), 26, Ink, true);
-        var buy = MakeButton(_detail, "UpgradeEquipment", "升级设备", new(45, 510, 470, 68));
+        MoneyPlate(_detail, "UpgradePriceFrame", "UpgradePrice", e.TargetLevel is not null ? $"{e.Price} 金币" : e.Level >= 3 ? "当前可用的最好设备" : e.Notice,
+            new(30, 449, 500, 62), false, e.TargetLevel is not null);
+        var buy = MakeButton(_detail, "UpgradeEquipment", "升级设备", new(45, 519, 470, 72));
         buy.Disabled = !e.CanBuy; buy.AddThemeFontSizeOverride("font_size", 34);
-        buy.AddThemeStyleboxOverride("normal", Box(new("#FFD36B"), new("#9A602B"), 3));
+        SkinPurchaseButton(buy);
         buy.Pressed += () => { if (_submitted || buy.Disabled || !buy.IsVisibleInTree()) return; _submitted = true; buy.Disabled = true; _purchase(e); };
-        LabelAt(_detail, "UpgradeNotice", e.CanBuy ? "升级后，下次营业生效" : e.Notice, new(0, 584, 560, 29), 20, Muted, true);
+        LabelAt(_detail, "UpgradeNotice", e.CanBuy ? "升级后，下次营业生效" : e.Notice, new(0, 591, 560, 29), 20, Muted, true);
     }
 
     private static void EffectPanel(VBoxContainer rows, string title, CityEquipmentView equipment, bool next)
@@ -107,14 +110,15 @@ public partial class EquipmentUpgradeView : Control
         }
     }
 
-    private static NinePatchRect PaintedBackground(Control parent, string filename, int top = 32)
+    private static NinePatchRect PaintedBackground(Control parent, string filename, int top = 32, int edge = 32)
     {
         // A wrapper keeps Container layout from resetting the 2x sprite's half scale.
         var wrapper = new Control { Name = "PaintedBackground", MouseFilter = MouseFilterEnum.Ignore };
         parent.AddChild(wrapper); wrapper.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         var art = new NinePatchRect { Name = "Backing", Texture = GD.Load<Texture2D>(ArtRoot + filename),
+            TextureFilter = TextureFilterEnum.Linear,
             Scale = Vector2.One * .5f, MouseFilter = MouseFilterEnum.Ignore,
-            PatchMarginLeft = 32, PatchMarginTop = top, PatchMarginRight = 32, PatchMarginBottom = 32 };
+            PatchMarginLeft = edge, PatchMarginTop = top, PatchMarginRight = edge, PatchMarginBottom = edge };
         wrapper.AddChild(art);
         void Fit() => art.Size = wrapper.Size * 2;
         wrapper.Resized += Fit; Fit();

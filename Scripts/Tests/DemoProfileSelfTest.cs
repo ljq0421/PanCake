@@ -20,10 +20,10 @@ public partial class DemoProfileSelfTest : Node
             var catalog = GetNode<DataCatalog>("/root/DataCatalog");
             Check(ExperienceProfile.IsDemo && catalog.IsValid && catalog.Demo is not null, "Demo profile loads before autoload saves");
             var content = catalog.Demo!;
-            Check(catalog.DaysByNumber.Count == 3 && !catalog.TryGetDay(StableIds.Cities.Wuhan, 1, out _)
-                && !catalog.TryGetDay(4, out _), "pilot exposes exactly the configured three stages");
+            Check(catalog.DaysByNumber.Count == content.CityStages(StableIds.Cities.Tianjin).Length
+                && !catalog.TryGetDay(StableIds.Cities.Xian, 1, out _), "Demo exposes configured city boundaries");
             int[] totals = { 28, 46, 65 };
-            foreach (var stage in content.Stages)
+            foreach (var stage in content.Stages.Take(3))
             {
                 var plan = stage.Plan(catalog.RecipesById, catalog.CustomersById["normal"]);
                 var replay = stage.Plan(catalog.RecipesById, catalog.CustomersById["normal"]);
@@ -43,9 +43,9 @@ public partial class DemoProfileSelfTest : Node
             DayResult Result(int day, int revenue, int completed) => new() { Day = day, SaleRevenue = revenue, CompletedCustomers = completed };
             save.CommitDay(Result(1, 0, 0), Plan(first), first.Config(catalog.RecipesById));
             Check(save.Data.Tianjin.HighestUnlockedDay == 1 && save.Data.Coins == 0 && save.CanEnter(StableIds.Cities.Tianjin, 1), "zero completed orders permit free retry but do not advance");
-            foreach (var stage in content.Stages)
+            foreach (var stage in content.Stages.Take(3))
             {
-                var plan = Plan(stage); var result = Result(stage.Day, totals[stage.Day - 1], stage.Recipes.Length);
+                var plan = Plan(stage); var result = Result(stage.Day, totals[stage.Day - 1], stage.ExplicitOrders.Length);
                 save.CommitDay(result, plan, stage.Config(catalog.RecipesById));
                 Check(save.CommitDay(result, plan, stage.Config(catalog.RecipesById)).PermanentCoinGain == 0, "duplicate successful submission is idempotent");
             }
@@ -59,12 +59,12 @@ public partial class DemoProfileSelfTest : Node
             save.CommitDay(Result(3, 70, 8), Plan(third), third.Config(catalog.RecipesById));
             Check(save.Data.Coins == 24, "new best replay pays only the difference");
             save.CommitDay(Result(3, 0, 0), Plan(third), third.Config(catalog.RecipesById));
-            Check(save.Data.Tianjin.HighestUnlockedDay == 3 && save.Data.Coins == 24, "zero-order replay never regresses progress or charges admission");
+            Check(save.Data.Tianjin.HighestUnlockedDay == Math.Min(4, content.CityStages(StableIds.Cities.Tianjin).Length) && save.Data.Coins == 24, "zero-order replay never regresses progress or charges admission");
             Check(save.TryRecordDemoStart(2, out _), "records the actual last-started main stage");
             save.Load();
             Check(save.ContinueDay == 2 && save.Data.PurchasedStoveLevel == 2 && save.Data.Coins == 24, "restart restores actual stage, equipment and money");
             Check(!save.CanEnter(StableIds.Cities.Xian, 1) && !save.CanEnter(StableIds.Cities.Wuhan, 1)
-                && !save.CanEnter(StableIds.Cities.Tianjin, 4), "save guards all unshipped stage and city entries");
+                && !save.CanEnter(StableIds.Cities.Tianjin, 8), "save guards all unshipped stage and city entries");
             string temporary = path + ".tmp";
             Directory.CreateDirectory(temporary);
             var retryPlan = Plan(third);
@@ -80,14 +80,17 @@ public partial class DemoProfileSelfTest : Node
             Check(File.ReadAllText(formal) == "formal-progress-sentinel", "formal progress stays byte-for-byte unchanged");
             string json = Godot.FileAccess.GetFileAsString(ExperienceProfile.ManifestPath);
             bool rejected = false;
-            try { DemoCatalog.Parse(json.Replace("[0, 16, 34, 52]", "[0, 16, 16, 52]"), catalog.RecipesById); }
+            try { var invalid = System.Text.Json.Nodes.JsonNode.Parse(json)!; invalid["stages"]![0]!["arrivals"]![2] = 16; DemoCatalog.Parse(invalid.ToJsonString(), catalog.RecipesById, catalog.ProductsById, catalog.CustomersById); }
             catch (InvalidDataException) { rejected = true; }
             Check(rejected, "invalid arrival schedule fails validation");
             using var lowIncome = new SaveService(); lowIncome.UseDemoPathForTests(Path.Combine(directory, "low-income.json"), content); lowIncome.ResetProgress(out _);
             lowIncome.CommitDay(Result(1, 0, 1), Plan(first), first.Config(catalog.RecipesById));
             Check(lowIncome.ContinueDay == 2 && lowIncome.Data.Coins == 0, "one completed order unlocks and continues to next stage even with zero income");
+            foreach (var s in content.Stages.Skip(1))
+                lowIncome.CommitDay(Result(s.Day, 0, 1), s.Plan(catalog), s.Config(catalog.RecipesById, catalog.ProductsById));
+            Check(lowIncome.Data.Coins == 0 && lowIncome.Data.Wuhan.Completed, "entire route advances with zero income and no upgrade purchase");
             using var stationFirst = new SaveService(); stationFirst.UseDemoPathForTests(Path.Combine(directory, "station-first.json"), content); stationFirst.ResetProgress(out _);
-            foreach (var stage in content.Stages) stationFirst.CommitDay(Result(stage.Day, totals[stage.Day - 1], 1), Plan(stage), stage.Config(catalog.RecipesById));
+            foreach (var stage in content.Stages.Take(3)) stationFirst.CommitDay(Result(stage.Day, totals[stage.Day - 1], 1), Plan(stage), stage.Config(catalog.RecipesById));
             Check(stationFirst.TryPurchase("equipment:ingredient_station_lv2", catalog, out _) && stationFirst.Data.Coins == 79
                 && stationFirst.CanEnter(StableIds.Cities.Tianjin, 3), "buying the ingredient station first remains playable at the unchanged price");
             GD.Print($"DEMO_PROFILE_SELF_TEST_OK {_checks}"); GetTree().Quit();

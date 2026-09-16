@@ -38,7 +38,7 @@ public partial class StartScreen
         var label = new Label { Name = name, Text = text, Position = rect.Position, Size = rect.Size,
             VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = centered ? HorizontalAlignment.Center : HorizontalAlignment.Left,
             AutowrapMode = TextServer.AutowrapMode.WordSmart, MouseFilter = MouseFilterEnum.Ignore };
-        label.AddThemeFontSizeOverride("font_size", fontSize); parent.AddChild(label); return label;
+        label.AddThemeFontSizeOverride("font_size", fontSize); parent.AddChild(label); label.Size = rect.Size; return label;
     }
     private Button Button(Control parent, string name, string caption, Rect2 rect, Action action, bool primary = false, bool bare = false)
     {

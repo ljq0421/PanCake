@@ -27,6 +27,14 @@ public partial class DayController : Node
     public event Action<DayState>? StateChanged;
     public event Action<DayResult>? DayFinished;
     public event Action<DeliveryEvaluation>? DeliveryCompleted;
+    public event Action<DeliveryReceipt>? ItemDelivered;
+    private bool _demoRun;
+    private void PublishItem(DeliveredItem item, bool matched)
+    {
+        var receipt = new DeliveryReceipt(CurrentPlan!.RunId, CurrentPlan.StageId, item, matched, true, TutorialActive);
+        if (_demoRun) DemoBreakfastCollection.Observe(receipt, CurrentPlan);
+        ItemDelivered?.Invoke(receipt);
+    }
     public BusinessFeedback Feedback { get; } = new();
     public TutorialProtection Tutorial { get; private set; } = TutorialProtection.None;
     // An isolated example has no business result; heat assistance alone remains a normal shift.
@@ -82,13 +90,16 @@ public partial class DayController : Node
         }
 
         DetachFeedbackQueue();
+        _paused = false; _pauseReasons.Clear();
         Tutorial = tutorial ?? config.Tutorial;
         Feedback.Reset();
-        CurrentConfig = config;
+        CurrentConfig = config; _demoRun = catalog.Demo is not null;
         CurrentPlan = catalog.Demo is { } demo
-            ? demo.Stage(dayNumber)!.Plan(catalog.RecipesById, catalog.CustomersById["normal"])
+            ? demo.Stage(cityId, dayNumber)!.Plan(catalog)
             : new OrderGenerator().Generate(config, catalog.RecipesById, catalog.ProductsById, catalog.CustomersById);
-        if (Tutorial.FreezeBusinessClocks && CurrentPlan.Customers.FirstOrDefault() is { } example)
+        if (Tutorial.FreezeBusinessClocks && (catalog.Demo?.Stage(cityId, dayNumber)?.Tutorial == "toppings"
+            ? CurrentPlan.Customers.FirstOrDefault(c => c.Order.PancakeRecipeId.Contains("crispy"))
+            : CurrentPlan.Customers.FirstOrDefault()) is { } example)
             CurrentPlan = new DayPlan
             {
                 Day = CurrentPlan.Day, RandomSeed = CurrentPlan.RandomSeed,
@@ -300,7 +311,7 @@ public partial class DayController : Node
         int count = GetWuhanDoupiDeliveryQuantity(customerId, inventory);
         if (count == 0 || FindDeliveryCustomer(customerId) is not CustomerRuntime customer) return Rejected("没有可交付的豆皮或顾客已不再需要。");
         DeliveryEvaluation result = Rejected("豆皮交付未生效。");
-        // Synchronous FIFO commits preserve each piece's quality. No callbacks until the batch ends.
+        // Synchronous FIFO commits preserve each piece's quality. Only the read-only item receipts publish per piece; the order callback waits for the batch.
         for (int i = 0; i < count; i++)
         {
             if (!inventory.TryPeek(out var quality)) break;
@@ -419,6 +430,7 @@ public partial class DayController : Node
         if (!acceptance.OrderComplete)
         {
             var incomplete = new DeliveryEvaluation(DeliveryGrade.Incomplete, 0, 0, 0, acceptance.Message, true);
+            PublishItem(item, matchesRequestedItem);
             if (notify) DeliveryCompleted?.Invoke(incomplete);
             return incomplete;
         }
@@ -435,6 +447,7 @@ public partial class DayController : Node
         if (!Tutorial.SuppressRevenue && CurrentConfig?.CityId is StableIds.Cities.Tianjin or StableIds.Cities.Wuhan or StableIds.Cities.Guangzhou)
             Feedback.Credit(evaluation.TotalRevenue, customer.Id);
         RecordOutcome(customer, evaluation);
+        PublishItem(item, matchesRequestedItem);
         if (notify) DeliveryCompleted?.Invoke(evaluation);
         return evaluation;
     }

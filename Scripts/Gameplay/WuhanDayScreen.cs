@@ -39,7 +39,7 @@ public partial class WuhanDayScreen : Control
     internal WuhanIngredientInventory Ingredients => _ingredients;
     private PanelContainer _results = null!; private ColorRect _blocker = null!; private RichTextLabel _resultText = null!; private Label _unlock = null!;
     private ConfirmationDialog _abandon = null!; private bool _committed; private bool _focused = true; private double _feedbackSeconds;
-    private bool CanInteract => _focused && IsVisibleInTree() && !_committed && !_abandon.Visible
+    private bool CanInteract => _focused && IsVisibleInTree() && !_committed && !_demoLessonComplete && !_abandon.Visible
         && _controller is not null && !_controller.IsPaused && _controller.State is DayState.Running or DayState.Closing;
 
     public override void _Ready()
@@ -151,6 +151,7 @@ public partial class WuhanDayScreen : Control
     }
     public bool Initialize(DataCatalog catalog, SaveService save, DayController controller, int day)
     {
+        _demoLesson?.Hide(); _demoLessonComplete = false; _demoPendingResult = null;
         TeachingFocus.ResetSession(); _teachingDoupiLast = false;
         _hudPaused = false; _hudPauseMenu.Hide(); controller.SetPauseReason("wuhan-hud", false); _sceneFeedback.Clear();
         BusinessFeedbackAudio.Attach(this, controller.Feedback, () => controller.CurrentConfig?.CityId == StableIds.Cities.Wuhan && (CanInteract));
@@ -165,14 +166,16 @@ public partial class WuhanDayScreen : Control
         _doupi=_doupiLevel>0?new DoupiStateMachine(catalog.DoupiGriddlesByLevel[_doupiLevel]):null; _eggUnlocked=false;
         GetNode<TextureRect>("WorkbenchBackground").Texture = _art.WorkbenchBackground(_doupi is not null);
         _basketLabels[1].Visible=false;
+        Workstation.AllowedIngredients = save.IsDemo ? controller.CurrentConfig!.AvailableRecipeIds.SelectMany(id => catalog.RecipesById[id].ExtraIngredients).Append(StableIds.Ingredients.WuhanBaseSeasoning).ToHashSet() : null;
         Workstation.Bind(_art,_cooker,_bowl,_doupi,_doupiStock,_eggUnlocked,_ingredients,_cookerLevel,_doupiLevel);
         Render();
         return true;
     }
-    public void BeginDay() { if (!_controller.TryStartDay(out string error)) Feedback(error,true); else Feedback("铺门打开，准备迎接第一位客人。",false); }
+    public void BeginDay() { if (BeginWuhanDemoLesson()) return; if (!_controller.TryStartDay(out string error)) Feedback(error,true); else Feedback("铺门打开，准备迎接第一位客人。",false); }
 
     public override void _Process(double delta)
     {
+        if (_demoLessonAction is not null) _demoLessonAction.Disabled = !_focused || _controller.IsPaused || _abandon.Visible;
         UpdatePendantState();
         Workstation.SetCookingAudioPaused(!CanInteract);
         if (!CanInteract) Workstation.CancelInput();
@@ -244,7 +247,7 @@ public partial class WuhanDayScreen : Control
     }
     internal void IngredientAction(string id)
     {
-        if(!CanInteract||Workstation.Busy("bowl")||!_ingredients.IsUnlimited(id))return;
+        if(!CanInteract||Workstation.Busy("bowl")||!_ingredients.IsUnlimited(id)||Workstation.AllowedIngredients is { } allowed && !allowed.Contains(id))return;
         bool ok=id==StableIds.Ingredients.WuhanBaseSeasoning?_bowl.TryAddBaseSeasoning():_bowl.TryAddTopping(id);
         if(ok){LearnTeachingAction("take:" + id);_ingredients.TryConsume(id);Workstation.PlayIngredient(id);}
         else
@@ -292,6 +295,7 @@ public partial class WuhanDayScreen : Control
             LearnTeachingAction(kind == ProductKind.Doupi ? "deliver:doupi" : "deliver:hot_dry_noodles");
         int feedbackSlot = Array.IndexOf(_deliveryCustomerIds, customerId);
         if (feedbackSlot >= 0) _sceneFeedback.Delivery(result, _orders[feedbackSlot]);
+        DemoLessonDelivered(result);
         Render();
         return result.ItemAccepted || result.CompletesOrder;
     }
@@ -415,9 +419,10 @@ public partial class WuhanDayScreen : Control
     }
     private void OnFinished(DayResult result)
     {
-        if (_committed || _controller.CurrentConfig?.CityId != StableIds.Cities.Wuhan) return;
+        if (_committed || _controller.TutorialActive || _controller.CurrentConfig?.CityId != StableIds.Cities.Wuhan) return;
         _committed = true; CloseBusinessDetails(); _paymentFeedback.Clear(); Workstation.CancelAnimations();
         var model = BusinessBookModel.From(StableIds.Cities.Wuhan, result, _controller.BusinessRecords, _catalog);
+        if (_save.IsDemo) { _demoPendingResult = model; RetryWuhanDemoSettlement(); return; }
         BusinessBookSettlement.Commit(model, _save, _controller.CurrentPlan!, _controller.CurrentConfig!, _catalog, allowFailedReturn: true);
         _blocker.Hide(); _results.Hide(); BusinessDetails.Open(model);
     }

@@ -29,6 +29,8 @@ public partial class GameTranslation : Translation
             }
             else _english._messages[key] = value;
         }
+        // Specific phrases must win over broad templates such as "完成 {0}" or "{0}：{1}".
+        _english._templates.Sort((a, b) => b.Pattern.ToString().Length.CompareTo(a.Pattern.ToString().Length));
         // Source strings are Chinese, including dynamically formatted messages. Without
         // an identity translation, Godot falls back to English even under zh_CN.
         _chinese = new GameTranslation { Locale = "zh_CN", _useSourceText = true };
@@ -42,17 +44,7 @@ public partial class GameTranslation : Translation
     private string TranslateText(string source)
     {
         if (_messages.TryGetValue(source, out string? value)) return value;
-        foreach (var (pattern, target) in _templates)
-        {
-            var match = pattern.Match(source);
-            if (!match.Success) continue;
-            return Regex.Replace(target, @"\{([0-7])\}", placeholder =>
-            {
-                string argument = match.Groups["arg" + placeholder.Groups[1].Value].Value;
-                string translated = TranslateText(argument);
-                return translated.Length > 0 ? translated : argument;
-            });
-        }
+        // Translate each line before broad templates; a generic colon must not swallow the entire help panel.
         if (source.Contains('\n'))
         {
             var lines = source.Split('\n'); bool changed = false;
@@ -63,6 +55,17 @@ public partial class GameTranslation : Translation
                 lines[i] = translated; changed = true;
             }
             if (changed) return string.Join('\n', lines);
+        }
+        foreach (var (pattern, target) in _templates)
+        {
+            var match = pattern.Match(source);
+            if (!match.Success) continue;
+            return Regex.Replace(target, @"\{([0-7])\}", placeholder =>
+            {
+                string argument = match.Groups["arg" + placeholder.Groups[1].Value].Value;
+                string translated = TranslateText(argument);
+                return translated.Length > 0 ? translated : argument;
+            });
         }
         return string.Empty;
     }

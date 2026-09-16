@@ -67,19 +67,19 @@ public partial class StartScreen
         var next = JourneyModel.Next(_completedCity!);
         if (next is null)
         {
-            if (_save is not null && JourneyModel.Cities.All(c => JourneyModel.Progress(_save, c.Id).Completed))
-                Art(_body, "中国阶段完成纪念章", new(480, 365, 360, 360));
+            // DrawMap already places the final travel stamp inside the map.
             return;
         }
         int index = Array.FindIndex(JourneyModel.Cities, c => c.Id == next.Id);
         Vector2 at = MapPoints[index];
         var glow = Art(_body, "城市解锁轻光效", new(at + new Vector2(-10, -45), new Vector2(170, 160)));
+        glow.Name = "MapUnlockGlow";
         glow.PivotOffset = glow.Size / 2; glow.Scale = Vector2.One * .75f;
         var tween = CreateTween().SetParallel(); _tweens.Add(tween);
         tween.TweenProperty(glow, "scale", Vector2.One * 1.12f, 1.5);
         tween.TweenProperty(glow, "modulate:a", 0f, 1.2).SetDelay(.4);
         Frames(_body, "城市节点点亮星闪", new(at + new Vector2(85, -25), new Vector2(95, 95)), .4, false);
-        Art(_body, "城市解锁小飘带", new(730, 140, 460, 95));
-        Text(_body, "UnlockCaption", next.Name + "已开放", new(805, 165, 310, 44), 25, true);
+        Art(_body, "城市解锁小飘带", new(730, 850, 460, 95));
+        Text(_body, "UnlockCaption", next.Name + "已开放", new(805, 875, 310, 44), 25, true);
     }
 }

@@ -125,6 +125,7 @@ public partial class TianjinDayScreen : Control
         VisibilityChanged += () =>
         {
             if (!IsVisibleInTree()) { CloseBusinessDetails(); ClearCoinFlights(); _collectionFeedback.Clear(); }
+            ApplyPauseState();
         };
         this.FindButton("暂停").Pressed += () => SetManualPaused(true);
         this.FindButton("继续营业").Pressed += () => SetManualPaused(false);
@@ -382,7 +383,7 @@ public partial class TianjinDayScreen : Control
     private void ApplyPauseState()
     {
         bool paused = _manualPaused || _focusPaused || _detailsPaused;
-        if (_controller is not null) _controller.IsPaused = paused;
+        if (_controller is not null) _controller.SetPauseReason("tianjin-ui", paused && IsVisibleInTree());
         if (_workstation is not null) _workstation.Paused = paused;
         if (paused) { ClearCoinFlights(); _sceneFeedback?.Clear(); _workstation?.CancelInput(); }
         _paymentFeedback.SetPaused(paused);

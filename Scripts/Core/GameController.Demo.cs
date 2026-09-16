@@ -16,14 +16,25 @@ public partial class GameController
         var screen = GetNode<TianjinDayScreen>(TianjinDayPath);
         _cityHubs[StableIds.Cities.Tianjin] = GetNode<MorningHub>(HubPath);
         screen.ConnectController(controller);
-        screen.HubRequested += () => { ShowOnly(_startScreen); _startScreen.PresentCity(StableIds.Cities.Tianjin); };
+        var wuhan = GetNode<WuhanDayScreen>(WuhanDayPath);
+        _cityHubs[StableIds.Cities.Wuhan] = GetNode<WuhanHub>(WuhanHubPath);
+        wuhan.ConnectController(controller);
+        void ReturnFromBusiness(string city)
+        {
+            ShowOnly(_startScreen);
+            if (_save.TakeJourneyCompletion() is { } completed) _startScreen.PresentCompletion(completed, () => _startScreen.PresentCity(city));
+            else _startScreen.PresentCity(city);
+        }
+        screen.HubRequested += () => ReturnFromBusiness(StableIds.Cities.Tianjin);
+        wuhan.HubRequested += () => ReturnFromBusiness(StableIds.Cities.Wuhan);
         _startScreen.Initialize(_save);
         _startScreen.ConfigureCities(catalog, null);
         _startScreen.BusinessRequested += (city, day) => StartCityBusiness(city, day);
         _startScreen.DemoTutorialRequested += () =>
         {
-            screen.ForceDemoTutorial = true;
-            StartCityBusiness(StableIds.Cities.Tianjin, Math.Max(1, _startScreen.SelectedDay));
+            if (_startScreen.SelectedCityId == StableIds.Cities.Wuhan) wuhan.ForceDemoTutorial = true;
+            else screen.ForceDemoTutorial = true;
+            StartCityBusiness(_startScreen.SelectedCityId, Math.Max(1, _startScreen.SelectedDay));
         };
         _startScreen.UpgradeRequested += (city, id) =>
         {
@@ -38,10 +49,19 @@ public partial class GameController
         };
         _startScreen.ContinueRequested += () =>
         {
-            if (_save.CanContinue && catalog.IsValid) _startScreen.PresentCity(StableIds.Cities.Tianjin);
+            if (_save.CanContinue && catalog.IsValid) _startScreen.PresentCity(_save.ContinueCityId);
             else _startScreen.ShowError("试玩存档或配置无法读取，请检查后重试。");
         };
         _startScreen.QuitRequested += () => GetTree().Quit();
+        var music = new DemoMusicPlayer { Name = "DemoMusic" }; AddChild(music);
+        music.Bind(() =>
+        {
+            bool business = screen.IsVisibleInTree() || wuhan.IsVisibleInTree();
+            string key = business ? controller.CurrentConfig?.CityId ?? "home"
+                : _startScreen.Page is JourneyPage.City or JourneyPage.Ledger or JourneyPage.Upgrades or JourneyPage.Collection
+                    ? _startScreen.SelectedCityId : "home";
+            return (key, business ? controller.IsPaused : _startScreen.ModalOpen);
+        });
         ShowOnly(_startScreen); _startScreen.Present();
         if (!catalog.IsValid) _startScreen.ShowError("试玩配置无法读取，请重新安装后重试。");
     }

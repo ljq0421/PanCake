@@ -19,10 +19,13 @@ public partial class StartScreen
         => _cityModel = new(catalog, _save!, yangzhou);
     public void PresentCity(string cityId, Action? returnToSource = null)
     {
-        if (_save?.IsDemo == true && cityId != StableIds.Cities.Tianjin) return;
+        if (_save?.IsDemo == true && (_save.ChapterLength(cityId) == 0 || !_save.Data.UnlockedCityIds.Contains(cityId))) return;
         _city = cityId; _cityReturn = returnToSource ?? RenderHome;
-        SelectedDay = Math.Clamp(_save!.IsDemo ? _save.ContinueDay : JourneyModel.Progress(_save!, cityId).HighestUnlockedDay, 1, _save.ChapterLength(cityId));
+        SelectedDay = Math.Clamp(_save!.IsDemo && cityId == _save.ContinueCityId ? _save.ContinueDay : JourneyModel.Progress(_save!, cityId).HighestUnlockedDay, 1, _save.ChapterLength(cityId));
+        string saveError = "";
+        if (_save.IsDemo) _save.TryRecordDemoStart(cityId, SelectedDay, out saveError);
         Show(); RenderCity();
+        if (saveError.Length > 0) ShowError(saveError);
     }
     public void PresentLedger() { SelectedDay = Math.Clamp(JourneyModel.Progress(_save!, _city).HighestUnlockedDay, 1, _save!.ChapterLength(_city)); RenderLedgerPage(); }
     public void PresentUpgrades() => RenderUpgradePage();
@@ -51,7 +54,7 @@ public partial class StartScreen
     }
     private void CityFrame(JourneyPage page, string title)
     {
-        Begin(page); Chrome(page == JourneyPage.City ? () => (_cityReturn ?? RenderHome)() : RenderCity, title);
+        Begin(page); Chrome(page == JourneyPage.City ? () => (_cityReturn ?? RenderHome)() : RenderCity, page == JourneyPage.City ? null : title);
         if (page == JourneyPage.Ledger)
         {
             HomeArt(_body, "旅行手账双页母版-经营手账", BookBounds).Name = "SharedBook";
@@ -90,57 +93,59 @@ public partial class StartScreen
     {
         var city = JourneyModel.City(_city); var p = JourneyModel.Progress(_save!, _city);
         int day = Math.Clamp(_save!.IsDemo ? SelectedDay : p.HighestUnlockedDay, 1, _save!.ChapterLength(_city));
+        var overview = _cityModel?.Overview(_city, day);
+        day = overview?.Day ?? day;
         CityFrame(JourneyPage.City, city.Name + "早餐铺");
-        Text(_body, "CityTitle", city.Name, new(325, 235, 500, 90), 58);
-        Text(_body, "PostcardLabel", "城市明信片", new(325, 322, 500, 48), 27);
-        CityPicture(_body, city, new(315, 365, 560, 300));
+        DrawContinuePostcard(city);
+        HomeArt(_body, "Dayx背景", new(320, 695, 595, 145)).Name = "DayRibbon";
+        var dayCaption = Text(_body, "DayTitle", $"第{day}天 {overview?.Title ?? ""}", new(383, 722, 443, 74), 32, true);
+        FitTextWidth(dayCaption, 32, 22);
         if (_save!.IsDemo)
-            Button(_body, "ReplayTutorial", "重看首份教学", new(350, 885, 470, 65), () => DemoTutorialRequested?.Invoke());
-        Foods(_body, city, new(350, 665), 177, .75f);
+        {
+            var replay = Button(_body, "ReplayTutorial", "重看首份教学", new(350, 838, 315, 36), () => DemoTutorialRequested?.Invoke(), bare: true);
+            replay.AddThemeFontSizeOverride("font_size", 22);
+            replay.Size = new(315, 36);
+        }
+        if (_save!.IsDemo && _save.Data.Wuhan.Completed)
+        {
+            var keepsake = Button(_body, "ReviewDemoEnding", "重看旅行纪念", new(1100, 276, 350, 40), RenderDemoEnding, bare: true);
+            keepsake.AddThemeFontSizeOverride("font_size", 24);
+            keepsake.Size = new(350, 40);
+        }
         // The master already contains the paper. Follow its printed rules, including their slope.
-        var note = new Control { Name = "BusinessNote", Position = new(1030, 340), Size = new(430, 400),
+        var note = new Control { Name = "BusinessNote", Position = new(1018, 350), Size = new(460, 380),
             RotationDegrees = -3.4f, MouseFilter = MouseFilterEnum.Ignore };
         _body.AddChild(note);
-        Text(note, "Ready", "准备开张", new(5, -19, 300, 30), 21, true);
-        Text(note, "DayTitle", $"第 {day} 天", new(5, 7, 300, 65), 42, true);
-        var themeLabel = Text(note, "DayTheme", _cityModel?.DayTitle(_city, day) ?? "", new(0, 96, 430, 54), 28, true);
-        FitTextWidth(themeLabel, 28, 22);
-        SummaryRow(note, "Coins", "当前金币", _save!.Data.Coins + " 金币", 171);
-        SummaryRow(note, "Progress", "营业日开放", $"{p.HighestUnlockedDay} / {_save!.ChapterLength(_city)} 天", 247);
-        SummaryRow(note, "ChapterState", _save.IsDemo ? "试玩进度" : "章节状态", (_save.IsDemo ? _save.DemoProgress.CompletedStages.Count == _save.ChapterLength(_city) : p.Completed) ? "已完成" : "尚未完成", 323);
+        ContinueSummaryRow(note, "Coins", "当前金币", (overview?.Coins ?? _save.Data.Coins).ToString(), 0);
+        var unlockRow = ContinueSummaryRow(note, "LatestUnlock", "最新解锁", "", 76);
+        DrawLatestUnlocks(unlockRow, overview?.LatestUnlocks ?? Array.Empty<CityUnlockView>());
+        ContinueSummaryRow(note, "Goal", "下一目标", overview?.Goal ?? JourneyModel.Goal(_save, city), 152, true);
+        ContinueSummaryRow(note, "Progress", "城市进度", $"已完成 {overview?.CompletedDays ?? 0} / {overview?.TotalDays ?? _save.ChapterLength(_city)} 天", 228);
+        ContinueSummaryRow(note, "BestRecord", "历史最佳", overview?.BestRevenue is { } best ? $"{best} 金币(第{overview.BestDay}天)" : "暂无记录", 304);
         var goals = new Control { Name = "JourneyGoals", Position = new(1015, 755), Size = new(425, 90), MouseFilter = MouseFilterEnum.Ignore };
         _body.AddChild(goals);
-        var heading = Text(goals, "GoalHeading", "下一目标", new(0, 0, 80, 28), 19);
-        heading.AddThemeColorOverride("font_color", StartScreenTheme.Muted);
-        var goal = Text(goals, "Goal", JourneyModel.Goal(_save, city), new(90, 0, 335, 48), 19);
-        goal.VerticalAlignment = VerticalAlignment.Top;
-        goal.AddThemeConstantOverride("line_spacing", -4);
-        if (p.Completed) HomeArt(_body, JourneyModel.Stamp(city), new(795, 248, 110, 110));
+        if (p.Completed) HomeArt(_body, JourneyModel.Stamp(city), new(788, 230, 92, 92)).Name = "CompletionStamp";
         if (_city == StableIds.Cities.Yangzhou)
         {
-            var collection = Text(goals, "Collection", p.UnlockedCollectibleIds.Contains("collectible:yangzhou_crab_soup_bun") ? "已收藏：蟹黄汤包图鉴 · 三星城市徽章" : "三星收藏：蟹黄汤包图鉴\n最终日18组 / 满意度90% / Perfect干丝10份", new(0, 51, 425, 34), 16);
+            var collection = Text(goals, "Collection", p.UnlockedCollectibleIds.Contains("collectible:yangzhou_crab_soup_bun") ? "已收藏：蟹黄汤包图鉴 · 三星城市徽章" : "三星收藏：蟹黄汤包图鉴\n最终日18组 / 满意度90% / Perfect干丝10份", new(0, 0, 425, 58), 18);
             collection.AddThemeConstantOverride("line_spacing", -6);
             collection.AddThemeColorOverride("font_color", StartScreenTheme.Muted);
         }
-        Button(_body, "OpenBusiness", $"{(p.Completed ? "再次营业" : "开张")} · 第 {day} 天", new(1035, 873, 510, 76), () => RequestBusiness(day), true).Disabled = !CanOpenDay(day);
+        var open = Button(_body, "OpenBusiness", "继续营业", new(680, 863, 520, 112), () => RequestBusiness(day), bare: true);
+        var plate = HomeArt(open, "首页地图按钮底板", new(0, 0, 520, 112), stretch: true);
+        plate.ShowBehindParent = true;
+        open.AddThemeFontSizeOverride("font_size", 46);
+        open.AddThemeColorOverride("font_outline_color", StartScreenTheme.Cream);
+        open.AddThemeConstantOverride("outline_size", 5);
+        open.Disabled = !CanOpenDay(day);
+        if (open.Disabled) plate.Modulate = new Color(1, 1, 1, .55f);
         Focus("OpenBusiness");
-    }
-    private void SummaryRow(Control parent, string name, string caption, string value, float y)
-    {
-        var row = new HBoxContainer { Position = new(0, y), Size = new(430, 54), MouseFilter = MouseFilterEnum.Ignore };
-        row.AddThemeConstantOverride("separation", 12); parent.AddChild(row);
-        var label = Text(row, name + "Label", caption, new(0, 0, 150, 54), 24);
-        label.CustomMinimumSize = new(150, 54);
-        label.AddThemeColorOverride("font_color", StartScreenTheme.Muted);
-        var field = Text(row, name, value, new(0, 0, 268, 54), 25);
-        field.SizeFlagsHorizontal = SizeFlags.ExpandFill;
-        field.HorizontalAlignment = HorizontalAlignment.Right;
-        FitTextWidth(field, 25, 20);
     }
     private void RenderLedgerPage()
     {
         var city = JourneyModel.City(_city); var p = JourneyModel.Progress(_save!, _city);
         CityFrame(JourneyPage.Ledger, city.Name + " · 经营手账");
+        if (_save!.IsDemo) DemoBookTabs();
         var calendarTitle = Text(_body, "CalendarTitle", "营业日历", new(604, 248, 270, 65), 43, true);
         FitTextWidth(calendarTitle, 43, 20);
         calendarTitle.RotationDegrees = -4;
@@ -220,7 +225,7 @@ public partial class StartScreen
     private void RenderUpgradePage()
     {
         var city = JourneyModel.City(_city); CityFrame(JourneyPage.Upgrades, city.Name + " · 店铺升级");
-        Text(_body, "Coins", _save!.Data.Coins + " 金币", new(1300, 170, 270, 48), 30, true);
+        EquipmentUpgradeView.AddWallet(_body, _save!.Data.Coins + " 金币", new(1220, 158, 360, 64));
         if (_equipmentCity != _city) { _selectedEquipment = null; _equipmentCity = _city; }
         var view = new EquipmentUpgradeView { Name = "UpgradeView", Position = new(320, 230) };
         _body.AddChild(view);

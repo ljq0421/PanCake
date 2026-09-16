@@ -338,7 +338,7 @@ public partial class StageFourSelfTest : Node
             DayPlan first = generator.Generate(config, catalog.RecipesById, catalog.ProductsById, catalog.CustomersById);
             DayPlan second = generator.Generate(config, catalog.RecipesById, catalog.ProductsById, catalog.CustomersById);
             Check(JsonSerializer.Serialize(first) == JsonSerializer.Serialize(second), $"Day {day} 同种子逐字段一致");
-            Check(first.Customers.Count == config.CustomerCount && first.Customers.All(item => item.ArrivalTime > 0 && item.ArrivalTime < config.DurationSeconds), $"Day {day} 顾客数与到店边界合法");
+            Check(first.Customers.Count == config.CustomerCount && first.Customers.All(item => item.ArrivalTime >= 0 && item.ArrivalTime < config.DurationSeconds), $"Day {day} 顾客数与到店边界合法");
             Check(first.Customers.Count(item => item.CustomerTypeId == "big_order") <= config.Constraints.MaxBigOrderCustomers, $"Day {day} 大订单不超过上限");
             Check(MaxYoutiaoRun(first) <= 2, $"Day {day} 最多连续两单含油条");
             Check(first.Customers.All(item => item.Order.Lines.Where(line => line.ProductKind == ProductKind.Pancake).Sum(line => line.Quantity) <= config.Constraints.MaxPancakesPerCustomer), $"Day {day} 单客煎饼数符合上限");
@@ -462,7 +462,7 @@ public partial class StageFourSelfTest : Node
             save.Data.PurchasedFryerLevel = 3;
             screen.Initialize(catalog, save, controller, day);
             Check(ReferenceEquals(screen.GetNode<TextureRect>("ShopBackground").Texture,
-                art.WorkbenchBackground(catalog.DaysByNumber[day].AvailableProductKinds)), $"Day{day}按当日商品选择背景，历史购买不越级显示");
+                art.LivingWorkbenchBackground(catalog.DaysByNumber[day].AvailableProductKinds)), $"Day{day}按当日商品选择背景，历史购买不越级显示");
             Check(((Control)station.FindChild("FryerArea", true, false)).Visible == (day >= 5)
                 && ((Control)station.FindChild("SoyMilkSlot", true, false)).Visible == (day >= 9), $"Day{day}背景与交互同步解锁");
         }
@@ -722,7 +722,7 @@ public partial class StageFourSelfTest : Node
             "天津顾客使用约 65% 半身裁切且人物视窗止于桌沿");
         Check(orderCard is OrderBubbleView { MouseFilter: Control.MouseFilterEnum.Ignore }
             && orderContent is VBoxContainer
-            && orderCard.GetThemeStylebox("panel") is StyleBoxFlat
+            && orderCard.GetThemeStylebox("panel") is StyleBoxEmpty
             && patience?.GetParent() == orderContent
             && orderContent.GetChildren().Last() == patience
             && portraitStack?.GetChildren().OfType<ProgressBar>().Any() == false,

@@ -409,7 +409,9 @@ public partial class PancakeWorkstation : Control
         _canvas.TickLivingMotion(deltaSeconds, IsTianjinWorkbench && !ReducedMotion, _stroke.IsSpreading);
         TickBagTransfer(deltaSeconds);
         Inventory.Tick(deltaSeconds);
-        FryerMachine?.Tick(deltaSeconds);
+        double fryerDelta = Tutorial.FreezeBusinessClocks && FryerMachine?.Runtime.State == ProjectCake.Fryer.FryerState.Frying
+            ? Math.Min(deltaSeconds, Math.Max(0, FryerMachine.Level.GoldenStartSeconds - FryerMachine.Runtime.FrySeconds)) : deltaSeconds;
+        FryerMachine?.Tick(fryerDelta);
         _fryerVisual.Tick(deltaSeconds);
         SoyMilkTray?.Tick(deltaSeconds);
         foreach (StockGesture gesture in _stockGestures) gesture.Tick(deltaSeconds);

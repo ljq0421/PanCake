@@ -192,7 +192,8 @@ public partial class XianSelfTest : Node
         var result = new DayResult { Day = 2, SaleRevenue = 100, CompletedCustomers = 9, Satisfaction = 100 };
         save.CommitDay(result, plan, day2); Check(save.TryPurchase(StableIds.Cities.Xian, "equipment:xian_board_lv2", _catalog, out _) && save.Data.Coins == 650, "日期开放后正常付费升级");
         Check(!save.TryPurchase(StableIds.Cities.Xian, "equipment:xian_board_lv2", _catalog, out _), "不能重复购买升级");
-        Check(save.CommitDay(result, plan, day2).PermanentCoinGain == 0 && save.CommitDay(new DayResult { Day = 2, SaleRevenue = 120 }, plan, day2).PermanentCoinGain == 20, "重玩仅补最佳收入差额");
+        var replayPlan = new OrderGenerator().Generate(day2, _catalog.RecipesById, _catalog.ProductsById, _catalog.CustomersById);
+        Check(save.CommitDay(result, plan, day2).PermanentCoinGain == 0 && save.CommitDay(new DayResult { Day = 2, SaleRevenue = 120 }, replayPlan, day2).PermanentCoinGain == 120, "重复提交不入账，新一次营业全额入账");
         var fail = Save("failure"); string directory = ProjectSettings.GlobalizePath($"{_root}/failure.json"); Directory.CreateDirectory(directory);
         Check(!fail.ApplyStartUnlocks(day2, out _) && fail.Data.Xian.EquipmentLevels[XianRules.Oven] == 0
             && !fail.Data.Xian.UnlockedContentIds.Contains("equipment:xian_oven_lv1"), "免费炉保存失败回滚等级与解锁");

@@ -136,7 +136,7 @@ public partial class TianjinLedger : Control
             : "等待开店\n今天的故事，还等你写下。";
         _note.Text = save.HasLoadError ? "重置会清除进度，操作前会再次确认。"
             : locked ? "当前只能开始已经解锁的营业日。"
-            : hasRecord ? "重玩只补发超过历史最佳的收入差额。"
+            : hasRecord ? ""
             : "先看清订单，再安排今天的工作台。";
         _start.Text = save.HasLoadError ? "暂时无法营业" : locked ? "尚未解锁"
             : $"{(hasRecord ? "再次营业" : "开始营业")} · Day {SelectedDay}";

@@ -53,9 +53,10 @@ public partial class SaveService
     public DayCommitResult CommitYangzhou(YangzhouSession session)
     {
         if (session.Phase != YangzhouPhase.Results) throw new InvalidOperationException("营业尚未结算。");
+        if (_settledRuns.TryGetValue(session, out _)) return new(0, false);
         var result = session.Result(); var snapshot = Clone(Data); var city = Data.Yangzhou;
         city.DayBestRecords.TryGetValue(result.Day, out var previous);
-        int gain = Math.Max(0, result.Revenue - (previous?.TotalRevenue ?? 0));
+        int gain = Math.Max(0, result.Revenue);
         bool newBest = previous is null || result.Revenue > previous.TotalRevenue;
         Data.Coins += gain;
         if (newBest) city.DayBestRecords[result.Day] = new DayBestRecord
@@ -71,6 +72,7 @@ public partial class SaveService
             foreach (string id in new[] { "collectible:yangzhou_crab_soup_bun", "badge:yangzhou_three_stars" })
                 if (!city.UnlockedCollectibleIds.Contains(id)) city.UnlockedCollectibleIds.Add(id);
         if (!TrySave(out string error)) { Data = snapshot; throw new IOException(error); }
+        _settledRuns.Add(session, new object());
         Changed?.Invoke(); return new(gain, newBest, result.Stars, complete);
     }
 }

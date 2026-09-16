@@ -29,7 +29,7 @@ public static class YangzhouBusinessBook
         try
         {
             var commit = save.CommitYangzhou(session);
-            model.SaveMessage = $"已入账 ¥{commit.PermanentCoinGain} · 历史最佳收入差额" + (commit.NewBest ? " · 新纪录" : "");
+            model.SaveMessage = $"已入账 ¥{commit.PermanentCoinGain}" + (commit.NewBest ? " · 新纪录" : "");
             var stickers = new List<string>();
             if (commit.EarnedStars > 0) stickers.Add($"本次评级 {new string('★', commit.EarnedStars)}");
             if (commit.NewChapterCompletion) { stickers.Add("扬州章节已点亮"); save.QueueJourneyCompletion(ProjectCake.Data.StableIds.Cities.Yangzhou); }

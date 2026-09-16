@@ -174,7 +174,6 @@ public partial class StartScreen
             b.TooltipText = $"第 {d} 天 · {_cityModel?.DayTitle(_city, d)}\n" + (recorded ? $"历史最佳收入 {record!.TotalRevenue} 金币 · 满意度 {record.Satisfaction:0.##}%" : metrics.Text);
             if (d == SelectedDay) HomeArt(b, "小红旗", new(151, -12, 30, 36)).Name = "SelectedFlag";
         }
-        Text(_body, "CalendarHint", "选择日期，查看营业记录。", new(330, 829, 550, 32), 22, true);
         Text(_body, "SelectedDay", $"第 {SelectedDay} 天", new(1050, 245, 325, 65), 49, true);
         if (SelectedDay == _save!.ChapterLength(_city)) HomeArt(_body, "皇冠", new(1368, 245, 55, 50)).Name = "FinalDayCrown";
         var theme = Text(_body, "SelectedTheme", _cityModel?.DayTitle(_city, SelectedDay) ?? "", new(1050, 340, 360, 42), 30, true);
@@ -198,7 +197,8 @@ public partial class StartScreen
             Art(_body, "res://resource/art/Global/BookUI/Perfect 印章.png", new(1370, 603, 70, 70)).Name = "PerfectStamp";
         var perfect = Text(_body, "BestPerfect", hasRecord ? $"Perfect {best!.PerfectOrders} 单" : "", new(1335, 687, 108, 60), 18, true);
         FitTextWidth(perfect, 18, 12);
-        Text(_body, "ReplayNote", _save.HasLoadError ? "重置会清除全部旅程，操作前会再次确认。" : "重玩仅补发超过历史最佳的收入差额。", new(1010, 803, 505, 38), 21, true);
+        if (_save.HasLoadError)
+            Text(_body, "ReplayNote", "重置会清除全部旅程，操作前会再次确认。", new(1010, 803, 505, 38), 21, true);
         Button(_body, "StartSelectedDay", $"{(hasRecord ? "再次营业" : "开张")} · 第 {SelectedDay} 天", new(1030, 873, 510, 76), () => RequestBusiness(SelectedDay), true).Disabled = !CanOpenDay(SelectedDay);
         Button(_body, "ResetLedgerProgress", "重置进度", new(340, 952, 170, 48), RequestLedgerReset);
         Focus("Date" + SelectedDay);
@@ -224,7 +224,7 @@ public partial class StartScreen
     private string? _equipmentCity;
     private void RenderUpgradePage()
     {
-        var city = JourneyModel.City(_city); CityFrame(JourneyPage.Upgrades, city.Name + " · 店铺升级");
+        CityFrame(JourneyPage.Upgrades, "");
         EquipmentUpgradeView.AddWallet(_body, _save!.Data.Coins + " 金币", new(1220, 158, 360, 64));
         if (_equipmentCity != _city) { _selectedEquipment = null; _equipmentCity = _city; }
         var view = new EquipmentUpgradeView { Name = "UpgradeView", Position = new(320, 230) };

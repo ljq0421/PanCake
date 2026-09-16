@@ -55,14 +55,17 @@ public partial class DemoProfileSelfTest : Node
                 && save.Data.PurchasedStoveLevel == 2, "real upgrade uses baseline price");
             var third = content.Stages[2];
             save.CommitDay(Result(3, 65, 8), Plan(third), third.Config(catalog.RecipesById));
-            Check(save.Data.Coins == 19, "same-revenue upgraded replay does not award the whole income again");
+            Check(save.Data.Coins == 84, "same-revenue upgraded replay awards the full income");
             save.CommitDay(Result(3, 70, 8), Plan(third), third.Config(catalog.RecipesById));
-            Check(save.Data.Coins == 24, "new best replay pays only the difference");
+            Check(save.Data.Coins == 154, "new best replay awards the full income");
+            save.CommitDay(Result(3, 40, 8), Plan(third), third.Config(catalog.RecipesById));
+            Check(save.Data.Coins == 194 && save.Data.Tianjin.DayBestRecords[3].TotalRevenue == 70,
+                "lower-revenue replay awards full income and retains the best record");
             save.CommitDay(Result(3, 0, 0), Plan(third), third.Config(catalog.RecipesById));
-            Check(save.Data.Tianjin.HighestUnlockedDay == Math.Min(4, content.CityStages(StableIds.Cities.Tianjin).Length) && save.Data.Coins == 24, "zero-order replay never regresses progress or charges admission");
+            Check(save.Data.Tianjin.HighestUnlockedDay == Math.Min(4, content.CityStages(StableIds.Cities.Tianjin).Length) && save.Data.Coins == 194, "zero-order replay never regresses progress or charges admission");
             Check(save.TryRecordDemoStart(2, out _), "records the actual last-started main stage");
             save.Load();
-            Check(save.ContinueDay == 2 && save.Data.PurchasedStoveLevel == 2 && save.Data.Coins == 24, "restart restores actual stage, equipment and money");
+            Check(save.ContinueDay == 2 && save.Data.PurchasedStoveLevel == 2 && save.Data.Coins == 194, "restart restores actual stage, equipment and money");
             Check(!save.CanEnter(StableIds.Cities.Xian, 1) && !save.CanEnter(StableIds.Cities.Wuhan, 1)
                 && !save.CanEnter(StableIds.Cities.Tianjin, 8), "save guards all unshipped stage and city entries");
             string temporary = path + ".tmp";
@@ -71,10 +74,13 @@ public partial class DemoProfileSelfTest : Node
             bool failed = false;
             try { save.CommitDay(Result(3, 80, 8), retryPlan, third.Config(catalog.RecipesById)); }
             catch (IOException) { failed = true; }
-            Check(failed && save.Data.Coins == 24 && !save.DemoProgress.AcceptedRuns.Contains(retryPlan.RunId), "write failure rolls back money and submission identity");
+            Check(failed && save.Data.Coins == 194 && !save.DemoProgress.AcceptedRuns.Contains(retryPlan.RunId), "write failure rolls back money and submission identity");
             Directory.Delete(temporary);
             save.CommitDay(Result(3, 80, 8), retryPlan, third.Config(catalog.RecipesById));
-            Check(save.Data.Coins == 34, "the same failed result retries once after storage recovers");
+            Check(save.Data.Coins == 274, "the same failed result retries once after storage recovers");
+            save.Load();
+            Check(save.CommitDay(Result(3, 80, 8), retryPlan, third.Config(catalog.RecipesById)).PermanentCoinGain == 0
+                && save.Data.Coins == 274, "reloaded Demo still rejects duplicate settlement");
             string corrupt = "{broken-demo-save"; File.WriteAllText(path, corrupt); save.Load();
             Check(save.HasLoadError && !save.TrySave(out _) && File.ReadAllText(path) == corrupt, "corrupt file is retained and cannot be silently overwritten");
             Check(File.ReadAllText(formal) == "formal-progress-sentinel", "formal progress stays byte-for-byte unchanged");

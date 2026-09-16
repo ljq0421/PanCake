@@ -112,6 +112,9 @@ public partial class SaveService : Node
 
     private string _savePath = DefaultSavePath;
     private string? _legacyPath = LegacySavePath;
+    // Formal runs are live plans/sessions; a replay creates a new instance.
+    // Mark only after writing succeeds so failed settlements remain retryable.
+    private readonly System.Runtime.CompilerServices.ConditionalWeakTable<object, object> _settledRuns = new();
     public event Action? Changed;
     // Session-only presentation queue, populated by successful settlement adapters.
     public string? PendingJourneyCompletion { get; private set; }
@@ -214,9 +217,12 @@ public partial class SaveService : Node
     public DayCommitResult CommitDay(DayResult result, DayPlan plan, DayConfig config)
     {
         if (IsDemo) return CommitDemoDay(result, plan, config);
+        if (_settledRuns.TryGetValue(plan, out _)) return new(0, false);
         SaveData snapshot = Clone(Data); CityProgressData city = Data.GetCity(config.CityId);
         bool hadBest = city.DayBestRecords.TryGetValue(result.Day, out DayBestRecord? best);
-        int previousBest = hadBest ? best!.TotalRevenue : 0; int gain = Math.Max(0, result.TotalRevenue - previousBest); bool newBest = !hadBest || result.TotalRevenue > previousBest;
+        int previousBest = hadBest ? best!.TotalRevenue : 0;
+        int gain = Math.Max(0, result.TotalRevenue);
+        bool newBest = !hadBest || result.TotalRevenue > previousBest;
         Data.Coins += gain; if (newBest) city.DayBestRecords[result.Day] = ToRecord(result);
         int chapterDays = ChapterDays(config.CityId);
         city.HighestUnlockedDay = Math.Min(chapterDays, Math.Max(city.HighestUnlockedDay, result.Day + 1));
@@ -238,6 +244,7 @@ public partial class SaveService : Node
         EnsureYangzhouUnlocked();
         Data.UnlockedCityIds.Sort(StringComparer.Ordinal);
         if (!TrySave(out string error)) { Data = snapshot; throw new IOException(error); }
+        _settledRuns.Add(plan, new object());
         Changed?.Invoke(); return new DayCommitResult(gain, newBest, stars, newlyCompleted);
     }
 

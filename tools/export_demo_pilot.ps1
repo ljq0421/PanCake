@@ -38,6 +38,7 @@ try {
     if (Select-String -LiteralPath $log -Pattern 'Export .NET Project:|Failed to export project|Failed to build project' -Quiet) {
         throw 'The exporter reported a .NET build failure. Do not distribute this output.'
     }
+    Copy-Item -LiteralPath 'resource/fonts/KNMaiyuan/OFL.txt' -Destination (Join-Path $output 'FONT-LICENSE-KNMaiyuan.txt')
     if (-not $Qa) {
         Copy-Item -LiteralPath 'docs/Demo-Pilot试玩说明.md' -Destination (Join-Path $output 'README.md')
         Copy-Item -LiteralPath 'docs/Demo-Music-Credits.md' -Destination (Join-Path $output 'MUSIC-CREDITS.md')

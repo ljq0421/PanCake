@@ -222,6 +222,14 @@ public partial class YangzhouSelfTest : Node
         var first = Play(_catalog, 1, 1, 1); int before = save.Data.Coins;
         save.CommitYangzhou(first); int after = save.Data.Coins; save.CommitYangzhou(first);
         Check(after > before && after == save.Data.Coins && save.Data.Yangzhou.HighestUnlockedDay == 2, "共享金币入账、重复结算不刷钱、解锁次日");
+        var replay = Play(_catalog, 1, 1, 1);
+        int replayRevenue = replay.Result().Revenue;
+        var replayCommit = save.CommitYangzhou(replay);
+        Check(replayRevenue == first.Result().Revenue && replayCommit.PermanentCoinGain == replayRevenue
+            && !replayCommit.NewBest && save.Data.Coins == after + replayRevenue, "扬州相同成绩再次营业仍全额入账");
+        save.Load();
+        Check(save.Data.Coins == after + replayRevenue && save.CommitYangzhou(replay).PermanentCoinGain == 0,
+            "扬州重玩收入保存且同一局不能重复提交");
         save.CommitYangzhou(Play(_catalog, 2, 1, 1));
         Check(save.PurchaseYangzhou(YangzhouCatalog.BoardId, _catalog, out _) && save.Data.Yangzhou.EquipmentLevels[YangzhouCatalog.BoardId] == 2, "Day2结束购买干丝Lv2");
         Check(save.Data.Yangzhou.EquipmentLevels[YangzhouCatalog.SteamerId] == 1, "Day3蒸笼免费解锁");

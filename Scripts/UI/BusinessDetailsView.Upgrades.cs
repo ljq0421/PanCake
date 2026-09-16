@@ -38,7 +38,6 @@ public partial class BusinessDetailsView
         _upgradeModal = modal; _canvas.AddChild(modal);
         Line(modal, new(0, 0, 1920, 1080), new Color(.12f, .08f, .04f, .55f));
         Panel(modal, new(245, 95, 1430, 850), CitySettlementTheme.Paper, 24, 3);
-        Text(modal, _model.CityName + " · 店铺升级", new(320, 120, 770, 50), 34, Accent);
         EquipmentUpgradeView.AddWallet(modal, $"当前余额 {source.Coins} 金币", new(1210, 115, 390, 64));
         var view = new EquipmentUpgradeView { Name = "UpgradeView", Position = new(320, 195) }; modal.AddChild(view);
         view.Configure(source.Equipment, _selectedUpgrade, id => _selectedUpgrade = id, e =>

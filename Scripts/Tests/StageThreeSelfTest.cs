@@ -19,6 +19,14 @@ public partial class StageThreeSelfTest : Node
         try
         {
             DataCatalog catalog = GetNode<DataCatalog>("/root/DataCatalog");
+            if (OS.GetCmdlineUserArgs().Contains("--revenue-only"))
+            {
+                TestReplayIncome(catalog);
+                TestSave(catalog);
+                GD.Print($"REPLAY_INCOME_RESULT passed={_passed} failed={_failed}");
+                GetTree().Quit(_failed == 0 ? 0 : 1);
+                return;
+            }
             if (OS.GetCmdlineUserArgs().Contains("--customer-slots-only"))
             {
                 TestCustomers(catalog);
@@ -35,6 +43,7 @@ public partial class StageThreeSelfTest : Node
             TestSharedSettlementRules(catalog);
             TestDayController(catalog);
             TestSave(catalog);
+            TestReplayIncome(catalog);
             TestScenes();
         }
         catch (Exception exception)
@@ -235,10 +244,10 @@ public partial class StageThreeSelfTest : Node
         DayConfig day1 = catalog.DaysByNumber[1]; DayPlan plan = new OrderGenerator().Generate(day1, catalog.RecipesById);
         DayResult first = Result(1, 50); DayCommitResult firstCommit = save.CommitDay(first, plan, day1);
         Check(firstCommit.PermanentCoinGain == 50 && save.Data.Coins == 50 && save.Data.HighestUnlockedDay == 2, "首次结算获得全额并解锁下一天");
-        DayCommitResult replay = save.CommitDay(Result(1, 45), plan, day1);
-        Check(replay.PermanentCoinGain == 0 && save.Data.Coins == 50, "较低重玩成绩不重复发金币");
-        DayCommitResult improved = save.CommitDay(Result(1, 63), plan, day1);
-        Check(improved.PermanentCoinGain == 13 && save.Data.Coins == 63, "提高最佳成绩只补发差额");
+        DayCommitResult replay = save.CommitDay(Result(1, 45), new OrderGenerator().Generate(day1, catalog.RecipesById), day1);
+        Check(replay.PermanentCoinGain == 45 && save.Data.Coins == 95, "较低重玩成绩全额入账");
+        DayCommitResult improved = save.CommitDay(Result(1, 63), new OrderGenerator().Generate(day1, catalog.RecipesById), day1);
+        Check(improved.PermanentCoinGain == 63 && save.Data.Coins == 158, "提高最佳成绩仍全额入账");
 
         save.CommitDay(Result(3, 100), new OrderGenerator().Generate(catalog.DaysByNumber[3], catalog.RecipesById), catalog.DaysByNumber[3]);
         Check(save.Data.UnlockedUpgradeIds.Contains("equipment:ingredient_station_lv2"), "Day 3 结算开放配料台 Lv2");
@@ -261,6 +270,42 @@ public partial class StageThreeSelfTest : Node
         save.QueueFree(); loaded.QueueFree();
         if (File.Exists(absolute)) File.Delete(absolute);
         foreach (string backup in Directory.GetFiles(Path.GetDirectoryName(absolute)!, Path.GetFileName(absolute) + ".corrupt-*.bak")) File.Delete(backup);
+    }
+
+    private void TestReplayIncome(DataCatalog catalog)
+    {
+        foreach (string cityId in new[] { StableIds.Cities.Tianjin, StableIds.Cities.Wuhan, StableIds.Cities.Xian, StableIds.Cities.Guangzhou })
+        {
+            string path = ProjectSettings.GlobalizePath($"res://.tmp/replay-income-{cityId.Replace(':', '-')}-{Guid.NewGuid():N}.json");
+            using var save = new SaveService(); save.UsePathForTests(path);
+            var config = catalog.GetDays(cityId)[1];
+            int total = 0, best = 0;
+            foreach (int revenue in new[] { 100, 80, 100, 130, 0 })
+            {
+                var plan = new OrderGenerator().Generate(config, catalog.RecipesById, catalog.ProductsById, catalog.CustomersById);
+                var result = new DayResult { Day = 1, SaleRevenue = revenue * 9 / 10, Tips = revenue / 10 };
+                var commit = save.CommitDay(result, plan, config);
+                total += revenue; best = Math.Max(best, revenue);
+                Check(commit.PermanentCoinGain == revenue && save.Data.Coins == total,
+                    $"{cityId} 每次营业收入含小费全额入账：{revenue}");
+                Check(save.Data.GetCity(cityId).DayBestRecords[1].TotalRevenue == best,
+                    $"{cityId} 历史最佳独立保留：{best}");
+                save.Load();
+                Check(save.Data.Coins == total && save.CommitDay(result, plan, config).PermanentCoinGain == 0
+                    && save.Data.Coins == total, $"{cityId} 保存后重载、重复提交不重复入账");
+            }
+            var retryPlan = new OrderGenerator().Generate(config, catalog.RecipesById, catalog.ProductsById, catalog.CustomersById);
+            var retryResult = new DayResult { Day = 1, SaleRevenue = 40 };
+            Directory.CreateDirectory(path + ".tmp");
+            bool failed = false;
+            try { save.CommitDay(retryResult, retryPlan, config); } catch (IOException) { failed = true; }
+            Check(failed && save.Data.Coins == total, $"{cityId} 保存失败回退收入");
+            Directory.Delete(path + ".tmp");
+            Check(save.CommitDay(retryResult, retryPlan, config).PermanentCoinGain == 40 && save.Data.Coins == total + 40
+                && save.CommitDay(retryResult, retryPlan, config).PermanentCoinGain == 0,
+                $"{cityId} 保存失败后同一次营业可重试且只入账一次");
+            File.Delete(path);
+        }
     }
 
     private void TestScenes()

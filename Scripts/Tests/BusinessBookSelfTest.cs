@@ -131,7 +131,7 @@ public partial class BusinessBookSelfTest : Node
             GetViewport().PushInput(new InputEventKey { Keycode=Key.Escape,Pressed=true },true);Check(!close,"Esc cannot bypass failed save");v.QueueFree();
             save.UsePathForTests("res://.tmp/book-tests/retry-"+Guid.NewGuid()+".json");int before=save.Data.Coins;
             var good=BusinessBookSettlement.Commit(Fixture("xian"),save,plan,d,catalog);Check(good.CanClose&&!good.CanRetry,"retry saves");int after=save.Data.Coins;
-            BusinessBookSettlement.Commit(Fixture("xian"),save,plan,d,catalog);Check(save.Data.Coins==after&&after>=before,"replay only pays best delta");
+            BusinessBookSettlement.Commit(Fixture("xian"),save,plan,d,catalog);Check(save.Data.Coins==after&&after>=before,"duplicate settlement does not pay again");
             await CheckCompactPresentation();
             await CheckBookUpgrades(catalog, yc);
             GD.Print($"BUSINESS_BOOK_TEST_RESULT passed={_checks} failed=0");GetTree().Quit();

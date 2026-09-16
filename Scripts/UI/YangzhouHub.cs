@@ -41,7 +41,7 @@ public partial class YangzhouHub : Control
         if (_save is null) return;
         var city = _save.Data.Yangzhou;
         _coins.Text = $"共享金币  ¥{_save.Data.Coins}";
-        _message.Text = _save.HasLoadError ? _save.LoadErrorMessage : city.Completed ? $"扬州已点亮 {new string('★', city.BestStars)} · 继续练习，挑战三星早茶大会。" : "逐日开放商品；重玩只补发超过当天最佳收入的差额。";
+        _message.Text = _save.HasLoadError ? _save.LoadErrorMessage : city.Completed ? $"扬州已点亮 {new string('★', city.BestStars)} · 继续练习，挑战三星早茶大会。" : "逐日开放商品。";
         foreach (var day in _catalog.Days)
         {
             var button = _days[day.Day - 1]; button.Disabled = _save.HasLoadError || day.Day > city.HighestUnlockedDay;

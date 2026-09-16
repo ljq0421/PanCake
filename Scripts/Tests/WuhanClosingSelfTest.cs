@@ -42,7 +42,9 @@ public partial class WuhanClosingSelfTest : Node
             bool returned = false;
             wuhan.HubRequested += () => returned = true;
             wuhan.BusinessDetails.CloseButton.EmitSignal(Button.SignalName.Pressed);
-            Check(returned && main.GetNode<WuhanHub>("UI/WuhanHub").IsVisibleInTree(), "return to Wuhan hub");
+            var hub = main.GetNode<StartScreen>("UI/StartScreen");
+            Check(returned && hub.IsVisibleInTree() && hub.Page == JourneyPage.City
+                && hub.SelectedCityId == StableIds.Cities.Wuhan, "return to shared Wuhan city page");
 
             // A later Tianjin day must still settle normally (no poisoned _committed flag).
             tianjin.Initialize(catalog, save, controller, 1);
@@ -64,8 +66,8 @@ public partial class WuhanClosingSelfTest : Node
             controller.Ledger!.RecordDelivery(new DeliveryEvaluation(DeliveryGrade.Correct, 20, 0, 80, "test"));
             Finish(controller);
             Check(wuhan.BusinessDetails.IsVisibleInTree() && wuhan.BusinessDetails.Model.Closing, "repeat Wuhan results visible");
-            Check(wuhan.BusinessDetails.Model.SaveMessage.Contains("已入账 ¥7"), "Wuhan owns the best-record gain");
-            Check(save.Data.Coins == 20, "only best-record difference awarded");
+            Check(wuhan.BusinessDetails.Model.SaveMessage == "已入账 ¥20 · 新纪录", "Wuhan shows full income without the replay hint");
+            Check(save.Data.Coins == 33, "both Wuhan business runs award their full income");
             GD.Print("WUHAN_CLOSING_RESULT passed=true");
             GetTree().Quit();
         }

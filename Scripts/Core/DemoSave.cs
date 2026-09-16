@@ -188,7 +188,7 @@ public partial class SaveService
         var snapshot = Clone(Data); var demoSnapshot = CloneDemoProgress();
         var city = Data.GetCity(stage.CityId);
         bool hadBest = city.DayBestRecords.TryGetValue(result.Day, out var best);
-        int gain = Math.Max(0, result.TotalRevenue - (best?.TotalRevenue ?? 0));
+        int gain = Math.Max(0, result.TotalRevenue);
         bool newBest = !hadBest || result.TotalRevenue > best!.TotalRevenue;
         Data.Coins += gain;
         if (newBest) city.DayBestRecords[result.Day] = ToRecord(result);

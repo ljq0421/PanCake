@@ -37,6 +37,10 @@ project/assembly_name="ProjectCake"
 
 run/main_run_args="-- --dev-ui"
 
+[gui]
+
+theme/custom_font="res://resource/fonts/KNMaiyuan/KNMaiyuan-Regular.ttf"
+
 [rendering]
 
 renderer/rendering_method="gl_compatibility"

@@ -54,7 +54,7 @@ public static class BusinessBookSettlement
         try
         {
             var commit = save.CommitDay(model.Result, plan, config);
-            model.SaveMessage = $"已入账 ¥{commit.PermanentCoinGain} · 历史最佳收入差额" + (commit.NewBest ? " · 新纪录" : "");
+            model.SaveMessage = $"已入账 ¥{commit.PermanentCoinGain}" + (commit.NewBest ? " · 新纪录" : "");
             var stickers = new List<string>();
             if (commit.EarnedStars > 0) stickers.Add($"本次评级 {new string('★', commit.EarnedStars)}");
             if (commit.NewChapterCompletion) { stickers.Add($"{model.CityName}章节已点亮"); save.QueueJourneyCompletion(config.CityId); }

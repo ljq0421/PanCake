@@ -46,7 +46,7 @@ public partial class GuangzhouHub : Control
         var city = _save.Data.Guangzhou;
         _coins.Text = $"共享金币  ¥{_save.Data.Coins}";
         _message.Text = _save.HasLoadError ? _save.LoadErrorMessage : city.Completed ? $"广州已点亮  {new string('★', city.BestStars)} · 可以继续挑战更高成绩。"
-            : "逐日开放新商品与设备升级。重玩只补发超过当天历史最高收入的差额。";
+            : "逐日开放新商品与设备升级。";
         for (int i = 0; i < 12; i++)
         {
             int day = i + 1; _days[i].Disabled = _save.HasLoadError || !_catalog.IsValid || day > city.HighestUnlockedDay;

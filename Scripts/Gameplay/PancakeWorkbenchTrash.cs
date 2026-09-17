@@ -100,6 +100,7 @@ public partial class PancakeWorkstation
         }
         else if (Hit(_canvas) && Machine.Runtime.State is not (PancakeState.Empty or PancakeState.Delivered))
         {
+            if (IsFlipping) return false;
             var machine = Machine;
             long generation = machine.Runtime.Generation;
             source = _canvas; name = "当前煎饼";

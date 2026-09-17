@@ -19,6 +19,7 @@ public partial class TianjinDayScreen
     private ProgressBar? _demoGestureBar;
     private bool _demoLessonComplete;
     private string _demoLessonSaveError = "";
+    private string _demoLessonLayout = "";
     private int _demoBusinessDay;
     private int _demoTeachingDay;
     private bool _demoPartialSeeded;
@@ -43,6 +44,8 @@ public partial class TianjinDayScreen
         _workstation.Initialize(_catalog, 1, 1, _demoTeachingDay >= 4 ? 1 : 0, _controller.CurrentConfig!, _art);
         _workstation.ConfigureTutorial(null);
         _workstation.ResetForDay();
+        if (_demoTeachingDay == 1 && _demoBusinessDay == 1)
+            _workstation.ConfigureFirstPancakeEggLesson(1);
         _workstation.Tutorial = _controller.Tutorial;
         GetNode<TextureRect>("ShopBackground").Texture = _art.LivingWorkbenchBackground(_controller.CurrentConfig!.AvailableProductKinds);
         _demoLessonComplete = false; _demoPartialSeeded = false; _demoLessonSaveError = ""; _demoLearned.Clear();
@@ -76,10 +79,11 @@ public partial class TianjinDayScreen
         _demoLesson.AddChild(_demoLessonActionFrame);
         _demoLessonAction.Pressed += () => { if (_controller.TutorialActive) FinishDemoLesson(); else _demoLesson.Hide(); };
         _demoGesture = new Panel { Name = "DemoGestureProgress", Position = new(40, 940), Size = new(475, 76), MouseFilter = MouseFilterEnum.Ignore };
-        _demoGesture.AddThemeStyleboxOverride("panel", TianjinUi.Box(TianjinUi.Paper, 12, 2, false)); AddChild(_demoGesture);
-        _demoGestureLabel = new Label { Position = new(16, 5), Size = new(443, 36), MouseFilter = MouseFilterEnum.Ignore };
+        _demoGesture.Size = new(475, 112);
+        TianjinTeachingUi.ApplyPanel(_demoGesture); AddChild(_demoGesture);
+        _demoGestureLabel = new Label { Position = new(60, 34), Size = new(379, 36), MouseFilter = MouseFilterEnum.Ignore };
         _demoGestureLabel.AddThemeFontSizeOverride("font_size", 22); _demoGesture.AddChild(_demoGestureLabel);
-        _demoGestureBar = new ProgressBar { Position = new(16, 46), Size = new(443, 14), MinValue = 0, MaxValue = 1, ShowPercentage = false, MouseFilter = MouseFilterEnum.Ignore };
+        _demoGestureBar = new ProgressBar { Position = new(60, 76), Size = new(379, 14), MinValue = 0, MaxValue = 1, ShowPercentage = false, MouseFilter = MouseFilterEnum.Ignore };
         _demoGesture.AddChild(_demoGestureBar); _demoGesture.Hide();
     }
 
@@ -105,10 +109,7 @@ public partial class TianjinDayScreen
         _demoLessonAction!.Disabled = _manualPaused || _focusPaused || _detailsPaused;
         _demoLessonTitle!.Text = _demoLessonComplete ? "第一份早餐，做好了！" : _save.IsDemo ? _save.DemoContent!.Stage(_demoTeachingDay)!.TitleZh : "第一张煎饼";
         _demoLessonAction.Text = _demoLessonSaveError.Length > 0 ? "重试保存" : _demoLessonComplete ? "开始营业" : "跳过教学";
-        bool showSummary = _demoLessonComplete || _demoLessonSaveError.Length > 0;
-        _demoLessonHint!.Visible = showSummary;
-        _demoLesson.Size = new Vector2(475, showSummary ? 270 : 150);
-        _demoLessonActionFrame!.Position = new Vector2(285, showSummary ? 190 : 46);
+        _demoLessonHint!.Visible = true;
         var r = _workstation.Machine.Runtime;
         _demoLessonHint!.Text = _demoLessonSaveError.Length > 0 ? _demoLessonSaveError
             : _demoLessonComplete ? "接下来自己试试。营业时留意火候，并按订单添加配料。"
@@ -128,6 +129,8 @@ public partial class TianjinDayScreen
                 PancakeState.Bagged => "把装袋的煎饼拖给上方顾客。",
                 _ => "完成手上的动作；需要时可跳过教学后重试。",
             };
+        TeachingFocus.Refresh();
+        LayoutDemoLesson();
     }
 
     internal void FinishDemoLesson()
@@ -144,10 +147,13 @@ public partial class TianjinDayScreen
             _demoLessonSaveError = "教学记录未保存，请重试。";
             UpdateDemoLesson(); return;
         }
+        int? remainingLessonEggs = _demoLessonComplete && _demoTeachingDay == 1 && _demoBusinessDay == 1
+            ? _workstation.Inventory.GetQuantity(StableIds.Ingredients.Egg) : null;
         _demoLesson!.Hide(); _workstation.Tutorial = TutorialProtection.None;
         _workstation.CancelInput(); _sceneFeedback.Clear(); ClearCoinFlights();
         _controller.AbandonDay();
         if (!Initialize(_catalog, _save, _controller, _demoBusinessDay)) return;
+        if (remainingLessonEggs is int eggs) _workstation.ConfigureFirstPancakeEggLesson(eggs);
         BeginDay();
     }
 
@@ -160,10 +166,19 @@ public partial class TianjinDayScreen
         if (_save.DemoProgress.CompletedTutorials.Contains(stage.Id)) return;
         EnsureDemoLesson(); _demoLesson!.Show(); _demoLessonAction!.Disabled = false;
         _demoLessonTitle!.Text = stage.TitleZh; _demoLessonAction.Text = "收起提示";
-        _demoLessonHint!.Visible = true; _demoLesson.Size = new(475, 270); _demoLessonActionFrame!.Position = new(285, 190);
+        _demoLessonHint!.Visible = true;
         _demoLessonHint!.Text = stage.Day >= 4 ? stage.Day == 5 ? "订单里的油条：夹进煎饼与单独交付是两回事。组合商品可分别送出。" : "利用加热空档补货；先送出需要的商品，可以恢复顾客耐心。" : stage.Day == 2
             ? "看清订单里的薄脆图标。刷完酱后，将薄脆拖进煎饼，再折叠装袋。"
             : "订单需要葱时，刷完酱再点击香葱。料盒不足时可长按补货，留意空档。";
+        LayoutDemoLesson();
+    }
+
+    private void LayoutDemoLesson()
+    {
+        string content = $"{_demoLessonTitle!.Tr(_demoLessonTitle.Text)}|{_demoLessonHint!.Visible}|{_demoLessonHint.Tr(_demoLessonHint.Text)}|{_demoLessonAction!.Tr(_demoLessonAction.Text)}";
+        if (_demoLessonLayout == content) return;
+        _demoLessonLayout = content;
+        TeachingCardLayout.Lesson(_demoLesson!, _demoLessonTitle, _demoLessonHint, _demoLessonAction, 475);
     }
 
     private void DemoLessonDelivery(DeliveryEvaluation evaluation, string customerId)

@@ -50,8 +50,8 @@ public partial class BusinessDetailsView : Control
         _title = Text(_book, "", new(80, 78, 1000, 62), 46);
         _previousPage = ButtonAt(_book, "＜", new(0, 508, 64, 64), () => SelectPage(false));
         _nextPage = ButtonAt(_book, "＞", new(1616, 508, 64, 64), () => SelectPage(true));
-        _previousPage.Name = "PreviousBookPage"; _previousPage.TooltipText = "营业小结";
-        _nextPage.Name = "NextBookPage"; _nextPage.TooltipText = "顾客明细";
+        _previousPage.Name = "PreviousBookPage";
+        _nextPage.Name = "NextBookPage";
         _status = Text(_book, "", new(900, 32, 650, 38), 22, Muted, HorizontalAlignment.Right);
         _summary = new Control { Position = new(0, 155), Size = new(1680, 620), MouseFilter = MouseFilterEnum.Ignore }; _book.AddChild(_summary);
         _details = new Control { Position = new(0, 155), Size = new(1680, 620), MouseFilter = MouseFilterEnum.Ignore }; _book.AddChild(_details);
@@ -62,7 +62,6 @@ public partial class BusinessDetailsView : Control
         _save = Text(_book, "", new(80, 792, 1120, 65), 20, Muted, wrap: true);
         CloseButton = ButtonAt(_book, "收好账本", new(1320, 798, 240, 72), RequestClose); CloseButton.Name = "CloseBusinessDetails";
         _retry = ButtonAt(_book, "重试保存", new(1100, 809, 190, 58), () => RetryRequested?.Invoke());
-        CloseButton.TooltipText = "收好账本（Esc）";
         _audio = new PancakeAudio(); AddChild(_audio);
         VisibilityChanged += () => { if (!Visible) { RemoveUpgradeModal(); FinishAnimation(); _audio.Stop(); } };
         Hide();
@@ -78,10 +77,11 @@ public partial class BusinessDetailsView : Control
         _status.Text = model.Closing ? "已收摊" : "营业中 · 已暂停";
         _save.Text = model.SaveMessage;
         _save.Visible = _save.Text.Length > 0;
-        _save.TooltipText = UsesBookArt ? _save.Text : "";
         _retry.Visible = model.CanRetry; CloseButton.Disabled = !model.CanClose;
         BuildSummary(); RefreshRows(); SelectPage(false, false); Show();
         (model.CanClose ? CloseButton : _retry).GrabFocus(); StartAnimation();
+        InterfaceTeaching.Offer(this, InterfaceLessons.BookKey, InterfaceLessons.Book,
+            () => Visible && _entrance?.IsRunning() != true && _upgradeModal is null && _model.CanClose);
     }
     private void BuildSummary()
     {
@@ -103,6 +103,7 @@ public partial class BusinessDetailsView : Control
         {
             var icon = new BookFoodIcon { Product = best }; Place(_summary, icon, new(95, 446, 108, 108));
             var name = Text(_summary, best.Name, new(225, 448, 510, 54), 30, wrap: true);
+            name.Name = "BookBestSeller";
             Text(_summary, $"已售 ×{best.Quantity}", new(225, 511, 510, 42), 24, Muted);
         }
         else Text(_summary, "还没有完成的客单", new(100, 448, 630, 64), 25, Muted);
@@ -332,11 +333,8 @@ public partial class BusinessDetailsView : Control
         var label = TianjinUi.Label(wrap ? "" : value, size, color ?? Ink, align);
         label.MouseFilter = MouseFilterEnum.Ignore;
         if (wrap) { label.Size = r.Size; label.AutowrapMode = TextServer.AutowrapMode.WordSmart; label.Text = value; }
-        if (value.StartsWith("完成率", StringComparison.Ordinal))
-            label.TooltipText = "完成率 = 完成 ÷（完成 + 流失），只计算已结束客单；错误完成也计入完成。";
-        else if (value == "完成顾客满意度")
-            label.TooltipText = "仅按已完成订单的顾客计算满意度，流失顾客不计入平均值。";
-        if (label.TooltipText.Length > 0) label.MouseFilter = MouseFilterEnum.Pass;
+        if (value.StartsWith("完成率", StringComparison.Ordinal)) label.Name = "BookCompletionRate";
+        else if (value == "完成顾客满意度") label.Name = "BookSatisfaction";
         Place(parent, label, r); return label;
     }
     private static void Panel(Control p, Rect2 r, Color color, int radius, int border) { var panel = new Panel { MouseFilter = MouseFilterEnum.Ignore }; var box = TianjinUi.Box(color, radius, border, false); box.BorderColor = new("#9D794E"); panel.AddThemeStyleboxOverride("panel", box); Place(p, panel, r); }

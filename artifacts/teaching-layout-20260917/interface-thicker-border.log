@@ -1,0 +1,107 @@
+Godot Engine v4.7.1.stable.mono.official.a13da4feb - https://godotengine.org
+OpenGL API 3.3.0 NVIDIA 610.88 - Compatibility - Using Device: NVIDIA - NVIDIA GeForce RTX 5070
+
+PASS isolated save
+PASS fixture saved
+PASS Continue has no hover text
+PASS Continue opens no native tooltip after dwell
+PASS capture 01-home-no-tooltip
+PASS WallMap has no hover text
+PASS WallMap opens no native tooltip after dwell
+PASS calendar first-use teaching
+PASS capture 02-calendar-teaching
+PASS teaching blocks underlying date clicks
+PASS Esc skips only teaching and preserves calendar
+PASS skip remembers calendar teaching
+PASS calendar teaching does not repeat
+PASS Date8 has no hover text
+PASS Date8 opens no native tooltip after dwell
+PASS capture 03-calendar-no-tooltip
+PASS start Tianjin
+PASS HUD first-use teaching
+PASS teaching freezes business time
+PASS capture 04-business-teaching
+PASS next teaching step
+PASS previous teaching step
+PASS completion releases its pause
+PASS pendant first-use teaching follows HUD
+PASS capture 05-pendant-teaching
+PASS HUD has no text tooltips
+PASS HudPause has no hover text
+PASS HudPause opens no native tooltip after dwell
+PASS CashPendant has no hover text
+PASS CashPendant opens no native tooltip after dwell
+PASS capture 06-business-no-tooltip
+PASS start Wuhan
+PASS shared HUD and pendant lessons do not repeat in Wuhan
+PASS Wuhan HUD cleared
+PASS start Xian
+PASS OpenBusinessBook has no hover text
+PASS OpenBusinessBook opens no native tooltip after dwell
+PASS coin tray and collect button cleared
+PASS CollectCoins has no hover text
+PASS CollectCoins opens no native tooltip after dwell
+PASS dialog close hover text removed
+PASS capture 07-dialog-no-tooltip
+PASS book first-use teaching
+PASS capture 08-book-teaching
+PASS book teaching preserves the book's existing pause
+PASS all book labels and buttons cleared
+PASS BookCompletionRate has no hover text
+PASS BookCompletionRate opens no native tooltip after dwell
+PASS BookSatisfaction has no hover text
+PASS BookSatisfaction opens no native tooltip after dwell
+PASS BookBestSeller has no hover text
+PASS BookBestSeller opens no native tooltip after dwell
+PASS CloseBusinessDetails has no hover text
+PASS CloseBusinessDetails opens no native tooltip after dwell
+PASS capture 09-book-no-tooltip
+PASS OpenBookUpgrades has no hover text
+PASS OpenBookUpgrades opens no native tooltip after dwell
+PASS upgrade remains enabled
+PASS UpgradeFeedback has no hover text
+PASS UpgradeFeedback opens no native tooltip after dwell
+PASS capture 10-upgrade-no-tooltip
+PASS return to city
+PASS help exposes replay entry
+PASS capture 11-help-entry
+PASS help replays all approved topics
+PASS capture 12-help-replay-1280
+PASS Esc returns from replay to help
+PASS English lesson translated
+PASS English lesson fits its measured text area
+PASS body and actions keep compact spacing
+PASS English lesson translated
+PASS English lesson fits its measured text area
+PASS body and actions keep compact spacing
+PASS English lesson translated
+PASS English lesson fits its measured text area
+PASS body and actions keep compact spacing
+PASS English lesson translated
+PASS English lesson fits its measured text area
+PASS body and actions keep compact spacing
+PASS English lesson translated
+PASS English lesson fits its measured text area
+PASS body and actions keep compact spacing
+PASS English lesson translated
+PASS English lesson fits its measured text area
+PASS body and actions keep compact spacing
+PASS English lesson translated
+PASS English lesson fits its measured text area
+PASS body and actions keep compact spacing
+PASS English lesson translated
+PASS English lesson fits its measured text area
+PASS body and actions keep compact spacing
+PASS English lesson translated
+PASS English lesson fits its measured text area
+PASS body and actions keep compact spacing
+PASS English lesson translated
+PASS English lesson fits its measured text area
+PASS body and actions keep compact spacing
+PASS capture 13-help-replay-en
+PASS English lesson translated
+PASS English lesson fits its measured text area
+PASS body and actions keep compact spacing
+PASS completing replay keeps help open
+PASS lesson completion persists across settings reload
+INTERFACE_TEACHING_PASS checks=103

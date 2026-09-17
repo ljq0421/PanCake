@@ -9,17 +9,18 @@ public partial class TianjinLivingWorkbench : Control
     public Func<bool> Active { get; set; } = () => false;
     public Func<PancakeRuntime?> Runtime { get; set; } = () => null;
     public Func<bool> Spreading { get; set; } = () => false;
+    public Func<float> FlipProgress { get; set; } = () => 1;
     public Action? StopPaymentFeedback { get; set; }
     private TextureRect _pendant = null!, _scraper = null!, _spatula = null!;
     private Tween? _pendantTween;
-    private float _steamLeft, _flipLeft;
+    private float _steamLeft;
     private PancakeState? _lastState;
     private bool _wasReduced;
     private readonly List<(Control View, Tween Tween)> _papers = new();
     public int CompletedPaperCount => _papers.Count;
     public float SteamRemaining => _steamLeft;
     public float PendantRotation => _pendant.RotationDegrees;
-    public bool ToolsAtRest => _scraper.Visible && _flipLeft <= 0;
+    public bool ToolsAtRest => _scraper.Visible && _spatula.Position.IsEqualApprox(SpatulaRect.Position);
     public void BindPendantHighlight(Func<InteractionHighlightState> state) => ArtContourHighlight.Attach(_pendant, state);
     private static bool Reduced => ProjectSettings.GetSetting("accessibility/reduce_motion", false).AsBool();
     private static readonly Rect2 ScraperRect = TianjinWorkbenchLayout.FromSource(1138, 505, 135, 51);
@@ -64,19 +65,14 @@ public partial class TianjinLivingWorkbench : Control
         _steamLeft = Math.Max(0, _steamLeft - (float)delta);
         if (state is PancakeState.Empty or PancakeState.Burnt or PancakeState.Folded or PancakeState.Bagged) _steamLeft = 0;
         _scraper.Visible = !Spreading();
-        if (_flipLeft > 0)
-        {
-            _flipLeft = Math.Max(0, _flipLeft - (float)delta);
-            float arc = Mathf.Sin((1 - _flipLeft / .25f) * Mathf.Pi);
-            _spatula.Position = SpatulaRect.Position.Lerp(TianjinWorkbenchLayout.EmbeddedSurface.GetCenter() + new Vector2(60, -30), arc);
-            _spatula.RotationDegrees = -12 * arc;
-        }
+        float progress = FlipProgress();
+        float reach = progress < .2f ? Mathf.SmoothStep(0, 1, progress / .2f)
+            : 1 - Mathf.SmoothStep(0, 1, (progress - .48f) / .52f);
+        float lift = Mathf.Sin(PancakeCanvas.FlipFlight(progress) * Mathf.Pi);
+        Vector2 contact = TianjinWorkbenchLayout.EmbeddedSurface.GetCenter() + new Vector2(125, -12 - 30 * lift);
+        _spatula.Position = SpatulaRect.Position.Lerp(contact, reach);
+        _spatula.RotationDegrees = -12 * reach;
         QueueRedraw();
-    }
-
-    public void Flip()
-    {
-        if (Active() && !Reduced) _flipLeft = .25f;
     }
 
     public void ReceivePayment()
@@ -117,7 +113,7 @@ public partial class TianjinLivingWorkbench : Control
     public void ResetMotion()
     {
         StopPaymentFeedback?.Invoke();
-        _steamLeft = _flipLeft = 0;
+        _steamLeft = 0;
         _pendantTween?.Kill(); _pendantTween = null;
         if (IsInstanceValid(_pendant)) _pendant.RotationDegrees = 0;
         if (IsInstanceValid(_scraper)) _scraper.Show();

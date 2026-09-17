@@ -20,39 +20,28 @@ public partial class CityPagesSelfTest
         _screen.PresentMap(); await Frames();
         Check(!_save.CanContinue && Find<Label>("MapLitCount").Text == $"1/{total}", "missing save shows the first unlocked city");
         Check(Find<Label>("SummaryCity").Text == "天津" && Find<Label>("MapSelection").Text == "当前城市", "missing save selects Tianjin");
-        Check(Find<Button>("EnterCity").Text == "开始新的旅程", "missing save offers a new journey");
         CheckMapLayout(); await Capture(prefix + "no-save");
-        await MapClick("EnterCity");
-        Check(_screen.Page == JourneyPage.Opening && !File.Exists(_path), "map starts the existing opening without creating a save early");
-        _screen.PresentMap(); await Frames();
         await MapClick("Node0");
         Check(_screen.Page == JourneyPage.Opening && !File.Exists(_path), "Tianjin node starts a new journey without creating a save early");
         Check(_save.ResetProgress(out _), "isolated map save created");
         _screen.PresentMap(); await Frames();
         Check(Find<Label>("MapLitCount").Text == $"1/{total}" && Find<Label>("MapNextCity").Text == "武汉", "initial route and unlock count");
-        Check(!Find<Button>("EnterCity").Disabled, "current city is available");
         Check(Find<TextureRect>("MapLandmark天津").Texture is AtlasTexture tianjin && tianjin.Atlas.ResourcePath.EndsWith("早餐地图-天津.png")
             && Find<TextureRect>("MapLandmark武汉").Texture is AtlasTexture wuhan && wuhan.Atlas.ResourcePath.EndsWith("早餐地图-武汉.png"), "current and next city use supplied landmarks");
         CheckMapLayout(); await Capture(prefix + "initial");
         string persisted = File.ReadAllText(_path);
 
         await MapClick("Node1");
+        if (_screen.DeveloperToolsVisible)
+        {
+            Check(_screen.Page == JourneyPage.City && _screen.SelectedCityId == StableIds.Cities.Wuhan, "developer node previews locked city");
+            await MapClick("Back");
+        }
+        else Check(_screen.Page == JourneyPage.Map, "locked city node only displays its goal");
         Check(Find<Label>("MapSelection").Text == "所选城市" && Find<Label>("SummaryCity").Text == "武汉", "mouse selects a locked city without entering");
         Check(Find<Label>("SummaryGoal").Text == "完成天津章节后开放", "locked city explains its prerequisite");
-        Check(Find<Button>("EnterCity").Disabled == !_screen.DeveloperToolsVisible, "locked action respects developer preview");
         Check(Find<Label>("MapLitCount").Text == $"1/{total}", "selection does not unlock a city");
         CheckMapLayout(); await Capture(prefix + "locked");
-        if (!_screen.DeveloperToolsVisible)
-        {
-            await MapClick("EnterCity");
-            Check(_screen.Page == JourneyPage.Map, "disabled action cannot enter a locked city");
-        }
-        else
-        {
-            await MapClick("EnterCity");
-            Check(_screen.Page == JourneyPage.City && _screen.SelectedCityId == StableIds.Cities.Wuhan, "developer action previews locked city");
-            _screen.PresentMap(); await Frames();
-        }
 
         Find<Button>("Node0").GrabFocus();
         _screen._Input(new InputEventKey { Keycode = Key.Tab, Pressed = true });
@@ -71,9 +60,6 @@ public partial class CityPagesSelfTest
         Check(_screen.Page == JourneyPage.City && _screen.SelectedCityId == StableIds.Cities.Tianjin, "keyboard activation opens Tianjin continue page");
         await MapClick("Back");
         Check(_screen.Page == JourneyPage.Map && Find<Button>("Node0").HasFocus(), "city Back returns to the Tianjin map node");
-        await MapClick("EnterCity");
-        Check(_screen.Page == JourneyPage.City && _screen.SelectedCityId == StableIds.Cities.Tianjin, "bottom action still enters selected city");
-        await MapClick("Back");
         await Capture(prefix + "tianjin-return");
         await MapClick("Back"); Check(_screen.Page == JourneyPage.Home, "map Back returns to its source");
 
@@ -84,14 +70,24 @@ public partial class CityPagesSelfTest
         Check(Find<Label>("SummaryCity").Text == "武汉" && Find<Label>("MapSelection").Text == "当前城市", "map initially selects saved current city");
         Check(Find<Label>("MapLitCount").Text == $"2/{total}" && Find<Label>("MapNextCity").Text == "西安", "next stop and counts follow progress");
         CheckMapLayout(); await Capture(prefix + "progress");
+        Check(File.ReadAllText(_path) == persisted, "map selection leaves persisted progress untouched");
+        await MapClick("Node1");
+        Check(_screen.Page == JourneyPage.City && _screen.SelectedCityId == StableIds.Cities.Wuhan, "unlocked Wuhan node opens its city page");
+        if (demo)
+        {
+            Check(_save.DemoProgress.LastStartedStageId == _save.DemoContent!.Stage(StableIds.Cities.Wuhan, _screen.SelectedDay)!.Id,
+                "entering demo Wuhan preserves existing stage recording");
+            persisted = File.ReadAllText(_path);
+        }
+        await MapClick("Back");
+        Check(_screen.Page == JourneyPage.Map && Find<Button>("Node1").HasFocus(), "city return restores Wuhan selection and focus");
         if (demo)
         {
             Check(Find<Label>("MapNextLabel").Text == "下一站预告", "demo marks the next city as a preview");
             await MapClick("Node2");
-            Check(Find<Button>("EnterCity").Disabled && Find<Label>("SummaryGoal").Text == "下一站预告 · 本次不可营业", "demo preview is explicitly unavailable");
+            Check(_screen.Page == JourneyPage.Map && Find<Label>("SummaryGoal").Text == "下一站预告 · 本次不可营业", "demo preview is explicitly unavailable");
             Check(Find<Label>("MapLitCount").Text == $"2/{total}", "demo preview excluded from both counts");
             Check(!JourneyModel.MapSummary(_save, JourneyModel.Cities[2], true).CanView, "developer preview cannot bypass demo boundary");
-            await MapClick("EnterCity"); Check(_screen.Page == JourneyPage.Map, "preview action cannot navigate");
             CheckMapLayout(); await Capture(prefix + "preview");
         }
         else
@@ -102,12 +98,9 @@ public partial class CityPagesSelfTest
             for (int i = 0; i < playable.Length; i++)
             {
                 await MapClick("Node" + i);
-                if (i == 0)
-                {
-                    Check(_screen.Page == JourneyPage.City && _screen.SelectedCityId == StableIds.Cities.Tianjin, "unlocked Tianjin opens its continue page");
-                    await MapClick("Back");
-                }
-                Check(Find<Label>("SummaryCity").Text == playable[i].Name && !Find<Button>("EnterCity").Disabled, "unlocked selection " + playable[i].Name);
+                Check(_screen.Page == JourneyPage.City && _screen.SelectedCityId == playable[i].Id, "unlocked node opens city " + playable[i].Name);
+                await MapClick("Back");
+                Check(Find<Label>("SummaryCity").Text == playable[i].Name && Find<Button>("Node" + i).HasFocus(), "return preserves city selection and focus " + playable[i].Name);
                 CheckMapLayout();
             }
             Check(Find<Label>("MapNextLabel").Text == "最终站", "last city has no invented next destination");
@@ -159,9 +152,14 @@ public partial class CityPagesSelfTest
         Check(_screen.FindChildren("MapJourneyCard", "", true, false).Count == 0
             && _screen.FindChildren("PageTitle", "", true, false).Count == 0, "old title and side card removed");
         var strip = Find<Panel>("MapJourneyStrip"); var map = Find<TextureRect>("MapFrame");
+        var world = Find<TextureRect>("WorldMapArt");
+        Vector2 native = world.Texture.GetSize();
+        Check(Math.Abs(world.Size.X / native.X - world.Size.Y / native.Y) < .0001f,
+            "world map preserves the original artwork proportions");
         Check(Find<TextureRect>("MapJourneyStripArt").Texture is AtlasTexture stripArt && stripArt.Atlas.ResourcePath.EndsWith("世界早餐地图解锁.png"), "map uses supplied strip artwork");
         Check(strip.Position.Y >= map.Position.Y + map.Size.Y, "information strip is below the map");
-        Check(!strip.GetGlobalRect().Intersects(Find<Button>("EnterCity").GetGlobalRect()), "primary action does not overlap the strip");
+        Check(_screen.FindChildren("EnterCity", "Button", true, false).Count == 0, "separate view-city button removed");
+        Check(Math.Abs(strip.Position.X + strip.Size.X / 2 - 960) < 1, "bottom strip is horizontally centered");
         foreach (string name in new[] { "MapSelection", "SummaryCity", "MapNextLabel", "MapNextCity", "MapLitLabel", "MapLitCount", "SummaryGoal" })
         {
             var label = Find<Label>(name);

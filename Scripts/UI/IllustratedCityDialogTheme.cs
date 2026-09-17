@@ -3,7 +3,7 @@ using ProjectCake.Data;
 
 namespace ProjectCake.UI;
 
-/// <summary>Approved illustrated dialogs shared by Tianjin and Wuhan, with city-specific frames and ink.</summary>
+/// <summary>Shared illustrated prompts; Wuhan retains its approved green frame.</summary>
 public static class IllustratedCityDialogTheme
 {
     private const string ArtRoot = "res://resource/art/TianJin/DialogUI/";
@@ -12,7 +12,7 @@ public static class IllustratedCityDialogTheme
     private static Texture2D? _secondary;
     public static readonly Vector2 PanelSize = new(1200, 630);
 
-    private static StyleBoxTexture PanelFrame(string cityId, float top = 0, float bottom = 0) => new()
+    public static StyleBoxTexture PanelFrame(string cityId, float top = 0, float bottom = 0) => new()
     {
         Texture = GD.Load<Texture2D>(cityId == StableIds.Cities.Wuhan
             ? "res://resource/art/Wuhan/DialogUI/dialog-panel-v1.png" : ArtRoot + "dialog-panel-v1.png"),
@@ -59,6 +59,37 @@ public static class IllustratedCityDialogTheme
         return title;
     }
 
+    public static void BuildPauseWithTeaching(Panel panel, string cityId)
+    {
+        panel.AddThemeStyleboxOverride("panel", PanelFrame(cityId));
+        SetBounds(panel, new(360, 225, 1200, 630));
+        var title = panel.GetNode<Label>("Title");
+        SetBounds(title, new(318, 17, 564, 114));
+        title.VerticalAlignment = VerticalAlignment.Center;
+        TextStyle(title, 60, cityId, true);
+        FitHeading(title);
+        var teaching = panel.GetChildren().OfType<Label>().First(label => label != title);
+        var actions = new List<Button>();
+        foreach (string name in new[] { "resume", "help", "exit" })
+        {
+            var button = panel.GetNode<Button>(name);
+            StyleAction(button, name == "resume", cityId);
+            actions.Add(button);
+        }
+        foreach (Label label in panel.GetChildren().OfType<Label>().Where(label => label != title))
+        {
+            SetBounds(label, new(600, 190, 490, 370));
+            TextStyle(label, 30, cityId);
+        }
+        void LayoutActions()
+        {
+            for (int row = 0; row < actions.Count; row++)
+                SetBounds(actions[row], new(teaching.Visible ? 100 : 395, 185 + 130 * row, 410, 104));
+        }
+        teaching.VisibilityChanged += LayoutActions;
+        LayoutActions();
+    }
+
     public static void ApplyConfirmation(AcceptDialog dialog, string cityId)
     {
         dialog.MinSize = new(1200, 630);
@@ -94,8 +125,9 @@ public static class IllustratedCityDialogTheme
         Vector2 size = dialog.Size;
         var title = artwork.GetNode<Label>("Title");
         title.Text = dialog.Title;
-        SetBounds(title, new(size.X * .20f, size.Y * .027f, size.X * .59f, size.Y * .18f));
+        SetBounds(title, new(size.X * .265f, size.Y * .027f, size.X * .47f, size.Y * .18f));
         TextStyle(title, 60, cityId, true);
+        FitHeading(title);
         // Keep the translated message intact; a Chinese comma is its natural line break.
         string message = System.Text.RegularExpressions.Regex.Replace(dialog.Tr(dialog.DialogText).ToString(), "，\\n*", "，\n");
         if (dialog.GetLabel().Text != message) dialog.GetLabel().Text = message;
@@ -150,5 +182,15 @@ public static class IllustratedCityDialogTheme
         label.AddThemeColorOverride("font_shadow_color", Colors.Transparent);
         label.AddThemeColorOverride("font_outline_color", new Color("#FFF8E8"));
         label.AddThemeConstantOverride("outline_size", heading ? 8 : 0);
+    }
+
+    public static void FitHeading(Label title)
+    {
+        title.AutowrapMode = TextServer.AutowrapMode.Off;
+        var font = title.GetThemeFont("font");
+        string text = title.Tr(title.Text).ToString();
+        int size = 60;
+        while (size > 28 && font.GetStringSize(text, HorizontalAlignment.Left, -1, size).X > title.Size.X - 24) size--;
+        title.AddThemeFontSizeOverride("font_size", size);
     }
 }

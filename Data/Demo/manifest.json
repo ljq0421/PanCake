@@ -12,9 +12,9 @@
       "patienceMultiplier": 1.6,
       "arrivals": [
         0,
-        16,
-        34,
-        52
+        8,
+        15,
+        24
       ],
       "availableRecipes": [
         "pancake_basic"

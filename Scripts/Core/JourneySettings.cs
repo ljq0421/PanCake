@@ -18,6 +18,12 @@ public partial class JourneySettings : Node
     public bool Fullscreen => GetWindow().Mode is Window.ModeEnum.Fullscreen or Window.ModeEnum.ExclusiveFullscreen;
     public string ErrorMessage { get; private set; } = "";
     public bool DisplayPending => _remaining > 0;
+    private readonly HashSet<string> _seenInterfaceLessons = new(StringComparer.Ordinal);
+    public bool HasSeenInterfaceLesson(string key) => _seenInterfaceLessons.Contains(key);
+    public void MarkInterfaceLessonSeen(string key)
+    {
+        if (_seenInterfaceLessons.Add(key)) SavePreferences();
+    }
     public int SecondsRemaining => (int)Math.Ceiling(_remaining);
     public event Action? Changed;
     private double _remaining;
@@ -51,6 +57,9 @@ public partial class JourneySettings : Node
     {
         RevertDisplay();
         var cfg = new ConfigFile(); Error load = cfg.Load(SettingsPath);
+        _seenInterfaceLessons.Clear();
+        foreach (string key in cfg.GetValue("teaching", "seen_interface_lessons", Array.Empty<string>()).AsStringArray())
+            _seenInterfaceLessons.Add(key);
         Language = cfg.GetValue("language", "locale", "zh_CN").AsString() == "en" ? "en" : "zh_CN";
         TranslationServer.SetLocale(Language);
         ErrorMessage = load is Error.Ok or Error.FileNotFound ? "" : "设置无法读取，已使用默认值。";
@@ -163,6 +172,7 @@ public partial class JourneySettings : Node
     public bool SavePreferences()
     {
         var cfg = new ConfigFile();
+        cfg.SetValue("teaching", "seen_interface_lessons", _seenInterfaceLessons.OrderBy(key => key).ToArray());
         cfg.SetValue("language", "locale", Language);
         Error directory = DirAccess.MakeDirRecursiveAbsolute(Path.GetDirectoryName(ProjectSettings.GlobalizePath(SettingsPath))!);
         if (directory != Error.Ok) { ErrorMessage = "设置未能保存，请检查写入权限与可用空间。"; return false; }

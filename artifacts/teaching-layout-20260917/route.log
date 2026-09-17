@@ -1,0 +1,124 @@
+Godot Engine v4.7.1.stable.mono.official.a13da4feb - https://godotengine.org
+OpenGL API 3.3.0 NVIDIA 610.88 - Compatibility - Using Device: NVIDIA - NVIDIA GeForce RTX 5070
+
+PASS valid Demo manifest
+PASS fresh route
+PASS demo_tj_01 unlocked in order
+PASS demo_tj_01 exact price baseline
+PASS demo_tj_01 customer capacity and schedule
+PASS demo_tj_01 free equipment and recipes
+PASS demo_tj_01 idempotent settlement
+PASS demo_tj_01 reload
+PASS demo_tj_02 unlocked in order
+PASS demo_tj_02 exact price baseline
+PASS demo_tj_02 customer capacity and schedule
+PASS demo_tj_02 free equipment and recipes
+PASS demo_tj_02 idempotent settlement
+PASS demo_tj_02 reload
+PASS demo_tj_03 unlocked in order
+PASS demo_tj_03 exact price baseline
+PASS demo_tj_03 customer capacity and schedule
+PASS demo_tj_03 free equipment and recipes
+PASS demo_tj_03 idempotent settlement
+PASS demo_tj_03 reload
+PASS demo_tj_04 unlocked in order
+PASS demo_tj_04 exact price baseline
+PASS demo_tj_04 customer capacity and schedule
+PASS demo_tj_04 free equipment and recipes
+PASS demo_tj_04 idempotent settlement
+PASS demo_tj_04 reload
+PASS demo_tj_05 unlocked in order
+PASS demo_tj_05 exact price baseline
+PASS demo_tj_05 customer capacity and schedule
+PASS demo_tj_05 free equipment and recipes
+PASS demo_tj_05 idempotent settlement
+PASS demo_tj_05 reload
+PASS demo_tj_06 unlocked in order
+PASS demo_tj_06 exact price baseline
+PASS demo_tj_06 customer capacity and schedule
+PASS demo_tj_06 free equipment and recipes
+PASS demo_tj_06 idempotent settlement
+PASS demo_tj_06 reload
+PASS demo_tj_07 unlocked in order
+PASS demo_tj_07 exact price baseline
+PASS demo_tj_07 customer capacity and schedule
+PASS demo_tj_07 free equipment and recipes
+PASS demo_tj_07 idempotent settlement
+PASS demo_tj_07 reload
+PASS demo_wh_01 unlocked in order
+PASS demo_wh_01 exact price baseline
+PASS demo_wh_01 customer capacity and schedule
+PASS demo_wh_01 free equipment and recipes
+PASS demo_wh_01 idempotent settlement
+PASS demo_wh_01 reload
+PASS demo_wh_02 unlocked in order
+PASS demo_wh_02 exact price baseline
+PASS demo_wh_02 customer capacity and schedule
+PASS demo_wh_02 free equipment and recipes
+PASS demo_wh_02 idempotent settlement
+PASS demo_wh_02 reload
+PASS demo_wh_03 unlocked in order
+PASS demo_wh_03 exact price baseline
+PASS demo_wh_03 customer capacity and schedule
+PASS demo_wh_03 free equipment and recipes
+PASS demo_wh_03 idempotent settlement
+PASS demo_wh_03 reload
+PASS demo_wh_04 unlocked in order
+PASS demo_wh_04 exact price baseline
+PASS demo_wh_04 customer capacity and schedule
+PASS demo_wh_04 free equipment and recipes
+PASS demo_wh_04 idempotent settlement
+PASS demo_wh_04 reload
+PASS demo_wh_05 unlocked in order
+PASS demo_wh_05 exact price baseline
+PASS demo_wh_05 customer capacity and schedule
+PASS demo_wh_05 free equipment and recipes
+PASS demo_wh_05 idempotent settlement
+PASS demo_wh_05 reload
+PASS demo_wh_06 unlocked in order
+PASS demo_wh_06 exact price baseline
+PASS demo_wh_06 customer capacity and schedule
+PASS demo_wh_06 free equipment and recipes
+PASS demo_wh_06 idempotent settlement
+PASS demo_wh_06 reload
+PASS unshipped content inaccessible
+PASS fryer upgrade uses actual saved balance
+PASS prepare new Tianjin lesson 2
+PASS isolated example 2
+PASS capture tianjin-2
+PASS skip clears example and restores main resources
+PASS prepare new Tianjin lesson 4
+PASS isolated example 4
+PASS capture tianjin-4
+PASS oil tutorial waits safely at golden heat
+PASS skip clears example and restores main resources
+PASS prepare new Tianjin lesson 6
+PASS isolated example 6
+PASS capture tianjin-6
+PASS teaching soy delivery visibly restores 15 percent without collection
+PASS skip clears example and restores main resources
+PASS Wuhan lesson prepared 1
+PASS Wuhan example clock isolated
+PASS capture wuhan-1
+PASS teaching noodles never overcook
+PASS real Wuhan lesson delivery
+PASS Wuhan lesson no revenue
+PASS capture wuhan-complete-1
+PASS Wuhan example clears before normal shift
+PASS Wuhan lesson prepared 4
+PASS Wuhan example clock isolated
+PASS capture wuhan-4
+PASS teaching waits for egg
+PASS teaching waits for flip
+PASS teaching waits for cutting
+PASS real Wuhan lesson delivery
+PASS Wuhan lesson no revenue
+PASS capture wuhan-complete-4
+PASS Wuhan example clears before normal shift
+PASS Wuhan upgrade purchase
+PASS record Wuhan replay
+PASS continue preserves Wuhan stage
+PASS pilot migration preserves assets and opens T4
+PASS migration preserves original bytes
+PASS migration never reissues income
+DEMO_ROUTE_SELF_TEST_OK 120

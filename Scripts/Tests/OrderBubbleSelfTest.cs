@@ -13,6 +13,7 @@ namespace ProjectCake.Tests;
 public partial class OrderBubbleSelfTest : Node
 {
     private int _passed;
+    private readonly HashSet<ulong> _checkedIconTextures = new();
     private bool Capture => OS.GetCmdlineUserArgs().Contains("--capture");
     private void Check(bool condition, string message)
     {
@@ -28,6 +29,12 @@ public partial class OrderBubbleSelfTest : Node
         try
         {
             ProjectSettings.SetSetting("accessibility/reduce_motion", true);
+            Directory.CreateDirectory(ProjectSettings.GlobalizePath("res://.tmp/order-bubbles"));
+            GetWindow().Position = new Vector2I(-10000, -10000);
+            var settings = GetNode<JourneySettings>("/root/JourneySettings");
+            settings.UsePathForTests("res://.tmp/order-bubbles/settings.cfg");
+            settings.MarkInterfaceLessonSeen(InterfaceLessons.BusinessKey);
+            settings.MarkInterfaceLessonSeen(InterfaceLessons.PendantKey);
             var catalog = GetNode<DataCatalog>("/root/DataCatalog");
             foreach (int width in new[] { 1920, 1280 })
             foreach (bool wuhan in new[] { false, true })
@@ -54,10 +61,10 @@ public partial class OrderBubbleSelfTest : Node
                 string plainRecipe = wuhan ? "hot_dry_noodles_classic" : "pancake_basic";
                 OrderLineData[][] fixtures =
                 {
-                    new[] { Main(firstRecipe, sauce: SaucePreference.Light), Main(secondRecipe, sauce: SaucePreference.Extra), sideA, sideB },
+                    new[] { Main(firstRecipe, sauce: SaucePreference.Light), Main(secondRecipe, sauce: SaucePreference.Extra), sideB },
                     new[] { Main(secondRecipe, 2), sideA },
                     new[] { Main(plainRecipe) },
-                    new[] { sideA },
+                    new[] { sideA, sideB },
                     new[] { Main(firstRecipe), sideA, sideB },
                 };
                 int count = 5;
@@ -98,10 +105,47 @@ public partial class OrderBubbleSelfTest : Node
                     var rows = bubble.FindChild("OrderRows", true, false).GetChildren().OfType<Container>().ToArray();
                     Check(rows.All(r => Math.Abs(r.Size.X - rows[0].Size.X) < .5 && Math.Abs(r.Position.X - rows[0].Position.X) < .5), "all food rows have equal width and aligned edges");
                     Check(bubble.GetGlobalRect().End.Y + 12 < (wuhan ? 625 : 575), "bubble tail stays above workbench");
-                    foreach (Control icon in bubble.FindChildren("*", "TextureRect", true, false).OfType<Control>())
+                    foreach (TextureRect icon in bubble.FindChildren("*", "TextureRect", true, false).OfType<TextureRect>())
+                    {
                         Check(bubble.GetGlobalRect().Grow(.5f).Encloses(icon.GetGlobalRect()),
                             $"food and sauce icons remain within the paper ({(wuhan ? "wuhan" : "tianjin")}/{width}/{icon.Name}: bubble={bubble.GetGlobalRect()}, icon={icon.GetGlobalRect()})");
-                    Check(bubble.Size.X <= (wuhan ? 365 : 332) && bubble.Size.Y <= 196, "largest order remains inside customer column budget");
+                        CheckIconEdges(icon);
+                        Node? row = icon.GetParent();
+                        while (row is not null && row is not PanelContainer) row = row.GetParent();
+                        Check(row is Control region && region.GetGlobalRect().Grow(.1f).Encloses(icon.GetGlobalRect()),
+                            $"{icon.Name}: enlarged image remains inside its own product row");
+                    }
+                    Check(Math.Abs(bubble.Size.X - OrderBubbleView.CompactWidth) < .5 && bubble.Size.Y <= 204,
+                        "all cards use the same narrow width and three product rows fit above the customer");
+                    Check(Math.Abs(bubble.GetGlobalRect().Size.X - OrderBubbleView.CompactWidth) < .5,
+                        "both cities preserve the same displayed width and icon scale");
+                    foreach (Control row in Regions(bubble, "OrderSideProduct"))
+                    {
+                        Control product = row.FindChild("CenteredSideProduct", true, false) as Control
+                            ?? throw new InvalidOperationException("missing centered side product");
+                        Check(Math.Abs(product.GetGlobalRect().GetCenter().X - row.GetGlobalRect().GetCenter().X) < .5,
+                            "side product stays centered with or without its quantity");
+                        int line = row.GetMeta("line_index").AsInt32();
+                        int quantity = controller.CustomerQueue.Slots[bubbles.ToList().IndexOf(bubble)].Order.Lines[line].Quantity;
+                        Check(row.FindChildren("OrderQuantity", "", true, false).Count == (quantity > 1 ? 1 : 0),
+                            "single sides are icon-only; repeated sides retain one quantity progress");
+                        if (row.FindChild("OrderQuantity", true, false) is Label countLabel)
+                        {
+                            Check(row.GetGlobalRect().Encloses(countLabel.GetGlobalRect()), "quantity stays inside the row after enlarging food");
+                            Check(!product.GetGlobalRect().Intersects(countLabel.GetGlobalRect()), "enlarged side product does not overlap its quantity");
+                        }
+                    }
+                    foreach (GridContainer grid in bubble.FindChildren("OrderToppings", "", true, false).OfType<GridContainer>())
+                    {
+                        Check(grid.Columns is 1 or 2, "ingredients use at most two columns");
+                        var icons = grid.GetChildren().OfType<Control>().ToArray();
+                        Check(icons.All(icon => icon.Size.IsEqualApprox(new Vector2(36, 26))), "toppings use the approved enlarged slots");
+                        Check(icons.All(icon => grid.GetGlobalRect().Grow(.5f).Encloses(icon.GetGlobalRect())), "all toppings fit within their grid");
+                        Control product = grid.GetParent().GetNode<Control>("OrderProductIcon");
+                        Check(!product.GetGlobalRect().Intersects(grid.GetGlobalRect()), "large product and topping columns do not overlap");
+                    }
+                    Check(bubble.FindChildren("OrderProductIcon", "", true, false).OfType<Control>()
+                        .All(icon => icon.Size.IsEqualApprox(new Vector2(74, 54))), "all finished products use the approved enlarged slots");
                 }
                 var spatialBubbles = bubbles.OrderBy(b => b.GlobalPosition.X).ToArray();
                 for (int i = 1; i < spatialBubbles.Length; i++) Check(!spatialBubbles[i-1].GetGlobalRect().Intersects(spatialBubbles[i].GetGlobalRect()), "adjacent customers' bubbles do not overlap");
@@ -124,18 +168,24 @@ public partial class OrderBubbleSelfTest : Node
                 Check(Regions(bubbles[2], "OrderMainRow")[0].FindChildren("OrderIngredientIcon*", "", true, false).Count == 0, "plain recipe has no invented topping icons");
                 Check(bubbles[2].FindChildren("OrderSauceIcon*", "", true, false).Count == 0, "normal sauce has no badge");
                 Check(bubbles[0].FindChildren("OrderSauceIcon*", "", true, false).Count == (wuhan ? 0 : 2), "only Tianjin uses the light and extra sauce badges");
-                Check(Regions(bubbles[0], "OrderSideProduct").Length == 2 && bubbles[0].FindChildren("OrderSideRow", "", true, false).Count == 1, "both side products share one row with two independent regions");
+                Check(Regions(bubbles[3], "OrderSideProduct").Length == 2 && bubbles[3].FindChildren("OrderSideRow", "", true, false).Count == 0,
+                    "different side products occupy independent full-width rows");
+                Check(Regions(bubbles[3], "OrderSideProduct")[1].Position.Y > Regions(bubbles[3], "OrderSideProduct")[0].Position.Y,
+                    "side products stack vertically");
+                Vector2[] initialSizes = bubbles.Select(b => b.Size).ToArray();
+                Vector2[] initialPositions = bubbles.Select(b => b.Position).ToArray();
                 await Shot($"{(wuhan ? "wuhan" : "tianjin")}-{width}-initial");
 
                 CustomerRuntime first = controller.CustomerQueue.Slots[0];
                 // Deliver the second recipe first: it must not mark the first displayed row.
                 Accept(first, fixtures[0][1]); Refresh(); await Frames();
                 Check(!Done(firstRows[0]) && Done(firstRows[1]), "out-of-order recipe delivery marks the matching portion only");
-                Accept(first, sideA); Accept(first, sideB); Refresh(); await Frames();
-                Control[] sideRegions = Regions(bubbles[0], "OrderSideProduct");
+                CustomerRuntime sidesCustomer = controller.CustomerQueue.Slots[3];
+                Accept(sidesCustomer, sideA); Accept(sidesCustomer, sideB); Refresh(); await Frames();
+                Control[] sideRegions = Regions(bubbles[3], "OrderSideProduct");
                 Check(Done(sideRegions[0]) && !Done(sideRegions[1]), "one complete side is green while partial second side stays paper");
-                Check(((Label)sideRegions[0].FindChild("OrderQuantity",true,false)).Text == "1/1"
-                    && ((Label)sideRegions[1].FindChild("OrderQuantity",true,false)).Text == "1/2", "independent delivered fractions are accurate");
+                Check(sideRegions[0].FindChild("OrderQuantity",true,false) is null
+                    && ((Label)sideRegions[1].FindChild("OrderQuantity",true,false)).Text == "1/2", "single side remains icon-only and repeated side progress is accurate");
                 CustomerRuntime repeated = controller.CustomerQueue.Slots[1];
                 Accept(repeated, fixtures[1][0]); Refresh(); await Frames();
                 Control[] repeatedRows = Regions(bubbles[1], "OrderMainRow");
@@ -143,8 +193,12 @@ public partial class OrderBubbleSelfTest : Node
                 ulong[] ids = bubbles[0].FindChildren("*","",true,false).Select(n => n.GetInstanceId()).ToArray();
                 for (int i=0;i<10;i++) Refresh();
                 Check(ids.SequenceEqual(bubbles[0].FindChildren("*","",true,false).Select(n=>n.GetInstanceId())), "progress refresh reuses nodes and food icons");
+                Check(bubbles.Select((bubble, i) => bubble.Size.DistanceTo(initialSizes[i]) < .1f
+                        && bubble.Position.DistanceTo(initialPositions[i]) < .1f).All(stable => stable),
+                    "partial delivery keeps every card's size and position stable: " + string.Join("; ",
+                        bubbles.Select((bubble, i) => $"{i}: {initialSizes[i]}/{initialPositions[i]} -> {bubble.Size}/{bubble.Position}")));
                 await Shot($"{(wuhan ? "wuhan" : "tianjin")}-{width}-partial");
-                Accept(first, sideB); Refresh(); await Frames();
+                Accept(sidesCustomer, sideB); Refresh(); await Frames();
                 Check(Done(sideRegions[1]) && ((Label)sideRegions[1].FindChild("OrderQuantity",true,false)).Text == "2/2", "second side greens only at full quantity");
                 screen.Free(); controller.Free(); save.Free(); await Frames();
             }
@@ -170,6 +224,8 @@ public partial class OrderBubbleSelfTest : Node
             var progress = new OrderProgress(order);
             bubble.Render(order, progress, catalog.RecipesById); await Frames();
             Check(Regions(bubble, "OrderMainRow").Length == 2, "Xi'an double buns own separate rows");
+            Check(Math.Abs(bubble.Size.X - 332) < .5 && bubble.FindChildren("OrderToppings", "", true, false).Count == 0,
+                "Xi'an keeps its original width and horizontal ingredients");
             Check(bubble.FindChildren("OrderExtraMeat", "", true, false).Count == (recipe.MeatPortions == 2 ? 2 : 0), "Xi'an meat badges match both portions");
             Check(bubble.FindChildren("OrderJuice", "", true, false).Count == (recipe.HasJuice ? 2 : 0), "Xi'an juice badges match both portions");
             Check(bubble.Size.Y <= 200 && bubble.Size.X <= 332, "largest Xi'an combo fits customer column");
@@ -190,6 +246,17 @@ public partial class OrderBubbleSelfTest : Node
     }
     private static Control[] Regions(OrderBubbleView bubble, string name) => bubble.FindChildren(name + "*", "PanelContainer", true, false).OfType<Control>().ToArray();
     private static bool Done(Control region) => region.GetMeta("complete").AsBool();
+    private void CheckIconEdges(TextureRect icon)
+    {
+        if (!_checkedIconTextures.Add(icon.Texture.GetInstanceId())) return;
+        using Image pixels = icon.Texture.GetImage();
+        Rect2I visible = pixels.GetUsedRect();
+        Check(pixels.HasMipmaps(), $"{icon.Name}: small icons retain filtered outlines through mipmaps");
+        float fit = Math.Min(icon.Size.X / pixels.GetWidth(), icon.Size.Y / pixels.GetHeight());
+        float guard = Math.Min(Math.Min(visible.Position.X, visible.Position.Y),
+            Math.Min(pixels.GetWidth() - visible.End.X, pixels.GetHeight() - visible.End.Y)) * fit;
+        Check(guard >= 1.8f, $"{icon.Name}: every image edge has room for filtering and ink (guard={guard})");
+    }
     private void Accept(CustomerRuntime customer, OrderLineData line)
     {
         var item = new DeliveredItem(line.ProductKind, line.DefinitionId, PancakeQuality.Perfect, YoutiaoQuality.Golden,
@@ -204,5 +271,12 @@ public partial class OrderBubbleSelfTest : Node
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         using Image image = GetViewport().GetTexture().GetImage();
         Check(image.SavePng(path) == Error.Ok, "capture saved");
+        if (name is "tianjin-1920-initial" or "wuhan-1920-initial")
+        {
+            Rect2I detail = name.StartsWith("tianjin") ? new(840, 85, 220, 250) : new(735, 95, 220, 250);
+            using Image zoom = image.GetRegion(detail);
+            zoom.Resize(660, 750, Image.Interpolation.Nearest);
+            Check(zoom.SavePng(path.Replace("-initial.png", "-icon-detail.png")) == Error.Ok, "actual rendered icon detail saved");
+        }
     }
 }

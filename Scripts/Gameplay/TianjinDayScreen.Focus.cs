@@ -12,7 +12,9 @@ public partial class TianjinDayScreen
     private void BuildTeachingFocus()
     {
         _workstation.BindFocusDrag();
-        TeachingFocus = new TutorialFocusLayer { CardSkin = TutorialFocusCardSkin.Tianjin, Resolve = ResolveTeachingFocus, KeepClear = TeachingClearAreas };
+        TeachingFocus = new TutorialFocusLayer { CardSkin = TutorialFocusCardSkin.Tianjin, Resolve = ResolveTeachingFocus,
+            KeepClear = TeachingClearAreas, PlaceNearTargets = true,
+            PresentationCard = () => _demoLesson?.IsVisibleInTree() == true ? _demoLesson : null };
         AddChild(TeachingFocus);
     }
     private IEnumerable<TutorialFocusTarget> TeachingClearAreas()
@@ -35,9 +37,12 @@ public partial class TianjinDayScreen
         IReadOnlyList<TutorialOrder> focusOrders = _controller.TutorialActive && _demoTeachingDay == 6 && orders.Any(o => o.Kind == ProductKind.SoyMilk)
             ? orders.Where(o => o.Kind == ProductKind.SoyMilk).ToArray() : orders;
         var step = _workstation.ResolveFocus(focusOrders, Recipients);
-        // The guided example keeps its existing skip/completion controls and one source of step copy.
-        if (step is not null && _demoLesson?.Visible == true && _controller.TutorialActive)
-            _demoLessonHint!.Text = step.Text;
+        // One card owns the current instruction and the lesson action; the focus layer only spotlights it.
+        if (step is not null && _demoLesson?.Visible == true)
+        {
+            if (_demoLessonSaveError.Length == 0) _demoLessonHint!.Text = step.Text;
+            LayoutDemoLesson();
+        }
         return step;
     }
 }

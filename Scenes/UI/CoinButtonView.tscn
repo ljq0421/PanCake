@@ -348,7 +348,6 @@ offset_left = 0
 offset_top = 0
 offset_right = 0.0
 offset_bottom = 0.0
-tooltip_text = "点击收钱"
 focus_mode = 0
 theme_override_styles/normal = SubResource("ButtonNormal")
 theme_override_styles/pressed = SubResource("ButtonHover")

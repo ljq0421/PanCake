@@ -26,6 +26,7 @@ public partial class CityPagesSelfTest : Node
             Directory.CreateDirectory(dir); _path = Path.Combine(dir, "save.json");
             _save = GetNode<SaveService>("/root/SaveService"); _save.UsePathForTests(_path); _save.ResetProgress(out _);
             GetNode<JourneySettings>("/root/JourneySettings").UsePathForTests(Path.Combine(dir, "settings.cfg"));
+            InterfaceLessons.MarkAllSeen(GetNode<JourneySettings>("/root/JourneySettings"));
             _main = GD.Load<PackedScene>("res://Scenes/Main/Main.tscn").Instantiate<GameController>(); AddChild(_main);
             _screen = _main.GetNode<StartScreen>("UI/StartScreen");
             await Frames();
@@ -39,6 +40,11 @@ public partial class CityPagesSelfTest : Node
                 GetNode<JourneySettings>("/root/JourneySettings").SetLanguage(args.Contains("--english") ? "en" : "zh_CN");
                 await ReviewWorldMap();
                 GD.Print($"WORLD_MAP_TEST_RESULT passed={_passed} failed=0"); GetTree().Quit(); return;
+            }
+            if (args.Contains("--upgrades-only"))
+            {
+                await CheckSharedUpgradePage();
+                GD.Print($"CITY_UPGRADE_TEST_RESULT passed={_passed} failed=0"); GetTree().Quit(); return;
             }
             _main.OpenCity(StableIds.Cities.Tianjin);
             _screen.PresentMap(); await Capture("map-locked");
@@ -67,16 +73,13 @@ public partial class CityPagesSelfTest : Node
             {
                 var city = JourneyModel.Cities[i];
                 Click("Node" + i); await Frames();
-                if (city.Id == StableIds.Cities.Tianjin)
-                {
-                    Check(_screen.Page == JourneyPage.City && _screen.SelectedCityId == city.Id, "Tianjin node directly opens city page");
-                    Click("Back"); await Frames();
-                }
+                Check(_screen.Page == JourneyPage.City && _screen.SelectedCityId == city.Id, "unlocked node directly opens city page " + city.Name);
+                Click("Back"); await Frames();
                 var mapCard = Find<Panel>("MapJourneyStrip");
                 Check(Find<TextureRect>("MapJourneyStripArt").Texture is AtlasTexture, "map uses supplied three-column strip " + city.Name);
                 Check(Find<Label>("MapLitCount").Text == "5/5", "map counts unlocked cities " + city.Name);
                 Check(Find<Label>("SummaryCity").Text == city.Name, "map strip selects city " + city.Name);
-                Check(Find<Button>("EnterCity").Position.X > mapCard.Position.X + mapCard.Size.X, "map action sits beside strip " + city.Name);
+                Check(Math.Abs(mapCard.Position.X + mapCard.Size.X / 2 - 960) < 1, "map strip is centered " + city.Name);
                 await Capture("map-card-" + city.Name);
             }
             foreach (var city in JourneyModel.Cities)
@@ -192,8 +195,8 @@ public partial class CityPagesSelfTest : Node
             _screen.PresentLedger(); Click("ResetLedgerProgress");
             var resetPanel = Find<Panel>("ResetLedgerPanel");
             Check(resetPanel.GetThemeStylebox("panel") is StyleBoxTexture
-                && Find<Panel>("ResetLedgerMessagePanel").Visible
-                && Find<Control>("ResetLedgerDecorations").Visible,
+                && ((StyleBoxTexture)resetPanel.GetThemeStylebox("panel")).Texture.ResourcePath
+                    == "res://resource/art/TianJin/DialogUI/dialog-panel-v1.png",
                 "reset confirmation uses the shared illustrated panel treatment");
             await Capture("reset-confirmation");
             Click("Cancel"); Check(_save.Data.Coins == 153, "reset cancel preserves progress");

@@ -1,0 +1,142 @@
+Godot Engine v4.7.1.stable.mono.official.a13da4feb - https://godotengine.org
+OpenGL API 3.3.0 NVIDIA 610.88 - Compatibility - Using Device: NVIDIA - NVIDIA GeForce RTX 5070
+
+PASS maintenance shift initializes
+PASS full stock does not prompt unnecessary maintenance
+PASS low stock prompts restock before it is empty, even between customers
+PASS capture tianjin-low-stock
+PASS restock hint does not interrupt a held ingredient
+PASS normal food and spreading do not prompt maintenance
+PASS missing egg immediately prompts refill while production is blocked
+PASS restocking does not interrupt brushing
+PASS first burnt pancake takes priority over low stock
+PASS capture tianjin-discard-hold
+PASS short right click neither discards nor teaches
+PASS real right hold changes the instruction to the bin target
+PASS capture tianjin-discard-drag
+PASS cancelled discard remains teachable
+PASS paused maintenance hint is hidden
+PASS unfocused maintenance hint is hidden
+PASS focus return restores needed cleanup
+PASS actual drop in bin teaches discard
+PASS cleanup hands off to missing stock
+PASS short left hold does not restock or teach
+PASS hold starts real refill but mastery waits for completion
+PASS capture tianjin-refill-progress
+PASS focus pause freezes refill and does not mark mastery
+PASS completed refill persists mastery and removes the instruction
+PASS successful maintenance does not repeat instructions
+PASS reset does not treat an abandoned refill as mastery
+PASS maintenance with fryer and soy initializes
+PASS missing ingredient has priority over last-used fryer's next step
+PASS burnt pancake wins even after using fryer
+PASS burnt fryer teaches the same right hold
+PASS consume soy fixture
+PASS one used soy cup does not prompt low-stock restocking
+PASS consume soy fixture
+PASS consume soy fixture
+PASS consume soy fixture
+PASS consume soy fixture
+PASS consume soy fixture
+PASS consume soy fixture
+PASS consume soy fixture
+PASS soy low stock follows the same idle-time rule
+PASS soy hold also waits for actual refill completion
+PASS soy refill completion teaches once
+PASS Tianjin initializes
+PASS Tianjin first action highlights batter: action=take:batter, state=Running, pending=1, slots=1, visible=True, station=True, paused=False
+PASS capture tianjin-batter
+PASS painted tutorial source uses the hover artwork matte
+PASS spotlight leaves empty matte corners shaded and the ingredient center clear
+PASS Tianjin tutorial inherits hover color
+PASS held batter targets stove instead of source
+PASS capture tianjin-held-batter
+PASS cancelled batter drag does not teach
+PASS fixture PlaceBatter
+PASS fixture BeginSpread
+PASS fixture CompleteSpread
+PASS egg is highlighted after spreading
+PASS capture tianjin-egg
+PASS successful egg operation is learned
+PASS heat wait targets current stove
+PASS close suppresses this shift
+PASS success does not reopen dismissed guidance
+PASS next Tianjin shift initializes
+PASS new shift resumes unlearned actions
+PASS Tianjin focus loss hides mask
+PASS Tianjin focus return resolves again
+PASS Tianjin stage 3 initializes
+PASS fixture PlaceBatter
+PASS fixture BeginSpread
+PASS fixture CompleteSpread
+PASS fixture AddEgg
+PASS fixture Flip
+PASS Tianjin sauce source is highlighted
+PASS capture tianjin-sauce
+PASS fixture BeginSauce
+PASS brush targets pancake surface
+PASS capture tianjin-brush
+PASS fixture CompleteSauce
+PASS new topping follows the actual order
+PASS capture tianjin-topping
+PASS Tianjin stage 5 initializes
+PASS new fryer introduces loading
+PASS capture tianjin-fryer-load
+PASS loaded fryer targets lower button
+PASS capture tianjin-fryer-lower
+PASS fixture PlaceBatter
+PASS fixture BeginSpread
+PASS fixture CompleteSpread
+PASS fixture AddEgg
+PASS fixture Flip
+PASS fixture BeginSauce
+PASS fixture CompleteSauce
+PASS held youtiao takes priority over another missing topping
+PASS held youtiao targets customer when pancake does not need it
+PASS Tianjin stage 9 initializes
+PASS new soy milk highlights its tray
+PASS capture tianjin-soy
+PASS hidden city has no mask
+PASS Wuhan initializes
+PASS Wuhan first action highlights raw tray
+PASS capture wuhan-raw
+PASS Wuhan tutorial inherits hover color
+PASS actual raw drag switches to basket
+PASS capture wuhan-held-noodles
+PASS cancelled noodles do not teach
+PASS successful raw drag is learned through shade
+PASS raising succeeds
+PASS pour reservation succeeds
+PASS actual pour completion is learned
+PASS seasoning is the next target
+PASS capture wuhan-seasoning
+PASS failed topping is not learned
+PASS valid seasoning click passes through shade
+PASS mixing targets bowl
+PASS capture wuhan-mix
+PASS completed real mixing is learned
+PASS ready meal targets delivery source
+PASS capture wuhan-ready
+PASS held meal highlights recipient
+PASS capture wuhan-customer
+PASS accepted noodle delivery is learned
+PASS paused shift hides guidance
+PASS doupi unlock stage initializes
+PASS new stage introduces unlearned doupi
+PASS capture wuhan-doupi-batter
+PASS doupi batter succeeds then targets egg
+PASS capture wuhan-doupi-egg
+PASS flip succeeds then targets filling
+PASS capture wuhan-doupi-filling
+PASS cooked doupi targets knife
+PASS capture wuhan-knife
+PASS held knife targets pan
+PASS capture wuhan-held-knife
+PASS picking up then cancelling knife is not mastery
+PASS complete cut gesture teaches and transfers eight pieces
+PASS capture wuhan-doupi-ready
+PASS Wuhan hidden city clears mask
+PASS learned operations persist
+PASS both cities reload learned operations
+PASS old saves without teaching records load as unlearned
+TUTORIAL_FOCUS_SELF_TEST_OK 138

@@ -13,7 +13,7 @@ public static class WuhanTeachingUi
     public static void ApplyPanel(Panel panel)
     {
         TianjinTeachingUi.ApplyPanel(panel);
-        panel.Material = CreateMaterial();
+        panel.GetNode<MeshInstance2D>("TeachingPanelArt").Material = CreateMaterial();
     }
 
     public static Panel ActionFrame(Button action, Vector2 position, Vector2 size)
@@ -26,9 +26,6 @@ public static class WuhanTeachingUi
         foreach (string state in new[] { "font_color", "font_hover_color", "font_pressed_color", "font_focus_color" })
             action.AddThemeColorOverride(state, WuhanUi.Text);
         action.AddThemeColorOverride("font_disabled_color", WuhanUi.Muted);
-        var focus = (StyleBoxFlat)action.GetThemeStylebox("focus").Duplicate();
-        focus.BorderColor = WuhanUi.Ink;
-        action.AddThemeStyleboxOverride("focus", focus);
         action.MouseEntered += () => art.Modulate = new Color(1.06f, 1.06f, 1.06f);
         action.MouseExited += () => art.Modulate = Colors.White;
         action.ButtonDown += () => art.Modulate = new Color(.92f, .92f, .92f);

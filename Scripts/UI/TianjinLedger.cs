@@ -116,9 +116,6 @@ public partial class TianjinLedger : Control
             UpdateButtonStyle(button, "pressed", TianjinUi.Yellow, 4);
             UpdateButtonStyle(button, "hover", paper.Lightened(.06f), 3);
             UpdateButtonStyle(button, "hover_pressed", TianjinUi.Yellow.Lightened(.06f), 4);
-            string description = showMetrics
-                ? $"最佳收入 ¥{dayBest!.TotalRevenue} · 满意度 {dayBest.Satisfaction:0}%" : state.Text;
-            button.TooltipText = $"Day {day} · {MorningHub.DaySubtitle(day)} · {description}";
         }
 
         bool locked = SelectedDay > save.Data.HighestUnlockedDay;

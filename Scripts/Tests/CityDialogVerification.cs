@@ -19,6 +19,7 @@ public partial class CityDialogVerification : Node
             save.UsePathForTests(Output + "/fixture.json");
             Require(save.ResetProgress(out _), "isolated fixture initialized");
             GetNode<JourneySettings>("/root/JourneySettings").UsePathForTests(ProjectSettings.GlobalizePath(Output + "/settings.cfg"));
+            InterfaceLessons.MarkAllSeen(GetNode<JourneySettings>("/root/JourneySettings"));
             save.Data.Coins = 5000;
             save.Data.Tianjin.HighestUnlockedDay = 15;
             save.Data.Wuhan.HighestUnlockedDay = save.Data.Xian.HighestUnlockedDay = 12;
@@ -48,6 +49,17 @@ public partial class CityDialogVerification : Node
                     double before = controller.DayElapsedSeconds; controller.Tick(2);
                     Require(controller.IsPaused && controller.DayElapsedSeconds == before, city + " pause freezes business");
                     await Shot(viewport, $"{city}-{width}-pause");
+                    if (city == "Xian")
+                    {
+                        var panel = screen.GetNode<Panel>("Workbench/PauseMenu/Panel");
+                        var teaching = panel.GetChildren().OfType<Label>().First(label => label.Name != "Title");
+                        Click(viewport, panel.GetNode<Button>("help")); await Frames();
+                        Require(teaching.Visible && panel.GetGlobalRect().Encloses(teaching.GetGlobalRect()), "Xian teaching fits the dialog");
+                        Require(!teaching.GetGlobalRect().Intersects(panel.GetNode<Button>("help").GetGlobalRect()), "Xian teaching stays clear of actions");
+                        await Shot(viewport, $"{city}-{width}-teaching");
+                        Click(viewport, panel.GetNode<Button>("help")); await Frames();
+                        Require(!teaching.Visible && panel.GetNode<Button>("resume").Position.X == 395, "Xian collapsed teaching restores centered actions");
+                    }
                     if (city == "Wuhan")
                     {
                         save.Data.UnlockedCityIds.Remove(id);
@@ -70,7 +82,7 @@ public partial class CityDialogVerification : Node
                     var coveredPanel = city == "Tianjin" ? menu : menu.GetNode<Control>(city == "Wuhan" ? "HudPausePanel" : "Panel");
                     Require(!coveredPanel.Visible, city + " underlying pause panel hidden");
                     Require(dialog.GetThemeStylebox("panel", "AcceptDialog") is StyleBoxTexture, city + " confirmation uses artwork");
-                    if (city is "Tianjin" or "Wuhan")
+                    if (city is "Tianjin" or "Wuhan" or "Xian")
                     {
                         Require(dialog.Size == new Vector2I(1200, 630), city + " confirmation keeps its designed size after layout");
                         Require(!dialog.GetLabel().Text.Contains("\n\n"), city + " line breaks remain stable across resize callbacks");
@@ -81,7 +93,7 @@ public partial class CityDialogVerification : Node
                     Require(!dialog.Visible && controller.IsPaused && menu.Visible, city + " cancel restores paused menu");
                     Click(viewport, abandon); await Frames();
                     var close = dialog.GetNode<Button>("CityDialogHeader/Artwork/Close");
-                    if (city is "Tianjin" or "Wuhan")
+                    if (city is "Tianjin" or "Wuhan" or "Xian")
                     {
                         Require(!close.Visible, city + " has no close icon or hit target");
                         KeyInput(viewport, Key.Escape); await Frames();
@@ -110,7 +122,7 @@ public partial class CityDialogVerification : Node
                     var error = main.GetNode<AcceptDialog>("NavigationError");
                     Require(error.GetNode<Label>("CityDialogHeader/Artwork/Title").Text == error.Title, "navigation header uses current title");
                     Require(error.Visible && error.GetThemeStylebox("panel", "AcceptDialog") is StyleBoxTexture, city + " navigation error uses artwork");
-                    if (city is "Tianjin" or "Wuhan")
+                    if (city is "Tianjin" or "Wuhan" or "Xian")
                     {
                         var frame = (StyleBoxTexture)error.GetThemeStylebox("panel", "AcceptDialog");
                         Require(frame.Texture.ResourcePath == "res://resource/art/TianJin/DialogUI/dialog-panel-v1.png",
@@ -120,8 +132,6 @@ public partial class CityDialogVerification : Node
                         Require(!error.GetNode<Control>("CityDialogHeader/Artwork/Close").Visible,
                             city + " navigation has no close icon");
                     }
-                    else Require(error.GetLabel().GetThemeFontSize("font_size") == 22,
-                        city + " navigation restores its original typography");
                     await Shot(viewport, $"{city}-{width}-navigation");
                     Click(error, error.GetOkButton()); await Frames();
                     Require(!error.Visible, city + " navigation acknowledgment closes dialog");

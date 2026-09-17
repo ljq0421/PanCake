@@ -1,0 +1,93 @@
+Godot Engine v4.7.1.stable.mono.official.a13da4feb - https://godotengine.org
+OpenGL API 3.3.0 NVIDIA 610.88 - Compatibility - Using Device: NVIDIA - NVIDIA GeForce RTX 5070
+
+PASS isolated tutorial save created
+PASS native game entry starts first-stage lesson
+PASS tutorial owns separate clocks and visible instructions
+PASS example customer finishes entering while patience is frozen
+PASS waiting cannot expire tutorial or customer
+PASS teaching waits for the egg before heating
+PASS first side reaches ready then waits without burning
+PASS second side reaches ready then waits without burning
+PASS capture tutorial compact
+ERROR: 保存失败：Access to the path 'D:\Project\ProjectCake\project-cake\.tmp\demo-tutorial-tests\ff1b2d37b2074ffd909f0c292835ea45\demo.json.tmp' is denied.
+   at: bool ProjectCake.Core.SaveService.TrySave(System.String&) (res://Scripts/Core/SaveService.cs:318)
+   C# backtrace (most recent call first):
+       [0] void Godot.GD.PushError(string) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Core/GD.cs:366)
+       [1] bool ProjectCake.Core.SaveService.TrySave(System.String&) (D:\Project\ProjectCake\project-cake\Scripts\Core\SaveService.cs:318)
+       [2] bool ProjectCake.Core.SaveService.SaveDemoTutorial(string, bool, System.String&) (D:\Project\ProjectCake\project-cake\Scripts\Core\DemoSave.cs:237)
+       [3] void ProjectCake.Gameplay.TianjinDayScreen.FinishDemoLesson() (D:\Project\ProjectCake\project-cake\Scripts\Gameplay\TianjinDayScreen.DemoTutorial.cs:139)
+       [4] void ProjectCake.Tests.DemoTutorialSelfTest+<_Ready>d__3.MoveNext() (D:\Project\ProjectCake\project-cake\Scripts\Tests\DemoTutorialSelfTest.cs:78)
+       [5] void System.Threading.ExecutionContext.RunInternal(System.Threading.ExecutionContext, System.Threading.ContextCallback, object)
+       [6] void System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1+AsyncStateMachineBox`1.MoveNext(System.Threading.Thread)
+       [7] void System.Threading.Tasks.AwaitTaskContinuation.RunCallback(System.Threading.ContextCallback, object, System.Threading.Tasks.Task&)
+       [8] void System.Threading.Tasks.Task.RunContinuations(object)
+       [9] bool System.Threading.Tasks.Task`1.TrySetResult(TResult)
+       [10] void System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1.SetExistingTaskResult(System.Threading.Tasks.Task`1[TResult], TResult)
+       [11] void ProjectCake.Tests.DemoTutorialSelfTest+<Capture>d__2.MoveNext() (D:\Project\ProjectCake\project-cake\Scripts\Tests\DemoTutorialSelfTest.cs:28)
+       [12] void System.Threading.ExecutionContext.RunInternal(System.Threading.ExecutionContext, System.Threading.ContextCallback, object)
+       [13] void System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1+AsyncStateMachineBox`1.MoveNext(System.Threading.Thread)
+       [14] void Godot.SignalAwaiter.SignalCallback(nint, Godot.NativeInterop.godot_variant**, int, Godot.NativeInterop.godot_bool*) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Core/SignalAwaiter.cs:65)
+PASS lesson save failure remains visible and retryable across rendering
+PASS capture tutorial retry
+PASS skip starts clean main business with normal clocks
+PASS example food and money cannot enter main business
+PASS skip is distinct from mastery
+ERROR: 保存失败：Access to the path 'D:\Project\ProjectCake\project-cake\.tmp\demo-tutorial-tests\ff1b2d37b2074ffd909f0c292835ea45\demo.json.tmp' is denied.
+   at: bool ProjectCake.Core.SaveService.TrySave(System.String&) (res://Scripts/Core/SaveService.cs:318)
+   C# backtrace (most recent call first):
+       [0] void Godot.GD.PushError(string) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Core/GD.cs:366)
+       [1] bool ProjectCake.Core.SaveService.TrySave(System.String&) (D:\Project\ProjectCake\project-cake\Scripts\Core\SaveService.cs:318)
+       [2] ProjectCake.Core.DayCommitResult ProjectCake.Core.SaveService.CommitDemoDay(ProjectCake.Gameplay.DayResult, ProjectCake.Orders.DayPlan, ProjectCake.Data.DayConfig) (D:\Project\ProjectCake\project-cake\Scripts\Core\DemoSave.cs:212)
+       [3] ProjectCake.Core.DayCommitResult ProjectCake.Core.SaveService.CommitDay(ProjectCake.Gameplay.DayResult, ProjectCake.Orders.DayPlan, ProjectCake.Data.DayConfig) (D:\Project\ProjectCake\project-cake\Scripts\Core\SaveService.cs:220)
+       [4] ProjectCake.UI.BusinessBookModel ProjectCake.UI.BusinessBookSettlement.Commit(ProjectCake.UI.BusinessBookModel, ProjectCake.Core.SaveService, ProjectCake.Orders.DayPlan, ProjectCake.Data.DayConfig, ProjectCake.Core.DataCatalog, bool) (D:\Project\ProjectCake\project-cake\Scripts\UI\BusinessBookSession.cs:56)
+       [5] void ProjectCake.Gameplay.TianjinDayScreen.RetryDemoSettlement() (D:\Project\ProjectCake\project-cake\Scripts\Gameplay\TianjinDayScreen.DemoTutorial.cs:211)
+       [6] void ProjectCake.Gameplay.TianjinDayScreen.OnDayFinished(ProjectCake.Gameplay.DayResult) (D:\Project\ProjectCake\project-cake\Scripts\Gameplay\TianjinDayScreen.cs:309)
+       [7] void ProjectCake.Core.DayController.CompleteDay() (D:\Project\ProjectCake\project-cake\Scripts\Core\DayController.cs:469)
+       [8] void ProjectCake.Core.DayController.Tick(double) (D:\Project\ProjectCake\project-cake\Scripts\Core\DayController.cs:202)
+       [9] void ProjectCake.Tests.DemoTutorialSelfTest+<_Ready>d__3.MoveNext() (D:\Project\ProjectCake\project-cake\Scripts\Tests\DemoTutorialSelfTest.cs:90)
+       [10] void System.Threading.ExecutionContext.RunInternal(System.Threading.ExecutionContext, System.Threading.ContextCallback, object)
+       [11] void System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1+AsyncStateMachineBox`1.MoveNext(System.Threading.Thread)
+       [12] void System.Threading.Tasks.AwaitTaskContinuation.RunCallback(System.Threading.ContextCallback, object, System.Threading.Tasks.Task&)
+       [13] void System.Threading.Tasks.Task.RunContinuations(object)
+       [14] bool System.Threading.Tasks.Task`1.TrySetResult(TResult)
+       [15] void System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1.SetExistingTaskResult(System.Threading.Tasks.Task`1[TResult], TResult)
+       [16] void ProjectCake.Tests.DemoTutorialSelfTest+<Capture>d__2.MoveNext() (D:\Project\ProjectCake\project-cake\Scripts\Tests\DemoTutorialSelfTest.cs:28)
+       [17] void System.Threading.ExecutionContext.RunInternal(System.Threading.ExecutionContext, System.Threading.ContextCallback, object)
+       [18] void System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1+AsyncStateMachineBox`1.MoveNext(System.Threading.Thread)
+       [19] void Godot.SignalAwaiter.SignalCallback(nint, Godot.NativeInterop.godot_variant**, int, Godot.NativeInterop.godot_bool*) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Core/SignalAwaiter.cs:65)
+PASS failed settlement keeps the ledger open with a save retry
+PASS native zero-order settlement saves and offers free retry without unlocking
+PASS native navigation rejects unshipped and locked content
+PASS skipped lesson can be replayed for free
+PASS visible sauce progress comes from actual production state
+PASS focus loss cancels input while retaining sauce progress
+PASS focus return resumes the same lesson
+PASS lesson breakfast is ready to drag (state=Bagged, tray=0, paused=False, enabled=True)
+PASS finished breakfast accepted by real customer drop callback
+PASS correct lesson delivery completes teaching without income
+PASS capture tutorial complete
+PASS completed lesson persists then clears example for independent practice
+PASS Demo Day 1 opts into completion without empty countdown waiting
+PASS other stages retain their configured closing policy
+PASS delivery waits for customer exit 0
+PASS empty counter does not skip future arrivals 0
+PASS delivery waits for customer exit 1
+PASS empty counter does not skip future arrivals 1
+PASS delivery waits for customer exit 2
+PASS empty counter does not skip future arrivals 2
+PASS delivery waits for customer exit 3
+PASS paused last exit does not trigger settlement
+PASS last customer's exit animation is preserved
+PASS 4 of 4 exits settle with time remaining
+PASS early settlement opens the real ledger, saves income and unlocks Day 2
+PASS further frames cannot settle or pay twice
+PASS fresh scene re-enters Day 1 after completion
+PASS returning Day 1 runs business without an empty teaching panel
+PASS capture tutorial returning-completed
+PASS isolated progress reset for skipped-lesson re-entry
+PASS skipped lesson persisted before re-entry
+PASS fresh scene re-enters Day 1 after skip
+PASS returning Day 1 runs business without an empty teaching panel
+PASS capture tutorial returning-skipped
+DEMO_TUTORIAL_SELF_TEST_OK 48

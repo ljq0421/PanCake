@@ -1,0 +1,151 @@
+Godot Engine v4.7.1.stable.mono.official.a13da4feb - https://godotengine.org
+
+PASS isolated tutorial save created
+ERROR: Condition "!actions.custom_samplers.has(function->arguments[j].tex_builtin)" is true. Continuing.
+   at: _dump_node_code (servers/rendering/shader_compiler.cpp:1329)
+   C# backtrace (most recent call first):
+       [0] void Godot.NativeCalls.godot_icall_1_56(nint, nint, nint) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/NativeCalls.cs:495)
+       [1] void Godot.ShaderMaterial.SetShader(Godot.Shader) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/ShaderMaterial.cs:63)
+       [2] void Godot.ShaderMaterial.set_Shader(Godot.Shader) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/ShaderMaterial.cs:27)
+       [3] Godot.ShaderMaterial ProjectCake.UI.FoodInk.Material(bool) (D:\Project\ProjectCake\project-cake\Scripts\UI\FoodInk.cs:17)
+       [4] void ProjectCake.UI.FryerVisualView._Ready() (D:\Project\ProjectCake\project-cake\Scripts\UI\FryerVisualView.cs:85)
+       [5] bool Godot.Node.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/Node.cs:2660)
+       [6] bool Godot.CanvasItem.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/CanvasItem.cs:1845)
+       [7] bool Godot.Control.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/Control.cs:4029)
+       [8] bool ProjectCake.UI.FryerVisualView.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (D:\Project\ProjectCake\project-cake\.godot\mono\temp\obj\Debug\Godot.SourceGenerators\Godot.SourceGenerators.ScriptMethodsGenerator\ProjectCake.UI.FryerVisualView_ScriptMethods.generated.cs:320)
+       [9] Godot.NativeInterop.godot_bool Godot.Bridge.CSharpInstanceBridge.Call(nint, Godot.NativeInterop.godot_string_name*, Godot.NativeInterop.godot_variant**, int, Godot.NativeInterop.godot_variant_call_error*, Godot.NativeInterop.godot_variant*) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Core/Bridge/CSharpInstanceBridge.cs:24)
+       [10] void Godot.NativeInterop.NativeFuncs.godotsharp_method_bind_ptrcall(nint, nint, System.Void**, System.Void*) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Godot.SourceGenerators.Internal/Godot.SourceGenerators.Internal.UnmanagedCallbacksGenerator/Godot.NativeInterop.NativeFuncs.generated.cs:380)
+       [11] void Godot.NativeCalls.godot_icall_3_912(nint, nint, nint, Godot.NativeInterop.godot_bool, int) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/NativeCalls.cs:8061)
+       [12] void Godot.Node.AddChild(Godot.Node, bool, Godot.Node+InternalMode) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/Node.cs:848)
+       [13] void ProjectCake.Tests.DemoTutorialSelfTest+<_Ready>d__4.MoveNext() (D:\Project\ProjectCake\project-cake\Scripts\Tests\DemoTutorialSelfTest.cs:75)
+       [14] void System.Runtime.CompilerServices.AsyncMethodBuilderCore.Start<TStateMachine>(TStateMachine&)
+       [15] void ProjectCake.Tests.DemoTutorialSelfTest._Ready()
+       [16] bool Godot.Node.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/Node.cs:2660)
+       [17] bool ProjectCake.Tests.DemoTutorialSelfTest.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (D:\Project\ProjectCake\project-cake\.godot\mono\temp\obj\Debug\Godot.SourceGenerators\Godot.SourceGenerators.ScriptMethodsGenerator\ProjectCake.Tests.DemoTutorialSelfTest_ScriptMethods.generated.cs:60)
+       [18] Godot.NativeInterop.godot_bool Godot.Bridge.CSharpInstanceBridge.Call(nint, Godot.NativeInterop.godot_string_name*, Godot.NativeInterop.godot_variant**, int, Godot.NativeInterop.godot_variant_call_error*, Godot.NativeInterop.godot_variant*) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Core/Bridge/CSharpInstanceBridge.cs:24)
+PASS native game entry starts first-stage lesson
+PASS tutorial owns separate clocks and visible instructions
+PASS example customer finishes entering while patience is frozen
+PASS waiting cannot expire tutorial or customer
+PASS batter uses one teaching card
+PASS batter keeps the skip action in the instruction card
+PASS batter card stays inside the viewport
+PASS batter resolves an operation target
+PASS batter instruction does not cover the operation
+PASS batter instruction sits beside its operation
+PASS batter shows the current operation in the merged card
+PASS spread uses one teaching card
+PASS spread keeps the skip action in the instruction card
+PASS spread card stays inside the viewport
+PASS spread resolves an operation target
+PASS spread instruction does not cover the operation
+PASS spread instruction sits beside its operation
+PASS spread shows the current operation in the merged card
+PASS egg uses one teaching card
+PASS egg keeps the skip action in the instruction card
+PASS egg card stays inside the viewport
+PASS egg resolves an operation target
+PASS egg instruction does not cover the operation
+PASS egg instruction sits beside its operation
+PASS egg shows the current operation in the merged card
+PASS teaching waits for the egg before heating
+PASS first side reaches ready then waits without burning
+PASS flip uses one teaching card
+PASS flip keeps the skip action in the instruction card
+PASS flip card stays inside the viewport
+PASS flip resolves an operation target
+PASS flip instruction does not cover the operation
+PASS flip instruction sits beside its operation
+PASS flip shows the current operation in the merged card
+PASS second side reaches ready then waits without burning
+PASS sauce-brush uses one teaching card
+PASS sauce-brush keeps the skip action in the instruction card
+PASS sauce-brush card stays inside the viewport
+PASS sauce-brush resolves an operation target
+PASS sauce-brush instruction does not cover the operation
+PASS sauce-brush instruction sits beside its operation
+PASS sauce-brush shows the current operation in the merged card
+ERROR: 保存失败：Access to the path 'D:\Project\ProjectCake\project-cake\.tmp\demo-tutorial-tests\87d9f9bef0e34e22a4d0a3c6ec59e891\demo.json.tmp' is denied.
+   at: bool ProjectCake.Core.SaveService.TrySave(System.String&) (res://Scripts/Core/SaveService.cs:318)
+   C# backtrace (most recent call first):
+       [0] void Godot.GD.PushError(string) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Core/GD.cs:366)
+       [1] bool ProjectCake.Core.SaveService.TrySave(System.String&) (D:\Project\ProjectCake\project-cake\Scripts\Core\SaveService.cs:318)
+       [2] bool ProjectCake.Core.SaveService.SaveDemoTutorial(string, bool, System.String&) (D:\Project\ProjectCake\project-cake\Scripts\Core\DemoSave.cs:237)
+       [3] void ProjectCake.Gameplay.TianjinDayScreen.FinishDemoLesson() (D:\Project\ProjectCake\project-cake\Scripts\Gameplay\TianjinDayScreen.DemoTutorial.cs:139)
+       [4] void ProjectCake.Gameplay.TianjinDayScreen.<EnsureDemoLesson>b__126_0() (D:\Project\ProjectCake\project-cake\Scripts\Gameplay\TianjinDayScreen.DemoTutorial.cs:78)
+       [5] void Godot.Callable.<From>g__Trampoline|1_0(object, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Core/Callable.generics.cs:39)
+       [6] void Godot.DelegateUtils.InvokeWithVariantArgs(nint, System.Void*, Godot.NativeInterop.godot_variant**, int, Godot.NativeInterop.godot_variant*) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Core/DelegateUtils.cs:86)
+       [7] Godot.NativeInterop.godot_variant Godot.NativeInterop.NativeFuncs.godotsharp_method_bind_call(nint, nint, Godot.NativeInterop.godot_variant**, int, Godot.NativeInterop.godot_variant_call_error&) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Godot.SourceGenerators.Internal/Godot.SourceGenerators.Internal.UnmanagedCallbacksGenerator/Godot.NativeInterop.NativeFuncs.generated.cs:388)
+       [8] int Godot.NativeCalls.godot_icall_2_921(nint, nint, Godot.NativeInterop.godot_string_name, System.ReadOnlySpan`1[Godot.Variant], Godot.NativeInterop.godot_string_name) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/NativeCalls.cs:8163)
+       [9] Godot.Error Godot.GodotObject.EmitSignal(Godot.StringName, Godot.Variant[]) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/GodotObject.cs:719)
+       [10] void ProjectCake.Tests.DemoTutorialSelfTest+<_Ready>d__4.MoveNext() (D:\Project\ProjectCake\project-cake\Scripts\Tests\DemoTutorialSelfTest.cs:108)
+       [11] void System.Threading.ExecutionContext.RunInternal(System.Threading.ExecutionContext, System.Threading.ContextCallback, object)
+       [12] void System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1+AsyncStateMachineBox`1.MoveNext(System.Threading.Thread)
+       [13] void Godot.SignalAwaiter.SignalCallback(nint, Godot.NativeInterop.godot_variant**, int, Godot.NativeInterop.godot_bool*) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Core/SignalAwaiter.cs:65)
+PASS lesson save failure remains visible and retryable across rendering
+PASS skip starts clean main business with normal clocks
+PASS example food and money cannot enter main business
+PASS skip is distinct from mastery
+ERROR: 保存失败：Access to the path 'D:\Project\ProjectCake\project-cake\.tmp\demo-tutorial-tests\87d9f9bef0e34e22a4d0a3c6ec59e891\demo.json.tmp' is denied.
+   at: bool ProjectCake.Core.SaveService.TrySave(System.String&) (res://Scripts/Core/SaveService.cs:318)
+   C# backtrace (most recent call first):
+       [0] void Godot.GD.PushError(string) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Core/GD.cs:366)
+       [1] bool ProjectCake.Core.SaveService.TrySave(System.String&) (D:\Project\ProjectCake\project-cake\Scripts\Core\SaveService.cs:318)
+       [2] ProjectCake.Core.DayCommitResult ProjectCake.Core.SaveService.CommitDemoDay(ProjectCake.Gameplay.DayResult, ProjectCake.Orders.DayPlan, ProjectCake.Data.DayConfig) (D:\Project\ProjectCake\project-cake\Scripts\Core\DemoSave.cs:212)
+       [3] ProjectCake.Core.DayCommitResult ProjectCake.Core.SaveService.CommitDay(ProjectCake.Gameplay.DayResult, ProjectCake.Orders.DayPlan, ProjectCake.Data.DayConfig) (D:\Project\ProjectCake\project-cake\Scripts\Core\SaveService.cs:220)
+       [4] ProjectCake.UI.BusinessBookModel ProjectCake.UI.BusinessBookSettlement.Commit(ProjectCake.UI.BusinessBookModel, ProjectCake.Core.SaveService, ProjectCake.Orders.DayPlan, ProjectCake.Data.DayConfig, ProjectCake.Core.DataCatalog, bool) (D:\Project\ProjectCake\project-cake\Scripts\UI\BusinessBookSession.cs:56)
+       [5] void ProjectCake.Gameplay.TianjinDayScreen.RetryDemoSettlement() (D:\Project\ProjectCake\project-cake\Scripts\Gameplay\TianjinDayScreen.DemoTutorial.cs:211)
+       [6] void ProjectCake.Gameplay.TianjinDayScreen.OnDayFinished(ProjectCake.Gameplay.DayResult) (D:\Project\ProjectCake\project-cake\Scripts\Gameplay\TianjinDayScreen.cs:309)
+       [7] void ProjectCake.Core.DayController.CompleteDay() (D:\Project\ProjectCake\project-cake\Scripts\Core\DayController.cs:469)
+       [8] void ProjectCake.Core.DayController.Tick(double) (D:\Project\ProjectCake\project-cake\Scripts\Core\DayController.cs:202)
+       [9] void ProjectCake.Tests.DemoTutorialSelfTest+<_Ready>d__4.MoveNext() (D:\Project\ProjectCake\project-cake\Scripts\Tests\DemoTutorialSelfTest.cs:121)
+       [10] void System.Threading.ExecutionContext.RunInternal(System.Threading.ExecutionContext, System.Threading.ContextCallback, object)
+       [11] void System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1+AsyncStateMachineBox`1.MoveNext(System.Threading.Thread)
+       [12] void Godot.SignalAwaiter.SignalCallback(nint, Godot.NativeInterop.godot_variant**, int, Godot.NativeInterop.godot_bool*) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Core/SignalAwaiter.cs:65)
+PASS failed settlement keeps the ledger open with a save retry
+PASS native zero-order settlement saves and offers free retry without unlocking
+PASS native navigation rejects unshipped and locked content
+PASS skipped lesson can be replayed for free
+PASS sauce-stroke uses one teaching card
+PASS sauce-stroke keeps the skip action in the instruction card
+PASS sauce-stroke card stays inside the viewport
+PASS sauce-stroke resolves an operation target
+PASS sauce-stroke instruction does not cover the operation
+PASS sauce-stroke instruction sits beside its operation
+PASS sauce-stroke shows the current operation in the merged card
+PASS visible sauce progress comes from actual production state
+PASS focus loss cancels input while retaining sauce progress
+PASS focus return resumes the same lesson
+PASS delivery uses one teaching card
+PASS delivery keeps the skip action in the instruction card
+PASS delivery card stays inside the viewport
+PASS delivery resolves an operation target
+PASS delivery instruction does not cover the operation
+PASS delivery instruction sits beside its operation
+PASS delivery shows the current operation in the merged card
+PASS lesson breakfast is ready to drag (state=Bagged, tray=0, paused=False, enabled=True)
+PASS finished breakfast accepted by real customer drop callback
+PASS correct lesson delivery completes teaching without income
+PASS completion retains only the merged lesson card
+PASS completed lesson persists then clears example for independent practice
+PASS Demo Day 1 opts into completion without empty countdown waiting
+PASS other stages retain their configured closing policy
+PASS delivery waits for customer exit 0
+PASS empty counter does not skip future arrivals 0
+PASS delivery waits for customer exit 1
+PASS empty counter does not skip future arrivals 1
+PASS delivery waits for customer exit 2
+PASS empty counter does not skip future arrivals 2
+PASS delivery waits for customer exit 3
+PASS paused last exit does not trigger settlement
+PASS last customer's exit animation is preserved
+PASS 4 of 4 exits settle with time remaining
+PASS early settlement opens the real ledger, saves income and unlocks Day 2
+PASS further frames cannot settle or pay twice
+PASS fresh scene re-enters Day 1 after completion
+PASS returning Day 1 runs business without an empty teaching panel
+PASS isolated progress reset for skipped-lesson re-entry
+PASS skipped lesson persisted before re-entry
+PASS fresh scene re-enters Day 1 after skip
+PASS returning Day 1 runs business without an empty teaching panel
+DEMO_TUTORIAL_SELF_TEST_OK 93

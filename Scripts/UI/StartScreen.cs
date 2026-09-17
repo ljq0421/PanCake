@@ -42,6 +42,13 @@ public partial class StartScreen : Control
         _canvas = GetNode<Control>("Canvas");
         _body = GetNode<Control>("Canvas/Page");
         _modal = GetNode<Control>("Canvas/Modal");
+        if (HostedByBook)
+        {
+            SetProcessInput(false);
+            // Only the upgrade book is reused; the gameplay host supplies the backdrop.
+            GetNode<Control>("Letterbox").Hide();
+            GetNode<Control>("Canvas/Background").Hide();
+        }
         Resized += FitCanvas; VisibilityChanged += UpdateVisibility; FitCanvas(); UpdateVisibility();
     }
     public void Initialize(SaveService save)
@@ -130,6 +137,7 @@ public partial class StartScreen : Control
     }
     private void UpdateVisibility()
     {
+        if (HostedByBook) return;
         if (IsVisibleInTree() && !_ownsAspect) { _previousAspect = GetWindow().ContentScaleAspect; _ownsAspect = true; GetWindow().ContentScaleAspect = Window.ContentScaleAspectEnum.Expand; }
         else if (!IsVisibleInTree())
         {
@@ -173,7 +181,7 @@ public partial class StartScreen : Control
     public override void _ExitTree()
     {
         if (_save is not null) _save.Changed -= SaveChanged;
-        if (_settings is not null) { _settings.Changed -= SettingsChanged; _settings.RevertDisplay(); }
+        if (_settings is not null) { _settings.Changed -= SettingsChanged; if (!HostedByBook) _settings.RevertDisplay(); }
         KillAnimations(); if (_ownsAspect) GetWindow().ContentScaleAspect = _previousAspect;
     }
 }

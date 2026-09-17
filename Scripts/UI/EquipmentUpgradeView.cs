@@ -38,7 +38,9 @@ public partial class EquipmentUpgradeView : Control
             card.ButtonUp += () => background.SelfModulate = Colors.White;
             var focusBorder = Box(Colors.Transparent, Gold, 2);
             card.AddThemeStyleboxOverride("focus", focusBorder);
-            if (item.Art is not null) Picture(card, item.Art, new(18, 15, 263, 135));
+            if (item.Art == "res://resource/art/TianJin/升级小料.png")
+                Sprite(card, "EquipmentPicture", item.Art, new(18, 20, 263, 127));
+            else if (item.Art is not null) Picture(card, item.Art, new(18, 15, 263, 135));
             else LabelAt(card, "EquipmentWordmark", item.Name, new(24, 25, 240, 130), 34, Muted, true);
             var equipmentName = LabelAt(card, "EquipmentName", item.Name, new(306, 17, 240, 48), 32);
             if (ProjectCake.Core.ExperienceProfile.IsDemo)
@@ -78,29 +80,41 @@ public partial class EquipmentUpgradeView : Control
         Sprite(_detail, "EquipmentDoodle", ArtRoot + "设备涂鸦背景-v1.png", new(0, 138, 274, 292));
         if (e.Art is not null) Picture(_detail, e.Art, new(0, 140, 270, 280));
         else LabelAt(_detail, "EquipmentWordmark", e.Name, new(0, 170, 266, 260), 40, Muted, true);
-        var scroll = new ScrollContainer { Name = "UpgradeScroll", Position = new(282, 90), Size = new(278, 350), HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
+        // The comparison viewport shares the equipment image's vertical centre (y = 280).
+        // Short comparisons centre as a group; longer ones retain scrolling above the price.
+        var scroll = new ScrollContainer { Name = "UpgradeScroll", Position = new(282, 115), Size = new(278, 330), HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
         _detail.AddChild(scroll);
-        var rows = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; rows.AddThemeConstantOverride("separation", 14); scroll.AddChild(rows);
+        var alignment = new MarginContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill, SizeFlagsVertical = SizeFlags.ExpandFill };
+        scroll.AddChild(alignment);
+        var rows = new VBoxContainer { Name = "UpgradeComparison", SizeFlagsHorizontal = SizeFlags.ExpandFill, SizeFlagsVertical = SizeFlags.ShrinkCenter };
+        rows.AddThemeConstantOverride("separation", 12); alignment.AddChild(rows);
         EffectPanel(rows, e.Level == 0 ? "开放后 Lv1" : $"当前等级  Lv{e.Level}", e, false);
-        if (e.TargetLevel is int target) EffectPanel(rows, $"升级后  Lv{target}", e, true);
+        if (e.TargetLevel is int target)
+        {
+            var arrow = Sprite(rows, "UpgradeComparisonArrow", "res://resource/art/Global/StartPage/箭头.png", new(0, 0, 36, 36));
+            arrow.CustomMinimumSize = new(36, 36);
+            arrow.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
+            EffectPanel(rows, $"升级后  Lv{target}", e, true);
+        }
         MoneyPlate(_detail, "UpgradePriceFrame", "UpgradePrice", e.TargetLevel is not null ? $"{e.Price} 金币" : e.Level >= 3 ? "当前可用的最好设备" : e.Notice,
             new(30, 449, 500, 62), false, e.TargetLevel is not null);
         var buy = MakeButton(_detail, "UpgradeEquipment", "升级设备", new(45, 519, 470, 72));
         buy.Disabled = !e.CanBuy; buy.AddThemeFontSizeOverride("font_size", 34);
         SkinPurchaseButton(buy);
         buy.Pressed += () => { if (_submitted || buy.Disabled || !buy.IsVisibleInTree()) return; _submitted = true; buy.Disabled = true; _purchase(e); };
-        LabelAt(_detail, "UpgradeNotice", e.CanBuy ? "升级后，下次营业生效" : e.Notice, new(0, 591, 560, 29), 20, Muted, true);
+        if (!e.CanBuy)
+            LabelAt(_detail, "UpgradeNotice", e.Notice, new(0, 591, 560, 29), 20, Muted, true);
     }
 
     private static void EffectPanel(VBoxContainer rows, string title, CityEquipmentView equipment, bool next)
     {
-        var panel = new PanelContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill, CustomMinimumSize = new(0, 180) };
+        var panel = new PanelContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill, SizeFlagsVertical = SizeFlags.ShrinkBegin };
         panel.AddThemeStyleboxOverride("panel", new StyleBoxEmpty()); rows.AddChild(panel);
         PaintedBackground(panel, next ? "升级后效果面板底板-v1.png" : "当前效果面板底板-v1.png", 80);
         var margins = new MarginContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; panel.AddChild(margins);
-        margins.AddThemeConstantOverride("margin_left", 16); margins.AddThemeConstantOverride("margin_right", 16);
-        margins.AddThemeConstantOverride("margin_bottom", 16);
-        var content = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; content.AddThemeConstantOverride("separation", 8); margins.AddChild(content);
+        margins.AddThemeConstantOverride("margin_left", 12); margins.AddThemeConstantOverride("margin_right", 12);
+        margins.AddThemeConstantOverride("margin_bottom", 8);
+        var content = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; content.AddThemeConstantOverride("separation", 4); margins.AddChild(content);
         var heading = FlowLabel(content, title, 25, next ? Green : Ink);
         heading.CustomMinimumSize = new(0, 40); heading.VerticalAlignment = VerticalAlignment.Center;
         foreach (var effect in equipment.Effects)

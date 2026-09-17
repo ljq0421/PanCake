@@ -14,6 +14,17 @@ namespace ProjectCake.Tests;
 public partial class TianjinLivingWorkbenchSelfTest : Node
 {
     private int _checks;
+    private PancakeWorkstation? _motionStation;
+    public override void _Process(double delta)
+    {
+        if (IsInstanceValid(_motionStation) && _motionStation!.IsFlipping) _motionStation.Tick(delta);
+    }
+    private void Flip(PancakeWorkstation station)
+    {
+        station.Machine.Runtime.State = PancakeState.SideAReady;
+        station.RefreshForCapture();
+        Check(station.TryInvokeProductionShortcut(Key.F), "real flip action accepted");
+    }
     private bool Capture => OS.GetCmdlineUserArgs().Contains("--capture");
     private bool Film => OS.GetCmdlineUserArgs().Contains("--living-film");
     private void Check(bool value, string message)
@@ -37,6 +48,7 @@ public partial class TianjinLivingWorkbenchSelfTest : Node
     {
         try
         {
+            InterfaceLessons.MarkAllSeen(GetNode<JourneySettings>("/root/JourneySettings"));
             var catalog = GetNode<DataCatalog>("/root/DataCatalog");
             foreach (int width in Film ? new[] { 1920 } : new[] { 1920, 1280 })
             foreach (int day in Film ? new[] { 15 } : new[] { 1, 5, 15 })
@@ -57,10 +69,11 @@ public partial class TianjinLivingWorkbenchSelfTest : Node
                 screen._Notification((int)NotificationApplicationFocusIn);
                 screen.RefreshForCapture(true); await Frames();
                 var station = screen.GetChildren().OfType<PancakeWorkstation>().Single();
+                _motionStation = station;
                 var living = screen.GetNode<TianjinLivingWorkbench>("LivingWorkbench");
                 var hud = screen.GetNode<BusinessHud>("BusinessHud");
                 var cards = screen.Descendants<OrderBubbleView>().Where(c => c.Name == "OrderBubble").ToArray();
-                Check(cards.Length == 5 && cards.All(c => c.CustomMinimumSize.X == 306), "five 306-unit papers");
+                Check(cards.Length == 5 && cards.All(c => c.CustomMinimumSize.X == OrderBubbleView.CompactWidth), "five papers use the current compact width");
                 Check(cards.All(c => ((StyleBoxFlat)c.GetThemeStylebox("panel")).BorderWidthLeft == 2), "thin private warm paper styles");
                 Check(cards.All(c => c.Patience.CustomMinimumSize.Y == 6), "six-unit patience strip");
                 using (var sprite = Image.LoadFromFile(ProjectSettings.GlobalizePath("res://resource/art/TianJin/LivingWorkbench/pendant.png")))
@@ -99,9 +112,9 @@ public partial class TianjinLivingWorkbenchSelfTest : Node
                 Check(living.SteamRemaining > 0, "ready transition emits steam once");
                 await Shot($"steam-{width}");
                 await Delay(.95); Check(living.SteamRemaining == 0, "mature pancake does not loop steam");
-                living.Flip(); await Frames(2); Check(!living.ToolsAtRest, "flip leaves the tool slot empty");
+                Flip(station); await Frames(2); Check(!living.ToolsAtRest, "flip leaves the tool slot empty");
                 await Shot($"flip-{width}");
-                await Delay(.3); Check(living.ToolsAtRest, "spatula returns to its fixed slot");
+                await Delay(.4); Check(living.ToolsAtRest && !station.IsFlipping, "pancake lands and spatula returns to its fixed slot");
 
                 var stock = station.Descendants<SoyMilkStockView>().Single();
                 var drag = station.Descendants<DragService>().Single();
@@ -153,7 +166,7 @@ public partial class TianjinLivingWorkbenchSelfTest : Node
                 Check(living.SteamRemaining == 0, "resume does not replay maturity");
                 Check((int)Performance.GetMonitor(Performance.Monitor.ObjectNodeCount) <= nodes + 10, "completion nodes return to baseline");
                 ProjectSettings.SetSetting("accessibility/reduce_motion", true); await Frames();
-                living.ReceivePayment(); living.Flip(); living.CompleteOrder(cards[0], true); await Frames();
+                living.ReceivePayment(); Flip(station); living.CompleteOrder(cards[0], true); await Frames();
                 Check(living.PendantRotation == 0 && living.ToolsAtRest, "reduced motion suppresses swing and tool travel");
                 Check(living.CompletedPaperCount == 1, "reduced motion retains static completion feedback");
                 await Delay(.6); Check(living.CompletedPaperCount == 0, "reduced completion cleans up");
@@ -183,7 +196,7 @@ public partial class TianjinLivingWorkbenchSelfTest : Node
                         fryer.Tick(.2);
                         living.CompleteOrder(cards[cycle], cycle == 2);
                         living.ReceivePayment(); hud.EmphasizeIncome(); await Frames(20);
-                        living.Flip(); await Frames(50);
+                        Flip(station); await Frames(50);
                     }
                 }
                 screen.Hide(); await Frames(); Check(living.CompletedPaperCount == 0 && living.ToolsAtRest, "leaving clears all temporary visuals");

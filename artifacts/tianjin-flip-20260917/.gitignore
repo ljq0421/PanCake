@@ -1,0 +1,7 @@
+profile*/
+save-*.json*
+settings.cfg
+frame-*.png
+!frame-1920-08.png
+!frame-1920-12.png
+!frame-1280-21.png

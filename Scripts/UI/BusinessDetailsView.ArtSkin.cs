@@ -9,6 +9,7 @@ public partial class BusinessDetailsView
     private const float ArtRowRight = ArtPageRight - ArtPageLeft, ArtRowWidth = 1200;
     private Control _plainPaper = null!, _illustratedPaper = null!;
     private bool UsesBookArt => _model.CityId is "tianjin" or "wuhan" or "xian";
+    private bool UsesTravelBook => _model.CityId is "tianjin" or "wuhan";
     private CitySettlementTheme CityTheme => CitySettlementTheme.For(_model.CityId);
     private TextureRect Art(Control parent, string name, Rect2 bounds)
     {
@@ -101,15 +102,24 @@ public partial class BusinessDetailsView
         _save.Position = new(ArtPageLeft, 732); _save.Size = new(ArtPageWidth, 52);
         SetButtonBounds(_retry, new(1020, 738, 180, 56));
         SetButtonBounds(CloseButton, new(1220, 738, 230, 56));
+        if (UsesTravelBook)
+        {
+            // Leave the travel stamp and lower corner illustrations clear.
+            _city.Position = new(410, 78); _city.Size = new(380, 32);
+            _title.Position = new(410, 115); _title.Size = new(380, 36);
+            _save.Position = new(300, 732); _save.Size = new(490, 52);
+            SetButtonBounds(_retry, new(990, 738, 180, 56));
+            SetButtonBounds(CloseButton, new(1190, 738, 230, 56));
+        }
     }
 
     private void PaintBookPaper()
     {
         Clear(_illustratedPaper);
-        const float width = 900f * 1448f / 929f;
+        float width = UsesTravelBook ? 1680 : 900f * 1448f / 929f;
         var board = Picture(_illustratedPaper, BookArtCatalog.GetBoard(_model.CityId), new((1680 - width) / 2, 0, width, 900));
         board.Name = "BookBoard";
-        board.Material = null;
+        board.Material = BookArtCatalog.BoardMaterial(_model.CityId);
     }
 
     private void BookDivider(Control parent, Rect2 bounds)
@@ -121,9 +131,10 @@ public partial class BusinessDetailsView
     private void BuildArtSummary()
     {
         var r = _model.Result;
-        Art(_summary, "总收入图标", new(ArtPageLeft, 38, 100, 100));
-        Text(_summary, "收入", new(350, 0, 440, 40), 30);
-        _income = Text(_summary, $"¥{r.TotalRevenue}", new(345, 42, 445, 92), 76);
+        float incomeInset = UsesTravelBook ? 40 : 0;
+        Art(_summary, "总收入图标", new(ArtPageLeft + incomeInset, 38, 100, 100));
+        Text(_summary, "收入", new(350 + incomeInset, 0, 440 - incomeInset, 40), 30);
+        _income = Text(_summary, $"¥{r.TotalRevenue}", new(345 + incomeInset, 42, 445 - incomeInset, 92), 76);
         Text(_summary, "菜品销售", new(ArtPageLeft, 146, 290, 38), 26, Muted);
         Text(_summary, $"¥{r.SaleRevenue}", new(530, 146, 260, 38), 28, Ink, HorizontalAlignment.Right);
         Art(_summary, "小费图标", new(ArtPageLeft, 195, 38, 38));
@@ -136,8 +147,8 @@ public partial class BusinessDetailsView
         {
             Place(_summary, new BookFoodIcon { Product = best }, new(ArtPageLeft, 337, 68, 68));
             var name = Text(_summary, best.Name, new(320, 326, 470, 58), 26, wrap: true);
-            name.MaxLinesVisible = 2; name.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis; name.TooltipText = best.Name;
-            name.MouseFilter = MouseFilterEnum.Pass;
+            name.Name = "BookBestSeller";
+            name.MaxLinesVisible = 2; name.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
             Text(_summary, $"已售 ×{best.Quantity}", new(320, 387, 470, 30), 22, Muted);
         }
         else Text(_summary, "还没有完成的客单", new(ArtPageLeft, 337, ArtPageWidth, 68), 25, Muted);
@@ -177,9 +188,10 @@ public partial class BusinessDetailsView
     private void AddSummarySticker(string[] items, string art, string name, Rect2 bounds, bool unlock)
     {
         if (items.Length == 0) return;
-        var sticker = new Control { Name = name, MouseFilter = MouseFilterEnum.Pass, TooltipText = string.Join("\n", items) };
+        var sticker = new Control { Name = name, MouseFilter = MouseFilterEnum.Ignore };
         Place(_summary, sticker, bounds);
-        var paper = FittedArtBounds(Art(sticker, art, new(0, 0, bounds.Size.X, bounds.Size.Y)));
+        var artwork = Art(sticker, art, new(0, 0, bounds.Size.X, bounds.Size.Y));
+        var paper = FittedArtBounds(artwork);
         float textWidth = unlock ? 158 : 181;
         string shortCaption = unlock ? "新解锁 · 回店查看" : CanUpgrade ? "可升级 · 查看效果" : "可升级 · 回店查看";
         string caption = items.Length == 1 ? items[0] : shortCaption;
@@ -190,7 +202,25 @@ public partial class BusinessDetailsView
         {
             _upgradeEntry = ButtonAt(sticker, "", new(0, 0, bounds.Size.X, bounds.Size.Y), OpenUpgrades);
             _upgradeEntry.Name = "OpenBookUpgrades";
-            _upgradeEntry.TooltipText = "查看升级效果与价格";
+            if (UsesTravelBook)
+            {
+                // The PNG already supplies the button silhouette. Keep every input state on that art.
+                var button = _upgradeEntry;
+                foreach (string state in new[] { "normal", "hover", "pressed", "disabled", "focus" })
+                    button.AddThemeStyleboxOverride(state, new StyleBoxEmpty());
+                void RefreshArtwork() => artwork.SelfModulate = button.IsPressed() ? new(.90f, .85f, .75f)
+                    : button.HasFocus() || button.IsHovered() ? new(1.08f, 1.04f, .90f) : Colors.White;
+                button.MouseEntered += RefreshArtwork; button.MouseExited += RefreshArtwork;
+                button.FocusEntered += RefreshArtwork; button.FocusExited += RefreshArtwork;
+                button.ButtonDown += RefreshArtwork; button.ButtonUp += RefreshArtwork;
+                button.Draw += RefreshArtwork;
+                RefreshArtwork();
+                return;
+            }
+            // The hit target sits above the artwork and caption; focus must not paint over them.
+            var focus = TianjinUi.Box(Colors.Transparent, 18, 3, false);
+            focus.BorderColor = Accent;
+            _upgradeEntry.AddThemeStyleboxOverride("focus", focus);
             foreach (string state in new[] { "normal", "hover", "pressed" })
             {
                 var box = TianjinUi.Box(state == "normal" ? Colors.Transparent : Accent with { A = .12f }, 18, 0, false);

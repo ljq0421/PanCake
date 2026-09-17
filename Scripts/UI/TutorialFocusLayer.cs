@@ -52,9 +52,13 @@ public partial class TutorialFocusLayer : Control
     public Func<TutorialFocusStep?> Resolve { get; set; } = () => null;
     public Func<IEnumerable<TutorialFocusTarget>> KeepClear { get; set; } = () => Array.Empty<TutorialFocusTarget>();
     public TutorialFocusCardSkin CardSkin { get; init; } = TutorialFocusCardSkin.Tianjin;
+    public bool PlaceNearTargets { get; init; }
+    public Func<Control?> PresentationCard { get; set; } = () => null;
     public bool Dismissed { get; private set; }
     public string? CurrentAction { get; private set; }
     internal string CurrentText => _hint.Text;
+    internal Rect2 CardBounds => (PresentationCard() ?? _card).GetGlobalRect();
+    internal bool DefaultCardVisible => _card.IsVisibleInTree();
     internal IReadOnlyList<Vector2[]> FocusPolygons => _outlines;
     private readonly List<Vector2[]> _outlines = new();
     private readonly List<(TutorialFocusTarget Target, Transform2D Transform)> _shapes = new();
@@ -62,6 +66,8 @@ public partial class TutorialFocusLayer : Control
     private TutorialFocusMask _ink = null!;
     private Panel _card = null!;
     private Label _hint = null!;
+    private Button _close = null!;
+    private string _layoutText = "";
     private TextureRect _shade = null!;
 
     public override void _Ready()
@@ -84,26 +90,36 @@ public partial class TutorialFocusLayer : Control
 
     private void BuildCardChrome()
     {
-        if (CardSkin == TutorialFocusCardSkin.Tianjin)
+        bool wuhan = CardSkin == TutorialFocusCardSkin.Wuhan;
+        if (wuhan) WuhanTeachingUi.ApplyPanel(_card); else TianjinTeachingUi.ApplyPanel(_card);
+        _hint = new Label { Size = new(540, 76), AutowrapMode = TextServer.AutowrapMode.WordSmart,
+            VerticalAlignment = VerticalAlignment.Center, MouseFilter = MouseFilterEnum.Ignore };
+        _hint.AddThemeFontSizeOverride("font_size", 24);
+        _hint.AddThemeColorOverride("font_color", wuhan ? WuhanUi.Text : TianjinUi.BrownText); _card.AddChild(_hint);
+        _close = new Button { Text = "本次关闭", FocusMode = FocusModeEnum.All };
+        _close.Pressed += Dismiss;
+        _card.AddChild(wuhan ? WuhanTeachingUi.ActionFrame(_close, Vector2.Zero, new(150, 54))
+            : TianjinTeachingUi.ActionFrame(_close, Vector2.Zero, new(150, 54)));
+    }
+
+    private void LayoutCard()
+    {
+        if (PlaceNearTargets)
         {
-            TianjinTeachingUi.ApplyPanel(_card);
-            _hint = new Label { Position = new Vector2(72, 20), Size = new Vector2(540, 76), AutowrapMode = TextServer.AutowrapMode.WordSmart,
-                VerticalAlignment = VerticalAlignment.Center, MouseFilter = MouseFilterEnum.Ignore };
-            _hint.AddThemeFontSizeOverride("font_size", 24); _hint.AddThemeColorOverride("font_color", TianjinUi.BrownText); _card.AddChild(_hint);
-            var close = new Button { Text = "本次关闭", FocusMode = FocusModeEnum.All };
-            close.Pressed += Dismiss;
-            _card.AddChild(TianjinTeachingUi.ActionFrame(close, new Vector2(638, 35), new Vector2(150, 54)));
+            float width = Mathf.Clamp(TeachingCardLayout.NaturalWidth(_hint), 300, 440);
+            float height = TeachingCardLayout.Place(_hint, 60, 38, width);
+            float buttonWidth = TeachingCardLayout.ButtonWidth(_close, 150);
+            TeachingCardLayout.PlaceButton(_close, new(60 + width - buttonWidth, 38 + height + 16), new(buttonWidth, 54));
+            _card.Size = new(60 + width + 36, 38 + height + 16 + 54 + 22);
             return;
         }
-
-        WuhanTeachingUi.ApplyPanel(_card);
-        // Align to the paper body below the raised steam decoration (local center Y = 74).
-        _hint = new Label { Position = new Vector2(72, 36), Size = new Vector2(540, 76), AutowrapMode = TextServer.AutowrapMode.WordSmart,
-            VerticalAlignment = VerticalAlignment.Center, MouseFilter = MouseFilterEnum.Ignore };
-        _hint.AddThemeFontSizeOverride("font_size", 24); _hint.AddThemeColorOverride("font_color", WuhanUi.Text); _card.AddChild(_hint);
-        var wuhanClose = new Button { Text = "本次关闭", FocusMode = FocusModeEnum.All };
-        wuhanClose.Pressed += Dismiss;
-        _card.AddChild(WuhanTeachingUi.ActionFrame(wuhanClose, new Vector2(638, 47), new Vector2(150, 54)));
+        float textWidth = Mathf.Clamp(TeachingCardLayout.NaturalWidth(_hint), 260, 540);
+        float actionWidth = TeachingCardLayout.ButtonWidth(_close, 150);
+        float rowHeight = Mathf.Max(54, TeachingCardLayout.Height(_hint, textWidth));
+        _card.Size = new(64 + textWidth + 24 + actionWidth + 36, 36 + rowHeight + 22);
+        _card.Position = new((1920 - _card.Size.X) / 2, 32);
+        TeachingCardLayout.Place(_hint, 64, 36 + (rowHeight - TeachingCardLayout.Height(_hint, textWidth)) / 2, textWidth);
+        TeachingCardLayout.PlaceButton(_close, new(64 + textWidth + 24, 36 + (rowHeight - 54) / 2), new(actionWidth, 54));
     }
 
     public void ResetSession() { Dismissed = false; Clear(); }
@@ -127,12 +143,48 @@ public partial class TutorialFocusLayer : Control
         }
         if (_outlines.Count == 0) { Clear(); return; }
         CurrentAction = step.ActionId; _hint.Text = step.Text;
-        // The card lives above the workbench and does not follow the pointer across click targets.
-        // Wuhan's transparent decoration is drawn above the shade; do not punch a bright rectangle around it.
-        if (CardSkin == TutorialFocusCardSkin.Tianjin)
-            polygons.Add(TutorialFocusTarget.Rectangle(new Rect2(_card.Position, _card.Size)));
+        string translated = _hint.Tr(_hint.Text);
+        if (_layoutText != translated) { _layoutText = translated; LayoutCard(); }
+        Control? presentation = PresentationCard();
+        _card.Visible = presentation is null;
+        if (PlaceNearTargets) PositionBesideTargets(presentation ?? _card);
         if (_ink.SetImages(images) | _ink.SetPolygons(polygons)) _mask.RenderTargetUpdateMode = SubViewport.UpdateMode.Once;
         Show(); QueueRedraw();
+    }
+
+    private void PositionBesideTargets(Control card)
+    {
+        Rect2 Bounds(Vector2[] points)
+        {
+            var rect = new Rect2(points[0], Vector2.Zero);
+            foreach (var point in points) rect = rect.Expand(point);
+            return rect;
+        }
+        var targets = _outlines.Select(Bounds).ToArray();
+        Rect2 anchor = targets.Aggregate((a, b) => a.Merge(b));
+        var clear = KeepClear().Where(t => IsInstanceValid(t.Owner) && t.Owner.IsVisibleInTree() && t.Points.Length > 0)
+            .Select(t => Bounds(t.Points.Select(p => GetGlobalTransform().AffineInverse() * t.Owner.GetGlobalTransform() * p).ToArray()));
+        Rect2[] obstacles = targets.Concat(clear).ToArray();
+        const float margin = 24, gap = 24;
+        Vector2 size = card.Size;
+        Vector2 center = anchor.GetCenter();
+        Vector2[] candidates = {
+            new(center.X - size.X / 2, anchor.Position.Y - gap - size.Y),
+            new(anchor.Position.X - gap - size.X, center.Y - size.Y / 2),
+            new(anchor.End.X + gap, center.Y - size.Y / 2),
+            new(center.X - size.X / 2, anchor.End.Y + gap),
+        };
+        Vector2 Clamp(Vector2 p) => new(Mathf.Clamp(p.X, margin, Mathf.Max(margin, Size.X - size.X - margin)),
+            Mathf.Clamp(p.Y, margin, Mathf.Max(margin, Size.Y - size.Y - margin)));
+        float Score(Vector2 p)
+        {
+            var rect = new Rect2(p, size);
+            float overlap = obstacles.Sum(o => { var intersection = rect.Intersection(o.Grow(12)); return intersection.HasArea() ? intersection.Size.X * intersection.Size.Y : 0; });
+            return overlap * 1000 + rect.GetCenter().DistanceSquaredTo(center);
+        }
+        Vector2 position = candidates.Select(Clamp).OrderBy(Score).First();
+        // Anchor to the actual control/art contour, never to the moving mouse or dragged sprite.
+        card.GlobalPosition = GetGlobalTransform() * position;
     }
 
     internal void DrawOutlines(CanvasItem canvas)

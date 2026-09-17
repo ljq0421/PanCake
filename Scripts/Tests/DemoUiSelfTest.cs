@@ -61,6 +61,7 @@ public partial class DemoUiSelfTest : Node
             save.UseDemoPathForTests(Path.Combine(dir, "save.json"), catalog.Demo!);
             Check(save.ResetProgress(out _), "isolated UI progress created");
             var settings = GetNode<JourneySettings>("/root/JourneySettings"); settings.UsePathForTests(Path.Combine(dir, "settings.cfg")); settings.SetLanguage(english ? "en" : "zh_CN");
+            InterfaceLessons.MarkAllSeen(settings);
             var main = GD.Load<PackedScene>("res://Scenes/Main/Main.tscn").Instantiate<GameController>(); AddChild(main);
             _screen = main.GetNode<StartScreen>("UI/StartScreen"); await Frames();
             if (args.Contains("--settings-only"))

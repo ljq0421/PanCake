@@ -1,0 +1,568 @@
+{
+  "BreakfastRecords": {},
+  "Version": 3,
+  "LastVisitedCityId": "city:xian",
+  "Coins": 9780,
+  "Cities": {
+    "city:tianjin": {
+      "HighestUnlockedDay": 15,
+      "BestStars": 0,
+      "Completed": false,
+      "EquipmentLevels": {
+        "pancake_stove": 1,
+        "ingredient_station": 1,
+        "fryer": 0
+      },
+      "UnlockedContentIds": [
+        "recipe:pancake_basic",
+        "ingredient:crispy",
+        "recipe:pancake_crispy",
+        "ingredient:scallion",
+        "recipe:pancake_scallion",
+        "recipe:pancake_scallion_crispy",
+        "equipment:ingredient_station_lv2",
+        "equipment:pancake_stove_lv2",
+        "equipment:fryer_lv1",
+        "product:youtiao",
+        "recipe:pancake_youtiao",
+        "recipe:pancake_scallion_youtiao",
+        "equipment:fryer_lv2",
+        "ingredient:ham",
+        "recipe:pancake_ham",
+        "recipe:pancake_ham_crispy",
+        "product:soy_milk",
+        "equipment:ingredient_station_lv3",
+        "equipment:pancake_stove_lv3",
+        "equipment:fryer_lv3"
+      ],
+      "UnlockedCollectibleIds": [],
+      "DayBestRecords": {
+        "1": {
+          "PerfectGansi": 0,
+          "TotalRevenue": 386,
+          "CompletedCustomers": 18,
+          "PerfectOrders": 0,
+          "IncorrectOrders": 0,
+          "HighestCorrectStreak": 0,
+          "Satisfaction": 96,
+          "YoutiaoUsed": 0,
+          "YoutiaoBurnt": 0
+        },
+        "2": {
+          "PerfectGansi": 0,
+          "TotalRevenue": 386,
+          "CompletedCustomers": 18,
+          "PerfectOrders": 0,
+          "IncorrectOrders": 0,
+          "HighestCorrectStreak": 0,
+          "Satisfaction": 96,
+          "YoutiaoUsed": 0,
+          "YoutiaoBurnt": 0
+        },
+        "3": {
+          "PerfectGansi": 0,
+          "TotalRevenue": 386,
+          "CompletedCustomers": 18,
+          "PerfectOrders": 0,
+          "IncorrectOrders": 0,
+          "HighestCorrectStreak": 0,
+          "Satisfaction": 96,
+          "YoutiaoUsed": 0,
+          "YoutiaoBurnt": 0
+        },
+        "4": {
+          "PerfectGansi": 0,
+          "TotalRevenue": 386,
+          "CompletedCustomers": 18,
+          "PerfectOrders": 0,
+          "IncorrectOrders": 0,
+          "HighestCorrectStreak": 0,
+          "Satisfaction": 96,
+          "YoutiaoUsed": 0,
+          "YoutiaoBurnt": 0
+        },
+        "5": {
+          "PerfectGansi": 0,
+          "TotalRevenue": 386,
+          "CompletedCustomers": 18,
+          "PerfectOrders": 0,
+          "IncorrectOrders": 0,
+          "HighestCorrectStreak": 0,
+          "Satisfaction": 96,
+          "YoutiaoUsed": 0,
+          "YoutiaoBurnt": 0
+        },
+        "6": {
+          "PerfectGansi": 0,
+          "TotalRevenue": 386,
+          "CompletedCustomers": 18,
+          "PerfectOrders": 0,
+          "IncorrectOrders": 0,
+          "HighestCorrectStreak": 0,
+          "Satisfaction": 96,
+          "YoutiaoUsed": 0,
+          "YoutiaoBurnt": 0
+        },
+        "7": {
+          "PerfectGansi": 0,
+          "TotalRevenue": 386,
+          "CompletedCustomers": 18,
+          "PerfectOrders": 0,
+          "IncorrectOrders": 0,
+          "HighestCorrectStreak": 0,
+          "Satisfaction": 96,
+          "YoutiaoUsed": 0,
+          "YoutiaoBurnt": 0
+        },
+        "8": {
+          "PerfectGansi": 0,
+          "TotalRevenue": 386,
+          "CompletedCustomers": 18,
+          "PerfectOrders": 0,
+          "IncorrectOrders": 0,
+          "HighestCorrectStreak": 0,
+          "Satisfaction": 96,
+          "YoutiaoUsed": 0,
+          "YoutiaoBurnt": 0
+        },
+        "9": {
+          "PerfectGansi": 0,
+          "TotalRevenue": 386,
+          "CompletedCustomers": 18,
+          "PerfectOrders": 0,
+          "IncorrectOrders": 0,
+          "HighestCorrectStreak": 0,
+          "Satisfaction": 96,
+          "YoutiaoUsed": 0,
+          "YoutiaoBurnt": 0
+        },
+        "10": {
+          "PerfectGansi": 0,
+          "TotalRevenue": 386,
+          "CompletedCustomers": 18,
+          "PerfectOrders": 0,
+          "IncorrectOrders": 0,
+          "HighestCorrectStreak": 0,
+          "Satisfaction": 96,
+          "YoutiaoUsed": 0,
+          "YoutiaoBurnt": 0
+        },
+        "11": {
+          "PerfectGansi": 0,
+          "TotalRevenue": 386,
+          "CompletedCustomers": 18,
+          "PerfectOrders": 0,
+          "IncorrectOrders": 0,
+          "HighestCorrectStreak": 0,
+          "Satisfaction": 96,
+          "YoutiaoUsed": 0,
+          "YoutiaoBurnt": 0
+        },
+        "12": {
+          "PerfectGansi": 0,
+          "TotalRevenue": 386,
+          "CompletedCustomers": 18,
+          "PerfectOrders": 0,
+          "IncorrectOrders": 0,
+          "HighestCorrectStreak": 0,
+          "Satisfaction": 96,
+          "YoutiaoUsed": 0,
+          "YoutiaoBurnt": 0
+        },
+        "13": {
+          "PerfectGansi": 0,
+          "TotalRevenue": 386,
+          "CompletedCustomers": 18,
+          "PerfectOrders": 0,
+          "IncorrectOrders": 0,
+          "HighestCorrectStreak": 0,
+          "Satisfaction": 96,
+          "YoutiaoUsed": 0,
+          "YoutiaoBurnt": 0
+        },
+        "14": {
+          "PerfectGansi": 0,
+          "TotalRevenue": 386,
+          "CompletedCustomers": 18,
+          "PerfectOrders": 0,
+          "IncorrectOrders": 0,
+          "HighestCorrectStreak": 0,
+          "Satisfaction": 96,
+          "YoutiaoUsed": 0,
+          "YoutiaoBurnt": 0
+        },
+        "15": {
+          "PerfectGansi": 0,
+          "TotalRevenue": 386,
+          "CompletedCustomers": 18,
+          "PerfectOrders": 0,
+          "IncorrectOrders": 0,
+          "HighestCorrectStreak": 0,
+          "Satisfaction": 96,
+          "YoutiaoUsed": 0,
+          "YoutiaoBurnt": 0
+        }
+      },
+      "LastDayPlan": null,
+      "LearnedWorkbenchActions": []
+    },
+    "city:wuhan": {
+      "HighestUnlockedDay": 12,
+      "BestStars": 0,
+      "Completed": false,
+      "EquipmentLevels": {
+        "noodle_cooker": 1,
+        "ingredient_station": 1,
+        "doupi_griddle": 0,
+        "egg_rice_wine_station": 0
+      },
+      "UnlockedContentIds": [
+        "recipe:hot_dry_noodles_classic",
+        "recipe:hot_dry_noodles_scallion",
+        "recipe:hot_dry_noodles_chili",
+        "recipe:hot_dry_noodles_scallion_chili",
+        "equipment:noodle_cooker_lv2",
+        "equipment:doupi_griddle_lv1",
+        "product:doupi",
+        "equipment:doupi_griddle_lv2",
+        "recipe:hot_dry_noodles_beef",
+        "recipe:hot_dry_noodles_beef_chili",
+        "equipment:noodle_cooker_lv3",
+        "equipment:doupi_griddle_lv3"
+      ],
+      "UnlockedCollectibleIds": [],
+      "DayBestRecords": {
+        "1": {
+          "PerfectGansi": 0,
+          "TotalRevenue": 386,
+          "CompletedCustomers": 18,
+          "PerfectOrders": 0,
+          "IncorrectOrders": 0,
+          "HighestCorrectStreak": 0,
+          "Satisfaction": 96,
+          "YoutiaoUsed": 0,
+          "YoutiaoBurnt": 0
+        },
+        "2": {
+          "PerfectGansi": 0,
+          "TotalRevenue": 386,
+          "CompletedCustomers": 18,
+          "PerfectOrders": 0,
+          "IncorrectOrders": 0,
+          "HighestCorrectStreak": 0,
+          "Satisfaction": 96,
+          "YoutiaoUsed": 0,
+          "YoutiaoBurnt": 0
+        },
+        "3": {
+          "PerfectGansi": 0,
+          "TotalRevenue": 386,
+          "CompletedCustomers": 18,
+          "PerfectOrders": 0,
+          "IncorrectOrders": 0,
+          "HighestCorrectStreak": 0,
+          "Satisfaction": 96,
+          "YoutiaoUsed": 0,
+          "YoutiaoBurnt": 0
+        },
+        "4": {
+          "PerfectGansi": 0,
+          "TotalRevenue": 386,
+          "CompletedCustomers": 18,
+          "PerfectOrders": 0,
+          "IncorrectOrders": 0,
+          "HighestCorrectStreak": 0,
+          "Satisfaction": 96,
+          "YoutiaoUsed": 0,
+          "YoutiaoBurnt": 0
+        },
+        "5": {
+          "PerfectGansi": 0,
+          "TotalRevenue": 386,
+          "CompletedCustomers": 18,
+          "PerfectOrders": 0,
+          "IncorrectOrders": 0,
+          "HighestCorrectStreak": 0,
+          "Satisfaction": 96,
+          "YoutiaoUsed": 0,
+          "YoutiaoBurnt": 0
+        },
+        "6": {
+          "PerfectGansi": 0,
+          "TotalRevenue": 386,
+          "CompletedCustomers": 18,
+          "PerfectOrders": 0,
+          "IncorrectOrders": 0,
+          "HighestCorrectStreak": 0,
+          "Satisfaction": 96,
+          "YoutiaoUsed": 0,
+          "YoutiaoBurnt": 0
+        },
+        "7": {
+          "PerfectGansi": 0,
+          "TotalRevenue": 386,
+          "CompletedCustomers": 18,
+          "PerfectOrders": 0,
+          "IncorrectOrders": 0,
+          "HighestCorrectStreak": 0,
+          "Satisfaction": 96,
+          "YoutiaoUsed": 0,
+          "YoutiaoBurnt": 0
+        },
+        "8": {
+          "PerfectGansi": 0,
+          "TotalRevenue": 386,
+          "CompletedCustomers": 18,
+          "PerfectOrders": 0,
+          "IncorrectOrders": 0,
+          "HighestCorrectStreak": 0,
+          "Satisfaction": 96,
+          "YoutiaoUsed": 0,
+          "YoutiaoBurnt": 0
+        },
+        "9": {
+          "PerfectGansi": 0,
+          "TotalRevenue": 386,
+          "CompletedCustomers": 18,
+          "PerfectOrders": 0,
+          "IncorrectOrders": 0,
+          "HighestCorrectStreak": 0,
+          "Satisfaction": 96,
+          "YoutiaoUsed": 0,
+          "YoutiaoBurnt": 0
+        },
+        "10": {
+          "PerfectGansi": 0,
+          "TotalRevenue": 386,
+          "CompletedCustomers": 18,
+          "PerfectOrders": 0,
+          "IncorrectOrders": 0,
+          "HighestCorrectStreak": 0,
+          "Satisfaction": 96,
+          "YoutiaoUsed": 0,
+          "YoutiaoBurnt": 0
+        },
+        "11": {
+          "PerfectGansi": 0,
+          "TotalRevenue": 386,
+          "CompletedCustomers": 18,
+          "PerfectOrders": 0,
+          "IncorrectOrders": 0,
+          "HighestCorrectStreak": 0,
+          "Satisfaction": 96,
+          "YoutiaoUsed": 0,
+          "YoutiaoBurnt": 0
+        },
+        "12": {
+          "PerfectGansi": 0,
+          "TotalRevenue": 386,
+          "CompletedCustomers": 18,
+          "PerfectOrders": 0,
+          "IncorrectOrders": 0,
+          "HighestCorrectStreak": 0,
+          "Satisfaction": 96,
+          "YoutiaoUsed": 0,
+          "YoutiaoBurnt": 0
+        }
+      },
+      "LastDayPlan": null,
+      "LearnedWorkbenchActions": []
+    },
+    "city:xian": {
+      "HighestUnlockedDay": 12,
+      "BestStars": 0,
+      "Completed": false,
+      "EquipmentLevels": {
+        "xian_board": 1,
+        "xian_oven": 2,
+        "xian_soup": 0
+      },
+      "UnlockedContentIds": [
+        "equipment:xian_board_lv2",
+        "equipment:xian_board_lv3",
+        "equipment:xian_oven_lv1",
+        "equipment:xian_oven_lv2",
+        "equipment:xian_oven_lv3",
+        "equipment:xian_soup_lv1",
+        "equipment:xian_soup_lv2",
+        "equipment:xian_soup_lv3",
+        "product:hulatang",
+        "recipe:roujiamo_extra_juicy",
+        "recipe:roujiamo_extra_meat",
+        "recipe:roujiamo_juicy",
+        "recipe:roujiamo_standard"
+      ],
+      "UnlockedCollectibleIds": [],
+      "DayBestRecords": {
+        "1": {
+          "PerfectGansi": 0,
+          "TotalRevenue": 386,
+          "CompletedCustomers": 18,
+          "PerfectOrders": 0,
+          "IncorrectOrders": 0,
+          "HighestCorrectStreak": 0,
+          "Satisfaction": 96,
+          "YoutiaoUsed": 0,
+          "YoutiaoBurnt": 0
+        },
+        "2": {
+          "PerfectGansi": 0,
+          "TotalRevenue": 386,
+          "CompletedCustomers": 18,
+          "PerfectOrders": 0,
+          "IncorrectOrders": 0,
+          "HighestCorrectStreak": 0,
+          "Satisfaction": 96,
+          "YoutiaoUsed": 0,
+          "YoutiaoBurnt": 0
+        },
+        "3": {
+          "PerfectGansi": 0,
+          "TotalRevenue": 386,
+          "CompletedCustomers": 18,
+          "PerfectOrders": 0,
+          "IncorrectOrders": 0,
+          "HighestCorrectStreak": 0,
+          "Satisfaction": 96,
+          "YoutiaoUsed": 0,
+          "YoutiaoBurnt": 0
+        },
+        "4": {
+          "PerfectGansi": 0,
+          "TotalRevenue": 386,
+          "CompletedCustomers": 18,
+          "PerfectOrders": 0,
+          "IncorrectOrders": 0,
+          "HighestCorrectStreak": 0,
+          "Satisfaction": 96,
+          "YoutiaoUsed": 0,
+          "YoutiaoBurnt": 0
+        },
+        "5": {
+          "PerfectGansi": 0,
+          "TotalRevenue": 386,
+          "CompletedCustomers": 18,
+          "PerfectOrders": 0,
+          "IncorrectOrders": 0,
+          "HighestCorrectStreak": 0,
+          "Satisfaction": 96,
+          "YoutiaoUsed": 0,
+          "YoutiaoBurnt": 0
+        },
+        "6": {
+          "PerfectGansi": 0,
+          "TotalRevenue": 386,
+          "CompletedCustomers": 18,
+          "PerfectOrders": 0,
+          "IncorrectOrders": 0,
+          "HighestCorrectStreak": 0,
+          "Satisfaction": 96,
+          "YoutiaoUsed": 0,
+          "YoutiaoBurnt": 0
+        },
+        "7": {
+          "PerfectGansi": 0,
+          "TotalRevenue": 386,
+          "CompletedCustomers": 18,
+          "PerfectOrders": 0,
+          "IncorrectOrders": 0,
+          "HighestCorrectStreak": 0,
+          "Satisfaction": 96,
+          "YoutiaoUsed": 0,
+          "YoutiaoBurnt": 0
+        },
+        "8": {
+          "PerfectGansi": 0,
+          "TotalRevenue": 386,
+          "CompletedCustomers": 18,
+          "PerfectOrders": 0,
+          "IncorrectOrders": 0,
+          "HighestCorrectStreak": 0,
+          "Satisfaction": 96,
+          "YoutiaoUsed": 0,
+          "YoutiaoBurnt": 0
+        },
+        "9": {
+          "PerfectGansi": 0,
+          "TotalRevenue": 386,
+          "CompletedCustomers": 18,
+          "PerfectOrders": 0,
+          "IncorrectOrders": 0,
+          "HighestCorrectStreak": 0,
+          "Satisfaction": 96,
+          "YoutiaoUsed": 0,
+          "YoutiaoBurnt": 0
+        },
+        "10": {
+          "PerfectGansi": 0,
+          "TotalRevenue": 386,
+          "CompletedCustomers": 18,
+          "PerfectOrders": 0,
+          "IncorrectOrders": 0,
+          "HighestCorrectStreak": 0,
+          "Satisfaction": 96,
+          "YoutiaoUsed": 0,
+          "YoutiaoBurnt": 0
+        },
+        "11": {
+          "PerfectGansi": 0,
+          "TotalRevenue": 386,
+          "CompletedCustomers": 18,
+          "PerfectOrders": 0,
+          "IncorrectOrders": 0,
+          "HighestCorrectStreak": 0,
+          "Satisfaction": 96,
+          "YoutiaoUsed": 0,
+          "YoutiaoBurnt": 0
+        },
+        "12": {
+          "PerfectGansi": 0,
+          "TotalRevenue": 386,
+          "CompletedCustomers": 18,
+          "PerfectOrders": 0,
+          "IncorrectOrders": 0,
+          "HighestCorrectStreak": 0,
+          "Satisfaction": 96,
+          "YoutiaoUsed": 0,
+          "YoutiaoBurnt": 0
+        }
+      },
+      "LastDayPlan": null,
+      "LearnedWorkbenchActions": []
+    },
+    "city:yangzhou": {
+      "HighestUnlockedDay": 1,
+      "BestStars": 0,
+      "Completed": false,
+      "EquipmentLevels": {
+        "yangzhou_board": 1,
+        "yangzhou_steamer": 0
+      },
+      "UnlockedContentIds": [],
+      "UnlockedCollectibleIds": [],
+      "DayBestRecords": {},
+      "LastDayPlan": null,
+      "LearnedWorkbenchActions": []
+    },
+    "city:guangzhou": {
+      "HighestUnlockedDay": 1,
+      "BestStars": 0,
+      "Completed": false,
+      "EquipmentLevels": {
+        "guangzhou_stove": 1,
+        "guangzhou_station": 1,
+        "guangzhou_cabinet": 0
+      },
+      "UnlockedContentIds": [],
+      "UnlockedCollectibleIds": [],
+      "DayBestRecords": {},
+      "LastDayPlan": null,
+      "LearnedWorkbenchActions": []
+    }
+  },
+  "UnlockedCityIds": [
+    "city:tianjin",
+    "city:wuhan",
+    "city:xian"
+  ]
+}

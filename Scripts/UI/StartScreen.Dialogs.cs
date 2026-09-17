@@ -10,32 +10,13 @@ public partial class StartScreen
         CloseModal(); _previousFocus = GetViewport().GuiGetFocusOwner(); _modalKind = kind;
         Clear(_modal); _modalControls.Clear(); _modal.Show();
         _modal.AddChild(new ColorRect { Size = new(1920, 1080), Color = new Color(.15f, .1f, .06f, .65f) });
-        if (kind is "confirm" or "reset-ledger" or "developer")
+        if (kind is "confirm" or "reset-ledger")
+            AddConfirmationPanel(_modal, kind == "confirm" ? "Confirmation" : "ResetLedger");
+        else if (kind == "developer")
         {
-            bool illustratedConfirmation = kind is "confirm" or "reset-ledger";
             var panel = new Panel { Position = new(495, 275), Size = new(930, 535), MouseFilter = MouseFilterEnum.Ignore };
-            panel.AddThemeStyleboxOverride("panel", illustratedConfirmation
-                ? GD.Load<StyleBoxTexture>("res://resource/art/Global/PanelUI/panel-main-v1.tres")
-                : StartScreenTheme.Box(StartScreenTheme.Cream, 3, true));
+            panel.AddThemeStyleboxOverride("panel", StartScreenTheme.Box(StartScreenTheme.Cream, 3, true));
             _modal.AddChild(panel);
-            if (illustratedConfirmation)
-            {
-                string prefix = kind == "confirm" ? "Confirmation" : "ResetLedger";
-                panel.Name = prefix + "Panel";
-                var group = new Panel { Name = prefix + "MessagePanel", Position = new(550, 445), Size = new(820, 160), MouseFilter = MouseFilterEnum.Ignore };
-                group.AddThemeStyleboxOverride("panel", GD.Load<StyleBoxTexture>("res://resource/art/Global/PanelUI/panel-group-v1.tres"));
-                _modal.AddChild(group);
-                var decorations = new Control { Name = prefix + "Decorations", Size = new(1920, 1080), MouseFilter = MouseFilterEnum.Ignore };
-                _modal.AddChild(decorations);
-                AddPanelTitleTape(decorations, prefix + "TitleTape", new(625, 332, 670, 94));
-                var tape = Art(decorations, "res://resource/art/Global/PanelUI/corner-tape-v4.png", new(480, 270, 135, 45));
-                tape.PivotOffset = tape.Size / 2;
-                tape.RotationDegrees = -24;
-                var stamp = Art(decorations, "res://resource/art/Global/PanelUI/bowl-stamp-v2.png", new(1320, 702, 72, 72));
-                stamp.Modulate = new Color(1, 1, 1, .60f);
-                stamp.PivotOffset = stamp.Size / 2;
-                stamp.RotationDegrees = 8;
-            }
         }
         else
         {
@@ -48,19 +29,35 @@ public partial class StartScreen
         }
         foreach (var button in _buttons) button.FocusMode = FocusModeEnum.None;
     }
-    private void AddPanelTitleTape(Control parent, string name, Rect2 bounds)
+    // Reference: the approved Tianjin dialog, using the supplied panel and button art unchanged.
+    private void AddConfirmationPanel(Control parent, string prefix)
     {
-        var texture = Texture("res://resource/art/Global/PanelUI/corner-tape-v4.png");
-        float scale = bounds.Size.Y / texture.GetHeight();
-        var tape = new NinePatchRect
-        {
-            Name = name, Position = bounds.Position, Size = bounds.Size / scale,
-            Scale = Vector2.One * scale, Texture = texture,
-            PatchMarginLeft = 50, PatchMarginRight = 50,
-            MouseFilter = MouseFilterEnum.Ignore,
-            Material = new ShaderMaterial { Shader = GD.Load<Shader>("res://resource/shaders/panel_tape_lighten.gdshader") },
-        };
-        parent.AddChild(tape);
+        var panel = new Panel { Name = prefix + "Panel", Position = new(360, 225),
+            Size = IllustratedCityDialogTheme.PanelSize, MouseFilter = MouseFilterEnum.Ignore };
+        panel.AddThemeStyleboxOverride("panel", IllustratedCityDialogTheme.PanelFrame(ProjectCake.Data.StableIds.Cities.Tianjin));
+        parent.AddChild(panel);
+    }
+    private Label ConfirmationTitle(Control parent, string name, string caption)
+    {
+        var title = Text(parent, name, caption, new(678, 242, 564, 114), 60, true);
+        title.AddThemeColorOverride("font_color", new Color("#542D16"));
+        IllustratedCityDialogTheme.FitHeading(title);
+        return title;
+    }
+    private Label ConfirmationMessage(Control parent, string name, string caption)
+    {
+        var message = Text(parent, name, caption, new(535, 432, 850, 180), 40, true);
+        message.AddThemeColorOverride("font_color", new Color("#542D16"));
+        message.AddThemeConstantOverride("line_spacing", 14);
+        FitTextWidth(message, 40, 28);
+        return message;
+    }
+    private Button ConfirmationAction(Control parent, string name, string caption, Action action, bool primary = false)
+    {
+        var button = Button(parent, name, caption, new(primary ? 990 : 520, 669, 410, 104), action,
+            bare: true, highlightFocus: false);
+        IllustratedCityDialogTheme.StyleAction(button, primary, ProjectCake.Data.StableIds.Cities.Tianjin);
+        return button;
     }
     private void CloseModal()
     {
@@ -85,20 +82,11 @@ public partial class StartScreen
         foreach (var control in _modalControls) control.FocusMode = FocusModeEnum.None;
         _displayConfirmation = new Control { Name = "DisplayConfirmation", Size = new(1920, 1080) }; _modal.AddChild(_displayConfirmation);
         _displayConfirmation.AddChild(new ColorRect { Size = new(1920, 1080), Color = new Color(.12f, .08f, .04f, .7f) });
-        var panel = new Panel { Name = "DisplayConfirmationPanel", Position = new(535, 330), Size = new(850, 400), MouseFilter = MouseFilterEnum.Ignore };
-        panel.AddThemeStyleboxOverride("panel", GD.Load<StyleBoxTexture>("res://resource/art/Global/PanelUI/panel-main-v1.tres")); _displayConfirmation.AddChild(panel);
-        var message = new Panel { Name = "DisplayConfirmationMessagePanel", Position = new(580, 465), Size = new(760, 90), MouseFilter = MouseFilterEnum.Ignore };
-        message.AddThemeStyleboxOverride("panel", GD.Load<StyleBoxTexture>("res://resource/art/Global/PanelUI/panel-group-v1.tres")); _displayConfirmation.AddChild(message);
-        var decorations = new Control { Name = "DisplayConfirmationDecorations", Size = new(1920, 1080), MouseFilter = MouseFilterEnum.Ignore };
-        _displayConfirmation.AddChild(decorations);
-        AddPanelTitleTape(decorations, "DisplayConfirmationTitleTape", new(690, 365, 540, 75));
-        var tape = Art(decorations, "res://resource/art/Global/PanelUI/corner-tape-v4.png", new(520, 321, 112, 39));
-        tape.PivotOffset = tape.Size / 2;
-        tape.RotationDegrees = -24;
-        Text(_displayConfirmation, "DisplayConfirmationTitle", "保留这个显示设置？", new(710, 378, 500, 46), 32, true);
-        _countdown = Text(_displayConfirmation, "Countdown", "15 秒后恢复原设置", new(615, 486, 690, 42), 26, true);
-        Button(_displayConfirmation, "RevertDisplay", "恢复原设置", new(620, 575, 295, 70), _settings.RevertDisplay);
-        Button(_displayConfirmation, "KeepDisplay", "保留设置", new(1000, 575, 285, 70), _settings.ConfirmDisplay, true);
+        AddConfirmationPanel(_displayConfirmation, "DisplayConfirmation");
+        ConfirmationTitle(_displayConfirmation, "DisplayConfirmationTitle", "保留这个显示设置？");
+        _countdown = ConfirmationMessage(_displayConfirmation, "Countdown", "15 秒后恢复原设置");
+        ConfirmationAction(_displayConfirmation, "RevertDisplay", "恢复原设置", _settings.RevertDisplay);
+        ConfirmationAction(_displayConfirmation, "KeepDisplay", "保留设置", _settings.ConfirmDisplay, true);
         _modalControls.First(c => c.Name == "RevertDisplay").GrabFocus();
     }
     private void SettingsChanged()

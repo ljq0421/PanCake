@@ -9,12 +9,16 @@ namespace ProjectCake.UI;
 THESIS: one portion owns one row and its ingredient icons; delivery changes that row's paper.
 OWN-WORLD: warm outlined paper in Tianjin, ivory and teal in Wuhan, existing food art.
 STORY: match the main food and extras, prepare it, then see only its region turn green.
-FIRST VIEWPORT: equal-width food rows above one shared side-product row and a patience bar.
+FIRST VIEWPORT: compact equal-width product rows, toppings in a grid, one patience bar.
 FORM: the user's approved icon-only order bubble; no names, ordinals, totals or status copy.
 FINISH: verify both cities at 1080p and 720p, partial deliveries, and unchanged drop targets.
 */
 public partial class OrderBubbleView : PanelContainer
 {
+    public const float CompactWidth = 184;
+    private const float CompactRowHeight = 58;
+    private static readonly Vector2 CompactProductSize = new(74, 54);
+    private static readonly Vector2 CompactToppingSize = new(36, 26);
     private const float MainHeight = 54;
     private const float SideHeight = 44;
     private static int WuhanToppingOrder(string ingredient) => ingredient switch
@@ -28,6 +32,7 @@ public partial class OrderBubbleView : PanelContainer
     private VBoxContainer _rows = null!;
     private readonly List<(int Line, int Portion, PanelContainer Region, Label? Quantity)> _regions = new();
     private readonly Dictionary<Texture2D, Texture2D> _trimmed = new();
+    private static readonly Dictionary<(Texture2D Source, Vector2 Size), Texture2D> CompactIcons = new();
     private TianjinArtCatalog _shared = null!;
     private WuhanArtCatalog? _wuhan;
     private XianArtCatalog? _xian;
@@ -42,7 +47,7 @@ public partial class OrderBubbleView : PanelContainer
     private const float OrnamentOverhang = 24;
     private readonly Color _complete = new("#DCECC8");
     private OrderData? _order;
-    private bool _tianjinPaper;
+    private bool _compactLayout;
     private OrderProgress? _progress;
     private IReadOnlyDictionary<string, RecipeData>? _recipes;
 
@@ -78,14 +83,21 @@ public partial class OrderBubbleView : PanelContainer
         QueueRedraw();
     }
 
-    // Explicit opt-in: the shared Wuhan and Xi'an scene resources remain untouched.
+    // Explicit opt-in: Xi'an keeps its existing horizontal layout.
+    public void ConfigureCompactLayout()
+    {
+        _compactLayout = true;
+        ApplyContentMargins();
+        CustomMinimumSize = new Vector2(CompactWidth, 0);
+        Size = new Vector2(CompactWidth, Size.Y);
+    }
+
     public void ConfigureTianjinPaper()
     {
-        _tianjinPaper = true;
+        ConfigureCompactLayout();
         _paper = new Color("#FAF2DF"); _ink = TianjinUi.BrownDark;
         _rule = new Color("#CDB38E", .7f);
         ApplyFrame("tianjin", TianjinUi.BrownDark);
-        CustomMinimumSize = new Vector2(306, 0); Size = new Vector2(306, Size.Y);
         QueueRedraw();
     }
 
@@ -142,10 +154,7 @@ public partial class OrderBubbleView : PanelContainer
         _frame = GD.Load<StyleBoxTexture>($"res://resource/art/OrderBubbleUI/frame-{city}.tres");
         using Image paperImage = _frame.Texture.GetImage();
         _paper = paperImage.GetPixel(130, paperImage.GetHeight() - 40);
-        AddThemeStyleboxOverride("panel", new StyleBoxEmpty {
-            ContentMarginLeft = 18, ContentMarginRight = 18,
-            ContentMarginTop = 18, ContentMarginBottom = 12,
-        });
+        ApplyContentMargins();
         _content.AddThemeConstantOverride("separation", 3);
         Patience.CustomMinimumSize = new Vector2(0, 6);
         var track = Flat(new Color("#E2D6BF")); track.SetCornerRadiusAll(3);
@@ -154,6 +163,14 @@ public partial class OrderBubbleView : PanelContainer
         Patience.AddThemeStyleboxOverride("fill", fill);
         QueueRedraw();
     }
+
+    private void ApplyContentMargins() => AddThemeStyleboxOverride("panel", new StyleBoxEmpty {
+        // Reclaim inner whitespace for larger food, keeping the three-row card's height.
+        ContentMarginLeft = _compactLayout ? 12 : 18,
+        ContentMarginRight = _compactLayout ? 12 : 18,
+        ContentMarginTop = _compactLayout ? 6 : 18,
+        ContentMarginBottom = 12,
+    });
 
     public void Render(OrderData order, OrderProgress progress, IReadOnlyDictionary<string, RecipeData> recipes)
     {
@@ -170,21 +187,24 @@ public partial class OrderBubbleView : PanelContainer
                 for (int portion = 0; portion < line.Quantity; portion++)
                 {
                     AddRule();
-                    PanelContainer region = Region("OrderMainRow", MainHeight, lineIndex, portion);
-                    var icons = new HBoxContainer { Name = "OrderIcons", MouseFilter = MouseFilterEnum.Ignore };
-                    icons.AddThemeConstantOverride("separation", _tianjinPaper ? 8 : 12);
+                    PanelContainer region = Region("OrderMainRow", _compactLayout ? CompactRowHeight : MainHeight, lineIndex, portion);
+                    var icons = new HBoxContainer { Name = "OrderIcons", MouseFilter = MouseFilterEnum.Ignore,
+                        Alignment = _compactLayout ? BoxContainer.AlignmentMode.Center : BoxContainer.AlignmentMode.Begin };
+                    icons.AddThemeConstantOverride("separation", _compactLayout ? 6 : 12);
                     region.AddChild(icons);
-                    icons.AddChild(ProductIcon(line.ProductKind, new Vector2(62, 46)));
+                    icons.AddChild(ProductIcon(line.ProductKind, _compactLayout ? CompactProductSize : new Vector2(62, 46)));
+                    var toppings = new List<Control>();
                     if (line.ProductKind == ProductKind.Pancake && line.Sauce != SaucePreference.Normal)
                     {
-                        TextureRect sauce = Icon(_shared.SaucePreferenceIcon(line.Sauce), new Vector2(28, 38), "OrderSauceIcon");
+                        TextureRect sauce = Icon(_shared.SaucePreferenceIcon(line.Sauce),
+                            _compactLayout ? CompactToppingSize : new Vector2(28, 38), "OrderSauceIcon");
                         sauce.SetMeta("sauce", (int)line.Sauce);
-                        icons.AddChild(sauce);
+                        toppings.Add(sauce);
                     }
                     if (_xian is not null && recipes.TryGetValue(line.DefinitionId, out var xianRecipe) && xianRecipe is XianRecipeData xr)
                     {
-                        if (xr.MeatPortions > 1) icons.AddChild(Icon(_xian.Texture("多肉订单小图标"), new Vector2(44, 40), "OrderExtraMeat"));
-                        if (xr.HasJuice) icons.AddChild(Icon(_xian.Texture("加汁订单小图标"), new Vector2(32, 40), "OrderJuice"));
+                        if (xr.MeatPortions > 1) toppings.Add(Icon(_xian.Texture("多肉订单小图标"), new Vector2(44, 40), "OrderExtraMeat"));
+                        if (xr.HasJuice) toppings.Add(Icon(_xian.Texture("加汁订单小图标"), new Vector2(32, 40), "OrderJuice"));
                     }
                     else if (recipes.TryGetValue(line.DefinitionId, out RecipeData? recipe))
                         foreach (string ingredient in line.ProductKind == ProductKind.HotDryNoodles
@@ -192,16 +212,57 @@ public partial class OrderBubbleView : PanelContainer
                             : recipe.ExtraIngredients.AsEnumerable())
                         {
                             Texture2D texture = _wuhan is null ? _shared.Ingredient(ingredient) : _wuhan.Ingredient(ingredient);
-                            TextureRect topping = Icon(texture, new Vector2(44, 40), $"OrderIngredientIcon_{ingredient}");
+                            TextureRect topping = Icon(texture,
+                                _compactLayout ? CompactToppingSize : new Vector2(44, 40), $"OrderIngredientIcon_{ingredient}");
                             topping.SetMeta("ingredient_id", ingredient);
-                            icons.AddChild(topping);
+                            toppings.Add(topping);
                         }
+                    if (_compactLayout && toppings.Count > 0)
+                    {
+                        var grid = new GridContainer { Name = "OrderToppings", Columns = toppings.Count > 2 ? 2 : 1,
+                            MouseFilter = MouseFilterEnum.Ignore, SizeFlagsVertical = SizeFlags.ShrinkCenter };
+                        grid.AddThemeConstantOverride("h_separation", 4);
+                        grid.AddThemeConstantOverride("v_separation", 2);
+                        icons.AddChild(grid);
+                        foreach (Control topping in toppings) grid.AddChild(topping);
+                    }
+                    else foreach (Control topping in toppings) icons.AddChild(topping);
                     _rows.AddChild(region);
                     _regions.Add((lineIndex, portion, region, null));
                 }
             }
             int[] sides = Enumerable.Range(0, order.Lines.Count).Where(i => !IsMain(order.Lines[i].ProductKind)).ToArray();
-            if (sides.Length > 0)
+            if (_compactLayout)
+            {
+                foreach (int index in sides)
+                {
+                    AddRule();
+                    PanelContainer region = Region("OrderSideProduct", CompactRowHeight, index, -1);
+                    var icons = new HBoxContainer { Name = "OrderIcons", Alignment = BoxContainer.AlignmentMode.Center,
+                        MouseFilter = MouseFilterEnum.Ignore };
+                    icons.AddThemeConstantOverride("separation", 6);
+                    region.AddChild(icons);
+                    // Keep the product on the row's centerline even when a quantity is shown.
+                    var product = new Control { Name = "CenteredSideProduct", CustomMinimumSize = CompactProductSize,
+                        MouseFilter = MouseFilterEnum.Ignore, SizeFlagsVertical = SizeFlags.ShrinkCenter };
+                    Control icon = ProductIcon(order.Lines[index].ProductKind, CompactProductSize);
+                    product.AddChild(icon); icon.Size = CompactProductSize;
+                    icons.AddChild(product);
+                    Label? quantity = null;
+                    if (order.Lines[index].Quantity > 1)
+                    {
+                        quantity = TianjinUi.Label("", 18, _ink);
+                        quantity.Name = "OrderQuantity";
+                        quantity.MouseFilter = MouseFilterEnum.Ignore;
+                        quantity.Position = new Vector2(CompactProductSize.X + 2, 0);
+                        quantity.Size = new Vector2(36, CompactProductSize.Y);
+                        product.AddChild(quantity);
+                    }
+                    _rows.AddChild(region);
+                    _regions.Add((index, -1, region, quantity));
+                }
+            }
+            else if (sides.Length > 0)
             {
                 AddRule();
                 var sideRow = new HBoxContainer { Name = "OrderSideRow", MouseFilter = MouseFilterEnum.Ignore };
@@ -246,8 +307,8 @@ public partial class OrderBubbleView : PanelContainer
     {
         var region = new PanelContainer { Name = $"{name}_{line}_{portion}", CustomMinimumSize = new Vector2(0, height), MouseFilter = MouseFilterEnum.Ignore };
         StyleBoxFlat style = Flat(Colors.Transparent);
-        style.ContentMarginLeft = style.ContentMarginRight = 6;
-        style.ContentMarginTop = style.ContentMarginBottom = 4;
+        style.ContentMarginLeft = style.ContentMarginRight = _compactLayout ? 2 : 6;
+        style.ContentMarginTop = style.ContentMarginBottom = _compactLayout ? 2 : 4;
         region.AddThemeStyleboxOverride("panel", style);
         region.SetMeta("line_index", line);
         region.SetMeta("portion", portion);
@@ -279,6 +340,41 @@ public partial class OrderBubbleView : PanelContainer
 
     private TextureRect Icon(Texture2D texture, Vector2 size, string name)
     {
+        if (_compactLayout)
+        {
+            var key = (texture, size);
+            if (!CompactIcons.TryGetValue(key, out Texture2D? prepared))
+            {
+                using Image source = texture.GetImage();
+                source.Convert(Image.Format.Rgba8);
+                // Preserve the source's antialiased silhouette, including faint edges.
+                // A tight atlas cuts off the ink shader at the quad's boundary. Bake a
+                // transparent guard of two display pixels and mipmaps for small icons.
+                Rect2I bounds = CompactIconBounds(source);
+                if (bounds.HasArea())
+                {
+                    float fit = Math.Min((size.X - 4) / bounds.Size.X, (size.Y - 4) / bounds.Size.Y);
+                    int padding = (int)Math.Ceiling(2 / fit);
+                    using Image padded = Image.CreateEmpty(bounds.Size.X + padding * 2, bounds.Size.Y + padding * 2,
+                        false, Image.Format.Rgba8);
+                    padded.Fill(Colors.Transparent);
+                    padded.BlitRect(source, bounds, new Vector2I(padding, padding));
+                    padded.FixAlphaEdges();
+                    padded.GenerateMipmaps();
+                    prepared = ImageTexture.CreateFromImage(padded);
+                }
+                else prepared = texture;
+                CompactIcons[key] = prepared;
+            }
+            var compactIcon = new TextureRect { Texture = prepared, Name = name, CustomMinimumSize = size,
+                ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+                StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
+                TextureFilter = TextureFilterEnum.LinearWithMipmaps,
+                MouseFilter = MouseFilterEnum.Ignore, SizeFlagsVertical = SizeFlags.ShrinkCenter };
+            // Prepared textures are transient; choose the existing ink from source identity.
+            if (FoodInk.AppliesTo(texture)) compactIcon.Material = FoodInk.Material(order: true);
+            return compactIcon;
+        }
         if (!_trimmed.TryGetValue(texture, out Texture2D? trimmed))
         {
             using Image image = texture.GetImage();
@@ -305,6 +401,23 @@ public partial class OrderBubbleView : PanelContainer
         icon.MouseFilter = MouseFilterEnum.Ignore;
         icon.SizeFlagsVertical = SizeFlags.ShrinkCenter;
         return icon;
+    }
+
+    private static Rect2I CompactIconBounds(Image image)
+    {
+        byte[] pixels = image.GetData();
+        int width = image.GetWidth(), height = image.GetHeight();
+        int left = width, top = height, right = -1, bottom = -1;
+        // Generated layers can have almost invisible alpha over the entire canvas.
+        // Ignore only that matte residue, not the softer edge pixels cut by the old 32 threshold.
+        for (int y = 0; y < height; y++)
+        for (int x = 0; x < width; x++)
+            if (pixels[(y * width + x) * 4 + 3] >= 8)
+            {
+                left = Math.Min(left, x); right = Math.Max(right, x);
+                top = Math.Min(top, y); bottom = Math.Max(bottom, y);
+            }
+        return right >= left ? new Rect2I(left, top, right - left + 1, bottom - top + 1) : default;
     }
 
     private static StyleBoxFlat Flat(Color color) => new()

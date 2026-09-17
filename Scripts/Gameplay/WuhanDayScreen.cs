@@ -11,7 +11,7 @@ namespace ProjectCake.Gameplay;
 
 public partial class WuhanDayScreen : Control
 {
-    private const float OrderCardWidth = 240;
+    private const float OrderCardWidth = OrderBubbleView.CompactWidth;
     public event Action? HubRequested;
     private readonly Control[] _customers = new Control[5];
     private readonly DropZone[] _customerDropZones = new DropZone[5];
@@ -70,6 +70,7 @@ public partial class WuhanDayScreen : Control
             _portraits[i].BindInteractionHighlight(() => CustomerHighlight(customerSlot));
             DeliveryDrag.RegisterZone(_customerDropZones[i]);
             _orders[i].Configure(_art.Shared, _art);
+            _orders[i].ConfigureCompactLayout();
         }
         Workstation.CanInteract = () => CanInteract;
         Workstation.ConfigureDelivery(DeliveryDrag);
@@ -109,7 +110,7 @@ public partial class WuhanDayScreen : Control
         var strip = GetNode<Control>("WuhanCustomerStrip");
         // Reserve the ornaments above the cards while preserving every customer's
         // world position and the existing counter crop at the bottom of the strip.
-        const float ornamentRoom = 24;
+        const float ornamentRoom = 94;
         strip.Position = new Vector2(32, 190 - ornamentRoom);
         strip.Size = new Vector2(1650, 370 + ornamentRoom);
         for (int i = 0; i < _customers.Length; i++)
@@ -129,7 +130,8 @@ public partial class WuhanDayScreen : Control
             _portraits[i].Scale = Vector2.One * 1.1f;
             _orders[i].Reparent(_customers[i], false);
             _orders[i].CustomMinimumSize = new Vector2(OrderCardWidth, 0);
-            _orders[i].Scale = Vector2.One * .88f;
+            // Counter the customer-column scale so both cities share readable icon sizes.
+            _orders[i].Scale = Vector2.One / _customers[i].Scale;
             _patience[i].CustomMinimumSize = new Vector2(0, 6);
             foreach (string style in new[] { "background", "fill" })
             {
@@ -337,14 +339,12 @@ public partial class WuhanDayScreen : Control
         RenderBusinessHud();
         int day = _controller.CurrentConfig.Day;
         _day.Text = $"{day}";
-        _day.TooltipText = $"武汉 Day {day} · {Subtitle(day)}\n{Tutorial(day)}";
         _clock.Text = _controller.State switch
         {
             DayState.Opening => $"开门 {_controller.OpeningRemainingSeconds:0}",
             DayState.Closing => $"收尾 {_controller.ClosingRemainingSeconds:0}",
             _ => $"{(int)_controller.DayRemainingSeconds / 60:00}:{(int)_controller.DayRemainingSeconds % 60:00}",
         };
-        _clock.TooltipText = $"候场 {_controller.CustomerQueue?.DoorQueue.Count ?? 0}";
         _income.Text = $"{_controller.Ledger?.Build().TotalRevenue ?? 0}";
         _tutorial.Text = $"武汉 Day {day} · {Subtitle(day)}\n{Tutorial(day)}";
         _tutorial.Visible = _controller.State == DayState.Opening;
@@ -385,7 +385,8 @@ public partial class WuhanDayScreen : Control
             // All Wuhan cards share one compact width, with the tail over the customer.
             _orders[i].Size = new Vector2(OrderCardWidth, _orders[i].GetCombinedMinimumSize().Y);
             _orders[i].Position = new Vector2(
-                (_customers[i].Size.X - _orders[i].Size.X * _orders[i].Scale.X) * .5f, 5);
+                (_customers[i].Size.X - _orders[i].Size.X * _orders[i].Scale.X) * .5f,
+                155 - _orders[i].Size.Y * _orders[i].Scale.Y);
             PatienceBarPresentation.Render(_patience[i], 1 - customer.PatienceProgress);
             _portraits[i].SetVisual(_art.Shared.CustomerPortrait(customer.AppearanceId,TianjinArtCatalog.ResolveCustomerExpression(customer.State,customer.WasServed)));
         }

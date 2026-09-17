@@ -1,0 +1,58 @@
+Godot Engine v4.7.1.stable.mono.official.a13da4feb - https://godotengine.org
+OpenGL API 3.3.0 NVIDIA 610.88 - Compatibility - Using Device: NVIDIA - NVIDIA GeForce RTX 5070
+
+ERROR: Failed to read the root certificate store.
+   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)
+FLIP_PASS button starts animation and commits exactly one flip
+FLIP_PASS repeated F cannot advance the recipe
+FLIP_PASS repeated F cannot advance the recipe
+FLIP_PASS repeated F cannot advance the recipe
+FLIP_PASS repeated F cannot advance the recipe
+FLIP_PASS repeated F cannot advance the recipe
+FLIP_PASS airborne inputs do not change food or stock
+FLIP_PASS airborne pancake cannot be picked up for trash
+FLIP_PASS other work remains available during the flip
+FLIP_PASS spatula accompanies the rising pancake (active=True, state=Running, paused=False, progress=0.3809524)
+FLIP_PASS food and spatula finish together at 0.35 seconds
+FLIP_PASS egg state survives the flip
+FLIP_PASS sauce becomes available after landing
+FLIP_PASS F starts a valid flip
+FLIP_PASS business details settle the food and restore the spatula
+FLIP_PASS closing details does not replay animation
+FLIP_PASS F starts a valid flip
+FLIP_PASS focus loss clears the animation
+FLIP_PASS F starts a valid flip
+FLIP_PASS changing reduced motion mid-flip settles immediately
+FLIP_PASS reduced motion preserves successful flip without travel or input delay
+FLIP_PASS F starts a valid flip
+FLIP_PASS paused workstation releases animation lock
+FLIP_PASS day reset removes moving food and unlocks the next pancake
+FLIP_PASS F starts a valid flip
+FLIP_PASS leaving clears both food and tool motion
+FLIP_PASS button starts animation and commits exactly one flip
+FLIP_PASS repeated F cannot advance the recipe
+FLIP_PASS repeated F cannot advance the recipe
+FLIP_PASS repeated F cannot advance the recipe
+FLIP_PASS repeated F cannot advance the recipe
+FLIP_PASS repeated F cannot advance the recipe
+FLIP_PASS airborne inputs do not change food or stock
+FLIP_PASS airborne pancake cannot be picked up for trash
+FLIP_PASS other work remains available during the flip
+FLIP_PASS spatula accompanies the rising pancake (active=True, state=Running, paused=False, progress=0.3809524)
+FLIP_PASS food and spatula finish together at 0.35 seconds
+FLIP_PASS egg state survives the flip
+FLIP_PASS sauce becomes available after landing
+FLIP_PASS F starts a valid flip
+FLIP_PASS business details settle the food and restore the spatula
+FLIP_PASS closing details does not replay animation
+FLIP_PASS F starts a valid flip
+FLIP_PASS focus loss clears the animation
+FLIP_PASS F starts a valid flip
+FLIP_PASS changing reduced motion mid-flip settles immediately
+FLIP_PASS reduced motion preserves successful flip without travel or input delay
+FLIP_PASS F starts a valid flip
+FLIP_PASS paused workstation releases animation lock
+FLIP_PASS day reset removes moving food and unlocks the next pancake
+FLIP_PASS F starts a valid flip
+FLIP_PASS leaving clears both food and tool motion
+TIANJIN_FLIP_TEST: 52 passed, 0 failed

@@ -98,7 +98,6 @@ public partial class WuhanLedger : Control
             UpdateButtonStyle(button, "pressed", selection, 4);
             UpdateButtonStyle(button, "hover", paper.Lightened(.06f), 3);
             UpdateButtonStyle(button, "hover_pressed", selection.Lightened(.06f), 4);
-            button.TooltipText = $"Day {day} · {WuhanHub.DaySubtitle(day)} · {_dateStates[index].Text}";
         }
 
         bool locked = SelectedDay > save.Data.Wuhan.HighestUnlockedDay;

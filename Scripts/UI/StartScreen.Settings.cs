@@ -134,7 +134,6 @@ public partial class StartScreen
         button.GetNode<Panel>("Knob").Position = new(on ? button.Size.X - 48 : 6, (button.Size.Y - 42) / 2);
         var label = button.GetNode<Label>("State");
         label.Text = on ? "开" : "关"; label.Position = new(on ? 8 : 52, 0);
-        button.TooltipText = (name == "Mute" ? Tr("全部静音") : Tr("垂直同步")) + ": " + Tr(on ? "开" : "关");
     }
 
     private void SettingsVolume(string key, string title, int y)

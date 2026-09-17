@@ -30,22 +30,17 @@ public partial class XianDayScreen
         CollectionFeedback = GetNode<CoinCollectionFeedback>("CoinCollectionFeedback");
         _pauseMenu = Workbench.GetNode<Control>("PauseMenu");
         var pausePanel = _pauseMenu.GetNode<Panel>("Panel");
-        CityDialogChrome.ApplyPausePanel(pausePanel, StableIds.Cities.Xian);
-        CityDialogChrome.ApplyPauseAction(pausePanel.GetNode<Button>("resume"), StableIds.Cities.Xian, primary: true);
-        CityDialogChrome.ApplyPauseAction(pausePanel.GetNode<Button>("help"), StableIds.Cities.Xian);
-        CityDialogChrome.ApplyPauseAction(pausePanel.GetNode<Button>("exit"), StableIds.Cities.Xian, destructive: true);
-        pausePanel.GetNode<Label>("Title").ZIndex = 2;
-        CityDialogChrome.AddTitleTape(_pauseMenu, "XianPauseTitleTape", new(750, 262, 420, 66), StableIds.Cities.Xian);
+        IllustratedCityDialogTheme.BuildPauseWithTeaching(pausePanel, StableIds.Cities.Xian);
         CityDialogChrome.ApplyConfirmation(_exitDialog, StableIds.Cities.Xian);
         _exitDialog.AboutToPopup += () =>
         {
-            pausePanel.Hide(); _pauseMenu.GetNode<Control>("XianPauseTitleTape").Hide();
+            pausePanel.Hide();
         };
         _exitDialog.VisibilityChanged += () =>
         {
             if (!_exitDialog.Visible && _controller?.IsPaused == true)
             {
-                pausePanel.Show(); _pauseMenu.GetNode<Control>("XianPauseTitleTape").Show();
+                pausePanel.Show();
                 pausePanel.GetNode<Button>("resume").GrabFocus();
             }
         };
@@ -75,7 +70,6 @@ public partial class XianDayScreen
     {
         _pauseMenu.Visible = _controller.IsPaused && !_results.Visible;
         _pauseMenu.GetNode<Control>("Panel").Visible = !_exitDialog.Visible;
-        _pauseMenu.GetNode<Control>("XianPauseTitleTape").Visible = !_exitDialog.Visible;
         bool soupOpen = Session.Soup is not null;
         Texture2D texture = soupOpen ? _soupArt : _initialArt;
         if (_workbenchArt.Texture != texture) _workbenchArt.Texture = texture;

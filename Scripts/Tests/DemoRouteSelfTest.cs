@@ -8,7 +8,17 @@ public partial class DemoRouteSelfTest : Node
 {
     private int _checks;
     private void Check(bool ok, string text) { if (!ok) throw new Exception(text); GD.Print("PASS " + text); _checks++; }
-    public override void _Ready()
+    private async Task CaptureLesson(string name)
+    {
+        if (!OS.GetCmdlineUserArgs().Contains("--capture")) return;
+        await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+        await ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
+        string directory = ProjectSettings.GlobalizePath("res://artifacts/teaching-layout-20260917/route");
+        Directory.CreateDirectory(directory);
+        using var image = GetViewport().GetTexture().GetImage();
+        Check(image.SavePng(Path.Combine(directory, name + ".png")) == Error.Ok, "capture " + name);
+    }
+    public override async void _Ready()
     {
         try
         {
@@ -45,6 +55,8 @@ public partial class DemoRouteSelfTest : Node
                 Check(controller.TutorialActive && controller.CurrentPlan!.Customers.Count == 1, "isolated example " + day);
                 var station = screen.GetNode<PancakeWorkstation>("PancakeWorkstation");
                 screen._Notification((int)NotificationApplicationFocusIn); screen.RefreshForCapture(true);
+                await CaptureLesson("tianjin-" + day);
+                screen._Notification((int)NotificationApplicationFocusIn); screen.RefreshForCapture(true);
                 if (day == 4)
                 {
                     station.FryerMachine!.TryExecute(ProjectCake.Fryer.FryerCommand.LoadOne);
@@ -75,6 +87,8 @@ public partial class DemoRouteSelfTest : Node
                     Check(ws.Initialize(c, save, wc, day), "Wuhan lesson prepared " + day);
                     ws._Notification((int)NotificationApplicationFocusIn); ws.BeginDay(); wc.Tick(.6);
                     Check(wc.TutorialActive && wc.DayElapsedSeconds == 0, "Wuhan example clock isolated");
+                    ws.RefreshForCapture(); await CaptureLesson("wuhan-" + day);
+                    ws._Notification((int)NotificationApplicationFocusIn);
                     if (day == 1)
                     {
                         ws.Cooker.TryStart(0); ws.Cooker.Tick(1000);
@@ -96,6 +110,8 @@ public partial class DemoRouteSelfTest : Node
                     int coins = save.Data.Coins;
                     Check(ws.DeliverToCustomer(wc.CustomerQueue!.Slots[0].Id, day == 1 ? ProductKind.HotDryNoodles : ProductKind.Doupi), "real Wuhan lesson delivery");
                     Check(wc.Ledger!.Build().TotalRevenue == 0 && save.Data.Coins == coins, "Wuhan lesson no revenue");
+                    ws.RefreshForCapture(); await CaptureLesson("wuhan-complete-" + day);
+                    ws._Notification((int)NotificationApplicationFocusIn);
                     ws.FinishWuhanDemoLesson();
                     Check(!wc.TutorialActive && ws.Bowl.State == ProjectCake.Wuhan.NoodleBowlState.Empty
                         && ws.DoupiStock.Count == 0 && !ws.Cooker.ProtectTeachingHeat, "Wuhan example clears before normal shift");

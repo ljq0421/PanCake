@@ -98,8 +98,6 @@ public partial class TianjinDayScreen : Control
                 - slot.GetParent<Control>().Position.X - slot.Size.X * .5f, slot.Position.Y);
             _customerDropZones[i].FixedHitRect = new Rect2(18, 0, 304, CustomerStripHeight);
             OrderBubbleView card = _orderCards[i];
-            card.CustomMinimumSize = new Vector2(306, card.CustomMinimumSize.Y);
-            card.Size = new Vector2(306, card.Size.Y);
             card.Resized += () => AlignOrderCard(card);
             AlignOrderCard(card);
         }
@@ -116,12 +114,12 @@ public partial class TianjinDayScreen : Control
             Active = () => _controller is not null && _focused && !_manualPaused && !_focusPaused && !_detailsPaused
                 && !_committed && !_controller.IsPaused && _controller.State is DayState.Running or DayState.Closing,
             Runtime = () => _workstation.Machine?.Runtime, Spreading = () => _workstation.IsSpreading,
+            FlipProgress = () => _workstation.FlipProgress,
             StopPaymentFeedback = () => { _paymentFeedback.Clear(); _hud.ResetIncomeEmphasis(); } };
         AddChild(_living);
         ((TianjinPendantButton)CashPendant).IndependentArtwork = true;
         _living.BindPendantHighlight(() => !CashPendant.Disabled && (CashPendant.IsHovered() || CashPendant.HasFocus())
             ? InteractionHighlightState.Hover : InteractionHighlightState.None);
-        _workstation.TianjinFlipped += _living.Flip;
         VisibilityChanged += () =>
         {
             if (!IsVisibleInTree()) { CloseBusinessDetails(); ClearCoinFlights(); _collectionFeedback.Clear(); }
@@ -533,7 +531,7 @@ public partial class TianjinDayScreen : Control
         CashPendant = new TianjinPendantButton { Background = () => _art.WorkbenchBackground(_controller?.CurrentConfig?.AvailableProductKinds ?? new List<ProductKind>()),
             IsOccluded = point => _orderCards.Any(card => card.IsVisibleInTree() && card.GetGlobalRect().HasPoint(point)),
             Name = "CashPendant", Position = bounds.Position, Size = bounds.Size,
-            TooltipText = "查看营业明细", MouseDefaultCursorShape = CursorShape.PointingHand, ZIndex = 80 };
+            MouseDefaultCursorShape = CursorShape.PointingHand, ZIndex = 80 };
         foreach (string state in new[] { "normal", "hover", "pressed", "disabled", "focus" })
             CashPendant.AddThemeStyleboxOverride(state, new StyleBoxEmpty());
         AddChild(CashPendant);

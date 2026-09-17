@@ -82,8 +82,8 @@ public partial class TianjinLedgerSelfTest : Node
             Check(Find<Button>("Date8").GetNode<TextureRect>("RevenueIcon").Visible
                 && Find<Button>("Date8").GetNode<TextureRect>("SatisfactionIcon").Visible
                 && DateState(8).Text == "386\n96%"
-                && Find<Button>("Date8").TooltipText.Contains("最佳收入 ¥386 · 满意度 96%"),
-                "date metrics use coin and heart with numbers and descriptive tooltip");
+                && Find<Button>("Date8").TooltipText.Length == 0,
+                "date metrics use coin and heart with numbers without hover text");
             Check(!Find<Button>("Date9").GetNode<TextureRect>("RevenueIcon").Visible
                 && !Find<Button>("Date10").GetNode<TextureRect>("SatisfactionIcon").Visible,
                 "unplayed and locked dates hide metric icons");

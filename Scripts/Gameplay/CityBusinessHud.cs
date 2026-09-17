@@ -108,7 +108,6 @@ public partial class XianDayScreen
         // Preserve the existing book entry and click-to-collect cash tray.
         _book.Entry.Reparent(_hud, false);
         _book.Entry.Position = new(284, 30); _book.Entry.Size = new(52, 52);
-        _book.Entry.TooltipText = "营业账本";
         BusinessHud.StyleIconButton(_book.Entry, _hud.LoadArt("经营手账页图标"));
         _book.Entry.Size = new(52, 52);
         // The existing collection control sits over the income coin, with the number remaining read-only.
@@ -122,7 +121,6 @@ public partial class XianDayScreen
     }
     private void RenderBusinessHud()
     {
-        CoinTray.TooltipText = CoinTray.PendingAmount > 0 ? $"点击收钱 ¥{CoinTray.PendingAmount}" : "暂无待收收入";
         _hud.Render(_controller,
         $"西安 · 第 {Session.Day} 天 · {XianRules.Titles[Session.Day - 1]}",
         XianRules.Titles[Session.Day - 1].Contains("高峰"),

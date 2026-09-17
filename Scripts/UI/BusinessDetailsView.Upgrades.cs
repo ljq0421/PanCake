@@ -36,22 +36,16 @@ public partial class BusinessDetailsView
         var source = _model.Upgrades!;
         var modal = new Control { Name = "BookUpgradeModal", Size = new(1920, 1080), MouseFilter = MouseFilterEnum.Stop };
         _upgradeModal = modal; _canvas.AddChild(modal);
-        Line(modal, new(0, 0, 1920, 1080), new Color(.12f, .08f, .04f, .55f));
-        Panel(modal, new(245, 95, 1430, 850), CitySettlementTheme.Paper, 24, 3);
-        EquipmentUpgradeView.AddWallet(modal, $"当前余额 {source.Coins} 金币", new(1210, 115, 390, 64));
-        var view = new EquipmentUpgradeView { Name = "UpgradeView", Position = new(320, 195) }; modal.AddChild(view);
-        view.Configure(source.Equipment, _selectedUpgrade, id => _selectedUpgrade = id, e =>
+        _book.Hide();
+        var page = GD.Load<PackedScene>("res://Scenes/UI/StartScreen.tscn").Instantiate<StartScreen>();
+        page.HostedByBook = true;
+        modal.AddChild(page);
+        page.PresentBookUpgrades(source, _selectedUpgrade, id => _selectedUpgrade = id, e =>
         {
             var offer = source.Offers.FirstOrDefault(o => o.EquipmentId == e.Id && o.CurrentLevel == e.Level && o.Price == e.Price);
             if (offer is null) { RenderUpgradeModal("设备状态已变化，请查看最新升级信息。"); return; }
             BuyUpgrade(offer);
-        });
-        var feedback = Text(modal, message, new(320, 865, 960, 62), 23, Muted, wrap: true);
-        feedback.Name = "UpgradeFeedback";
-        feedback.MaxLinesVisible = 2; feedback.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
-        feedback.TooltipText = message; feedback.MouseFilter = MouseFilterEnum.Pass;
-        var close = ButtonAt(modal, "返回账本", new(1340, 865, 245, 55), CloseUpgrades); close.Name = "CloseUpgrades";
-        (view.Buttons.FirstOrDefault(b => b.Name == "Select_" + view.SelectedId) ?? close).GrabFocus();
+        }, CloseUpgrades, message);
     }
     private void BuyUpgrade(BookUpgradeOffer offer)
     {
@@ -69,6 +63,7 @@ public partial class BusinessDetailsView
     {
         if (_upgradeModal is null) return;
         _upgradeModal.GetParent().RemoveChild(_upgradeModal); _upgradeModal.QueueFree(); _upgradeModal = null;
+        _book.Show();
     }
     private void CloseUpgrades()
     {

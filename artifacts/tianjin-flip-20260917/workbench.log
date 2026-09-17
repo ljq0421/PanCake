@@ -1,0 +1,489 @@
+Godot Engine v4.7.1.stable.mono.official.a13da4feb - https://godotengine.org
+
+ERROR: Condition "!actions.custom_samplers.has(function->arguments[j].tex_builtin)" is true. Continuing.
+   at: _dump_node_code (servers/rendering/shader_compiler.cpp:1329)
+   C# backtrace (most recent call first):
+       [0] void Godot.NativeCalls.godot_icall_1_56(nint, nint, nint) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/NativeCalls.cs:495)
+       [1] void Godot.ShaderMaterial.SetShader(Godot.Shader) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/ShaderMaterial.cs:63)
+       [2] void Godot.ShaderMaterial.set_Shader(Godot.Shader) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/ShaderMaterial.cs:27)
+       [3] Godot.ShaderMaterial ProjectCake.UI.FoodInk.Material(bool) (D:\Project\ProjectCake\project-cake\Scripts\UI\FoodInk.cs:17)
+       [4] void ProjectCake.UI.FoodInk.Apply(Godot.TextureRect, bool) (D:\Project\ProjectCake\project-cake\Scripts\UI\FoodInk.cs:49)
+       [5] void ProjectCake.UI.WorkstationSlotView.EnsureIngredientVisuals(int, Godot.Texture2D) (D:\Project\ProjectCake\project-cake\Scripts\UI\WorkstationSlotView.cs:531)
+       [6] void ProjectCake.UI.WorkstationSlotView.Configure(Godot.Texture2D, Godot.Texture2D, string, ProjectCake.UI.WorkstationSlotSpec, ProjectCake.UI.IngredientVisualMode) (D:\Project\ProjectCake\project-cake\Scripts\UI\WorkstationSlotView.cs:324)
+       [7] void ProjectCake.UI.IngredientStockSlotView.ConfigureStock(Godot.Texture2D, Godot.Texture2D, string, ProjectCake.UI.WorkstationSlotSpec, ProjectCake.UI.IngredientVisualMode) (D:\Project\ProjectCake\project-cake\Scripts\UI\IngredientStockSlotView.cs:95)
+       [8] void ProjectCake.Tests.StageFourSelfTest.TestEmbeddedStockContainment(ProjectCake.Core.DataCatalog) (D:\Project\ProjectCake\project-cake\Scripts\Tests\TianjinWorkbenchSelfTest.cs:259)
+       [9] void ProjectCake.Tests.StageFourSelfTest+<TestTianjinWorkbenchV1>d__53.MoveNext() (D:\Project\ProjectCake\project-cake\Scripts\Tests\TianjinWorkbenchSelfTest.cs:20)
+       [10] void System.Runtime.CompilerServices.AsyncMethodBuilderCore.Start<TStateMachine>(TStateMachine&)
+       [11] System.Threading.Tasks.Task ProjectCake.Tests.StageFourSelfTest.TestTianjinWorkbenchV1(ProjectCake.Core.DataCatalog)
+       [12] void ProjectCake.Tests.StageFourSelfTest+<_Ready>d__15.MoveNext() (D:\Project\ProjectCake\project-cake\Scripts\Tests\StageFourSelfTest.cs:52)
+       [13] void System.Runtime.CompilerServices.AsyncMethodBuilderCore.Start<TStateMachine>(TStateMachine&)
+       [14] void ProjectCake.Tests.StageFourSelfTest._Ready()
+       [15] bool Godot.Node.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/Node.cs:2660)
+       [16] bool ProjectCake.Tests.StageFourSelfTest.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (D:\Project\ProjectCake\project-cake\.godot\mono\temp\obj\Debug\Godot.SourceGenerators\Godot.SourceGenerators.ScriptMethodsGenerator\ProjectCake.Tests.StageFourSelfTest_ScriptMethods.generated.cs:310)
+       [17] Godot.NativeInterop.godot_bool Godot.Bridge.CSharpInstanceBridge.Call(nint, Godot.NativeInterop.godot_string_name*, Godot.NativeInterop.godot_variant**, int, Godot.NativeInterop.godot_variant_call_error*, Godot.NativeInterop.godot_variant*) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Core/Bridge/CSharpInstanceBridge.cs:24)
+[PASS] Lv1 egg 放大后仍显示0份库存
+[PASS] Lv1 egg 0份旋转后完整位于托盘内
+[PASS] Lv1 egg 0份不被父容器裁切
+[PASS] Lv1 egg 放大后仍显示1份库存
+[PASS] Lv1 egg 1份旋转后完整位于托盘内
+[PASS] Lv1 egg 1份不被父容器裁切
+[PASS] Lv1 egg 放大后仍显示3份库存
+[PASS] Lv1 egg 3份旋转后完整位于托盘内
+[PASS] Lv1 egg 3份不被父容器裁切
+[PASS] Lv1 egg 放大后仍显示6份库存
+[PASS] Lv1 egg 6份旋转后完整位于托盘内
+[PASS] Lv1 egg 6份不被父容器裁切
+[PASS] Lv1 egg 同排素材朝向与高度统一
+[PASS] Lv1 egg 满库存铺满托盘内部宽高
+[PASS] Lv1 egg 前后两排有清晰错位
+[PASS] Lv1 egg 单份至少放大20%
+[PASS] Lv1 egg 补货预览保持数量与边界
+[PASS] Lv1 crispy 放大后仍显示0份库存
+[PASS] Lv1 crispy 0份旋转后完整位于托盘内
+[PASS] Lv1 crispy 0份不被父容器裁切
+[PASS] Lv1 crispy 放大后仍显示1份库存
+[PASS] Lv1 crispy 1份旋转后完整位于托盘内
+[PASS] Lv1 crispy 1份不被父容器裁切
+[PASS] Lv1 crispy 放大后仍显示3份库存
+[PASS] Lv1 crispy 3份旋转后完整位于托盘内
+[PASS] Lv1 crispy 3份不被父容器裁切
+[PASS] Lv1 crispy 放大后仍显示6份库存
+[PASS] Lv1 crispy 6份旋转后完整位于托盘内
+[PASS] Lv1 crispy 6份不被父容器裁切
+[PASS] Lv1 crispy 同排素材朝向与高度统一
+[PASS] Lv1 crispy 满库存铺满托盘内部宽高
+[PASS] Lv1 crispy 前后两排有清晰错位
+[PASS] Lv1 crispy 单份至少放大20%
+[PASS] Lv1 crispy 补货预览保持数量与边界
+[PASS] Lv1 scallion 放大后仍显示0份库存
+[PASS] Lv1 scallion 0份旋转后完整位于托盘内
+[PASS] Lv1 scallion 0份不被父容器裁切
+[PASS] Lv1 scallion 放大后仍显示1份库存
+[PASS] Lv1 scallion 1份旋转后完整位于托盘内
+[PASS] Lv1 scallion 1份不被父容器裁切
+[PASS] Lv1 scallion 放大后仍显示3份库存
+[PASS] Lv1 scallion 3份旋转后完整位于托盘内
+[PASS] Lv1 scallion 3份不被父容器裁切
+[PASS] Lv1 scallion 放大后仍显示6份库存
+[PASS] Lv1 scallion 6份旋转后完整位于托盘内
+[PASS] Lv1 scallion 6份不被父容器裁切
+[PASS] Lv1 scallion 同排素材朝向与高度统一
+[PASS] Lv1 scallion 满库存铺满托盘内部宽高
+[PASS] Lv1 scallion 前后两排有清晰错位
+[PASS] Lv1 scallion 单份至少放大20%
+[PASS] Lv1 scallion 补货预览保持数量与边界
+[PASS] Lv1 ham 放大后仍显示0份库存
+[PASS] Lv1 ham 0份旋转后完整位于托盘内
+[PASS] Lv1 ham 0份不被父容器裁切
+[PASS] Lv1 ham 放大后仍显示1份库存
+[PASS] Lv1 ham 1份旋转后完整位于托盘内
+[PASS] Lv1 ham 1份不被父容器裁切
+[PASS] Lv1 ham 放大后仍显示3份库存
+[PASS] Lv1 ham 3份旋转后完整位于托盘内
+[PASS] Lv1 ham 3份不被父容器裁切
+[PASS] Lv1 ham 放大后仍显示6份库存
+[PASS] Lv1 ham 6份旋转后完整位于托盘内
+[PASS] Lv1 ham 6份不被父容器裁切
+[PASS] Lv1 ham 同排素材朝向与高度统一
+[PASS] Lv1 ham 满库存铺满托盘内部宽高
+[PASS] Lv1 ham 前后两排有清晰错位
+[PASS] Lv1 ham 单份至少放大20%
+[PASS] Lv1 ham 补货预览保持数量与边界
+[PASS] Lv2 egg 放大后仍显示0份库存
+[PASS] Lv2 egg 0份旋转后完整位于托盘内
+[PASS] Lv2 egg 0份不被父容器裁切
+[PASS] Lv2 egg 放大后仍显示1份库存
+[PASS] Lv2 egg 1份旋转后完整位于托盘内
+[PASS] Lv2 egg 1份不被父容器裁切
+[PASS] Lv2 egg 放大后仍显示4份库存
+[PASS] Lv2 egg 4份旋转后完整位于托盘内
+[PASS] Lv2 egg 4份不被父容器裁切
+[PASS] Lv2 egg 放大后仍显示8份库存
+[PASS] Lv2 egg 8份旋转后完整位于托盘内
+[PASS] Lv2 egg 8份不被父容器裁切
+[PASS] Lv2 egg 同排素材朝向与高度统一
+[PASS] Lv2 egg 满库存铺满托盘内部宽高
+[PASS] Lv2 egg 前后两排有清晰错位
+[PASS] Lv2 egg 单份至少放大20%
+[PASS] Lv2 egg 补货预览保持数量与边界
+[PASS] Lv2 crispy 放大后仍显示0份库存
+[PASS] Lv2 crispy 0份旋转后完整位于托盘内
+[PASS] Lv2 crispy 0份不被父容器裁切
+[PASS] Lv2 crispy 放大后仍显示1份库存
+[PASS] Lv2 crispy 1份旋转后完整位于托盘内
+[PASS] Lv2 crispy 1份不被父容器裁切
+[PASS] Lv2 crispy 放大后仍显示4份库存
+[PASS] Lv2 crispy 4份旋转后完整位于托盘内
+[PASS] Lv2 crispy 4份不被父容器裁切
+[PASS] Lv2 crispy 放大后仍显示8份库存
+[PASS] Lv2 crispy 8份旋转后完整位于托盘内
+[PASS] Lv2 crispy 8份不被父容器裁切
+[PASS] Lv2 crispy 同排素材朝向与高度统一
+[PASS] Lv2 crispy 满库存铺满托盘内部宽高
+[PASS] Lv2 crispy 前后两排有清晰错位
+[PASS] Lv2 crispy 单份至少放大20%
+[PASS] Lv2 crispy 补货预览保持数量与边界
+[PASS] Lv2 scallion 放大后仍显示0份库存
+[PASS] Lv2 scallion 0份旋转后完整位于托盘内
+[PASS] Lv2 scallion 0份不被父容器裁切
+[PASS] Lv2 scallion 放大后仍显示1份库存
+[PASS] Lv2 scallion 1份旋转后完整位于托盘内
+[PASS] Lv2 scallion 1份不被父容器裁切
+[PASS] Lv2 scallion 放大后仍显示4份库存
+[PASS] Lv2 scallion 4份旋转后完整位于托盘内
+[PASS] Lv2 scallion 4份不被父容器裁切
+[PASS] Lv2 scallion 放大后仍显示8份库存
+[PASS] Lv2 scallion 8份旋转后完整位于托盘内
+[PASS] Lv2 scallion 8份不被父容器裁切
+[PASS] Lv2 scallion 同排素材朝向与高度统一
+[PASS] Lv2 scallion 满库存铺满托盘内部宽高
+[PASS] Lv2 scallion 前后两排有清晰错位
+[PASS] Lv2 scallion 单份至少放大20%
+[PASS] Lv2 scallion 补货预览保持数量与边界
+[PASS] Lv2 ham 放大后仍显示0份库存
+[PASS] Lv2 ham 0份旋转后完整位于托盘内
+[PASS] Lv2 ham 0份不被父容器裁切
+[PASS] Lv2 ham 放大后仍显示1份库存
+[PASS] Lv2 ham 1份旋转后完整位于托盘内
+[PASS] Lv2 ham 1份不被父容器裁切
+[PASS] Lv2 ham 放大后仍显示4份库存
+[PASS] Lv2 ham 4份旋转后完整位于托盘内
+[PASS] Lv2 ham 4份不被父容器裁切
+[PASS] Lv2 ham 放大后仍显示8份库存
+[PASS] Lv2 ham 8份旋转后完整位于托盘内
+[PASS] Lv2 ham 8份不被父容器裁切
+[PASS] Lv2 ham 同排素材朝向与高度统一
+[PASS] Lv2 ham 满库存铺满托盘内部宽高
+[PASS] Lv2 ham 前后两排有清晰错位
+[PASS] Lv2 ham 单份至少放大20%
+[PASS] Lv2 ham 补货预览保持数量与边界
+[PASS] Lv3 egg 放大后仍显示0份库存
+[PASS] Lv3 egg 0份旋转后完整位于托盘内
+[PASS] Lv3 egg 0份不被父容器裁切
+[PASS] Lv3 egg 放大后仍显示1份库存
+[PASS] Lv3 egg 1份旋转后完整位于托盘内
+[PASS] Lv3 egg 1份不被父容器裁切
+[PASS] Lv3 egg 放大后仍显示5份库存
+[PASS] Lv3 egg 5份旋转后完整位于托盘内
+[PASS] Lv3 egg 5份不被父容器裁切
+[PASS] Lv3 egg 放大后仍显示10份库存
+[PASS] Lv3 egg 10份旋转后完整位于托盘内
+[PASS] Lv3 egg 10份不被父容器裁切
+[PASS] Lv3 egg 同排素材朝向与高度统一
+[PASS] Lv3 egg 满库存铺满托盘内部宽高
+[PASS] Lv3 egg 前后两排有清晰错位
+[PASS] Lv3 egg 单份至少放大20%
+[PASS] Lv3 egg 补货预览保持数量与边界
+[PASS] Lv3 crispy 放大后仍显示0份库存
+[PASS] Lv3 crispy 0份旋转后完整位于托盘内
+[PASS] Lv3 crispy 0份不被父容器裁切
+[PASS] Lv3 crispy 放大后仍显示1份库存
+[PASS] Lv3 crispy 1份旋转后完整位于托盘内
+[PASS] Lv3 crispy 1份不被父容器裁切
+[PASS] Lv3 crispy 放大后仍显示5份库存
+[PASS] Lv3 crispy 5份旋转后完整位于托盘内
+[PASS] Lv3 crispy 5份不被父容器裁切
+[PASS] Lv3 crispy 放大后仍显示10份库存
+[PASS] Lv3 crispy 10份旋转后完整位于托盘内
+[PASS] Lv3 crispy 10份不被父容器裁切
+[PASS] Lv3 crispy 同排素材朝向与高度统一
+[PASS] Lv3 crispy 满库存铺满托盘内部宽高
+[PASS] Lv3 crispy 前后两排有清晰错位
+[PASS] Lv3 crispy 单份至少放大20%
+[PASS] Lv3 crispy 补货预览保持数量与边界
+[PASS] Lv3 scallion 放大后仍显示0份库存
+[PASS] Lv3 scallion 0份旋转后完整位于托盘内
+[PASS] Lv3 scallion 0份不被父容器裁切
+[PASS] Lv3 scallion 放大后仍显示1份库存
+[PASS] Lv3 scallion 1份旋转后完整位于托盘内
+[PASS] Lv3 scallion 1份不被父容器裁切
+[PASS] Lv3 scallion 放大后仍显示5份库存
+[PASS] Lv3 scallion 5份旋转后完整位于托盘内
+[PASS] Lv3 scallion 5份不被父容器裁切
+[PASS] Lv3 scallion 放大后仍显示10份库存
+[PASS] Lv3 scallion 10份旋转后完整位于托盘内
+[PASS] Lv3 scallion 10份不被父容器裁切
+[PASS] Lv3 scallion 同排素材朝向与高度统一
+[PASS] Lv3 scallion 满库存铺满托盘内部宽高
+[PASS] Lv3 scallion 前后两排有清晰错位
+[PASS] Lv3 scallion 单份至少放大20%
+[PASS] Lv3 scallion 补货预览保持数量与边界
+[PASS] Lv3 ham 放大后仍显示0份库存
+[PASS] Lv3 ham 0份旋转后完整位于托盘内
+[PASS] Lv3 ham 0份不被父容器裁切
+[PASS] Lv3 ham 放大后仍显示1份库存
+[PASS] Lv3 ham 1份旋转后完整位于托盘内
+[PASS] Lv3 ham 1份不被父容器裁切
+[PASS] Lv3 ham 放大后仍显示5份库存
+[PASS] Lv3 ham 5份旋转后完整位于托盘内
+[PASS] Lv3 ham 5份不被父容器裁切
+[PASS] Lv3 ham 放大后仍显示10份库存
+[PASS] Lv3 ham 10份旋转后完整位于托盘内
+[PASS] Lv3 ham 10份不被父容器裁切
+[PASS] Lv3 ham 同排素材朝向与高度统一
+[PASS] Lv3 ham 满库存铺满托盘内部宽高
+[PASS] Lv3 ham 前后两排有清晰错位
+[PASS] Lv3 ham 单份至少放大20%
+[PASS] Lv3 ham 补货预览保持数量与边界
+[PASS] 豆浆第1杯放大且完整位于托盘内
+[PASS] 豆浆第2杯放大且完整位于托盘内
+[PASS] 豆浆第3杯放大且完整位于托盘内
+[PASS] 豆浆第4杯放大且完整位于托盘内
+[PASS] 豆浆第5杯放大且完整位于托盘内
+[PASS] 豆浆第6杯放大且完整位于托盘内
+[PASS] 豆浆第7杯放大且完整位于托盘内
+[PASS] 豆浆第8杯放大且完整位于托盘内
+[PASS] 豆浆第9杯放大且完整位于托盘内
+[PASS] 豆浆第10杯放大且完整位于托盘内
+[PASS] 无教学字段的旧版存档正常读取，不按历史进度推测已学操作
+[PASS] 首次进入: 工作台状态底板和出餐说明隐藏
+[PASS] 首次进入: 制作进度条不绘制文字
+[PASS] 首次进入: 工作台无悬停文字
+[PASS] 首次进入: 原料库存及首次教学文字隐藏
+[PASS] 空炉错点鸡蛋不学习、不写入教学记录
+[PASS] 实际炉面接收面糊
+[PASS] 成功放浆只记录一次教学
+[PASS] 重复放浆被拒绝且不重复记录
+[PASS] 成功摊面和加蛋记录，重复加蛋不消费也不重复学习
+[PASS] 教学记录经真实磁盘写入和重新加载保留
+[PASS] 重新营业: 工作台状态底板和出餐说明隐藏
+[PASS] 重新营业: 制作进度条不绘制文字
+[PASS] 重新营业: 工作台无悬停文字
+[PASS] 重新营业: 原料库存及首次教学文字隐藏
+[PASS] 已学和未学操作均不显示工作台文字
+[PASS] 生油条既有装料手势成功后学习
+[PASS] 下锅按钮成功后独立学习
+[PASS] 满盘补货失败不学习
+ERROR: [FAIL] 补货成功启动后单独记录教学
+   at: void ProjectCake.Tests.StageFourSelfTest.Fail(string, string) (res://Scripts/Tests/StageFourSelfTest.cs:972)
+   C# backtrace (most recent call first):
+       [0] void Godot.GD.PushError(string) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Core/GD.cs:366)
+       [1] void ProjectCake.Tests.StageFourSelfTest.Fail(string, string) (D:\Project\ProjectCake\project-cake\Scripts\Tests\StageFourSelfTest.cs:972)
+       [2] void ProjectCake.Tests.StageFourSelfTest.Check(bool, string, string) (D:\Project\ProjectCake\project-cake\Scripts\Tests\StageFourSelfTest.cs:971)
+       [3] void ProjectCake.Tests.StageFourSelfTest+<TestTianjinWorkbenchV1>d__53.MoveNext() (D:\Project\ProjectCake\project-cake\Scripts\Tests\TianjinWorkbenchSelfTest.cs:97)
+       [4] void System.Threading.ExecutionContext.RunInternal(System.Threading.ExecutionContext, System.Threading.ContextCallback, object)
+       [5] void System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1+AsyncStateMachineBox`1.MoveNext(System.Threading.Thread)
+       [6] void Godot.SignalAwaiter.SignalCallback(nint, Godot.NativeInterop.godot_variant**, int, Godot.NativeInterop.godot_bool*) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Core/SignalAwaiter.cs:65)
+[PASS] 制作和补货中: 工作台状态底板和出餐说明隐藏
+[PASS] 制作和补货中: 制作进度条不绘制文字
+[PASS] 制作和补货中: 工作台无悬停文字
+[PASS] 制作和补货中: 原料库存及首次教学文字隐藏
+[PASS] 空盘收钱不学习
+[PASS] 天津旧收钱入口隐藏且停用，不再学习收钱
+[PASS] 炸篮未成功升起前不学习
+ERROR: 保存失败：Access to the path is denied.
+   at: bool ProjectCake.Core.SaveService.TrySave(System.String&) (res://Scripts/Core/SaveService.cs:319)
+   C# backtrace (most recent call first):
+       [0] void Godot.GD.PushError(string) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Core/GD.cs:366)
+       [1] bool ProjectCake.Core.SaveService.TrySave(System.String&) (D:\Project\ProjectCake\project-cake\Scripts\Core\SaveService.cs:319)
+       [2] void ProjectCake.Gameplay.TianjinDayScreen.RememberWorkbenchAction(string) (D:\Project\ProjectCake\project-cake\Scripts\Gameplay\TianjinDayScreen.cs:490)
+       [3] void ProjectCake.Gameplay.PancakeWorkstation.LearnWorkbenchAction(string) (D:\Project\ProjectCake\project-cake\Scripts\Gameplay\PancakeWorkbenchTutorial.cs:39)
+       [4] void ProjectCake.Gameplay.PancakeWorkstation.ExecuteFryer(ProjectCake.Fryer.FryerCommand) (D:\Project\ProjectCake\project-cake\Scripts\Gameplay\PancakeWorkstation.cs:737)
+       [5] void ProjectCake.Gameplay.PancakeWorkstation.<_Ready>b__214_7() (D:\Project\ProjectCake\project-cake\Scripts\Gameplay\PancakeWorkstation.cs:227)
+       [6] void Godot.Callable.<From>g__Trampoline|1_0(object, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Core/Callable.generics.cs:39)
+       [7] void Godot.DelegateUtils.InvokeWithVariantArgs(nint, System.Void*, Godot.NativeInterop.godot_variant**, int, Godot.NativeInterop.godot_variant*) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Core/DelegateUtils.cs:86)
+       [8] Godot.NativeInterop.godot_variant Godot.NativeInterop.NativeFuncs.godotsharp_method_bind_call(nint, nint, Godot.NativeInterop.godot_variant**, int, Godot.NativeInterop.godot_variant_call_error&) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Godot.SourceGenerators.Internal/Godot.SourceGenerators.Internal.UnmanagedCallbacksGenerator/Godot.NativeInterop.NativeFuncs.generated.cs:388)
+       [9] int Godot.NativeCalls.godot_icall_2_921(nint, nint, Godot.NativeInterop.godot_string_name, System.ReadOnlySpan`1[Godot.Variant], Godot.NativeInterop.godot_string_name) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/NativeCalls.cs:8163)
+       [10] Godot.Error Godot.GodotObject.EmitSignal(Godot.StringName, Godot.Variant[]) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/GodotObject.cs:719)
+       [11] void ProjectCake.Tests.StageFourSelfTest+<TestTianjinWorkbenchV1>d__53.MoveNext() (D:\Project\ProjectCake\project-cake\Scripts\Tests\TianjinWorkbenchSelfTest.cs:110)
+       [12] void System.Threading.ExecutionContext.RunInternal(System.Threading.ExecutionContext, System.Threading.ContextCallback, object)
+       [13] void System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1+AsyncStateMachineBox`1.MoveNext(System.Threading.Thread)
+       [14] void Godot.SignalAwaiter.SignalCallback(nint, Godot.NativeInterop.godot_variant**, int, Godot.NativeInterop.godot_bool*) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Core/SignalAwaiter.cs:65)
+[PASS] 保存失败不回滚升篮操作，当前会话保留已掌握状态
+[PASS] 保存路径恢复后可保存当前会话教学记录
+[PASS] 保存重试后重启仍记住操作
+[PASS] 五名顾客槽位等距，最右侧不再额外隔开
+[PASS] young_woman 天津头部宽高共同归一，避免同宽但高大一圈
+[PASS] young_woman 半身窗口顶部和柜台基线稳定
+[PASS] young_woman Happy 切换不移动身体或腰线
+[PASS] young_woman Normal 切换不移动身体或腰线
+[PASS] young_woman Impatient 切换不移动身体或腰线
+[PASS] young_woman Angry 切换不移动身体或腰线
+[PASS] male_office 天津头部宽高共同归一，避免同宽但高大一圈
+[PASS] male_office 半身窗口顶部和柜台基线稳定
+[PASS] male_office Happy 切换不移动身体或腰线
+[PASS] male_office Normal 切换不移动身体或腰线
+[PASS] male_office Impatient 切换不移动身体或腰线
+[PASS] male_office Angry 切换不移动身体或腰线
+[PASS] elder_regular 天津头部宽高共同归一，避免同宽但高大一圈
+[PASS] elder_regular 半身窗口顶部和柜台基线稳定
+[PASS] elder_regular Happy 切换不移动身体或腰线
+[PASS] elder_regular Normal 切换不移动身体或腰线
+[PASS] elder_regular Impatient 切换不移动身体或腰线
+[PASS] elder_regular Angry 切换不移动身体或腰线
+[PASS] female_office 天津头部宽高共同归一，避免同宽但高大一圈
+[PASS] female_office 半身窗口顶部和柜台基线稳定
+[PASS] female_office Happy 切换不移动身体或腰线
+[PASS] female_office Normal 切换不移动身体或腰线
+[PASS] female_office Impatient 切换不移动身体或腰线
+[PASS] female_office Angry 切换不移动身体或腰线
+[PASS] xiangsheng_performer 天津头部宽高共同归一，避免同宽但高大一圈
+[PASS] xiangsheng_performer 半身窗口顶部和柜台基线稳定
+[PASS] xiangsheng_performer Happy 切换不移动身体或腰线
+[PASS] xiangsheng_performer Normal 切换不移动身体或腰线
+[PASS] xiangsheng_performer Impatient 切换不移动身体或腰线
+[PASS] xiangsheng_performer Angry 切换不移动身体或腰线
+[PASS] tianjin_aunt 天津头部宽高共同归一，避免同宽但高大一圈
+[PASS] tianjin_aunt 半身窗口顶部和柜台基线稳定
+[PASS] tianjin_aunt Happy 切换不移动身体或腰线
+[PASS] tianjin_aunt Normal 切换不移动身体或腰线
+[PASS] tianjin_aunt Impatient 切换不移动身体或腰线
+[PASS] tianjin_aunt Angry 切换不移动身体或腰线
+[PASS] morning_elder 天津头部宽高共同归一，避免同宽但高大一圈
+[PASS] morning_elder 半身窗口顶部和柜台基线稳定
+[PASS] morning_elder Happy 切换不移动身体或腰线
+[PASS] morning_elder Normal 切换不移动身体或腰线
+[PASS] morning_elder Impatient 切换不移动身体或腰线
+[PASS] morning_elder Angry 切换不移动身体或腰线
+[PASS] morning_aunt 天津头部宽高共同归一，避免同宽但高大一圈
+[PASS] morning_aunt 半身窗口顶部和柜台基线稳定
+[PASS] morning_aunt Happy 切换不移动身体或腰线
+[PASS] morning_aunt Normal 切换不移动身体或腰线
+[PASS] morning_aunt Impatient 切换不移动身体或腰线
+[PASS] morning_aunt Angry 切换不移动身体或腰线
+[PASS] student 天津头部宽高共同归一，避免同宽但高大一圈
+[PASS] student 半身窗口顶部和柜台基线稳定
+[PASS] student Happy 切换不移动身体或腰线
+[PASS] student Normal 切换不移动身体或腰线
+[PASS] student Impatient 切换不移动身体或腰线
+[PASS] student Angry 切换不移动身体或腰线
+[PASS] delivery_rider 天津头部宽高共同归一，避免同宽但高大一圈
+[PASS] delivery_rider 半身窗口顶部和柜台基线稳定
+[PASS] delivery_rider Happy 切换不移动身体或腰线
+[PASS] delivery_rider Normal 切换不移动身体或腰线
+[PASS] delivery_rider Impatient 切换不移动身体或腰线
+[PASS] delivery_rider Angry 切换不移动身体或腰线
+[PASS] taxi_driver 天津头部宽高共同归一，避免同宽但高大一圈
+[PASS] taxi_driver 半身窗口顶部和柜台基线稳定
+[PASS] taxi_driver Happy 切换不移动身体或腰线
+[PASS] taxi_driver Normal 切换不移动身体或腰线
+[PASS] taxi_driver Impatient 切换不移动身体或腰线
+[PASS] taxi_driver Angry 切换不移动身体或腰线
+[PASS] tourist 天津头部宽高共同归一，避免同宽但高大一圈
+[PASS] tourist 半身窗口顶部和柜台基线稳定
+[PASS] tourist Happy 切换不移动身体或腰线
+[PASS] tourist Normal 切换不移动身体或腰线
+[PASS] tourist Impatient 切换不移动身体或腰线
+[PASS] tourist Angry 切换不移动身体或腰线
+[PASS] kuaiban_performer 天津头部宽高共同归一，避免同宽但高大一圈
+[PASS] kuaiban_performer 半身窗口顶部和柜台基线稳定
+[PASS] kuaiban_performer Happy 切换不移动身体或腰线
+[PASS] kuaiban_performer Normal 切换不移动身体或腰线
+[PASS] kuaiban_performer Impatient 切换不移动身体或腰线
+[PASS] kuaiban_performer Angry 切换不移动身体或腰线
+[PASS] yangliuqing_painter 天津头部宽高共同归一，避免同宽但高大一圈
+[PASS] yangliuqing_painter 半身窗口顶部和柜台基线稳定
+[PASS] yangliuqing_painter Happy 切换不移动身体或腰线
+[PASS] yangliuqing_painter Normal 切换不移动身体或腰线
+[PASS] yangliuqing_painter Impatient 切换不移动身体或腰线
+[PASS] yangliuqing_painter Angry 切换不移动身体或腰线
+[PASS] clay_figurine_artisan 天津头部宽高共同归一，避免同宽但高大一圈
+[PASS] clay_figurine_artisan 半身窗口顶部和柜台基线稳定
+[PASS] clay_figurine_artisan Happy 切换不移动身体或腰线
+[PASS] clay_figurine_artisan Normal 切换不移动身体或腰线
+[PASS] clay_figurine_artisan Impatient 切换不移动身体或腰线
+[PASS] clay_figurine_artisan Angry 切换不移动身体或腰线
+[PASS] culture_street_shopkeeper 天津头部宽高共同归一，避免同宽但高大一圈
+[PASS] culture_street_shopkeeper 半身窗口顶部和柜台基线稳定
+[PASS] culture_street_shopkeeper Happy 切换不移动身体或腰线
+[PASS] culture_street_shopkeeper Normal 切换不移动身体或腰线
+[PASS] culture_street_shopkeeper Impatient 切换不移动身体或腰线
+[PASS] culture_street_shopkeeper Angry 切换不移动身体或腰线
+[PASS] haihe_cruise_worker 天津头部宽高共同归一，避免同宽但高大一圈
+[PASS] haihe_cruise_worker 半身窗口顶部和柜台基线稳定
+[PASS] haihe_cruise_worker Happy 切换不移动身体或腰线
+[PASS] haihe_cruise_worker Normal 切换不移动身体或腰线
+[PASS] haihe_cruise_worker Impatient 切换不移动身体或腰线
+[PASS] haihe_cruise_worker Angry 切换不移动身体或腰线
+[PASS] wudadao_clerk 天津头部宽高共同归一，避免同宽但高大一圈
+[PASS] wudadao_clerk 半身窗口顶部和柜台基线稳定
+[PASS] wudadao_clerk Happy 切换不移动身体或腰线
+[PASS] wudadao_clerk Normal 切换不移动身体或腰线
+[PASS] wudadao_clerk Impatient 切换不移动身体或腰线
+[PASS] wudadao_clerk Angry 切换不移动身体或腰线
+[PASS] breakfast_shop_peer 天津头部宽高共同归一，避免同宽但高大一圈
+[PASS] breakfast_shop_peer 半身窗口顶部和柜台基线稳定
+[PASS] breakfast_shop_peer Happy 切换不移动身体或腰线
+[PASS] breakfast_shop_peer Normal 切换不移动身体或腰线
+[PASS] breakfast_shop_peer Impatient 切换不移动身体或腰线
+[PASS] breakfast_shop_peer Angry 切换不移动身体或腰线
+[PASS] culture_street_owner 天津头部宽高共同归一，避免同宽但高大一圈
+[PASS] culture_street_owner 半身窗口顶部和柜台基线稳定
+[PASS] culture_street_owner Happy 切换不移动身体或腰线
+[PASS] culture_street_owner Normal 切换不移动身体或腰线
+[PASS] culture_street_owner Impatient 切换不移动身体或腰线
+[PASS] culture_street_owner Angry 切换不移动身体或腰线
+[PASS] haihe_runner 天津头部宽高共同归一，避免同宽但高大一圈
+[PASS] haihe_runner 半身窗口顶部和柜台基线稳定
+[PASS] haihe_runner Happy 切换不移动身体或腰线
+[PASS] haihe_runner Normal 切换不移动身体或腰线
+[PASS] haihe_runner Impatient 切换不移动身体或腰线
+[PASS] haihe_runner Angry 切换不移动身体或腰线
+[PASS] tianjin_port_worker 天津头部宽高共同归一，避免同宽但高大一圈
+[PASS] tianjin_port_worker 半身窗口顶部和柜台基线稳定
+[PASS] tianjin_port_worker Happy 切换不移动身体或腰线
+[PASS] tianjin_port_worker Normal 切换不移动身体或腰线
+[PASS] tianjin_port_worker Impatient 切换不移动身体或腰线
+[PASS] tianjin_port_worker Angry 切换不移动身体或腰线
+[PASS] folk_art_performer 天津头部宽高共同归一，避免同宽但高大一圈
+[PASS] folk_art_performer 半身窗口顶部和柜台基线稳定
+[PASS] folk_art_performer Happy 切换不移动身体或腰线
+[PASS] folk_art_performer Normal 切换不移动身体或腰线
+[PASS] folk_art_performer Impatient 切换不移动身体或腰线
+[PASS] folk_art_performer Angry 切换不移动身体或腰线
+[PASS] kite_artisan 天津头部宽高共同归一，避免同宽但高大一圈
+[PASS] kite_artisan 半身窗口顶部和柜台基线稳定
+[PASS] kite_artisan Happy 切换不移动身体或腰线
+[PASS] kite_artisan Normal 切换不移动身体或腰线
+[PASS] kite_artisan Impatient 切换不移动身体或腰线
+[PASS] kite_artisan Angry 切换不移动身体或腰线
+[PASS] 双煎饼套餐增高订单卡时人物腰线稳定，气泡尾部不压人物头部
+[PASS] 正式运行隐藏桌面开发辅助线
+[PASS] 缩放1 垃圾桶放大高亮不扩大命中区域
+[PASS] 缩放1 桶外松手不会消费物品或学习丢弃
+[PASS] 缩放0.6666667 垃圾桶放大高亮不扩大命中区域
+[PASS] 缩放0.6666667 桶外松手不会消费物品或学习丢弃
+[PASS] 垃圾桶拒绝豆浆，取杯区不会成为丢弃入口
+[PASS] 有效垃圾桶区域松手准确丢弃一件并保存教学
+[PASS] Lv1 炉面圆心、炸锅锅口和接触锚点升级不漂移
+[PASS] Lv1 成品油条每份库存对应一根实物
+[PASS] Lv1 成品油条同向同高且不越出托盘
+[PASS] Lv1 成品油条取用到6根时逐根减少
+[PASS] Lv1 成品油条取用到5根时逐根减少
+[PASS] Lv1 成品油条取用到4根时逐根减少
+[PASS] Lv1 成品油条取用到3根时逐根减少
+[PASS] Lv1 成品油条取用到2根时逐根减少
+[PASS] Lv1 成品油条取用到1根时逐根减少
+[PASS] Lv1 成品油条取用到0根时逐根减少
+[PASS] Lv2 炉面圆心、炸锅锅口和接触锚点升级不漂移
+[PASS] Lv2 成品油条每份库存对应一根实物
+[PASS] Lv2 成品油条同向同高且不越出托盘
+[PASS] Lv2 成品油条取用到8根时逐根减少
+[PASS] Lv2 成品油条取用到7根时逐根减少
+[PASS] Lv2 成品油条取用到6根时逐根减少
+[PASS] Lv2 成品油条取用到5根时逐根减少
+[PASS] Lv2 成品油条取用到4根时逐根减少
+[PASS] Lv2 成品油条取用到3根时逐根减少
+[PASS] Lv2 成品油条取用到2根时逐根减少
+[PASS] Lv2 成品油条取用到1根时逐根减少
+[PASS] Lv2 成品油条取用到0根时逐根减少
+[PASS] Lv3 炉面圆心、炸锅锅口和接触锚点升级不漂移
+[PASS] Lv3 成品油条每份库存对应一根实物
+[PASS] Lv3 成品油条同向同高且不越出托盘
+[PASS] Lv3 成品油条取用到8根时逐根减少
+[PASS] Lv3 成品油条取用到7根时逐根减少
+[PASS] Lv3 成品油条取用到6根时逐根减少
+[PASS] Lv3 成品油条取用到5根时逐根减少
+[PASS] Lv3 成品油条取用到4根时逐根减少
+[PASS] Lv3 成品油条取用到3根时逐根减少
+[PASS] Lv3 成品油条取用到2根时逐根减少
+[PASS] Lv3 成品油条取用到1根时逐根减少
+[PASS] Lv3 成品油条取用到0根时逐根减少
+[PASS] 切换关卡保留已学操作，未成功的新操作继续教学
+[PASS] 切换关卡后: 工作台状态底板和出餐说明隐藏
+[PASS] 切换关卡后: 制作进度条不绘制文字
+[PASS] 切换关卡后: 工作台无悬停文字
+[PASS] 切换关卡后: 原料库存及首次教学文字隐藏
+[PASS] 非天津共享工作台保留状态与悬停说明
+[PASS] 非天津长按教学文字与进度条保留
+天津工作台 V1 自测完成：437 项通过，1 项失败。

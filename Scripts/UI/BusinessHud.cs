@@ -13,7 +13,7 @@ public partial class BusinessHud : Control
     private readonly Label _income = TianjinUi.Label("0", 27);
     private TextureRect _peak = null!;
     private Control _daySign = null!, _progressSign = null!, _incomeSign = null!;
-    public Button PauseButton { get; } = new() { Name = "HudPause", TooltipText = "暂停营业（Esc）" };
+    public Button PauseButton { get; } = new() { Name = "HudPause" };
     public Control IncomeTarget => _income;
     private Tween? _incomeTween;
 
@@ -74,12 +74,8 @@ public partial class BusinessHud : Control
     {
         if (controller.CurrentConfig is not { } config) return;
         _day.Text = config.Day.ToString();
-        _daySign.TooltipText = dayDescription;
-        _daySign.MouseFilter = MouseFilterEnum.Pass;
         _peak.Visible = peak;
         _orders.Text = $"{controller.Ledger?.CompletedCustomers ?? 0}/{config.CustomerCount}";
-        _orders.TooltipText = "今日已完成订单 / 计划订单";
-        _orders.MouseFilter = MouseFilterEnum.Pass;
         double seconds = controller.State switch {
             DayState.Opening => controller.OpeningRemainingSeconds,
             DayState.Closing => controller.ClosingRemainingSeconds,
@@ -87,13 +83,26 @@ public partial class BusinessHud : Control
             _ => controller.DayRemainingSeconds };
         int remaining = Math.Max(0, (int)Math.Ceiling(seconds));
         _time.Text = $"{remaining / 60:00}:{remaining % 60:00}";
-        _time.TooltipText = controller.IsPaused ? "营业已暂停" : controller.State switch {
-            DayState.Opening => "开门倒计时", DayState.Closing => "打烊收尾", DayState.Results => "今日已打烊", _ => "剩余营业时间" };
-        _time.MouseFilter = MouseFilterEnum.Pass;
         _time.AddThemeColorOverride("font_color", controller.State == DayState.Closing ? new Color("#9B422F") : TianjinUi.BrownText);
         _income.Text = (controller.Ledger?.Build().TotalRevenue ?? 0).ToString();
-        _income.TooltipText = "今日收入（含小费）"; _income.MouseFilter = MouseFilterEnum.Pass;
         PauseButton.Disabled = !allowPause;
+        OfferInterfaceTeaching(controller, allowPause);
+    }
+
+    private void OfferInterfaceTeaching(DayController controller, bool allowPause)
+    {
+        if (!allowPause || !IsVisibleInTree() || controller.State != DayState.Running || controller.TutorialActive) return;
+        var owner = GetParent<Control>();
+        bool Eligible() => owner.IsVisibleInTree() && !controller.IsPaused && !controller.TutorialActive
+            && controller.State == DayState.Running
+            && !owner.Descendants<TutorialFocusLayer>().Any(layer => layer.Visible)
+            && !owner.Descendants<Control>().Any(control => control.Name == "DemoLesson" && control.IsVisibleInTree());
+        void Pause(bool value) => controller.SetPauseReason("interface-teaching", value);
+        var settings = GetNode<JourneySettings>("/root/JourneySettings");
+        if (!settings.HasSeenInterfaceLesson(InterfaceLessons.BusinessKey))
+            InterfaceTeaching.Offer(owner, InterfaceLessons.BusinessKey, InterfaceLessons.Business, Eligible, Pause);
+        else if (_city is "天津" or "武汉")
+            InterfaceTeaching.Offer(owner, InterfaceLessons.PendantKey, InterfaceLessons.Pendant, Eligible, Pause);
     }
 
     public Texture2D LoadArt(string name)

@@ -10,13 +10,26 @@ public static class BookArtCatalog
     private static Shader? _shader;
     public static string BoardPath(string city) => city switch
     {
-        "tianjin" => "res://resource/art/TianJin/Ledger/ledger_book.png",
-        "wuhan" => "res://resource/art/Global/BookUI/营业结算账本底板-武汉-v3.png",
+        "tianjin" or "wuhan" => "res://resource/art/Global/StartPage/旅行手账双页母版.png",
         "xian" => "res://resource/art/Global/BookUI/营业结算账本底板-西安-v3.png",
         _ => "res://resource/art/Global/BookUI/营业结算账本底板-v1.png",
     };
     public static string BoardName(string city) => Path.GetFileNameWithoutExtension(BoardPath(city));
     public static Texture2D GetBoard(string city) => GetPath(BoardPath(city));
+    public static ShaderMaterial? BoardMaterial(string city)
+    {
+        if (city is not ("tianjin" or "wuhan")) return null;
+        string key = city + "/travel-board";
+        if (Materials.TryGetValue(key, out var cached)) return cached;
+        var theme = CitySettlementTheme.For(city);
+        // Reuse the upgrade page's region mask: cream paper and texture retain their original colors.
+        var material = new ShaderMaterial { Shader = GD.Load<Shader>("res://resource/shaders/journey_book_city.gdshader") };
+        material.SetShaderParameter("region_mask", GD.Load<Texture2D>("res://resource/art/Global/StartPage/旅行手账双页分区遮罩.png"));
+        material.SetShaderParameter("cover_color", theme.Primary);
+        material.SetShaderParameter("ornament_color", theme.Secondary);
+        Materials.Add(key, material);
+        return material;
+    }
     public static ShaderMaterial? DecorationMaterial(string name, CitySettlementTheme theme)
     {
         int area = name switch { "营业结算账本底板-v1" => 2, "顾客头像圆框" => 3, "账本轻分隔线" => 4, "今日手记便签底板" => 5, "今日热销徽章" or "可升级提示贴片" or "新解锁提示贴片" => 1, _ => 0 };

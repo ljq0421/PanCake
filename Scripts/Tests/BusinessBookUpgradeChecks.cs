@@ -1,5 +1,6 @@
 using Godot;
 using ProjectCake.Core;
+using ProjectCake.Gameplay;
 using ProjectCake.UI;
 using ProjectCake.Yangzhou;
 
@@ -44,6 +45,17 @@ public partial class BusinessBookSelfTest
             using (var locked = new FileStream(ProjectSettings.GlobalizePath(path) + ".tmp", FileMode.Create, System.IO.FileAccess.Write, FileShare.None))
                 Check(!source.Purchase(first, out _) && source.Coins == 10000 && source.Offers.Contains(first), city + " failed save rolls back wallet and level");
 
+            // Keep a real workstation behind the book in captures, so an opaque page backdrop is visible as a regression.
+            Control? workstation = null;
+            DayController? controller = null;
+            if (Capture && city == "tianjin")
+            {
+                controller = new DayController(); AddChild(controller); controller.SetProcess(false);
+                var screen = GD.Load<PackedScene>("res://Scenes/Gameplay/TianjinDayScreen.tscn").Instantiate<TianjinDayScreen>();
+                AddChild(screen); screen.SetProcess(false);
+                screen.ConnectController(controller); screen.Initialize(catalog, save, controller, 2); screen.BeginDay();
+                workstation = screen;
+            }
             var model = Fixture(city); model.Closing = true; model.Upgrades = source;
             var view = new BusinessDetailsView(); AddChild(view); bool closed = false; view.CloseRequested += () => closed = true;
             model.Closing = false; view.Open(model);
@@ -56,7 +68,13 @@ public partial class BusinessBookSelfTest
                 Click(Entry()); await Frames();
                 var modal = view.Descendants<Control>().Single(n => n.Name == "BookUpgradeModal");
                 Check(modal.IsVisibleInTree(), city + " click opens modal");
-                Check(view.Descendants<Label>().Any(l => l.Text == $"当前余额 {source.Coins} 金币"), city + " wallet shown");
+                Check(modal.Descendants<Label>().Any(l => l.Text == $"{source.Coins} 金币"), city + " wallet shown");
+                var page = modal.Descendants<StartScreen>().Single();
+                Check(page.Page == JourneyPage.Upgrades && page.SelectedCityId == cityId, city + " reuses home upgrade page for source city");
+                Check(!page.GetNode<Control>("Canvas/Background").Visible && !page.GetNode<Control>("Letterbox").Visible
+                    && page.FindChild("SharedBook", true, false) is TextureRect { Visible: true }, city + " reuses only book and preserves gameplay backdrop");
+                Check(!view.CloseButton.IsVisibleInTree(), city + " original ledger is hidden beneath upgrade book");
+                Check(!page.Descendants<Button>().Any(b => b.Name == "Home" || b.Name == "MapTab" || b.Name == "LedgerTab"), city + " settlement navigation only returns to book");
                 view.CloseButton.EmitSignal(BaseButton.SignalName.Pressed); Check(!closed, city + " modal blocks book close");
                 for (int i = 0; i < 8; i++)
                 {
@@ -72,6 +90,17 @@ public partial class BusinessBookSelfTest
                 if (Capture && detailScroll.ScrollVertical > 0) await Shot($"{city}-upgrades-{size.X}-bottom");
                 GetViewport().PushInput(new InputEventKey { Keycode = Key.Escape, Pressed = true }, true);
                 Check(!closed && Entry().HasFocus(), city + " Escape restores upgrade focus");
+                if (city is "tianjin" or "wuhan")
+                    Check(Entry().GetThemeStylebox("focus") is StyleBoxEmpty
+                        && Entry().GetParent().GetChildren().OfType<TextureRect>().Single().SelfModulate != Colors.White,
+                        city + " return focus highlights original sticker without a rectangular frame");
+                else if (city == "xian")
+                    Check(Entry().GetThemeStylebox("focus") is StyleBoxFlat focus && focus.BgColor.A == 0 && focus.BorderWidthTop > 0,
+                        city + " return focus leaves sticker artwork and caption visible");
+                if (Capture && size.X == 1920) await Shot(city + "-upgrade-return-focus");
+                Click(Entry()); await Frames();
+                Click(view.Descendants<Button>().Single(b => b.Name == "CloseUpgrades")); await Frames();
+                Check(!closed && Entry().HasFocus() && !view.Descendants<Control>().Any(n => n.Name == "BookUpgradeModal"), city + " return button restores original book");
             }
             int income = model.Result.TotalRevenue;
             Click(Entry()); await Frames();
@@ -88,6 +117,7 @@ public partial class BusinessBookSelfTest
             Click(buy); await Frames();
             Check(view.Descendants<EquipmentUpgradeView>().Single().SelectedId == first.EquipmentId, city + " purchase retains selection");
             Check(source.Coins == 10000 - first.Price && model.Result.TotalRevenue == income, city + " UI purchase debits once without recommitting revenue");
+            Check(view.Descendants<Label>().Any(l => l.Text == $"{source.Coins} 金币"), city + " shared page refreshes balance after purchase");
             Check(!source.Purchase(first, out _) && source.Coins == 10000 - first.Price, city + " stale duplicate rejected");
             save.Load();
             Check(source.Coins == 10000 - first.Price && save.Data.GetCity(cityId).EquipmentLevels[first.EquipmentId] == first.TargetLevel, city + " purchase persists across reload");
@@ -132,7 +162,7 @@ public partial class BusinessBookSelfTest
             GetViewport().PushInput(new InputEventKey { Keycode = Key.Escape, Pressed = true }, true);
             model.Closing = false; view.Open(model);
             Check(!view.Descendants<Button>().Any(b => b.Name == "OpenBookUpgrades" || b.Name == "UpgradeSticker"), city + " live no entry");
-            view.QueueFree(); save.QueueFree(); await Frames();
+            view.QueueFree(); workstation?.QueueFree(); controller?.QueueFree(); save.QueueFree(); await Frames();
         }
     }
 }

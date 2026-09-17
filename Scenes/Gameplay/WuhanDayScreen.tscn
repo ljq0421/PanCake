@@ -1724,7 +1724,6 @@ layout_mode = 0
 offset_left = 12.0
 offset_right = 238.0
 offset_bottom = 86.0
-tooltip_text = "点击收走金币 · 收入已自动入账，未点击也不会丢失"
 focus_mode = 0
 theme_override_styles/normal = SubResource("StyleBoxEmpty_vqal8")
 theme_override_styles/pressed = SubResource("StyleBoxEmpty_he338")

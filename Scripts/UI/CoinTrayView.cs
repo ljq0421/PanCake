@@ -21,7 +21,7 @@ public partial class CoinTrayView : Control
         _collect.AddThemeStyleboxOverride("normal", TianjinUi.Box(TianjinUi.Cream, 10, 2, false));
         _collect.AddThemeStyleboxOverride("hover", TianjinUi.Box(TianjinUi.Yellow.Lightened(.4f), 10, 2, false));
         _collect.AddThemeStyleboxOverride("pressed", TianjinUi.Box(TianjinUi.Yellow, 10, 2, false));
-        _collect.TooltipText = "点击收钱";
+        _collect.TooltipText = string.Empty;
         _caption.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         _caption.CustomMinimumSize = Vector2.Zero;
         _caption.HorizontalAlignment = HorizontalAlignment.Center;

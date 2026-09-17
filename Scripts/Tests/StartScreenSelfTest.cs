@@ -35,7 +35,33 @@ public partial class StartScreenSelfTest : Node
             _save = GetNode<SaveService>("/root/SaveService");
             _save.UsePathForTests(_path);
             GetNode<JourneySettings>("/root/JourneySettings").UsePathForTests(Path.Combine(directory, "settings.cfg"));
+            InterfaceLessons.MarkAllSeen(GetNode<JourneySettings>("/root/JourneySettings"));
             await Launch();
+            if (args.Contains("--dialogs-only"))
+            {
+                await PanelPreview();
+                _save.ResetProgress(out _);
+                _screen.PresentCity(StableIds.Cities.Tianjin); _screen.PresentLedger(); await Frames();
+                string beforeReset = File.ReadAllText(_path);
+                await Click(Find<Button>("ResetLedgerProgress"));
+                Check(Find<Button>("Cancel").HasFocus(), "reset defaults to preserving progress");
+                await Capture("reset-confirmation");
+                await Click(Find<Button>("Cancel"));
+                Check(File.ReadAllText(_path) == beforeReset, "reset cancellation preserves save");
+                await Click(Find<Button>("ResetLedgerProgress"));
+                await Click(Find<Button>("Confirm"));
+                Check(!_screen.ModalOpen && _screen.Page == JourneyPage.City, "confirmed reset returns to city");
+                await Click(Find<Button>("Settings"));
+                var settings = GetNode<JourneySettings>("/root/JourneySettings");
+                Vector2I originalSize = GetWindow().Size;
+                await Click(Find<Button>("Fullscreen"));
+                Check(settings.DisplayPending && Find<Button>("RevertDisplay").HasFocus(), "display defaults to revert");
+                await Capture("display-confirmation");
+                settings._Process(16); await Frames();
+                Check(!settings.DisplayPending && GetWindow().Size == originalSize, "display timeout restores dimensions");
+                KeyPress(Key.Escape);
+                GD.Print($"DIALOGS_SELF_TEST_PASS checks={_passed}"); GetTree().Quit(); return;
+            }
             if (args.Contains("--settings-only"))
             {
                 await SettingsPageChecks.Run(_screen, _save, GetNode<JourneySettings>("/root/JourneySettings"), Capture);
@@ -52,7 +78,7 @@ public partial class StartScreenSelfTest : Node
             if (args.Contains("--home-gallery")) { await HomeGallery(); GD.Print("HOME_GALLERY_OK"); GetTree().Quit(); return; }
             if (args.Contains("--gallery")) { await Gallery(); GD.Print("JOURNEY_GALLERY_OK"); GetTree().Quit(); return; }
             Check(!_save.CanContinue && !_save.RequiresNewGameConfirmation, "missing save is distinct from an empty valid save");
-            Check(Find<Button>("Continue").Disabled && Find<Button>("Continue").TooltipText.Contains("暂无存档"), "continue stays visible and disabled without a save");
+            Check(Find<Button>("Continue").Disabled && Find<Button>("Continue").TooltipText.Length == 0, "continue stays visible and disabled without a save or hover popup");
             Check(_main.GetNode("UI").GetChildren().OfType<Control>().Count(c => c.Visible) == 1 && _screen.Visible, "only the title page is visible at startup");
             Check(Find<Button>("NewGame").HasFocus(), "first run focuses new game");
             KeyPress(Key.Down);
@@ -175,13 +201,9 @@ public partial class StartScreenSelfTest : Node
         await NewJourney();
         Check(_screen.ConfirmationOpen && Find<Button>("Cancel").HasFocus(), "painted confirmation defaults to cancel");
         var panel = Find<Panel>("ConfirmationPanel");
-        var group = Find<Panel>("ConfirmationMessagePanel");
-        var decorations = Find<Control>("ConfirmationDecorations");
-        var painted = panel.GetThemeStylebox("panel");
-        panel.AddThemeStyleboxOverride("panel", StartScreenTheme.Box(StartScreenTheme.Cream, 3, true));
-        group.Hide(); decorations.Hide();
-        await Capture("panel-before");
-        panel.AddThemeStyleboxOverride("panel", painted); group.Show(); decorations.Show();
+        Check(panel.GetThemeStylebox("panel") is StyleBoxTexture frame
+            && frame.Texture.ResourcePath == "res://resource/art/TianJin/DialogUI/dialog-panel-v1.png",
+            "confirmation uses the supplied illustrated dialog");
         await Capture("panel-after");
         foreach (string name in new[] { "ConfirmationTitle", "ConfirmationText", "Cancel", "Confirm" })
         {
@@ -204,28 +226,6 @@ public partial class StartScreenSelfTest : Node
         await Capture("panel-long-message");
         KeyPress(Key.Escape);
 
-        // Real Godot rendering at wide, tall and compact sizes, over light and dark surfaces.
-        var gallery = new Control { Size = new(1920, 1080), MouseFilter = Control.MouseFilterEnum.Ignore };
-        _screen.GetNode("Canvas").AddChild(gallery);
-        gallery.AddChild(new ColorRect { Size = gallery.Size, Color = new Color("#332D28") });
-        gallery.AddChild(new ColorRect { Size = new(960, 1080), Color = new Color("#E9DDC7") });
-        for (int column = 0; column < 2; column++)
-        {
-            string asset = column == 0 ? "main" : "group";
-            var style = GD.Load<StyleBoxTexture>($"res://resource/art/Global/PanelUI/panel-{asset}-v1.tres");
-            var heading = new Label { Position = new(60 + column * 960, 30), Text = column == 0 ? "01 通用纸卡 · 九宫格" : "03 轻量分组 · 九宫格" };
-            heading.AddThemeFontSizeOverride("font_size", 32);
-            heading.AddThemeColorOverride("font_color", column == 0 ? new Color("#4A3024") : new Color("#FFF8E8"));
-            gallery.AddChild(heading);
-            var regions = new[] { new Rect2(60, 110, 840, 190), new Rect2(60, 350, 360, 520), new Rect2(480, 350, 310, 170) };
-            foreach (var region in regions)
-            {
-                var sample = new Panel { Position = region.Position + new Vector2(column * 960, 0), Size = region.Size };
-                sample.AddThemeStyleboxOverride("panel", style); gallery.AddChild(sample);
-            }
-        }
-        await Capture("panel-nine-slice");
-        gallery.GetParent().RemoveChild(gallery); gallery.QueueFree();
     }
 
     private async Task JourneyPreview()
@@ -330,8 +330,8 @@ public partial class StartScreenSelfTest : Node
         await Click(Find<Button>("Fullscreen")); await Capture("display-confirmation");
         Check(settings.DisplayPending, "display asks for confirmation");
         Check(Find<Panel>("DisplayConfirmationPanel").GetThemeStylebox("panel") is StyleBoxTexture
-            && Find<Panel>("DisplayConfirmationMessagePanel").Visible
-            && Find<Control>("DisplayConfirmationDecorations").Visible
+            && ((StyleBoxTexture)Find<Panel>("DisplayConfirmationPanel").GetThemeStylebox("panel")).Texture.ResourcePath
+                == "res://resource/art/TianJin/DialogUI/dialog-panel-v1.png"
             && Find<Label>("DisplayConfirmationTitle").Text == "保留这个显示设置？",
             "display confirmation uses the shared illustrated panel treatment");
         settings._Process(16);
@@ -461,7 +461,7 @@ public partial class StartScreenSelfTest : Node
         var markers = Find<Control>("HomeMap").GetChildren().OfType<Control>().Where(n => n.Name.ToString().StartsWith("HomeCity")).ToArray();
         Check(markers.Length == 5, "home shows all five unlocked cities");
         Check(markers.All(a => markers.All(b => a == b || !a.GetRect().Intersects(b.GetRect()))), "five city callouts do not overlap");
-        Check(Find<Button>("Continue").TooltipText.Contains("武汉"), "continue tooltip shows actual saved city");
+        Check(_save.ContinueCityId == StableIds.Cities.Wuhan && Find<Button>("Continue").TooltipText.Length == 0, "continue retains saved city without hover text");
         await Capture("home-five-cities");
         await Click(Find<Button>("Settings"));
         var settings = GetNode<JourneySettings>("/root/JourneySettings");

@@ -50,6 +50,9 @@ public partial class StartScreen
         closeArt.Name = "HelpCloseArt";
         closeArt.ShowBehindParent = true;
         close.AddThemeFontSizeOverride("font_size", 41);
+        var teaching = Button(_modal, "ReplayInterfaceTeaching", "经营教学", new(1370, 948, 290, 68), () =>
+            InterfaceTeaching.Offer(_modal, "replay", InterfaceLessons.Replay(HelpCityId()), replay: true));
+        teaching.AddThemeFontSizeOverride("font_size", 29);
         close.GrabFocus();
     }
 
@@ -133,9 +136,7 @@ public partial class StartScreen
 
     private void DrawHelpCityTips(Control parent)
     {
-        string cityId = Page is JourneyPage.City or JourneyPage.Ledger or JourneyPage.Upgrades or JourneyPage.Collection or JourneyPage.Map or JourneyPage.Continue
-            ? _city : Page == JourneyPage.Completion && _completedCity is not null ? _completedCity
-            : _save?.CanContinue == true ? _save.ContinueCityId : StableIds.Cities.Tianjin;
+        string cityId = HelpCityId();
         JourneyCity city = JourneyModel.Cities.FirstOrDefault(c => c.Id == cityId) ?? JourneyModel.Cities[0];
         var panel = HelpPanel(parent, "HelpCityTips", new(1000, 623, 770, 214), "#FFF4DD", "#D3A777", 25, 4);
         panel.SetMeta("city_id", city.Id);
@@ -178,6 +179,10 @@ public partial class StartScreen
             HelpText(panel, "HelpTip" + i, tips[i], new(390, 44 + i * 51, 360, 48), 26);
         }
     }
+
+    private string HelpCityId() => Page is JourneyPage.City or JourneyPage.Ledger or JourneyPage.Upgrades or JourneyPage.Collection or JourneyPage.Map or JourneyPage.Continue
+        ? _city : Page == JourneyPage.Completion && _completedCity is not null ? _completedCity
+        : _save?.CanContinue == true ? _save.ContinueCityId : StableIds.Cities.Tianjin;
 
     private void DrawHelpKeys(Control parent)
     {

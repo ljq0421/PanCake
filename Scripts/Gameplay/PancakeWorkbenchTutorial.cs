@@ -13,6 +13,7 @@ public partial class PancakeWorkstation
     private readonly HashSet<string> _pendingRefillLessons = new(StringComparer.Ordinal);
     private readonly Dictionary<string, Label> _firstUseHints = new(StringComparer.Ordinal);
     private bool _tutorialMemory;
+    private bool _deferEggRefillToRecipe;
     private Label? _trashHint;
     public event Action<string>? WorkbenchActionLearned;
     internal IReadOnlySet<string> LearnedWorkbenchActions => _learnedActions;
@@ -41,6 +42,15 @@ public partial class PancakeWorkstation
     }
 
     private bool NeedsTeaching(string action) => !_learnedActions.Contains(action);
+
+    internal void ConfigureFirstPancakeEggLesson(int quantity)
+    {
+        // The first egg belongs to the guided pancake; teach refilling when the next recipe needs it.
+        _deferEggRefillToRecipe = true;
+        int excess = Inventory.GetQuantity(StableIds.Ingredients.Egg) - quantity;
+        if (excess > 0) Inventory.TryConsume(StableIds.Ingredients.Egg, excess);
+        Render();
+    }
 
     private void TrackRefillLesson(string id)
     {

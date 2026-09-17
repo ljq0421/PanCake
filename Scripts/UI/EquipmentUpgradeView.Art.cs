@@ -52,7 +52,6 @@ public partial class EquipmentUpgradeView
         while (fontSize > 16 && font.GetStringSize(translated, fontSize: fontSize).X > available) fontSize--;
         label.AddThemeFontSizeOverride("font_size", fontSize);
         label.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
-        label.TooltipText = caption;
         float textWidth = Math.Min(available, font.GetStringSize(translated, fontSize: fontSize).X + 2);
         float total = textWidth + (showCoin ? iconSize + gap : 0), start = (rect.Size.X - total) / 2;
         label.Position = new(start + (showCoin ? iconSize + gap : 0), 8);

@@ -40,7 +40,7 @@ public partial class WuhanDayScreen
             _demoLesson = new Panel { Name = "DemoLesson", Position = new(38, 870), Size = new(510, 165), ZIndex = 90, MouseFilter = MouseFilterEnum.Ignore };
             AddChild(_demoLesson); WuhanTeachingUi.ApplyPanel(_demoLesson);
             _demoLessonTitle = new Label { Position = new(54, 45), Size = new(390, 44), MouseFilter = MouseFilterEnum.Ignore,
-                HorizontalAlignment = HorizontalAlignment.Center };
+                AutowrapMode = TextServer.AutowrapMode.WordSmart };
             _demoLessonTitle.AddThemeFontSizeOverride("font_size", 22); _demoLesson.AddChild(_demoLessonTitle);
             _demoLessonAction = new Button { Text = "跳过教学" };
             _demoLesson.AddChild(WuhanTeachingUi.ActionFrame(_demoLessonAction, new(160, 98), new(200, 52)));
@@ -50,6 +50,7 @@ public partial class WuhanDayScreen
             .Append(StableIds.Ingredients.WuhanBaseSeasoning).ToHashSet();
         GetNode<TextureRect>("WorkbenchBackground").Texture = _art.WorkbenchBackground(_doupi is not null);
         _demoLessonTitle!.Text = lesson?.TitleZh ?? "第一碗热干面"; _demoLessonAction!.Text = "跳过教学"; _demoLesson.Show();
+        LayoutWuhanDemoLesson();
         _controller.TryStartDay(out _); _controller.Tick(3); _controller.Tick(.01); Render();
         return true;
     }
@@ -64,7 +65,7 @@ public partial class WuhanDayScreen
         if (!saved)
         {
             _save.Data.Wuhan.LearnedWorkbenchActions = old;
-            _demoLessonTitle!.Text = "教学记录未保存，请重试。"; _demoLessonAction!.Text = "重试保存"; return;
+            _demoLessonTitle!.Text = "教学记录未保存，请重试。"; _demoLessonAction!.Text = "重试保存"; LayoutWuhanDemoLesson(); return;
         }
         _demoLesson!.Hide(); _sceneFeedback.Clear(); _paymentFeedback.Clear(); Workstation.CancelAnimations();
         _controller.AbandonDay();
@@ -77,6 +78,7 @@ public partial class WuhanDayScreen
         {
             _demoLessonComplete = true;
             _demoLessonTitle!.Text = "第一份早餐，做好了！"; _demoLessonAction!.Text = "开始营业";
+            LayoutWuhanDemoLesson();
             Workstation.CancelInput();
         }
         else Callable.From(() => { int day = _demoBusinessDay; ForceDemoTutorial = true; BeginWuhanDemoLesson(); _demoBusinessDay = day; }).CallDeferred();
@@ -87,5 +89,11 @@ public partial class WuhanDayScreen
         BusinessBookSettlement.Commit(_demoPendingResult, _save, _controller.CurrentPlan!, _controller.CurrentConfig!, _catalog);
         if (_demoPendingResult.CanRetry) _demoPendingResult.SaveMessage = "保存失败：请检查写入权限和可用空间。原有进度已保留。";
         BusinessDetails.Open(_demoPendingResult);
+    }
+
+    private void LayoutWuhanDemoLesson()
+    {
+        TeachingCardLayout.Lesson(_demoLesson!, _demoLessonTitle!, null, _demoLessonAction!, 510);
+        _demoLesson!.Position = new(38, 1035 - _demoLesson.Size.Y);
     }
 }

@@ -87,7 +87,8 @@ public partial class PancakeWorkstation
         if (!IsTransferringBag && r.State == PancakeState.Empty && !HasFinishedPancake)
         {
             foreach (string id in _ingredientSlots.Keys.Where(_enabledIngredients.Contains).OrderBy(id => id, StringComparer.Ordinal))
-                if (NeedsTeaching("refill:" + id) && Inventory.GetStatus(id) is IngredientStockStatus.Low or IngredientStockStatus.Empty or IngredientStockStatus.Refilling)
+                if (!(id == StableIds.Ingredients.Egg && _deferEggRefillToRecipe)
+                    && NeedsTeaching("refill:" + id) && Inventory.GetStatus(id) is IngredientStockStatus.Low or IngredientStockStatus.Empty or IngredientStockStatus.Refilling)
                     return RefillFocus(id);
             if (SoyMilkTray is { IsTaking: false } soy && NeedsTeaching("refill:soy_milk") && (soy.Quantity <= 2 || soy.IsRefilling))
                 return SoyRefillFocus();

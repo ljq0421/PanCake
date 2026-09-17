@@ -53,7 +53,8 @@ public partial class PancakeWorkstation : Control
     private DragService _drag = null!;
     internal bool IsDragging => _drag.IsDragging;
     internal bool IsSpreading => _stroke.IsSpreading;
-    internal event Action? TianjinFlipped;
+    internal bool IsFlipping => _canvas?.IsFlipping == true;
+    internal float FlipProgress => _canvas?.FlipProgress ?? 1;
     private bool _soyCupHeld;
     private DragItem _batterItem = null!;
     private StrokeInteractor _stroke = null!;
@@ -200,6 +201,7 @@ public partial class PancakeWorkstation : Control
     public override void _Ready()
     {
         SceneNodeBinder.Bind(this);
+        VisibilityChanged += () => { if (!IsVisibleInTree()) FinishFlipAnimation(); };
         _art = new TianjinArtCatalog();
         _ingredientSlots.Clear();
         foreach (IngredientStockSlotView slot in this.Descendants<IngredientStockSlotView>())
@@ -352,6 +354,7 @@ public partial class PancakeWorkstation : Control
         CancelInput();
         _pendingRefillLessons.Clear();
         Tutorial = config?.Tutorial ?? TutorialProtection.None;
+        _deferEggRefillToRecipe = false;
         foreach ((Control target, Tween tween) in _interactionTweens)
         {
             tween.Kill();
@@ -406,6 +409,7 @@ public partial class PancakeWorkstation : Control
             if (IsTianjinWorkbench) CancelInput();
             return;
         }
+        TickFlipAnimation(deltaSeconds);
         Machine.Tick(TutorialCookingDelta(deltaSeconds));
         _canvas.TickLivingMotion(deltaSeconds, IsTianjinWorkbench && !ReducedMotion, _stroke.IsSpreading);
         TickBagTransfer(deltaSeconds);
@@ -425,6 +429,7 @@ public partial class PancakeWorkstation : Control
 
     public void CancelInput()
     {
+        FinishFlipAnimation();
         _canvas?.TickLivingMotion(0, false, false);
         CancelRightFoodPress();
         foreach (StockGesture gesture in _stockGestures) gesture.Cancel();
@@ -440,6 +445,7 @@ public partial class PancakeWorkstation : Control
     {
         CancelInput();
         _pendingRefillLessons.Clear();
+        _deferEggRefillToRecipe = false;
         CoinTray?.RenderRevenue(0);
         PancakeTray.Clear();
         ResetBagPresentation();
@@ -519,8 +525,8 @@ public partial class PancakeWorkstation : Control
     }
 
     private bool CanInteract => InteractionEnabled && !Paused && !_batterDropAnimating;
-    private bool CanUse(string id) => _initialized && CanInteract && _enabledIngredients.Contains(id) && Inventory.HasAvailable(id);
-    private bool CanDrop(string id) => CanInteract && id switch
+    private bool CanUse(string id) => _initialized && CanInteract && !IsFlipping && _enabledIngredients.Contains(id) && Inventory.HasAvailable(id);
+    private bool CanDrop(string id) => CanInteract && !IsFlipping && id switch
     {
         StableIds.Ingredients.Batter => Machine.Runtime.State == PancakeState.Empty,
         StableIds.Ingredients.Crispy or StableIds.Ingredients.Ham or StoredYoutiaoPayload => Machine.Runtime.State is PancakeState.Sauced or PancakeState.Toppings,
@@ -531,7 +537,7 @@ public partial class PancakeWorkstation : Control
         if (id == StableIds.Ingredients.Batter) TryPlaceBatter();
         else Execute(PancakeCommand.AddIngredient, id == StoredYoutiaoPayload ? StableIds.Ingredients.Youtiao : id);
     }
-    private StrokeMode ResolveStroke() => !_initialized || !CanInteract ? StrokeMode.None : Machine.Runtime.State switch
+    private StrokeMode ResolveStroke() => !_initialized || !CanInteract || IsFlipping ? StrokeMode.None : Machine.Runtime.State switch
     {
         PancakeState.BatterPlaced or PancakeState.Spreading => StrokeMode.Spread,
         PancakeState.Saucing => StrokeMode.Sauce,
@@ -545,6 +551,7 @@ public partial class PancakeWorkstation : Control
     }
     private void PickUpSauceBrush()
     {
+        if (IsFlipping) return;
         if (!CanUse(StableIds.Ingredients.Sauce))
         {
             Reject("酱料不足、正在补货或当前不能操作。");
@@ -652,7 +659,7 @@ public partial class PancakeWorkstation : Control
     }
     private bool Execute(PancakeCommand command, string? id = null)
     {
-        if (!_initialized || !CanInteract) return false;
+        if (!_initialized || !CanInteract || IsFlipping) return false;
         YoutiaoQuality? consumedYoutiao = null;
         PancakeActionResult result = Machine.TryExecute(command, id, ingredient =>
         {
@@ -668,7 +675,12 @@ public partial class PancakeWorkstation : Control
         }
 
         LearnPancakeAction(command, id);
-        if (IsTianjinWorkbench && command == PancakeCommand.Flip) TianjinFlipped?.Invoke();
+        if (IsTianjinWorkbench && command == PancakeCommand.Flip && !ReducedMotion)
+        {
+            CancelRightFoodPress();
+            _canvas.SetFlipProgress(0);
+            Render();
+        }
         if (command == PancakeCommand.CompleteSauce) _stroke.CancelStroke();
 
         if (consumedYoutiao is YoutiaoQuality quality)
@@ -684,6 +696,25 @@ public partial class PancakeWorkstation : Control
             && command is not (PancakeCommand.Flip or PancakeCommand.CompleteSpread)))
             Inform(result.Message, false);
         return true;
+    }
+    private void TickFlipAnimation(double delta)
+    {
+        if (!IsFlipping) return;
+        if (ReducedMotion || !IsVisibleInTree()
+            || Machine.Runtime.State is not (PancakeState.SideBCooking or PancakeState.SideBReady))
+        {
+            FinishFlipAnimation();
+            return;
+        }
+        _canvas.SetFlipProgress(FlipProgress + (float)Math.Max(0, delta) / PancakeCanvas.FlipDuration);
+        if (!IsFlipping) Render();
+    }
+
+    private void FinishFlipAnimation()
+    {
+        if (!IsFlipping) return;
+        _canvas.SetFlipProgress(1);
+        if (_initialized) Render();
     }
     private bool CanLoadRawYoutiao() => _initialized && CanInteract && !_drag.IsDragging && FryerMachine is not null
         && FryerMachine.Runtime.State is FryerState.Empty or FryerState.Loaded

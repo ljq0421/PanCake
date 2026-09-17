@@ -71,7 +71,7 @@ public partial class StartScreen
             return;
         }
         int index = Array.FindIndex(JourneyModel.Cities, c => c.Id == next.Id);
-        Vector2 at = MapPoints[index];
+        Vector2 at = MapNodePosition(index);
         var glow = Art(_body, "城市解锁轻光效", new(at + new Vector2(-10, -45), new Vector2(170, 160)));
         glow.Name = "MapUnlockGlow";
         glow.PivotOffset = glow.Size / 2; glow.Scale = Vector2.One * .75f;

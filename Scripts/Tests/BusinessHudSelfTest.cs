@@ -13,6 +13,9 @@ public partial class BusinessHudSelfTest : Node
         try
         {
             bool capture = OS.GetCmdlineUserArgs().Contains("--capture");
+            var settings = GetNode<JourneySettings>("/root/JourneySettings");
+            settings.UsePathForTests("res://.tmp/hud-review/settings.cfg");
+            InterfaceLessons.MarkAllSeen(settings);
             string? selectedCity = OS.GetCmdlineUserArgs().FirstOrDefault(arg => arg.StartsWith("--city="))?.Split('=')[1];
             var catalog = GetNode<DataCatalog>("/root/DataCatalog");
             var save = new SaveService();
@@ -101,7 +104,9 @@ public partial class BusinessHudSelfTest : Node
                     _ => screen.GetNode<Control>("Workbench/PauseMenu/Panel"),
                 };
                 Require(pausePanel?.GetThemeStylebox("panel") is StyleBoxTexture
-                    && screen.FindChild(city + "PauseTitleTape", true, false) is Control { Visible: true },
+                    && (city is "Tianjin" or "Wuhan"
+                        ? pausePanel.GetNode<Control>("IllustratedContents").GetChildren().OfType<Label>().Any(label => label.IsVisibleInTree() && label.Text.Length > 0)
+                        : screen.FindChild(city + "PauseTitleTape", true, false) is Control { Visible: true }),
                     "pause uses the shared illustrated panel treatment");
                 if (capture) await Shot(viewport, $"{city}-{width}-paused");
                 if (screen is WuhanDayScreen)

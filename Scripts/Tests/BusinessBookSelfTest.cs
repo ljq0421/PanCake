@@ -22,6 +22,9 @@ public partial class BusinessBookSelfTest : Node
         try
         {
             GetWindow().Position = new(-10000,-10000);
+            var settings = GetNode<JourneySettings>("/root/JourneySettings");
+            settings.UsePathForTests("res://.tmp/book-tests/interface-settings.cfg");
+            InterfaceLessons.MarkAllSeen(settings);
             var catalog = GetNode<DataCatalog>("/root/DataCatalog"); Check(catalog.IsValid,"catalog valid");
             if (OS.GetCmdlineUserArgs().Contains("--upgrades-only"))
             {
@@ -121,7 +124,7 @@ public partial class BusinessBookSelfTest : Node
             v.CloseRequested+=()=>close=true;v.RetryRequested+=()=>requestedRetry=true;v.Open(failed);v.FinishAnimation();await Frames();
             CheckArtPage(v,"xian","real save exception summary");
             var saveMessage=v.Descendants<Label>().Single(l=>l.Text==failed.SaveMessage);
-            Check(saveMessage.MaxLinesVisible==2&&saveMessage.GetVisibleLineCount()<=2&&saveMessage.TooltipText==failed.SaveMessage&&saveMessage.MouseFilter!=Control.MouseFilterEnum.Ignore,"real save exception is bounded and exposes its complete message in a usable tooltip");
+            Check(saveMessage.MaxLinesVisible==2&&saveMessage.GetVisibleLineCount()<=2&&saveMessage.TooltipText.Length==0,"real save exception remains bounded without hover text");
             Click(v.Descendants<Button>().Single(b=>b.Text=="重试保存"));Check(requestedRetry,"real save exception leaves retry clickable");
             CheckStaticPaperBounds(v,"real save exception without redundant footer");
             Check(!v.Descendants<Button>().Any(b=>b.Text=="统计说明"),"standalone statistics entry removed");
@@ -172,15 +175,15 @@ public partial class BusinessBookSelfTest : Node
             var text=view.Descendants<Label>().Where(l=>l.IsVisibleInTree()).Select(l=>l.Text).ToArray();
             Check(text.Contains(closing?"已收摊":"营业中 · 已暂停")&&text.Contains("营业小结"),city+" state and chapter");
             Check(!text.Any(t=>t.Contains("今日")||t.Contains("截至目前")||t=="营业账本"||t=="Esc 返回"),city+" concise summary copy");
-            Check(next.IsVisibleInTree()&&!previous.Visible&&next.TooltipText=="顾客明细"&&next.Size.X>=64&&next.Size.Y>=64,city+" forward edge affordance");
-            Check(view.CloseButton.TooltipText.Contains("Esc")&&view.CloseButton.HasFocus(),city+" default close focus and shortcut hint");
+            Check(next.IsVisibleInTree()&&!previous.Visible&&next.TooltipText.Length==0&&next.Size.X>=64&&next.Size.Y>=64,city+" forward edge affordance without hover text");
+            Check(view.CloseButton.TooltipText.Length==0&&view.CloseButton.HasFocus(),city+" default close focus without hover text");
             var rate=view.Descendants<Label>().Single(l=>l.Text.StartsWith("完成率"));
             var satisfaction=view.Descendants<Label>().Single(l=>l.Text=="完成顾客满意度");
-            Check(rate.TooltipText.Contains("已结束")&&satisfaction.TooltipText.Contains("流失")&&rate.MouseFilter==Control.MouseFilterEnum.Pass,city+" statistical tooltips");
+            Check(rate.TooltipText.Length==0&&satisfaction.TooltipText.Length==0,city+" statistics use teaching instead of hover text");
             if(city is "tianjin" or "wuhan" or "xian")CheckArtPage(view,city,"compact summary");
             if(Capture)await Shot($"compact-{city}-{size.X}-{(closing?"closing":"live")}-summary");
             Click(next);await ToSignal(GetTree().CreateTimer(.25),SceneTreeTimer.SignalName.Timeout);await Frames();
-            Check(view.DetailVisible&&previous.HasFocus()&&previous.TooltipText=="营业小结"&&!next.Visible,city+" page animation completes and transfers focus");
+            Check(view.DetailVisible&&previous.HasFocus()&&previous.TooltipText.Length==0&&!next.Visible,city+" page animation completes and transfers focus");
             var scroll=view.Descendants<ScrollContainer>().Single();
             var rows=scroll.GetChild<VBoxContainer>(0).GetChildren().OfType<Control>().Where(c=>c.Name.ToString().StartsWith("OrderRow")).ToArray();
             foreach(var row in rows)
@@ -240,15 +243,21 @@ public partial class BusinessBookSelfTest : Node
     {
         string expected = city switch
         {
-            "tianjin" => "res://resource/art/TianJin/Ledger/ledger_book.png",
-            "wuhan" => "res://resource/art/Global/BookUI/营业结算账本底板-武汉-v3.png",
+            "tianjin" or "wuhan" => "res://resource/art/Global/StartPage/旅行手账双页母版.png",
             "xian" => "res://resource/art/Global/BookUI/营业结算账本底板-西安-v3.png",
             _ => throw new ArgumentOutOfRangeException(nameof(city)),
         };
         Check(BookArtCatalog.BoardPath(city)==expected,city+" board resolves complete resource path");
         Check(ReferenceEquals(BookArtCatalog.GetBoard(city),BookArtCatalog.GetBoard(city)),city+" board reuses texture cache");
         var board=view.Descendants<TextureRect>().Single(t=>t.IsVisibleInTree()&&t.Name=="BookBoard");
-        Check(board.Texture is AtlasTexture boardAtlas&&boardAtlas.Atlas.ResourcePath==expected&&board.Material is null&&board.Modulate==Colors.White&&board.SelfModulate==Colors.White,city+" "+page+" uses city board without additional tint");
+        Check(board.Texture is AtlasTexture boardAtlas&&boardAtlas.Atlas.ResourcePath==expected&&board.Modulate==Colors.White&&board.SelfModulate==Colors.White,city+" "+page+" uses specified board without whole-image tint");
+        if (city is "tianjin" or "wuhan")
+            Check(board.Material is ShaderMaterial material
+                && material.GetShaderParameter("cover_color").AsColor() == CitySettlementTheme.For(city).Primary
+                && material.GetShaderParameter("ornament_color").AsColor() == CitySettlementTheme.For(city).Secondary
+                && material.GetShaderParameter("region_mask").AsGodotObject() is Texture2D mask
+                && mask.ResourcePath.EndsWith("旅行手账双页分区遮罩.png"), city+" colors only the authored cover and ornament regions");
+        else Check(board.Material is null, city+" preserves existing board material");
         Check(board.StretchMode==TextureRect.StretchModeEnum.KeepAspectCentered,city+" "+page+" preserves artwork aspect ratio");
         var book=board.GetParent().GetParent<Control>();
         Check(book.Size==new Vector2(1680,900)&&book.Scale==Vector2.One,city+" book retains design container without horizontal compression");

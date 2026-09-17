@@ -54,6 +54,10 @@ public partial class StartScreen
     }
     private void CityFrame(JourneyPage page, string title)
     {
+        if (HostedByBook)
+        {
+            Begin(page); BookUpgradeNavigation(); BookFrame(_city); return;
+        }
         Begin(page); Chrome(page == JourneyPage.City ? () => (_cityReturn ?? RenderHome)() : RenderCity, page == JourneyPage.City ? null : title);
         if (page == JourneyPage.Ledger)
         {
@@ -171,7 +175,6 @@ public partial class StartScreen
                 mood.Name = "SatisfactionFace";
             }
             else b.AddChild(new LedgerLockIcon { Name = "DateLock", Position = new(138, 25), Scale = Vector2.One * .23f, MouseFilter = MouseFilterEnum.Ignore });
-            b.TooltipText = $"第 {d} 天 · {_cityModel?.DayTitle(_city, d)}\n" + (recorded ? $"历史最佳收入 {record!.TotalRevenue} 金币 · 满意度 {record.Satisfaction:0.##}%" : metrics.Text);
             if (d == SelectedDay) HomeArt(b, "小红旗", new(151, -12, 30, 36)).Name = "SelectedFlag";
         }
         Text(_body, "SelectedDay", $"第 {SelectedDay} 天", new(1050, 245, 325, 65), 49, true);
@@ -202,6 +205,8 @@ public partial class StartScreen
         Button(_body, "StartSelectedDay", $"{(hasRecord ? "再次营业" : "开张")} · 第 {SelectedDay} 天", new(1030, 873, 510, 76), () => RequestBusiness(SelectedDay), true).Disabled = !CanOpenDay(SelectedDay);
         Button(_body, "ResetLedgerProgress", "重置进度", new(340, 952, 170, 48), RequestLedgerReset);
         Focus("Date" + SelectedDay);
+        InterfaceTeaching.Offer(_body, InterfaceLessons.CalendarKey, InterfaceLessons.Calendar,
+            () => !ModalOpen && Page == JourneyPage.Ledger);
     }
     internal static string LedgerMoodArt(double? satisfaction) => satisfaction is null ? "灰脸"
         : satisfaction >= 60 ? "绿笑脸" : satisfaction >= 30 ? "棕平脸" : "红难过";
@@ -214,10 +219,10 @@ public partial class StartScreen
     private void RequestLedgerReset()
     {
         OpenModal("reset-ledger");
-        Text(_modal, "Title", "重新开始全部旅程？", new(540, 320, 840, 80), 38, true);
-        Text(_modal, "Warning", "所有城市的营业记录、金币和升级将被清空。\n此操作无法撤销。", new(550, 445, 820, 130), 30, true);
-        Button(_modal, "Cancel", "保留进度", new(610, 650, 300, 72), CloseModal);
-        Button(_modal, "Confirm", "确认重置", new(1000, 650, 300, 72), () => { CloseModal(); _busy = true; NewGameRequested?.Invoke(); }, true);
+        ConfirmationTitle(_modal, "Title", "重新开始全部旅程？");
+        ConfirmationMessage(_modal, "Warning", "所有城市的营业记录、金币和升级将被清空。\n此操作无法撤销。");
+        ConfirmationAction(_modal, "Cancel", "保留进度", CloseModal);
+        ConfirmationAction(_modal, "Confirm", "确认重置", () => { CloseModal(); _busy = true; NewGameRequested?.Invoke(); }, true);
         _modalControls[0].GrabFocus();
     }
     private string? _selectedEquipment;
@@ -225,13 +230,14 @@ public partial class StartScreen
     private void RenderUpgradePage()
     {
         CityFrame(JourneyPage.Upgrades, "");
-        EquipmentUpgradeView.AddWallet(_body, _save!.Data.Coins + " 金币", new(1220, 158, 360, 64));
+        EquipmentUpgradeView.AddWallet(_body, (_bookUpgradeSource?.Coins ?? _save!.Data.Coins) + " 金币", new(1220, 158, 360, 64));
         if (_equipmentCity != _city) { _selectedEquipment = null; _equipmentCity = _city; }
         var view = new EquipmentUpgradeView { Name = "UpgradeView", Position = new(320, 230) };
         _body.AddChild(view);
-        view.Configure(_cityModel?.Equipment(_city) ?? Array.Empty<CityEquipmentView>(), _selectedEquipment,
-            id => _selectedEquipment = id, e =>
+        view.Configure(_bookUpgradeSource?.Equipment ?? _cityModel?.Equipment(_city) ?? Array.Empty<CityEquipmentView>(), _selectedEquipment,
+            id => { _selectedEquipment = id; _bookUpgradeSelection?.Invoke(id); }, e =>
             {
+                if (HostedByBook) { _bookUpgradePurchase?.Invoke(e); return; }
                 if (_busy || ModalOpen) return;
                 var current = _cityModel?.Equipment(_city).FirstOrDefault(i => i.Id == e.Id);
                 if (current is null || !current.CanBuy || current.Level != e.Level || current.Price != e.Price)

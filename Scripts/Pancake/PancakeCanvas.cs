@@ -17,6 +17,18 @@ public partial class PancakeCanvas : Control
     private double _lastSpread;
     private float _edgeRelaxation;
     internal float EdgeRelaxation => _edgeRelaxation;
+    internal const float FlipDuration = .35f;
+    internal float FlipProgress { get; private set; } = 1;
+    internal bool IsFlipping => FlipProgress < 1;
+
+    internal void SetFlipProgress(float progress)
+    {
+        FlipProgress = Mathf.Clamp(progress, 0, 1);
+        QueueRedraw();
+    }
+
+    // The first 20% lets the spatula reach the edge; the last 10% settles the food.
+    internal static float FlipFlight(float progress) => Mathf.Clamp((progress - .2f) / .7f, 0, 1);
 
     public void TickLivingMotion(double delta, bool active, bool spreading)
     {
@@ -83,6 +95,11 @@ public partial class PancakeCanvas : Control
         }
 
         Rect2 surface = GetSurfaceRect();
+        if (IsFlipping)
+        {
+            DrawFlippingPancake(surface, qualityTint);
+            return;
+        }
         float scale = runtime.State switch
         {
             PancakeState.BatterPlaced => Mathf.Lerp(0.22f, 0.32f, BatterDropProgress),
@@ -191,6 +208,82 @@ public partial class PancakeCanvas : Control
             stoveSize *= fit;
         }
         return (center, stoveSize);
+    }
+
+    private void DrawFlippingPancake(Rect2 surface, Color tint)
+    {
+        float flight = FlipFlight(FlipProgress);
+        float lift = Mathf.Sin(flight * Mathf.Pi);
+        // A soft contact shadow stays on the stove while the pancake leaves it.
+        for (int i = 3; i >= 0; i--)
+        {
+            Rect2 shadow = ScaleFromCenter(surface, .94f - .09f * lift).Grow(i * 3);
+            DrawEllipse(shadow, new Color(.18f, .10f, .06f, .035f * lift));
+        }
+        float settle = FlipProgress > .9f ? Mathf.Sin((FlipProgress - .9f) * 10 * Mathf.Pi) : 0;
+        Vector2 size = surface.Size * new Vector2(1 + .018f * lift + .008f * settle,
+            Math.Max(.055f, Mathf.Abs(Mathf.Cos(flight * Mathf.Pi))) * (1 - .025f * settle));
+        Vector2 center = surface.GetCenter() + new Vector2(0, -44 * lift);
+        Rect2 food = new(center - size * .5f, size);
+        float light = 1 - .16f * lift;
+        Color face = new(tint.R * light, tint.G * light, tint.B * light, tint.A);
+        // Warp the silhouette and every texture through the same curve so the egg
+        // remains attached to the skin, including when the pancake is edge-on.
+        DrawBentEllipse(food, surface, new Color(.29f, .16f, .11f, tint.A));
+        DrawBentEllipse(new Rect2(food.Position + new Vector2(4, 4), food.Size - new Vector2(8, 8)),
+            surface, new Color(1, .78f, .28f, tint.A));
+        DrawBentTexture(_art!.PancakeBase, new Rect2(food.Position + new Vector2(2.5f, 2.5f),
+            food.Size - new Vector2(5, 5)), surface, face);
+        if (_runtime!.HasEgg) DrawBentTexture(_art.PancakeEgg, food, surface, face);
+    }
+
+    private Vector2 BendFlipPoint(Vector2 point, Rect2 surface)
+    {
+        float x = Mathf.Clamp((point.X - surface.GetCenter().X) / (surface.Size.X * .5f), -1, 1);
+        float flight = FlipFlight(FlipProgress);
+        float pickup = Mathf.Sin(Mathf.Pi * Mathf.Clamp((FlipProgress - .08f) / .34f, 0, 1));
+        float sag = 46 * Mathf.Sin(flight * Mathf.Pi);
+        float landingCurl = 12 * Mathf.Sin(Mathf.Pi * Mathf.Clamp((FlipProgress - .78f) / .22f, 0, 1));
+        // The right edge follows the spatula first. The middle then droops between
+        // the edges in flight; on landing the middle rests before the edges relax.
+        point.Y += -28 * pickup * Mathf.Pow((x + 1) * .5f, 2)
+            + sag * (1 - x * x) - landingCurl * x * x;
+        return point;
+    }
+
+    private void DrawBentEllipse(Rect2 rect, Rect2 surface, Color color)
+    {
+        if (rect.Size.X <= 0 || rect.Size.Y <= 0) return;
+        const int segments = 96;
+        var points = new Vector2[segments];
+        for (int i = 0; i < segments; i++)
+        {
+            float angle = Mathf.Tau * i / segments;
+            points[i] = BendFlipPoint(rect.GetCenter() + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * rect.Size * .5f, surface);
+        }
+        DrawColoredPolygon(points, color);
+        var outline = new Vector2[segments + 1];
+        points.CopyTo(outline, 0); outline[segments] = points[0];
+        DrawPolyline(outline, color, 1, true);
+    }
+
+    private void DrawBentTexture(Texture2D texture, Rect2 rect, Rect2 surface, Color tint)
+    {
+        // Narrow textured strips follow the curve without allocating scene nodes
+        // or changing the stove's input region. Adjacent strips share exact edges.
+        const int strips = 40;
+        var vertices = new Vector2[4];
+        var uv = new Vector2[4];
+        var colors = new[] { tint };
+        for (int i = 0; i < strips; i++)
+        {
+            float left = (float)i / strips, right = (float)(i + 1) / strips;
+            uv[0] = new(left, 0); uv[1] = new(right, 0);
+            uv[2] = new(right, 1); uv[3] = new(left, 1);
+            for (int corner = 0; corner < 4; corner++)
+                vertices[corner] = BendFlipPoint(rect.Position + rect.Size * uv[corner], surface);
+            DrawPolygon(vertices, colors, uv, texture);
+        }
     }
 
     private void DrawPancakeSurface(Rect2 rect, Color tint)

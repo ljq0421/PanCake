@@ -10,6 +10,7 @@ public sealed class BookUpgradeSource
     private readonly DataCatalog? _catalog;
     private readonly YangzhouCatalog? _yangzhou;
     private readonly string _city;
+    public string CityId => _city;
     public CityEquipmentView[] Equipment => new CityPageModel(_catalog, _save, _yangzhou).Equipment(_city);
     public int Coins => _save.Data.Coins;
     public BookUpgradeSource(SaveService save, DataCatalog catalog, string city) { _save = save; _catalog = catalog; _city = city; }

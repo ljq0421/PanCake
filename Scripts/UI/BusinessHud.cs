@@ -3,16 +3,19 @@ using ProjectCake.Core;
 
 namespace ProjectCake.UI;
 
-/// <summary>Three separated shop signs, shared by the three illustrated chapters.</summary>
+/// <summary>One illustrated day, time and income sign shared by all city workbenches.</summary>
 public partial class BusinessHud : Control
 {
     private readonly string _city;
-    private readonly Label _day = TianjinUi.Label("1", 28);
-    private readonly Label _orders = TianjinUi.Label("0/0", 25);
-    private readonly Label _time = TianjinUi.Label("00:00", 32);
-    private readonly Label _income = TianjinUi.Label("0", 27);
-    private TextureRect _peak = null!;
-    private Control _daySign = null!, _progressSign = null!, _incomeSign = null!;
+    public const string ArtworkPath = "res://resource/art/Global/PanelUI/HUD.png";
+    // Current HUD.png (1916 x 821): exclude near-transparent export specks as well as padding.
+    private static readonly Rect2 ArtworkRegion = new(97, 177, 1723, 396);
+    private const float ArtworkScale = 440f / 1723;
+    private readonly Label _day = TianjinUi.Label("1", 25, alignment: HorizontalAlignment.Center);
+    private readonly Label _time = TianjinUi.Label("00:00", 25, alignment: HorizontalAlignment.Center);
+    private readonly Label _income = TianjinUi.Label("0", 25, alignment: HorizontalAlignment.Center);
+    private Control _sign = null!;
+    public Control IncomeCoin { get; } = new() { Name = "IncomeCoin" };
     public Button PauseButton { get; } = new() { Name = "HudPause" };
     public Control IncomeTarget => _income;
     private Tween? _incomeTween;
@@ -42,21 +45,29 @@ public partial class BusinessHud : Control
         ZIndex = 70;
         TextureFilter = TextureFilterEnum.LinearWithMipmaps;
         SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
-        _daySign = Sign("DaySign", "小型营业日签底板", new(24, 6, 250, 94));
-        Icon(_daySign, "经营手账页图标", new(40, 35, 36, 36));
-        Place(_daySign, _day, new(92, 34, 70, 38));
-        _peak = Icon(_daySign, "高峰状态徽记", new(166, 39, 28, 28));
-        _progressSign = Sign("ProgressSign", "中央经营挂牌底板", new(745, 6, 430, 94));
-        Icon(_progressSign, "今日订单图标", new(40, 35, 34, 34));
-        Place(_progressSign, _orders, new(86, 33, 108, 40));
-        Icon(_progressSign, "厨房计时器", new(222, 33, 38, 38));
-        Place(_progressSign, _time, new(271, 30, 128, 44));
-        _incomeSign = Sign("IncomeSign", "收入挂牌底板", new(1586, 6, 240, 94));
-        var coin = new TextureRect { Texture = GD.Load<Texture2D>("res://resource/art/TianJin/金币图标.png"),
-            ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered };
-        Place(_incomeSign, coin, new(38, 35, 36, 36));
-        Place(_incomeSign, _income, new(86, 34, 124, 38));
-        StyleIconButton(PauseButton, LoadArt("暂停铜扣"));
+        // Exclude transparent margins at runtime, retaining the supplied image unchanged.
+        _sign = new TextureRect { Name = "HudArtwork",
+            Texture = new AtlasTexture { Atlas = GD.Load<Texture2D>(ArtworkPath), Region = ArtworkRegion },
+            ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+            StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered };
+        Place(this, _sign, new(Vector2.Zero, ArtworkRegion.Size * ArtworkScale));
+        if (_city == "武汉")
+        {
+            var material = new ShaderMaterial { Shader = GD.Load<Shader>("res://resource/shaders/business_hud_city.gdshader") };
+            material.SetShaderParameter("accent", WuhanUi.Accent);
+            material.SetShaderParameter("outline", WuhanUi.Ink);
+            _sign.Material = material;
+            _day.AddThemeColorOverride("font_color", WuhanUi.Text);
+            _income.AddThemeColorOverride("font_color", WuhanUi.Text);
+        }
+        _day.Name = "DaySign"; _time.Name = "TimeSign"; _income.Name = "IncomeSign";
+        _day.ClipText = _time.ClipText = _income.ClipText = true;
+        PlaceOnArtwork(_day, new(530, 355, 173, 110));
+        PlaceOnArtwork(_time, new(956, 355, 212, 110));
+        PlaceOnArtwork(_income, new(1410, 355, 255, 110));
+        PlaceOnArtwork(IncomeCoin, new(1254, 340, 145, 145));
+        if (_city is "天津" or "武汉" or "西安") StyleIconButton(PauseButton, LoadArt("暂停铜扣"));
+        else PauseButton.Hide(); // Guangzhou and Yangzhou keep their existing pause/resume controls.
         PauseButton.Position = new(1840, 28); PauseButton.Size = new(56, 56);
         AddChild(PauseButton);
         Resized += LayoutSigns;
@@ -65,28 +76,39 @@ public partial class BusinessHud : Control
 
     private void LayoutSigns()
     {
-        _progressSign.Position = new((Size.X - 430) / 2, 6);
-        _incomeSign.Position = new(Size.X - 334, 6);
+        _sign.Position = new((Size.X - _sign.Size.X) / 2, 6);
         PauseButton.Position = new(Size.X - 80, 28);
     }
 
-    public void Render(DayController controller, string dayDescription, bool peak, bool allowPause)
+    public void Render(DayController controller, bool allowPause)
     {
         if (controller.CurrentConfig is not { } config) return;
-        _day.Text = config.Day.ToString();
-        _peak.Visible = peak;
-        _orders.Text = $"{controller.Ledger?.CompletedCustomers ?? 0}/{config.CustomerCount}";
         double seconds = controller.State switch {
             DayState.Opening => controller.OpeningRemainingSeconds,
             DayState.Closing => controller.ClosingRemainingSeconds,
             DayState.Results => 0,
             _ => controller.DayRemainingSeconds };
+        RenderValues(config.Day, seconds, controller.Ledger?.Build().TotalRevenue ?? 0, controller.State == DayState.Closing);
+        PauseButton.Disabled = !allowPause;
+        if (_city is "天津" or "武汉" or "西安") OfferInterfaceTeaching(controller, allowPause);
+    }
+
+    public void RenderValues(int day, double seconds, int income, bool closing)
+    {
+        _day.Text = day.ToString();
         int remaining = Math.Max(0, (int)Math.Ceiling(seconds));
         _time.Text = $"{remaining / 60:00}:{remaining % 60:00}";
-        _time.AddThemeColorOverride("font_color", controller.State == DayState.Closing ? new Color("#9B422F") : TianjinUi.BrownText);
-        _income.Text = (controller.Ledger?.Build().TotalRevenue ?? 0).ToString();
-        PauseButton.Disabled = !allowPause;
-        OfferInterfaceTeaching(controller, allowPause);
+        _time.AddThemeColorOverride("font_color", closing ? new Color("#9B422F") : _city == "武汉" ? WuhanUi.Text : TianjinUi.BrownText);
+        _income.Text = income.ToString();
+        FitNumber(_day); FitNumber(_time); FitNumber(_income);
+    }
+
+    private static void FitNumber(Label label)
+    {
+        int fontSize = 25;
+        Font font = label.GetThemeFont("font");
+        while (fontSize > 12 && font.GetStringSize(label.Text, fontSize: fontSize).X > label.Size.X - 4) fontSize--;
+        label.AddThemeFontSizeOverride("font_size", fontSize);
     }
 
     private void OfferInterfaceTeaching(DayController controller, bool allowPause)
@@ -124,42 +146,11 @@ public partial class BusinessHud : Control
         button.ButtonUp += () => icon.Modulate = Colors.White;
     }
 
-    private Control Sign(string name, string art, Rect2 rect)
-    {
-        var sign = new BusinessHudSign { Name = name, Texture = LoadArt(art), MouseFilter = MouseFilterEnum.Ignore };
-        if (_city == "天津") sign.Material = new ShaderMaterial {
-            Shader = GD.Load<Shader>("res://resource/shaders/tianjin_sign_paper.gdshader") };
-        Place(this, sign, rect); return sign;
-    }
-    private TextureRect Icon(Control parent, string art, Rect2 rect)
-    {
-        var icon = new TextureRect { Texture = LoadArt(art), ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
-            StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered };
-        Place(parent, icon, rect); return icon;
-    }
+    private void PlaceOnArtwork(Control child, Rect2 source)
+        => Place(_sign, child, new((source.Position - ArtworkRegion.Position) * ArtworkScale, source.Size * ArtworkScale));
     private static void Place(Control parent, Control child, Rect2 rect)
     {
         child.MouseFilter = MouseFilterEnum.Ignore; child.Position = rect.Position; child.Size = rect.Size;
         parent.AddChild(child);
-    }
-}
-
-/// <summary>Stretch only the blank bands; keep the ties, side ornaments and center seal proportional.</summary>
-public partial class BusinessHudSign : Control
-{
-    public Texture2D Texture { get; set; } = null!;
-    public override void _Draw()
-    {
-        float w = Texture.GetWidth(), h = Texture.GetHeight(), scale = Size.Y / h;
-        float[] cuts = { 0, .24f, .45f, .55f, .76f, 1 };
-        float flexible = Math.Max(0, Size.X - w * .58f * scale) / 2;
-        float x = 0;
-        for (int i = 0; i < 5; i++)
-        {
-            float sourceWidth = (cuts[i + 1] - cuts[i]) * w;
-            float width = i is 1 or 3 ? flexible : sourceWidth * scale;
-            DrawTextureRectRegion(Texture, new Rect2(x, 0, width, Size.Y), new Rect2(cuts[i] * w, 0, sourceWidth, h));
-            x += width;
-        }
     }
 }

@@ -8,6 +8,8 @@ namespace ProjectCake.UI;
 
 public enum BookOutcome { Correct, Perfect, Incorrect, Lost, Unreceived }
 public enum BookFilter { All, Completed, Incorrect, Lost }
+public enum BookHighlightKind { Perfect, NoLoss, Tips, CorrectStreak }
+public sealed record BookHighlight(BookHighlightKind Kind, string Caption);
 public sealed record BookProduct(string Id, string Name, int Quantity, string Visual, string Preference = "");
 public sealed record BookOrder(int Number, string Id, string Customer, string Appearance,
     IReadOnlyList<BookProduct> Products, BookOutcome Outcome, int Sales, int Tips, double? Score, string Reason = "")
@@ -34,6 +36,19 @@ public sealed class BusinessBookModel
     public int Resolved => Result.CompletedCustomers + Result.LostCustomers;
     public double? CompletionRate => Resolved == 0 ? null : 100d * Result.CompletedCustomers / Resolved;
     public double? Satisfaction => Result.CompletedCustomers == 0 ? null : Result.Satisfaction;
+    public IReadOnlyList<BookHighlight> Highlights
+    {
+        get
+        {
+            var highlights = new List<BookHighlight>(4);
+            if (Result.PerfectOrders > 0) highlights.Add(new(BookHighlightKind.Perfect, $"完美出餐 ×{Result.PerfectOrders}"));
+            if (Result.CompletedCustomers > 0 && Result.LostCustomers == 0)
+                highlights.Add(new(BookHighlightKind.NoLoss, Closing ? "零流失" : "暂未流失"));
+            if (Result.Tips > 0) highlights.Add(new(BookHighlightKind.Tips, $"小费 ¥{Result.Tips}"));
+            if (Result.HighestCorrectStreak >= 2) highlights.Add(new(BookHighlightKind.CorrectStreak, $"连续正确 ×{Result.HighestCorrectStreak}"));
+            return Array.AsReadOnly(highlights.Take(3).ToArray());
+        }
+    }
     public BookProduct? BestSeller => Orders.Where(o => !o.Lost).SelectMany(o => o.Products)
         .GroupBy(p => p.Id, StringComparer.Ordinal).Select(g => g.First() with { Quantity = g.Sum(p => p.Quantity), Preference = "" })
         .OrderByDescending(p => p.Quantity).ThenBy(p => p.Id, StringComparer.Ordinal).FirstOrDefault();

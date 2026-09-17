@@ -41,8 +41,6 @@ public sealed class DayConfig
     [JsonRequired]
     public double DurationSeconds { get; set; }
 
-    public bool FinishWhenAllCustomersServed { get; set; }
-
     [JsonRequired]
     public int CustomerCount { get; set; }
 

@@ -4,7 +4,7 @@ using System.Text;
 
 namespace ProjectCake.UI;
 
-internal enum TianjinPaintedObject { SoyTray, Trash, Pendant }
+internal enum TianjinPaintedObject { SoyTray, Trash, Pendant, Sauce }
 
 /// <summary>Ink silhouettes shared by the visible highlight and pendant hit testing.</summary>
 internal static class TianjinPaintedObjectContour
@@ -18,6 +18,14 @@ internal static class TianjinPaintedObjectContour
         if (Cache.TryGetValue((background, id), out Matte? matte)) return matte;
         Part[] parts = id switch
         {
+            // The green bowl has its own silhouette, not a translated batter bowl.
+            // Read its outer ink directly; the pale rim and cast shadow are not edges.
+            TianjinPaintedObject.Sauce => [new(.42f, [new(1010,682), new(1055,689),
+                new(1074,671), new(1085,669), new(1095,674), new(1097,685),
+                new(1076,705), new(1090,719), new(1093,737), new(1085,776),
+                new(1073,793), new(1053,805), new(1020,809), new(989,800),
+                new(970,782), new(956,753), new(948,727), new(949,713),
+                new(960,698), new(986,686)])],
             TianjinPaintedObject.SoyTray => [new(.42f, [new(1484,578), new(1585,578), new(1603,584),
                 new(1612,597), new(1660,774), new(1662,790), new(1655,803), new(1636,809),
                 new(1508,809), new(1493,802), new(1486,789), new(1460,601), new(1460,590), new(1470,582)])],

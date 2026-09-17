@@ -22,10 +22,12 @@ public sealed class SoyMilkTrayRuntime
         Quantity = capacity;
     }
 
-    public bool TryConsumeForDelivery()
+    public bool TryConsumeForDelivery() => TryConsumeForDelivery(1);
+
+    public bool TryConsumeForDelivery(int quantity)
     {
-        if (!CanStartDrag) return false;
-        Quantity--;
+        if (!CanStartDrag || quantity <= 0 || quantity > Quantity) return false;
+        Quantity -= quantity;
         IsTaking = true;
         TakingProgress = 0;
         Changed?.Invoke();

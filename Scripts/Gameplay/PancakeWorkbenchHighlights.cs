@@ -155,10 +155,12 @@ internal partial class TianjinEquipmentHighlightView : Control
         foreach (Contour contour in _contours)
         {
             if (contour.State == InteractionHighlightState.None) continue;
-            if (contour.Id is "soy_tray" or "trash")
+            if (contour.Id is "soy_tray" or "trash" or StableIds.Ingredients.Sauce)
             {
                 TianjinPaintedObjectContour.Draw(this, Background(),
-                    contour.Id == "soy_tray" ? TianjinPaintedObject.SoyTray : TianjinPaintedObject.Trash, contour.State);
+                    contour.Id == "soy_tray" ? TianjinPaintedObject.SoyTray
+                        : contour.Id == StableIds.Ingredients.Sauce ? TianjinPaintedObject.Sauce
+                        : TianjinPaintedObject.Trash, contour.State);
                 continue;
             }
             if (contour.Id == "youtiao_rack")

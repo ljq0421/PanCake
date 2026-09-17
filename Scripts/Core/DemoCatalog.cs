@@ -18,7 +18,6 @@ public sealed class DemoStage
     public required string TitleZh { get; init; }
     public required string TitleEn { get; init; }
     public double DurationSeconds { get; init; }
-    public bool FinishWhenAllCustomersServed { get; init; }
     public double PatienceMultiplier { get; init; }
     public required double[] Arrivals { get; init; }
     public string[] Recipes { get; init; } = Array.Empty<string>();
@@ -34,7 +33,6 @@ public sealed class DemoStage
     {
         SourcePath = ExperienceProfile.ManifestPath, CityId = CityId, Day = Day,
         DurationSeconds = DurationSeconds, CustomerCount = ExplicitOrders.Length,
-        FinishWhenAllCustomersServed = FinishWhenAllCustomersServed,
         ExpectedRevenue = ExplicitOrders.Sum(o => Price(o, recipes, products)), PatienceMultiplier = PatienceMultiplier,
         MaxWaitingCustomers = 5, RandomSeed = (CityId == StableIds.Cities.Tianjin ? 1000 : 2000) + Day,
         SatisfactionAverageMode = SatisfactionAverageMode.CompletedCustomers,

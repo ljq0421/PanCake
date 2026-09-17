@@ -3,6 +3,7 @@ using ProjectCake.Core;
 using ProjectCake.Gameplay;
 using ProjectCake.Orders;
 using ProjectCake.UI;
+using ProjectCake.Yangzhou;
 
 namespace ProjectCake.Tests;
 
@@ -51,9 +52,12 @@ public partial class BusinessHudSelfTest : Node
                 }
                 Refresh();
                 await Frames();
+                foreach (var close in screen.Descendants<Button>().Where(b => b.IsVisibleInTree() && b.Text == "本次关闭").ToArray())
+                    close.EmitSignal(Button.SignalName.Pressed);
+                Refresh(); await Frames();
                 var hud = screen.FindChild("BusinessHud", true, false) as BusinessHud ?? throw new Exception("HUD absent");
                 Require(hud.IsVisibleInTree(), "HUD visible");
-                Require(hud.GetNode<Control>("DaySign").GetGlobalRect().End.X < hud.GetNode<Control>("ProgressSign").GetGlobalRect().Position.X, "separate signs");
+                CheckArtwork(hud);
                 Require(hud.PauseButton.GetGlobalRect().End.X <= 1920, "pause in viewport");
                 Require(hud.PauseButton.GetThemeStylebox("focus") is StyleBoxEmpty, "art pause has no rectangular focus frame");
                 hud.PauseButton.GrabFocus(); await Frames();
@@ -77,14 +81,17 @@ public partial class BusinessHudSelfTest : Node
                 foreach (string message in new[] { "开始抹酱。", "煎饼已折叠。", "煎饼已经装袋。", "食物已丢弃。",
                     "切块完成，将自动补入备餐盘。", "已离火，品质锁定；继续沿其余虚线切块。", "提篮，开始沥水。" })
                 {
+                    screen._Notification((int)NotificationApplicationFocusIn);
                     feedback.Report(message, false, new Vector2(960, 620));
                     Require(feedback.GetChildCount() == (city == "Xian" ? 1 : 0), "only deliveries show checkmarks in Tianjin and Wuhan");
                     feedback.Clear(); await Frames();
                 }
+                screen._Notification((int)NotificationApplicationFocusIn);
                 feedback.Delivery(new DeliveryEvaluation(DeliveryGrade.Correct, 10, 0, 100, "正确"), order);
                 Require(feedback.Descendants<TextureRect>().Any(c => c.Texture?.ResourcePath.Contains("正确反馈小勾") == true), "correct delivery retains checkmark");
                 if (capture) await Shot(viewport, $"{city}-{width}-correct-delivery");
                 feedback.Clear(); await Frames();
+                screen._Notification((int)NotificationApplicationFocusIn);
                 feedback.Delivery(new DeliveryEvaluation(DeliveryGrade.Perfect, 10, 1, 100, "Perfect"), order);
                 Require(feedback.Descendants<TextureRect>().Any(c => c.Texture?.ResourcePath.Contains("Perfect 小星章") == true), "perfect delivery retains star");
                 feedback.Report("这份餐品不符合订单，请检查配料。", true, screen.GetGlobalTransform() * new Vector2(1300, 620));
@@ -106,7 +113,7 @@ public partial class BusinessHudSelfTest : Node
                 Require(pausePanel?.GetThemeStylebox("panel") is StyleBoxTexture
                     && (city is "Tianjin" or "Wuhan"
                         ? pausePanel.GetNode<Control>("IllustratedContents").GetChildren().OfType<Label>().Any(label => label.IsVisibleInTree() && label.Text.Length > 0)
-                        : screen.FindChild(city + "PauseTitleTape", true, false) is Control { Visible: true }),
+                        : pausePanel.GetNode<Label>("Title").IsVisibleInTree()),
                     "pause uses the shared illustrated panel treatment");
                 if (capture) await Shot(viewport, $"{city}-{width}-paused");
                 if (screen is WuhanDayScreen)
@@ -130,11 +137,77 @@ public partial class BusinessHudSelfTest : Node
                 viewport.QueueFree(); controller.QueueFree(); await Frames();
                 GD.Print($"HUD_PASS {city} {width}");
             }
+            await CheckRemainingCities(catalog, save, capture, selectedCity);
             GD.Print("BUSINESS_HUD_TEST_PASS"); GetTree().Quit();
         }
         catch (Exception e) { GD.PushError(e.ToString()); GetTree().Quit(1); }
     }
     private static void Require(bool condition, string message) { if (!condition) throw new Exception(message); }
+    private static void CheckArtwork(BusinessHud hud)
+    {
+        var art = hud.GetNode<TextureRect>("HudArtwork");
+        Require(art.Texture is AtlasTexture { Atlas.ResourcePath: BusinessHud.ArtworkPath }, "shared HUD artwork");
+        Require(Math.Abs(art.GetGlobalRect().GetCenter().X - 960) < 1, "HUD centered");
+        Require(art.GetGlobalRect().End.Y <= 108, "HUD clears customer row and hints");
+        var atlas = (AtlasTexture)art.Texture;
+        Require(new Rect2(Vector2.Zero, atlas.Atlas.GetSize()).Encloses(atlas.Region), "HUD atlas stays inside current source image");
+        Require(Math.Abs(art.Size.X / art.Size.Y - atlas.Region.Size.X / atlas.Region.Size.Y) < .001f, "artwork keeps aspect ratio");
+        Require(art.GetChildren().OfType<Label>().Count() == 3, "only day, clock and income remain");
+        foreach (var label in art.GetChildren().OfType<Label>())
+        {
+            // Read actual source-space bounds, catching stale label coordinates after an asset replacement.
+            float scale = art.Size.X / atlas.Region.Size.X;
+            Rect2 source = new(label.Position / scale + atlas.Region.Position, label.Size / scale);
+            Rect2 safe = label.Name.ToString() switch
+            {
+                "DaySign" => new(512, 335, 200, 150),
+                "TimeSign" => new(949, 335, 224, 150),
+                _ => new(1400, 335, 275, 150),
+            };
+            Require(safe.Encloses(source), "HUD number clears source icons, separators and side ornaments");
+            Require(art.GetGlobalRect().Encloses(label.GetGlobalRect()), "HUD text stays inside artwork");
+            Require(label.GetThemeFont("font").GetStringSize(label.Text, fontSize: label.GetThemeFontSize("font_size")).X <= label.Size.X,
+                "HUD number fits its region");
+        }
+        Require(!InterfaceLessons.Business.Any(lesson => lesson.Target == "ProgressSign"), "teaching no longer refers to order progress");
+    }
+
+    private async Task CheckRemainingCities(DataCatalog catalog, SaveService save, bool capture, string? selectedCity)
+    {
+        save.Data.Guangzhou.HighestUnlockedDay = save.Data.Yangzhou.HighestUnlockedDay = 12;
+        foreach (int width in new[] { 1920, 1280 })
+        foreach (string city in new[] { "Guangzhou", "Yangzhou" }.Where(city => selectedCity is null || selectedCity == city))
+        {
+            var viewport = new SubViewport { Size = new(width, width * 9 / 16), Size2DOverride = new(1920, 1080),
+                Size2DOverrideStretch = true, RenderTargetUpdateMode = SubViewport.UpdateMode.Always };
+            AddChild(viewport); viewport.NotifyMouseEntered();
+            var controller = new DayController(); AddChild(controller); controller.SetProcess(false);
+            var screen = GD.Load<PackedScene>($"res://Scenes/Gameplay/{city}DayScreen.tscn").Instantiate<Control>();
+            viewport.AddChild(screen); screen.SetProcess(false);
+            if (screen is GuangzhouDayScreen g)
+            { Require(g.Initialize(catalog, save, controller, 12), "Guangzhou initialize"); g.BeginDay(); }
+            else Require(((YangzhouDayScreen)screen).Initialize(YangzhouCatalog.Load(), save, 12), "Yangzhou initialize");
+            void Step(double seconds) { screen._Notification((int)NotificationApplicationFocusIn); screen._Process(seconds); }
+            double Remaining() => screen is YangzhouDayScreen y ? y.Session.Elapsed : controller.DayElapsedSeconds;
+            Step(6); await Frames();
+            var hud = (BusinessHud)screen.FindChild("BusinessHud", true, false);
+            CheckArtwork(hud);
+            Require(hud.IsVisibleInTree() && !hud.PauseButton.IsVisibleInTree(), "shared art retains native city pause control");
+            if (capture) await Shot(viewport, $"{city}-{width}-running");
+            Button pause = screen.FindButton("暂停");
+            Click(viewport, pause); Step(0); double before = Remaining(); Step(2);
+            Require(Remaining() == before, "city pause freezes time");
+            Click(viewport, pause); Step(.25); Require(Remaining() > before, "city resume advances time");
+            var book = (Button)screen.FindChild("OpenBusinessBook", true, false);
+            Require(!book.GetGlobalRect().Intersects(hud.GetNode<Control>("HudArtwork").GetGlobalRect()), "book remains outside HUD artwork");
+            Click(viewport, book); await Frames();
+            var details = (BusinessDetailsView)screen.FindChild("BusinessDetails", true, false);
+            Require(details.Visible, "book remains clickable");
+            before = Remaining(); Step(2); Require(Remaining() == before, "book freezes time");
+            viewport.QueueFree(); controller.QueueFree(); await Frames();
+            GD.Print($"HUD_PASS {city} {width}");
+        }
+    }
     private static void Click(Viewport viewport, Control control)
     {
         Vector2 p = control.GetGlobalRect().GetCenter();

@@ -124,6 +124,7 @@ public sealed class YangzhouSession
         {
             Elapsed = Math.Min(Day.Duration, Elapsed + dt);
             Arrive();
+            if (_waiting.Count == 0 && _next == Plan.Count) { Phase = YangzhouPhase.Results; return; }
             if (Elapsed + .000001 >= Day.Duration) Phase = YangzhouPhase.Closing;
         }
         else if (Phase == YangzhouPhase.Closing)

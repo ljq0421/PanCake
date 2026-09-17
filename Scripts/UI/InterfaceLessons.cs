@@ -15,10 +15,9 @@ internal static class InterfaceLessons
     };
     internal static InterfaceLesson[] Business => new[]
     {
-        new InterfaceLesson("今天是第几天", "左上角的日签显示当前营业日。\n当天主题可以在开店前的经营手账中查看。", "DaySign"),
-        new InterfaceLesson("看懂订单进度", "订单数字表示：今日已完成订单 / 计划订单。\n它不是同时在店的顾客人数。", "ProgressSign"),
-        new InterfaceLesson("留意营业时间", "计时器显示剩余营业时间。\n开门时倒数，打烊后进入收尾；暂停时停止计时。", "ProgressSign"),
-        new InterfaceLesson("今天赚了多少", "右上角显示今日营业收入，已经包含小费。\n具体销售和小费可以在营业账本中查看。", "IncomeSign"),
+        new InterfaceLesson("今天是第几天", "顶部挂牌的日历旁显示当前营业日。\n当天主题可以在开店前的经营手账中查看。", "DaySign"),
+        new InterfaceLesson("留意营业时间", "计时器显示剩余营业时间。\n开门时倒数，打烊后进入收尾；暂停时停止计时。", "TimeSign"),
+        new InterfaceLesson("今天赚了多少", "顶部挂牌的金币旁显示今日营业收入，已经包含小费。\n具体销售和小费可以在营业账本中查看。", "IncomeSign"),
         new InterfaceLesson("需要歇一会儿", "点击暂停按钮，或按 Esc 暂停营业。\n在暂停菜单中选择继续营业即可返回。", "HudPause")
     };
     internal static InterfaceLesson[] Pendant => new[]

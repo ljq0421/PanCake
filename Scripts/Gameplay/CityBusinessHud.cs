@@ -20,8 +20,6 @@ public partial class TianjinDayScreen
         _feedbackPanel.Hide();
     }
     private void RenderBusinessHud() => _hud.Render(_controller,
-        $"天津 · 第 {_controller.CurrentConfig!.Day} 天 · {DaySubtitle(_controller.CurrentConfig.Day)}",
-        DaySubtitle(_controller.CurrentConfig.Day).Contains("高峰"),
         _focused && !_manualPaused && !_detailsPaused && !_committed && !_abandonDialog.Visible);
 }
 
@@ -89,8 +87,6 @@ public partial class WuhanDayScreen
         { SetHudPaused(!_hudPaused); GetViewport().SetInputAsHandled(); }
     }
     private void RenderBusinessHud() => _hud.Render(_controller,
-        $"武汉 · 第 {_controller.CurrentConfig!.Day} 天 · {Subtitle(_controller.CurrentConfig.Day)}\n{Tutorial(_controller.CurrentConfig.Day)}",
-        Subtitle(_controller.CurrentConfig.Day).Contains("高峰") || _controller.CurrentConfig.Day == 12,
         _focused && !_hudPaused && !_detailsPaused && !_committed && !_abandon.Visible);
 }
 
@@ -111,7 +107,10 @@ public partial class XianDayScreen
         BusinessHud.StyleIconButton(_book.Entry, _hud.LoadArt("经营手账页图标"));
         _book.Entry.Size = new(52, 52);
         // The existing collection control sits over the income coin, with the number remaining read-only.
-        CoinTray.Position = new(1616, 29); CoinTray.CustomMinimumSize = Vector2.Zero; CoinTray.Size = new(60, 58); CoinTray.ZIndex = 71;
+        CoinTray.Reparent(_hud.IncomeCoin, false);
+        CoinTray.CustomMinimumSize = Vector2.Zero;
+        CoinTray.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
+        CoinTray.ZIndex = 1;
         var collect = CoinTray.Descendants<Button>().Single();
         collect.CustomMinimumSize = Vector2.Zero;
         foreach (string state in new[] { "normal", "hover", "pressed" }) collect.AddThemeStyleboxOverride(state, new StyleBoxEmpty());
@@ -122,8 +121,38 @@ public partial class XianDayScreen
     private void RenderBusinessHud()
     {
         _hud.Render(_controller,
-        $"西安 · 第 {Session.Day} 天 · {XianRules.Titles[Session.Day - 1]}",
-        XianRules.Titles[Session.Day - 1].Contains("高峰"),
         _focused && !_controller.IsPaused && !_results.Visible && !_exitDialog.Visible);
+    }
+}
+
+public partial class GuangzhouDayScreen
+{
+    private BusinessHud _hud = null!;
+    private void BuildBusinessHud()
+    {
+        _title.Hide(); _clock.Hide(); _income.Hide();
+        _hud = new BusinessHud("广州"); _canvas.AddChild(_hud);
+    }
+}
+
+public partial class YangzhouDayScreen
+{
+    private BusinessHud _hud = null!;
+    private void BuildBusinessHud()
+    {
+        _header.Hide();
+        _hud = new BusinessHud("扬州"); _canvas.AddChild(_hud);
+    }
+    private void RenderBusinessHud()
+    {
+        double remaining = Session.Phase switch
+        {
+            ProjectCake.Yangzhou.YangzhouPhase.Prep => Session.PrepRemaining,
+            ProjectCake.Yangzhou.YangzhouPhase.Closing => Session.ClosingRemaining,
+            ProjectCake.Yangzhou.YangzhouPhase.Results => 0,
+            _ => Session.Day.Duration - Session.Elapsed,
+        };
+        _hud.RenderValues(Session.Day.Day, remaining, Session.Revenue,
+            Session.Phase == ProjectCake.Yangzhou.YangzhouPhase.Closing);
     }
 }

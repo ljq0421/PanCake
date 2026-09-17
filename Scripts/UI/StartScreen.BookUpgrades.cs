@@ -26,7 +26,8 @@ public partial class StartScreen
 
     private void BookUpgradeNavigation()
     {
-        var back = Button(_body, "CloseUpgrades", "", new(72, 48, 225, 62), () => _returnToBook?.Invoke(), bare: true);
+        // Keep the return action on the right page, 16 px below the wallet's lower edge.
+        var back = Button(_body, "CloseUpgrades", "", new(1355, 238, 225, 62), () => _returnToBook?.Invoke(), bare: true);
         Art(back, "账本翻页箭头｜左", new(0, 7, 55, 48));
         Text(back, "Caption", "返回账本", new(62, 0, 160, 62), 25);
     }

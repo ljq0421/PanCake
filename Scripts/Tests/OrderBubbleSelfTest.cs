@@ -63,9 +63,9 @@ public partial class OrderBubbleSelfTest : Node
                 {
                     new[] { Main(firstRecipe, sauce: SaucePreference.Light), Main(secondRecipe, sauce: SaucePreference.Extra), sideB },
                     new[] { Main(secondRecipe, 2), sideA },
-                    new[] { Main(plainRecipe) },
+                    new[] { Main(plainRecipe), sideA },
                     new[] { sideA, sideB },
-                    new[] { Main(firstRecipe), sideA, sideB },
+                    new[] { Main(plainRecipe), sideA, sideB },
                 };
                 int count = 5;
                 // Keep these visual fixtures when Tianjin resolves live orders on arrival.
@@ -116,15 +116,15 @@ public partial class OrderBubbleSelfTest : Node
                             $"{icon.Name}: enlarged image remains inside its own product row");
                     }
                     Check(Math.Abs(bubble.Size.X - OrderBubbleView.CompactWidth) < .5 && bubble.Size.Y <= 204,
-                        "all cards use the same narrow width and three product rows fit above the customer");
+                        $"all cards use the same narrow width and three product rows fit above the customer ({wuhan}/{width}/{Array.IndexOf(bubbles, bubble)}: {bubble.Size})");
                     Check(Math.Abs(bubble.GetGlobalRect().Size.X - OrderBubbleView.CompactWidth) < .5,
                         "both cities preserve the same displayed width and icon scale");
                     foreach (Control row in Regions(bubble, "OrderSideProduct"))
                     {
-                        Control product = row.FindChild("CenteredSideProduct", true, false) as Control
-                            ?? throw new InvalidOperationException("missing centered side product");
-                        Check(Math.Abs(product.GetGlobalRect().GetCenter().X - row.GetGlobalRect().GetCenter().X) < .5,
-                            "side product stays centered with or without its quantity");
+                        Control product = (Control)row.FindChild("OrderProductIcon", true, false);
+                        if (!row.HasMeta("shared_row"))
+                            Check(Math.Abs(product.GetGlobalRect().GetCenter().X - row.GetGlobalRect().GetCenter().X) < .5,
+                                "standalone side product stays centered with or without its quantity");
                         int line = row.GetMeta("line_index").AsInt32();
                         int quantity = controller.CustomerQueue.Slots[bubbles.ToList().IndexOf(bubble)].Order.Lines[line].Quantity;
                         Check(row.FindChildren("OrderQuantity", "", true, false).Count == (quantity > 1 ? 1 : 0),
@@ -145,7 +145,8 @@ public partial class OrderBubbleSelfTest : Node
                         Check(!product.GetGlobalRect().Intersects(grid.GetGlobalRect()), "large product and topping columns do not overlap");
                     }
                     Check(bubble.FindChildren("OrderProductIcon", "", true, false).OfType<Control>()
-                        .All(icon => icon.Size.IsEqualApprox(new Vector2(74, 54))), "all finished products use the approved enlarged slots");
+                        .All(icon => icon.Size.X > 24 && icon.Size.X <= 74.1f && Math.Abs(icon.Size.Y - 54) < .1),
+                        "products retain enlarged height with artwork-aware widths in shared rows");
                 }
                 var spatialBubbles = bubbles.OrderBy(b => b.GlobalPosition.X).ToArray();
                 for (int i = 1; i < spatialBubbles.Length; i++) Check(!spatialBubbles[i-1].GetGlobalRect().Intersects(spatialBubbles[i].GetGlobalRect()), "adjacent customers' bubbles do not overlap");
@@ -168,10 +169,18 @@ public partial class OrderBubbleSelfTest : Node
                 Check(Regions(bubbles[2], "OrderMainRow")[0].FindChildren("OrderIngredientIcon*", "", true, false).Count == 0, "plain recipe has no invented topping icons");
                 Check(bubbles[2].FindChildren("OrderSauceIcon*", "", true, false).Count == 0, "normal sauce has no badge");
                 Check(bubbles[0].FindChildren("OrderSauceIcon*", "", true, false).Count == (wuhan ? 0 : 2), "only Tianjin uses the light and extra sauce badges");
-                Check(Regions(bubbles[3], "OrderSideProduct").Length == 2 && bubbles[3].FindChildren("OrderSideRow", "", true, false).Count == 0,
-                    "different side products occupy independent full-width rows");
-                Check(Regions(bubbles[3], "OrderSideProduct")[1].Position.Y > Regions(bubbles[3], "OrderSideProduct")[0].Position.Y,
-                    "side products stack vertically");
+                Control[] sharedSides = Regions(bubbles[3], "OrderSideProduct");
+                Check(sharedSides.Length == 2 && sharedSides[0].GetParent() == sharedSides[1].GetParent()
+                    && !sharedSides[0].GetGlobalRect().Intersects(sharedSides[1].GetGlobalRect()),
+                    "two side types share a row with independent nonoverlapping regions");
+                Check(Regions(bubbles[2], "OrderMainRow")[0].GetParent() == Regions(bubbles[2], "OrderSideProduct")[0].GetParent(),
+                    "a plain main and one side share a single row");
+                Check(Regions(bubbles[4], "OrderSideProduct").All(side =>
+                    side.GlobalPosition.Y > Regions(bubbles[4], "OrderMainRow")[0].GlobalPosition.Y)
+                    && bubbles[4].FindChildren("OrderSimpleRow", "", true, false).Count == 1,
+                    "three plain products use main on first row and both sides on second row");
+                Check(bubbles[2].Size.Y < 100 && bubbles[3].Size.Y < 100 && bubbles[4].Size.Y < 150,
+                    "sharing rows reduces card height for pairs and three-product combos");
                 Vector2[] initialSizes = bubbles.Select(b => b.Size).ToArray();
                 Vector2[] initialPositions = bubbles.Select(b => b.Position).ToArray();
                 await Shot($"{(wuhan ? "wuhan" : "tianjin")}-{width}-initial");
@@ -190,6 +199,9 @@ public partial class OrderBubbleSelfTest : Node
                 Accept(repeated, fixtures[1][0]); Refresh(); await Frames();
                 Control[] repeatedRows = Regions(bubbles[1], "OrderMainRow");
                 Check(Done(repeatedRows[0]) && !Done(repeatedRows[1]), "only one of two identical portions is green");
+                Accept(controller.CustomerQueue.Slots[2], fixtures[2][0]); Refresh(); await Frames();
+                Check(Done(Regions(bubbles[2], "OrderMainRow")[0]) && !Done(Regions(bubbles[2], "OrderSideProduct")[0]),
+                    "delivering the main in a shared row leaves the adjacent side incomplete");
                 ulong[] ids = bubbles[0].FindChildren("*","",true,false).Select(n => n.GetInstanceId()).ToArray();
                 for (int i=0;i<10;i++) Refresh();
                 Check(ids.SequenceEqual(bubbles[0].FindChildren("*","",true,false).Select(n=>n.GetInstanceId())), "progress refresh reuses nodes and food icons");
@@ -202,6 +214,7 @@ public partial class OrderBubbleSelfTest : Node
                 Check(Done(sideRegions[1]) && ((Label)sideRegions[1].FindChild("OrderQuantity",true,false)).Text == "2/2", "second side greens only at full quantity");
                 screen.Free(); controller.Free(); save.Free(); await Frames();
             }
+            await CheckPlainVariants(catalog);
             foreach (int width in new[] { 1920, 1280 })
             {
                 GetWindow().Size = new Vector2I(width, width * 9 / 16);
@@ -210,6 +223,40 @@ public partial class OrderBubbleSelfTest : Node
             GD.Print($"ORDER_BUBBLE_TEST: {_passed} passed, 0 failed"); GetTree().Quit();
         }
         catch(Exception e) { GD.PushError(e.ToString()); GetTree().Quit(1); }
+    }
+    private async Task CheckPlainVariants(DataCatalog catalog)
+    {
+        var bubble = SceneFactory.Instantiate<OrderBubbleView>("res://Scenes/UI/OrderBubbleView.tscn");
+        AddChild(bubble); bubble.ConfigureTianjinPaper();
+        foreach (SaucePreference sauce in Enum.GetValues<SaucePreference>())
+        {
+            var order = new OrderData { OrderId = $"plain-{sauce}", CityId = "tianjin", CustomerTypeId = "normal", Lines = new[] {
+                new OrderLineData(ProductKind.Pancake, "pancake_basic", 2, sauce),
+                new OrderLineData(ProductKind.Youtiao, "youtiao", 2) } };
+            var progress = new OrderProgress(order);
+            bubble.Render(order, progress, catalog.RecipesById); await Frames();
+            Check(bubble.FindChildren("OrderSimpleRow", "", true, false).Count == (sauce == SaucePreference.Normal ? 1 : 0),
+                "only normal-sauce plain pancakes may share with a side");
+            Check(bubble.FindChildren("OrderSauceIcon*", "", true, false).Count == (sauce == SaucePreference.Normal ? 0 : 2),
+                "both special-sauce portions keep their visible requirement");
+            Check(Regions(bubble, "OrderMainRow").Length == 2, "pairing preserves each repeated main portion");
+            Check(Math.Abs(bubble.Size.X - OrderBubbleView.CompactWidth) < .5, "plain pancake plus repeated youtiao keeps fixed width");
+            foreach (TextureRect icon in bubble.FindChildren("*", "TextureRect", true, false).OfType<TextureRect>()) CheckIconEdges(icon);
+        }
+        var sides = new OrderData { OrderId = "double-sides", CityId = "tianjin", CustomerTypeId = "normal", Lines = new[] {
+            new OrderLineData(ProductKind.SoyMilk, "soy_milk", 2), new OrderLineData(ProductKind.Youtiao, "youtiao", 2) } };
+        bubble.Render(sides, new OrderProgress(sides), catalog.RecipesById); await Frames();
+        Check(Math.Abs(bubble.Size.X - OrderBubbleView.CompactWidth) < .5 && bubble.Size.Y < 100,
+            "two repeated side types and both quantity labels fit a single narrow row");
+        foreach (Control side in Regions(bubble, "OrderSideProduct"))
+        {
+            var icon = (TextureRect)side.FindChild("OrderProductIcon", true, false);
+            var quantity = (Control)side.FindChild("OrderQuantity", true, false);
+            Check(side.GetGlobalRect().Grow(.1f).Encloses(quantity.GetGlobalRect())
+                && !icon.GetGlobalRect().Intersects(quantity.GetGlobalRect()), "both shared progress labels fit without overlapping food");
+            CheckIconEdges(icon);
+        }
+        bubble.Free();
     }
     private async Task CheckXian(DataCatalog catalog)
     {

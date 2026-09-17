@@ -65,7 +65,7 @@ public partial class DemoJourneySelfTest : Node
                                     result = controller.TryDeliverPreparedPancakeTo(customer.Id, new PreparedPancake(PancakeQuality.Perfect, c.RecipesById[line.DefinitionId].ExtraIngredients.ToHashSet(), YoutiaoQuality.Golden), c, () => true);
                                 else if (line.ProductKind == ProductKind.Youtiao)
                                 { var inventory = new YoutiaoInventory(1); inventory.TryStore(1, YoutiaoQuality.Golden); result = controller.TryDeliverYoutiaoTo(customer.Id, inventory); }
-                                else if (line.ProductKind == ProductKind.SoyMilk) result = controller.TryDeliverSoyMilkTo(customer.Id, new SoyMilkTrayRuntime());
+                                else if (line.ProductKind == ProductKind.SoyMilk) result = controller.TryDeliverSoyMilkTo(customer.Id, new SoyMilkTrayRuntime(1));
                                 else result = controller.TryDeliverWuhanTo(customer.Id, new DeliveredItem(line.ProductKind, line.DefinitionId, WuhanQuality: line.ProductKind == ProductKind.HotDryNoodles ? WuhanFoodQuality.MixedComplete : WuhanFoodQuality.None), () => true);
                                 if (!result.ItemAccepted && !result.CompletesOrder) throw new Exception(stage.Id + " real delivery rejected: " + result.Message);
                             }

@@ -74,7 +74,7 @@ public partial class CityPagesSelfTest : Node
                 var city = JourneyModel.Cities[i];
                 Click("Node" + i); await Frames();
                 Check(_screen.Page == JourneyPage.City && _screen.SelectedCityId == city.Id, "unlocked node directly opens city page " + city.Name);
-                Click("Back"); await Frames();
+                _screen._Input(new InputEventKey { Keycode = Key.Escape, Pressed = true }); await Frames();
                 var mapCard = Find<Panel>("MapJourneyStrip");
                 Check(Find<TextureRect>("MapJourneyStripArt").Texture is AtlasTexture, "map uses supplied three-column strip " + city.Name);
                 Check(Find<Label>("MapLitCount").Text == "5/5", "map counts unlocked cities " + city.Name);
@@ -119,8 +119,7 @@ public partial class CityPagesSelfTest : Node
                     Check(label.Position.Y + label.Size.Y <= ((Control)label.GetParent()).Size.Y + 1, "fixed label fits " + city.Name + "/" + label.Name);
                 await Capture(city.Name + "-upgrades");
                 Check(File.ReadAllText(_path) == before, "browsing never writes " + city.Name);
-                Click("MapTab"); await Frames(); Click("Back");
-                Check(_screen.Page == JourneyPage.Upgrades && _screen.SelectedCityId == city.Id, "map restores source city and tab " + city.Name);
+                Check(_screen.Page == JourneyPage.Upgrades && !_screen.Descendants<Button>().Any(b => b.Name == "MapTab"), "upgrade page has no map bookmark " + city.Name);
                 Click("Settings"); await Frames();
                 var settingsBooks = _screen.GetNode<Control>("Canvas/Modal").GetChildren().OfType<TextureRect>().ToArray();
                 Check(settingsBooks.Length > 0 && settingsBooks.All(t => t.Material is null), "settings book remains original " + city.Name);
@@ -178,8 +177,7 @@ public partial class CityPagesSelfTest : Node
             Check(_screen.FindChildren("PerfectStamp", "TextureRect", true, false).Count == 0, "zero perfect has no stamp");
             Click("Date1");
             Check(_screen.FindChildren("FinalDayCrown", "TextureRect", true, false).Count == 0, "ordinary day has no crown");
-            Click("MapTab"); Click("Back");
-            Check(_screen.Page == JourneyPage.Ledger && _screen.SelectedDay == 1, "map restores selected ledger date");
+            Check(_screen.Page == JourneyPage.Ledger && _screen.SelectedDay == 1 && !_screen.Descendants<Button>().Any(b => b.Name == "MapTab"), "ledger retains selected date without map bookmark");
             _screen.PresentHome(); Click("NewGame"); Click("Skip");
             Check(Find<TextureRect>("SharedBook").GetRect() == StartScreen.BookBounds, "new journey shares book geometry"); await Capture("new-journey");
             Check(Find<TextureRect>("SharedBook").Material is null, "new journey book remains original");

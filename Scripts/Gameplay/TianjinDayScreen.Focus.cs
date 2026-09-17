@@ -20,6 +20,8 @@ public partial class TianjinDayScreen
     private IEnumerable<TutorialFocusTarget> TeachingClearAreas()
     {
         foreach (var target in _workstation.FocusClearAreas()) yield return target;
+        foreach (var card in _orderCards)
+            if (card.IsVisibleInTree()) yield return TutorialFocusTarget.Control(card, false);
         if (_demoGesture?.IsVisibleInTree() == true) yield return TutorialFocusTarget.Control(_demoGesture, false);
     }
     private TutorialFocusStep? ResolveTeachingFocus()
@@ -38,10 +40,15 @@ public partial class TianjinDayScreen
             ? orders.Where(o => o.Kind == ProductKind.SoyMilk).ToArray() : orders;
         var step = _workstation.ResolveFocus(focusOrders, Recipients);
         // One card owns the current instruction and the lesson action; the focus layer only spotlights it.
-        if (step is not null && _demoLesson?.Visible == true)
+        if (_demoLesson?.Visible == true)
         {
-            if (_demoLessonSaveError.Length == 0) _demoLessonHint!.Text = step.Text;
+            if (_demoLessonSaveError.Length == 0 && (step is not null || _controller.TutorialActive))
+            {
+                _demoLessonHint!.Text = step?.Text ?? "";
+                _demoLessonHint.Visible = step is not null;
+            }
             LayoutDemoLesson();
+            if (step is null) RestDemoLesson();
         }
         return step;
     }

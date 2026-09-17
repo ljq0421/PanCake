@@ -167,9 +167,14 @@ public partial class YangzhouSelfTest : Node
         }
         Check(affordable && save.Data.Yangzhou.BestStars == 3, "无需继承金币，按正常成长节奏可买齐设备并三星"); save.Free();
     }
-    public static YangzhouSession Play(YangzhouCatalog catalog, int day, int board, int steamer)
+    public static YangzhouSession Play(YangzhouCatalog catalog, int day, int board, int steamer, bool productionAdvancesBusiness = true)
     {
         var session = new YangzhouSession(catalog, day, board, steamer); int guard = 0;
+        // Closing-policy tests isolate service time while still preparing and staging real food.
+        void WorkTick(double seconds)
+        {
+            if (productionAdvancesBusiness) session.Tick(seconds); else session.Kitchen.Tick(seconds);
+        }
         session.Tick(5);
         while (session.Phase != YangzhouPhase.Results && guard++ < 2000)
         {
@@ -184,30 +189,30 @@ public partial class YangzhouSelfTest : Node
                     {
                         if (k.Board.Portions == 0)
                         {
-                            if (k.Tofu.Count == 0) { session.Refill("tofu"); session.Tick(.81); }
-                            session.Cut(); for (int j = 0; j < 30 && k.Board.Cutting; j++) { session.Stroke(j % 2 == 0 ? 70 : -70, .1); session.Tick(.1); }
+                            if (k.Tofu.Count == 0) { session.Refill("tofu"); WorkTick(.81); }
+                            session.Cut(); for (int j = 0; j < 30 && k.Board.Cutting; j++) { session.Stroke(j % 2 == 0 ? 70 : -70, .1); WorkTick(.1); }
                         }
                         session.LoadGansi();
-                        for (int j = 0; j < 3; j++) { session.Dip(); session.Tick(.31); session.Lift(); session.Tick(.05); }
-                        if (k.Seasoning.Count == 0) { session.Refill("season"); session.Tick(.61); }
-                        session.Season(); session.Tick(.31);
+                        for (int j = 0; j < 3; j++) { session.Dip(); WorkTick(.31); session.Lift(); WorkTick(.05); }
+                        if (k.Seasoning.Count == 0) { session.Refill("season"); WorkTick(.61); }
+                        session.Season(); WorkTick(.31);
                     }
                     else if (line.Key == "T01")
                     {
-                        if (k.Tea.Count == 0) { session.Refill("T01"); session.Tick(.61); }
-                        session.TakeTea(); session.Tick(.31);
+                        if (k.Tea.Count == 0) { session.Refill("T01"); WorkTick(.61); }
+                        session.TakeTea(); WorkTick(.31);
                     }
                     else if (!k.HasFood(line.Key))
                     {
                         int layer = line.Key == "B02" && k.Steamers.Length > 1 ? 1 : 0;
                         var raw = line.Key == "B01" ? k.RawBuns : k.RawSiumai;
-                        if (raw.Count < k.Steamers[layer].Data.Capacity) { session.Refill(line.Key); session.Tick(.81); }
+                        if (raw.Count < k.Steamers[layer].Data.Capacity) { session.Refill(line.Key); WorkTick(.81); }
                         session.LoadSteamer(layer, line.Key, k.Steamers[layer].Data.Capacity); session.SteamAction(layer);
-                        session.Tick(k.Steamers[layer].CookSeconds + .05); session.SteamAction(layer); session.SteamAction(layer);
+                        WorkTick(k.Steamers[layer].CookSeconds + .05); session.SteamAction(layer); session.SteamAction(layer);
                     }
                     if (session.Selected?.Plan.Id != id) break;
                     if (!session.Stage(line.Key)) throw new InvalidOperationException("模拟生产不能放入 " + line.Key);
-                    session.Tick(.1);
+                    WorkTick(.1);
                 }
             }
             if (session.Selected?.Plan.Id == id) session.Serve();

@@ -97,7 +97,7 @@ public partial class EquipmentUpgradeView : Control
             EffectPanel(rows, $"升级后  Lv{target}", e, true);
         }
         MoneyPlate(_detail, "UpgradePriceFrame", "UpgradePrice", e.TargetLevel is not null ? $"{e.Price} 金币" : e.Level >= 3 ? "当前可用的最好设备" : e.Notice,
-            new(30, 449, 500, 62), false, e.TargetLevel is not null);
+            new(30, 449, 500, 62), e.TargetLevel is not null);
         var buy = MakeButton(_detail, "UpgradeEquipment", "升级设备", new(45, 519, 470, 72));
         buy.Disabled = !e.CanBuy; buy.AddThemeFontSizeOverride("font_size", 34);
         SkinPurchaseButton(buy);

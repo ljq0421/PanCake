@@ -20,7 +20,7 @@ public partial class StartScreen
         }
         else
         {
-            var book = HomeArt(_modal, "旅行手账双页母版", kind == "help" ? HelpBookBounds : BookBounds);
+            var book = HomeArt(_modal, "旅行手账双页母版", BookBounds);
             if (kind == "settings")
             {
                 book.Name = "SettingsBook";
@@ -99,6 +99,10 @@ public partial class StartScreen
                     FitTextWidth(caption, 26, 20);
         }
         // Existing home buttons also need their translated text measured after a locale change.
+        if (_body is not null)
+            foreach (string name in new[] { "LedgerTab", "UpgradeTab" })
+                if (_body.GetNodeOrNull<Button>(name)?.GetNodeOrNull<Label>("Caption") is { } bookmarkCaption)
+                    FitContinueLines(bookmarkCaption, 25, 16, 2);
         if (Page == JourneyPage.Home && _body is not null)
             foreach (string name in new[] { "Continue", "NewGame", "WorldMap" })
                 if (_body.FindChild(name, true, false)?.GetNodeOrNull<Label>("Caption") is { } caption)

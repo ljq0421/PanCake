@@ -56,9 +56,11 @@ public partial class StartScreen
     {
         if (HostedByBook)
         {
-            Begin(page); BookUpgradeNavigation(); BookFrame(_city); return;
+            Begin(page); BookFrame(_city); BookUpgradeNavigation(); return;
         }
-        Begin(page); Chrome(page == JourneyPage.City ? () => (_cityReturn ?? RenderHome)() : RenderCity, page == JourneyPage.City ? null : title);
+        Begin(page);
+        if (page == JourneyPage.City) NavigationUtilities(includeHome: true);
+        else Chrome(RenderCity, title);
         if (page == JourneyPage.Ledger)
         {
             HomeArt(_body, "旅行手账双页母版-经营手账", BookBounds).Name = "SharedBook";
@@ -70,15 +72,17 @@ public partial class StartScreen
         }
         else BookFrame(_city, page == JourneyPage.City);
         (string Name, string Caption, Action Action)[] tabs = {
-            ("LedgerTab", "经营手账", PresentLedger), ("UpgradeTab", "店铺升级", PresentUpgrades),
-            ("MapTab", "世界地图", () => { var origin = Page; string city = _city; int day = SelectedDay;
-                PresentMap(() => { _city = city; SelectedDay = day; if (origin == JourneyPage.Ledger) RenderLedgerPage(); else if (origin == JourneyPage.Upgrades) RenderUpgradePage(); else RenderCity(); }); }) };
+            ("LedgerTab", "经营手账", PresentLedger), ("UpgradeTab", "店铺升级", PresentUpgrades) };
         for (int i = 0; i < tabs.Length; i++)
         {
-            var tab = tabs[i]; var b = Button(_body, tab.Name, "", new(1610, 290 + i * 132, 245, 100), tab.Action, bare: true);
-            var art = HomeArt(b, "旅行手账书签母版", new(0, 0, 245, 100), stretch: true);
-            if (page == JourneyPage.Ledger && i == 0 || page == JourneyPage.Upgrades && i == 1) art.Modulate = new Color("#FFDC83");
-            Text(b, "Caption", tab.Caption, new(40, 18, 194, 64), 28, true);
+            var bookmark = tabs[i];
+            bool selected = page == JourneyPage.Ledger && i == 0 || page == JourneyPage.Upgrades && i == 1;
+            var button = Button(_body, bookmark.Name, "", new(selected ? 1617 : 1607, 290 + i * 170, 140, 155), bookmark.Action, bare: true);
+            HomeArt(button, "书页标签-" + bookmark.Caption + "-v2", new(0, 0, 140, 155), stretch: true);
+            var caption = Text(button, "Caption", bookmark.Caption.Insert(2, "\n"), new(25, 85, 94, 57), 25, true);
+            FitContinueLines(caption, 25, 16, 2);
+            // The straight edge tucks under the book cover, like a paper index tab.
+            _body.MoveChild(button, _body.GetNode("SharedBook").GetIndex());
         }
     }
     private bool CanOpenDay(int day)
@@ -104,12 +108,6 @@ public partial class StartScreen
         HomeArt(_body, "Dayx背景", new(320, 695, 595, 145)).Name = "DayRibbon";
         var dayCaption = Text(_body, "DayTitle", $"第{day}天 {overview?.Title ?? ""}", new(383, 722, 443, 74), 32, true);
         FitTextWidth(dayCaption, 32, 22);
-        if (_city is StableIds.Cities.Tianjin or StableIds.Cities.Wuhan)
-        {
-            var replay = Button(_body, "ReplayTutorial", "重看首份教学", new(350, 838, 315, 36), () => DemoTutorialRequested?.Invoke(), bare: true);
-            replay.AddThemeFontSizeOverride("font_size", 22);
-            replay.Size = new(315, 36);
-        }
         if (_save!.IsDemo && _save.Data.Wuhan.Completed)
         {
             var keepsake = Button(_body, "ReviewDemoEnding", "重看旅行纪念", new(1100, 276, 350, 40), RenderDemoEnding, bare: true);
@@ -149,7 +147,6 @@ public partial class StartScreen
     {
         var city = JourneyModel.City(_city); var p = JourneyModel.Progress(_save!, _city);
         CityFrame(JourneyPage.Ledger, city.Name + " · 经营手账");
-        DemoBookTabs();
         var calendarTitle = Text(_body, "CalendarTitle", "营业日历", new(604, 248, 270, 65), 43, true);
         FitTextWidth(calendarTitle, 43, 20);
         calendarTitle.RotationDegrees = -4;
@@ -230,7 +227,9 @@ public partial class StartScreen
     private void RenderUpgradePage()
     {
         CityFrame(JourneyPage.Upgrades, "");
-        EquipmentUpgradeView.AddWallet(_body, (_bookUpgradeSource?.Coins ?? _save!.Data.Coins) + " 金币", new(1220, 158, 360, 64));
+        var wallet = EquipmentUpgradeView.AddWallet(_body, _bookUpgradeSource?.Coins ?? _save!.Data.Coins, new(1220, 158, 360, 64));
+        wallet.PivotOffset = wallet.Size;
+        wallet.Scale = Vector2.One * .7f;
         if (_equipmentCity != _city) { _selectedEquipment = null; _equipmentCity = _city; }
         var view = new EquipmentUpgradeView { Name = "UpgradeView", Position = new(320, 230) };
         _body.AddChild(view);

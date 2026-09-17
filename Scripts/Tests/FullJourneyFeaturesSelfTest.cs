@@ -74,7 +74,7 @@ public partial class FullJourneyFeaturesSelfTest : Node
                                         catalog.RecipesById[line.DefinitionId].ExtraIngredients.ToHashSet(), YoutiaoQuality.Golden), catalog, () => true);
                                 else if (line.ProductKind == ProductKind.Youtiao)
                                 { var stock = new YoutiaoInventory(1); stock.TryStore(1, YoutiaoQuality.Golden); delivery = controller.TryDeliverYoutiaoTo(customer.Id, stock); }
-                                else if (line.ProductKind == ProductKind.SoyMilk) delivery = controller.TryDeliverSoyMilkTo(customer.Id, new SoyMilkTrayRuntime());
+                                else if (line.ProductKind == ProductKind.SoyMilk) delivery = controller.TryDeliverSoyMilkTo(customer.Id, new SoyMilkTrayRuntime(1));
                                 else delivery = controller.TryDeliverWuhanTo(customer.Id, new(line.ProductKind, line.DefinitionId,
                                     WuhanQuality: line.ProductKind == ProductKind.HotDryNoodles ? WuhanFoodQuality.MixedComplete : WuhanFoodQuality.None), () => true);
                                 Check(delivery.ItemAccepted || delivery.CompletesOrder, "actual delivery accepted");
@@ -122,8 +122,8 @@ public partial class FullJourneyFeaturesSelfTest : Node
             Button Find(string name) => screen.Descendants<Button>().Single(b => b.Name == name && b.IsVisibleInTree());
             screen.PresentCity(StableIds.Cities.Tianjin); await Frames(); await Capture("full-preparation");
             music._Process(2); Check(music.CurrentKey == StableIds.Cities.Tianjin, "full preparation routes city music");
-            screen.PresentLedger(); await Frames(); await Click(Find("BreakfastRecords"));
-            Check(screen.Page == JourneyPage.Collection && screen.Descendants<Button>().Count(b => b.Name.ToString().StartsWith("Breakfast_")) == 5, "real ledger entry opens all five cards");
+            screen.PresentHome(); await Frames(); await Click(Find("BreakfastRecords"));
+            Check(screen.Page == JourneyPage.Collection && screen.Descendants<Button>().Count(b => b.Name.ToString().StartsWith("Breakfast_")) == 5, "real home entry opens all five cards");
             await Click(Find("Breakfast_doupi"));
             Check(screen.Descendants<Label>().Any(l => l.Name == "BreakfastOrigin" && l.Text.Contains("第 6 天")), "full collection displays saved origin");
             await Capture("full-collection-zh");
@@ -134,6 +134,9 @@ public partial class FullJourneyFeaturesSelfTest : Node
                 screen.PresentCity(city); await Frames(); int requestedDay = screen.SelectedDay;
                 int coins = save.Data.Coins, highest = save.Data.GetCity(city).HighestUnlockedDay;
                 string records = JsonSerializer.Serialize(save.Data.BreakfastRecords);
+                Check(!screen.Descendants<Button>().Any(b => b.IsVisibleInTree() && (b.Name == "Back" || b.Name == "ReplayTutorial")), "preparation omits back and tutorial links");
+                await Click(Find("Help"));
+                await Capture("full-help-" + city.Replace(':', '-'));
                 await Click(Find("ReplayTutorial"));
                 Check(dayController.TutorialActive && dayController.CurrentConfig!.Day == 1 && dayController.CurrentConfig.CityId == city,
                     "replay opens isolated first lesson " + city);
@@ -149,6 +152,7 @@ public partial class FullJourneyFeaturesSelfTest : Node
                     "skip resumes original full-game day " + city);
                 Check(dayController.CurrentPlan!.PendingBreakfastRecords.Count == 0, "practice records do not leak");
                 dayController.AbandonDay(); main.OpenCity(city); await Frames();
+                await Click(Find("Help"));
                 await Click(Find("ReplayTutorial")); dayController.Tick(2);
                 if (city == StableIds.Cities.Tianjin)
                 {

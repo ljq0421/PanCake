@@ -48,6 +48,29 @@ public partial class InteractionHighlightSelfTest : Node
             }
             var screen = SceneFactory.Instantiate<TianjinDayScreen>("res://Scenes/Gameplay/TianjinDayScreen.tscn");
             _viewport.AddChild(screen); screen.SetProcess(false); screen.ConnectController(controller);
+            if (OS.GetCmdlineUserArgs().Contains("--sauce-only"))
+            {
+                bool demo = catalog.Demo is not null;
+                if (demo) save.UseDemoPathForTests(savePath + ".demo", catalog.Demo!);
+                foreach (int day in demo ? new[] { 1 } : new[] { 1, 6, 15 })
+                {
+                    Check(screen.Initialize(catalog, save, controller, day), $"prepare sauce capture day {day}");
+                    screen.RefreshForCapture(true);
+                    MovePointer(TianjinWorkbenchLayout.EmbeddedIngredient(StableIds.Ingredients.Sauce).GetCenter());
+                    Check(_viewport.GetMousePosition().DistanceTo(TianjinWorkbenchLayout.EmbeddedIngredient(StableIds.Ingredients.Sauce).GetCenter()) < 2,
+                        "pointer is over sauce in logical viewport coordinates");
+                    await Shot($"sauce-{(demo ? "demo" : "full")}-day-{day}");
+                    screen.QueueFree();
+                    controller.QueueFree();
+                    await Frames();
+                    controller = new DayController(); AddChild(controller);
+                    screen = SceneFactory.Instantiate<TianjinDayScreen>("res://Scenes/Gameplay/TianjinDayScreen.tscn");
+                    _viewport.AddChild(screen); screen.SetProcess(false); screen.ConnectController(controller);
+                }
+                GD.Print($"SAUCE_CAPTURE_RESULT passed={_passed} failed=0");
+                GetTree().Quit();
+                return;
+            }
             screen.Initialize(catalog, save, controller, 15);
 
             // Three-item orders expose a progress refresh while the same customer

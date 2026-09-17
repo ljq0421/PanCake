@@ -35,18 +35,34 @@ public partial class EquipmentUpgradeView
         return sprite;
     }
 
-    internal static Control AddWallet(Control parent, string caption, Rect2 rect) =>
-        MoneyPlate(parent, "UpgradeWallet", "Coins", caption, rect, true, true);
+    internal static Control AddWallet(Control parent, int coins, Rect2 rect)
+    {
+        const string artPath = "res://resource/art/Global/StartPage/钱袋子.png";
+        var texture = TrimmedArt(artPath);
+        float height = rect.Size.X * texture.GetHeight() / texture.GetWidth();
+        // Preserve the artwork's proportions and the gap above the return button.
+        var plate = new Control { Name = "UpgradeWallet", Position = new(rect.Position.X, rect.End.Y - height),
+            Size = new(rect.Size.X, height), MouseFilter = MouseFilterEnum.Ignore };
+        parent.AddChild(plate);
+        Sprite(plate, "WalletArt", artPath, new(Vector2.Zero, plate.Size));
+        var label = LabelAt(plate, "Coins", coins.ToString(),
+            new(plate.Size.X * .40f, height * .23f, plate.Size.X * .54f, height * .62f), 28, Ink, true);
+        label.AutowrapMode = TextServer.AutowrapMode.Off;
+        int fontSize = 28;
+        while (fontSize > 16 && label.GetThemeFont("font").GetStringSize(label.Text, fontSize: fontSize).X > label.Size.X) fontSize--;
+        label.AddThemeFontSizeOverride("font_size", fontSize);
+        return plate;
+    }
 
-    private static Control MoneyPlate(Control parent, string name, string labelName, string caption, Rect2 rect, bool wallet, bool showCoin)
+    private static Control MoneyPlate(Control parent, string name, string labelName, string caption, Rect2 rect, bool showCoin)
     {
         var plate = new Control { Name = name, Position = rect.Position, Size = rect.Size, MouseFilter = MouseFilterEnum.Ignore };
         parent.AddChild(plate);
-        PaintedBackground(plate, wallet ? "金币余额底板-v1.png" : "升级费用底板-v1.png", wallet ? 65 : 48, wallet ? 65 : 48);
-        float iconSize = wallet ? 40 : 36, gap = 12, available = rect.Size.X - 40 - (showCoin ? iconSize + gap : 0);
-        var label = LabelAt(plate, labelName, caption, new(20, 8, available, rect.Size.Y - 16), wallet ? 28 : 27, Ink, true);
+        PaintedBackground(plate, "升级费用底板-v1.png", 48, 48);
+        float iconSize = 36, gap = 12, available = rect.Size.X - 40 - (showCoin ? iconSize + gap : 0);
+        var label = LabelAt(plate, labelName, caption, new(20, 8, available, rect.Size.Y - 16), 27, Ink, true);
         label.AutowrapMode = TextServer.AutowrapMode.Off;
-        int fontSize = wallet ? 28 : 27;
+        int fontSize = 27;
         var font = label.GetThemeFont("font");
         string translated = label.Tr(caption);
         while (fontSize > 16 && font.GetStringSize(translated, fontSize: fontSize).X > available) fontSize--;

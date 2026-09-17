@@ -35,7 +35,9 @@ public partial class PancakeWorkstation
         TutorialFocusTarget Surface() => TutorialFocusTarget.Ellipse(this, TianjinWorkbenchLayout.EmbeddedSurface);
         Texture2D Background() => _art.WorkbenchBackground(SoyMilkTray is not null ? new[] { ProductKind.SoyMilk }
             : FryerMachine is not null ? new[] { ProductKind.Youtiao } : Array.Empty<ProductKind>());
-        TutorialFocusTarget Ingredient(string id) => TutorialFocusTarget.Background(this, Background(), IngredientOutline(id), id is "crispy" or "ham");
+        TutorialFocusTarget Ingredient(string id) => id == StableIds.Ingredients.Sauce
+            ? Painted(TianjinPaintedObject.Sauce)
+            : TutorialFocusTarget.Background(this, Background(), IngredientOutline(id), id is "crispy" or "ham");
         TutorialFocusTarget Painted(TianjinPaintedObject id) {
             var matte = TianjinPaintedObjectContour.Get(Background(), id);
             var scale = new Vector2(1920, 1080) / Background().GetSize();

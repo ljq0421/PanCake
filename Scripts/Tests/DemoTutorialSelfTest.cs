@@ -36,6 +36,8 @@ public partial class DemoTutorialSelfTest : Node
         Check(card.Descendants<Button>().Single(b => b.Text == "跳过教学").IsVisibleInTree(), state + " keeps the skip action in the instruction card");
         Rect2 bounds = card.GetGlobalRect();
         Check(new Rect2(0, 0, 1920, 1080).Encloses(bounds), state + " card stays inside the viewport");
+        foreach (var order in screen.Descendants<OrderBubbleView>().Where(o => o.IsVisibleInTree()))
+            Check(!bounds.Grow(10).Intersects(order.GetGlobalRect()), state + " keeps customer orders readable");
         var step = screen.TeachingFocus.Resolve();
         Check(step is not null, state + " resolves an operation target");
         float distance = float.MaxValue;
@@ -163,6 +165,8 @@ public partial class DemoTutorialSelfTest : Node
             Check(save.DemoProgress.CompletedTutorials.Contains("demo_tj_01") && !controller.TutorialActive && station.Machine.Runtime.State == PancakeState.Empty, "completed lesson persists then clears example for independent practice");
             await CheckSecondPancakeRefill(controller, screen, station, save);
             CheckDayOneClosing(controller, catalog, save, screen);
+            await CheckDayTwoLearnedActions(main, controller, screen, station, save);
+            await CheckContextHintPlacement(main, controller, screen, save);
             main.QueueFree(); await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
             await CheckReturningDayOne(save, false);
             Check(save.ResetProgress(out _), "isolated progress reset for skipped-lesson re-entry");
@@ -209,6 +213,106 @@ public partial class DemoTutorialSelfTest : Node
         Check(station.Inventory.GetQuantity("egg") == station.Inventory.GetCapacity("egg"), "ordinary reset restores normal stock after the lesson handoff");
     }
 
+    private async Task CheckDayTwoLearnedActions(GameController main, DayController controller, TianjinDayScreen screen,
+        PancakeWorkstation station, SaveService save)
+    {
+        // Earlier cooking fixtures bypass input callbacks. Seed the saved history of a completed first pancake.
+        string[] basics = { "take:batter", "spread", "take:egg", "flip", "take:sauce", "sauce", "fold", "bag", "deliver:finished_pancake" };
+        foreach (string action in basics) station.LearnWorkbenchAction(action);
+        Check(save.TrySave(out _), "first-day learned actions saved before advancing");
+        save.Load();
+        Check(main.StartCityBusiness(StableIds.Cities.Tianjin, 2), "Day 2 starts its new topping lesson");
+        controller.Tick(2);
+        void Focus() { screen.RefreshForCapture(true); screen.TeachingFocus.Refresh(); }
+        void Known(string state)
+        {
+            Focus();
+            Check(screen.TeachingFocus.CurrentAction is null && screen.DemoLessonHint.Length == 0,
+                "Day 2 does not repeat learned " + state + " in spotlight or lesson copy");
+        }
+        void Do(PancakeCommand command)
+        {
+            var result = station.Machine.TryExecute(command);
+            Check(result.Success, "Day 2 fixture " + command);
+        }
+        void CookToToppings()
+        {
+            Do(PancakeCommand.PlaceBatter); Do(PancakeCommand.BeginSpread); Known("spreading");
+            Do(PancakeCommand.CompleteSpread); Known("egg"); Do(PancakeCommand.AddEgg);
+            station.Tick(100); Known("flip"); Do(PancakeCommand.Flip);
+            station.Tick(100); Known("take sauce"); Do(PancakeCommand.BeginSauce); Known("brushing");
+            station.Machine.SetSauceCoverage(1); Do(PancakeCommand.CompleteSauce); Focus();
+        }
+        void Deliver()
+        {
+            Do(PancakeCommand.Fold); Known("bagging"); Do(PancakeCommand.Bag);
+            station.Tick(1); Known("delivery");
+            var target = screen.Descendants<DropZone>().First(z => z.Name.ToString().StartsWith("CustomerDropZone") && z.CanAccept("finished_pancake"));
+            Check(target.TryAccept("finished_pancake"), "Day 2 uses the real delivery callback");
+        }
+        Focus();
+        Check(controller.TutorialActive && basics.All(station.LearnedWorkbenchActions.Contains)
+            && !station.LearnedWorkbenchActions.Contains("take:crispy"), "new lesson inherits saved basics but keeps the new topping unlearned");
+        Known("batter");
+        Do(PancakeCommand.PlaceBatter); Do(PancakeCommand.BeginSpread); Known("spreading");
+        await Capture("day2-known-spread");
+        // Finish a wrong example without the newly required topping, then exercise its automatic retry.
+        Do(PancakeCommand.CompleteSpread); Do(PancakeCommand.AddEgg); station.Tick(100);
+        Do(PancakeCommand.Flip); station.Tick(100); Do(PancakeCommand.BeginSauce);
+        station.Machine.SetSauceCoverage(1); Do(PancakeCommand.CompleteSauce); Focus();
+        Check(screen.TeachingFocus.CurrentAction == "take:crispy", "Day 2 still teaches the new crispy topping");
+        Deliver();
+        await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+        controller.Tick(2); Focus();
+        Check(controller.TutorialActive && !screen.DemoLessonComplete && basics.All(station.LearnedWorkbenchActions.Contains),
+            "wrong delivery retries the new lesson without clearing learned basics");
+        Known("batter after retry");
+        CookToToppings();
+        Check(screen.TeachingFocus.CurrentAction == "take:crispy" && screen.DemoLessonHint.Contains("薄脆"),
+            "retried lesson targets crispy in the merged teaching card");
+        await Capture("day2-crispy");
+        Check(station.Descendants<DropZone>().Single(z => z.Name == "PancakeDropZone").TryAccept("crispy"),
+            "real ingredient drop teaches crispy");
+        Known("folding after crispy");
+        Check(!save.Data.Tianjin.LearnedWorkbenchActions.Contains("take:crispy"), "new action waits for successful lesson completion before saving");
+        Deliver();
+        Check(screen.DemoLessonComplete, "correct crispy pancake completes the new lesson");
+        screen.FinishDemoLesson();
+        save.Load();
+        Check(save.DemoProgress.CompletedTutorials.Contains("demo_tj_02")
+            && basics.All(save.Data.Tianjin.LearnedWorkbenchActions.Contains)
+            && save.Data.Tianjin.LearnedWorkbenchActions.Contains("take:crispy"), "completion saves the new action alongside all previous actions");
+        screen.ForceDemoTutorial = true;
+        Check(main.StartCityBusiness(StableIds.Cities.Tianjin, 2), "explicit replay can reopen a completed topping lesson");
+        controller.Tick(2); Focus();
+        Check(screen.TeachingFocus.CurrentAction == "take:batter" && !station.LearnedWorkbenchActions.Contains("spread"),
+            "explicit replay shows the full basic sequence");
+        Do(PancakeCommand.PlaceBatter); Do(PancakeCommand.BeginSpread); Focus();
+        Check(screen.TeachingFocus.CurrentAction == "spread" && screen.DemoLessonHint.Contains("摊"), "explicit replay teaches spreading again");
+        await Capture("day2-explicit-replay");
+        screen.FinishDemoLesson();
+        Check(basics.All(save.Data.Tianjin.LearnedWorkbenchActions.Contains)
+            && save.Data.Tianjin.LearnedWorkbenchActions.Contains("take:crispy"), "skipping replay preserves all saved learning");
+    }
+
+    private async Task CheckContextHintPlacement(GameController main, DayController controller, TianjinDayScreen screen, SaveService save)
+    {
+        save.Data.Tianjin.HighestUnlockedDay = 3;
+        Check(save.SaveDemoTutorial("demo_tj_03", true, out _), "skip Day 3 guided lesson to exercise its context hint");
+        var card = screen.GetNode<Panel>("DemoLesson");
+        card.Position = new(700, 160);
+        Check(main.StartCityBusiness(StableIds.Cities.Tianjin, 3), "Day 3 starts context guidance after an earlier lesson");
+        controller.Tick(DayController.OpeningDurationSeconds); controller.Tick(2);
+        screen.RefreshForCapture(true); screen.TeachingFocus.Refresh();
+        Check(screen.DemoLessonVisible && card.Descendants<Button>().Any(b => b.Text == "收起提示"), "Day 3 context hint remains dismissible");
+        Check(screen.TeachingFocus.CurrentAction is null && screen.DemoLessonHint.Contains("香葱"), "Day 3 shows context without repeating learned batter teaching");
+        var orders = screen.Descendants<OrderBubbleView>().Where(o => o.IsVisibleInTree()).ToArray();
+        Check(orders.Length > 0, "context fixture displays a customer order");
+        Check(orders.All(o => !card.GetGlobalRect().Grow(10).Intersects(o.GetGlobalRect())), "context hint clears orders after changing lessons");
+        Check(new Rect2(0, 0, 1920, 1080).Encloses(card.GetGlobalRect()), "context hint stays in the viewport");
+        await Capture("day3-context-orders");
+    }
+
     private async Task CheckReturningDayOne(SaveService save, bool skipped)
     {
         save.Load();
@@ -230,10 +334,8 @@ public partial class DemoTutorialSelfTest : Node
 
     private void CheckDayOneClosing(DayController controller, DataCatalog catalog, SaveService save, TianjinDayScreen screen)
     {
-        Check(controller.CurrentConfig!.FinishWhenAllCustomersServed && controller.CurrentConfig.CustomerCount == 4,
-            "Demo Day 1 opts into completion without empty countdown waiting");
-        Check(catalog.Demo!.Stages.Skip(1).All(s => !s.Config(catalog.RecipesById, catalog.ProductsById).FinishWhenAllCustomersServed),
-            "other stages retain their configured closing policy");
+        Check(controller.CurrentConfig!.CustomerCount == 4,
+            "Demo Day 1 retains four customers under the shared closing policy");
         int finished = 0; controller.DayFinished += _ => finished++;
         controller.Tick(DayController.OpeningDurationSeconds);
         for (int served = 0; served < 4; served++)

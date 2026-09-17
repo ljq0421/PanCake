@@ -42,11 +42,20 @@ public partial class StartScreen
     private Button HomeAction(string name, string caption, string icon, Rect2 rect, Action action, bool small = false)
     {
         var button = Button(_body, name, "", rect, action, bare: true, highlightFocus: name != "Continue");
-        HomeArt(button, small ? "首页地图按钮底板" : "首页主按钮底板", new(Vector2.Zero, rect.Size), stretch: true);
-        HomeArt(button, icon, small ? new(14, -12, 110, 112) : new(18, -34, 180, 178));
+        var texture = Texture(small ? "首页地图按钮底板" : "首页主按钮底板");
+        float artScale = rect.Size.Y / texture.GetHeight();
+        // Scale both painted end caps uniformly; only the plain centre changes width.
+        button.AddChild(new NinePatchRect
+        {
+            Name = "ButtonBacking", Texture = texture,
+            Size = rect.Size / artScale, Scale = Vector2.One * artScale,
+            PatchMarginLeft = texture.GetHeight() / 2, PatchMarginRight = texture.GetHeight() / 2,
+            MouseFilter = MouseFilterEnum.Ignore
+        });
+        HomeArt(button, icon, small ? new(35, -12, 100, 100) : new(18, -34, 180, 178));
         var label = Text(button, "Caption", caption,
-            small ? new(122, 18, 175, 66) : new(200, 30, 275, 88), small ? 34 : 48, true);
-        FitTextWidth(label, small ? 34 : 48, small ? 25 : 32);
+            small ? new(7, 83, 156, 45) : new(200, 30, 275, 88), small ? 30 : 48, true);
+        FitTextWidth(label, small ? 30 : 48, small ? 25 : 32);
         label.AddThemeColorOverride("font_outline_color", StartScreenTheme.Cream);
         label.AddThemeConstantOverride("outline_size", 4);
         return button;

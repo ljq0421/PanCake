@@ -41,7 +41,8 @@ public static class DrawnArtContour
     }
 
     public static void Draw(CanvasItem canvas, Texture2D texture, Rect2 destination,
-        InteractionHighlightState state, Rect2? source = null, bool keyGreen = false, Color? tint = null, Transform2D? drawingTransform = null)
+        InteractionHighlightState state, Rect2? source = null, bool keyGreen = false, Color? tint = null, Transform2D? drawingTransform = null,
+        Rect2? clipBounds = null)
     {
         float opacity = InteractionHighlightTheme.HoverOpacity(canvas, (texture.GetInstanceId(), destination, source), state);
         if (state == InteractionHighlightState.None || destination.Size.X <= 0 || destination.Size.Y <= 0) return;
@@ -67,8 +68,16 @@ public static class DrawnArtContour
             }
             int pad = stroke + Samples;
             Vector2 margin = destination.Size * new Vector2((float)pad / width, (float)pad / height);
-            canvas.DrawTextureRect(outline, new Rect2(destination.Position - margin, destination.Size + margin * 2),
-                false, color);
+            Rect2 bounds = new(destination.Position - margin, destination.Size + margin * 2);
+            if (clipBounds is not { } clip) canvas.DrawTextureRect(outline, bounds, false, color);
+            else
+            {
+                Rect2 visible = bounds.Intersection(clip);
+                if (!visible.HasArea()) return;
+                canvas.DrawTextureRectRegion(outline, visible,
+                    new Rect2((visible.Position - bounds.Position) / bounds.Size * outline.GetSize(),
+                        visible.Size / bounds.Size * outline.GetSize()), color);
+            }
         }
     }
 

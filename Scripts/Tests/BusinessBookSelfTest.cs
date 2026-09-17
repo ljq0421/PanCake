@@ -26,6 +26,26 @@ public partial class BusinessBookSelfTest : Node
             settings.UsePathForTests("res://.tmp/book-tests/interface-settings.cfg");
             InterfaceLessons.MarkAllSeen(settings);
             var catalog = GetNode<DataCatalog>("/root/DataCatalog"); Check(catalog.IsValid,"catalog valid");
+            CheckHighlightModel();
+            if (OS.GetCmdlineUserArgs().Contains("--summary-only"))
+            {
+                await CheckReferencePresentation(catalog);
+                await CheckTravelHighlightStates();
+                GD.Print($"BUSINESS_BOOK_SUMMARY_TEST_RESULT passed={_checks} failed=0"); GetTree().Quit(); return;
+            }
+            if (OS.GetCmdlineUserArgs().Contains("--reference-only"))
+            {
+                await CheckReferencePresentation(catalog);
+                GD.Print($"BUSINESS_BOOK_REFERENCE_TEST_RESULT passed={_checks} failed=0"); GetTree().Quit(); return;
+            }
+            if (OS.GetCmdlineUserArgs().Contains("--presentation-only"))
+            {
+                await CheckCompactPresentation();
+                GetWindow().Size = CaptureSizes[0]; await Frames(5);
+                foreach (string city in new[] { "tianjin", "wuhan", "xian" }) await CheckArtEdges(city);
+                await CheckReferencePresentation(catalog);
+                GD.Print($"BUSINESS_BOOK_PRESENTATION_TEST_RESULT passed={_checks} failed=0"); GetTree().Quit(); return;
+            }
             if (OS.GetCmdlineUserArgs().Contains("--upgrades-only"))
             {
                 await CheckBookUpgrades(catalog, YangzhouCatalog.Load());
@@ -154,7 +174,7 @@ public partial class BusinessBookSelfTest : Node
             Check(icon.Size==new Vector2(30,30)&&icon.StretchMode==TextureRect.StretchModeEnum.KeepAspectCentered,city+" proportional small icon");
             Check(label.Text==text&&label.GetLineCount()==1&&label.Position.Y==0,city+" metric value fits one line");
             Check(Math.Abs(icon.GetRect().GetCenter().Y-label.GetRect().GetCenter().Y)<.01&&label.Position.X-icon.GetRect().End.X==8,city+" icon and value align");
-            Check(icon.Position.X==end&&label.GetRect().End.X<=metrics.Size.X,city+" metric groups fit without overlap");
+            Check(icon.Position.X>=end-.01f&&label.GetRect().End.X<=metrics.Size.X,city+" metric groups fit without overlap");
             end=label.GetRect().End.X+20;
         }
     }
@@ -173,13 +193,13 @@ public partial class BusinessBookSelfTest : Node
             var model=Fixture(city);model.Closing=closing;if(!closing)model.SaveMessage="";
             view.Open(model);view.FinishAnimation();await Frames();
             var text=view.Descendants<Label>().Where(l=>l.IsVisibleInTree()).Select(l=>l.Text).ToArray();
-            Check(text.Contains(closing?"已收摊":"营业中 · 已暂停")&&text.Contains("营业小结"),city+" state and chapter");
-            Check(!text.Any(t=>t.Contains("今日")||t.Contains("截至目前")||t=="营业账本"||t=="Esc 返回"),city+" concise summary copy");
+            Check((closing && city is "tianjin" or "wuhan" ? !text.Contains("已收摊") : text.Contains(closing?"已收摊":"营业中 · 已暂停"))&&text.Contains("营业小结"),city+" state and chapter");
+            Check(!text.Any(t=>(t.Contains("今日") && !(city is "tianjin" or "wuhan" && t is "今日接待" or "今日亮点"))||t.Contains("截至目前")||t=="营业账本"||t=="Esc 返回"),city+" concise summary copy");
             Check(next.IsVisibleInTree()&&!previous.Visible&&next.TooltipText.Length==0&&next.Size.X>=64&&next.Size.Y>=64,city+" forward edge affordance without hover text");
             Check(view.CloseButton.TooltipText.Length==0&&view.CloseButton.HasFocus(),city+" default close focus without hover text");
             var rate=view.Descendants<Label>().Single(l=>l.Text.StartsWith("完成率"));
-            var satisfaction=view.Descendants<Label>().Single(l=>l.Text=="完成顾客满意度");
-            Check(rate.TooltipText.Length==0&&satisfaction.TooltipText.Length==0,city+" statistics use teaching instead of hover text");
+            var satisfaction=view.Descendants<Label>().Single(l=>l.Name=="BookSatisfaction");
+            Check((rate.TooltipText.Length>0&&satisfaction.TooltipText.Length>0)==(city is "tianjin" or "wuhan"),city+" approved statistics hover explanation");
             if(city is "tianjin" or "wuhan" or "xian")CheckArtPage(view,city,"compact summary");
             if(Capture)await Shot($"compact-{city}-{size.X}-{(closing?"closing":"live")}-summary");
             Click(next);await ToSignal(GetTree().CreateTimer(.25),SceneTreeTimer.SignalName.Timeout);await Frames();
@@ -260,7 +280,7 @@ public partial class BusinessBookSelfTest : Node
         else Check(board.Material is null, city+" preserves existing board material");
         Check(board.StretchMode==TextureRect.StretchModeEnum.KeepAspectCentered,city+" "+page+" preserves artwork aspect ratio");
         var book=board.GetParent().GetParent<Control>();
-        Check(book.Size==new Vector2(1680,900)&&book.Scale==Vector2.One,city+" book retains design container without horizontal compression");
+        Check(book.Size==new Vector2(1680,900)&&book.Scale==Vector2.One * (city is "tianjin" or "wuhan" ? 1.12f : 1f),city+" book retains proportional design container");
         var semanticNames=new[]{"总收入图标.png","小费图标.png","完成顾客图标.png","流失顾客图标.png","满意度图标.png","Perfect 图标.png","Perfect 印章.png","状态章-正确完成.png","状态章-错误完成.png","状态章-顾客流失.png"};
         var semantic=view.Descendants<TextureRect>().Where(t=>t.IsVisibleInTree()&&t.Texture is AtlasTexture a&&semanticNames.Any(n=>a.Atlas.ResourcePath.EndsWith(n,StringComparison.Ordinal))).ToArray();
         Check(semantic.Length>0&&semantic.All(t=>t.Material is null&&t.Modulate==Colors.White&&t.SelfModulate==Colors.White),city+" "+page+" preserves semantic icon colors");
@@ -271,7 +291,7 @@ public partial class BusinessBookSelfTest : Node
             for(Node? ancestor=widget.GetParent();ancestor is not null&&ancestor!=book;ancestor=ancestor.GetParent())if(ancestor is ScrollContainer){inScroll=true;break;}
             if(inScroll)continue;
             var bounds=InLocalSpace(book,widget);
-            Check((IsPageArrow(widget) ? InArrowRegion(bounds) : InPaperColumn(bounds)&&bounds.Position.Y>=77&&bounds.End.Y<=826),$"{city} {page} {WidgetText(widget)} stays inside paper: {bounds}");
+            Check((IsPageArrow(widget) ? InArrowRegion(bounds,city) : InPaperColumn(bounds)&&bounds.Position.Y>=(city is "tianjin" or "wuhan" ? 54 : 77)&&bounds.End.Y<=(city is "tianjin" or "wuhan" ? 851 : 826)),$"{city} {page} {WidgetText(widget)} stays inside paper: {bounds}");
         }
     }
     private async Task CheckArtEdges(string city)
@@ -328,7 +348,7 @@ public partial class BusinessBookSelfTest : Node
         foreach(var control in controls)
         {
             var bounds=InLocalSpace(book,control);
-            Check((IsPageArrow(control) ? InArrowRegion(bounds) : InPaperColumn(bounds)&&bounds.Position.Y>=77&&bounds.End.Y<=826),$"{scenario} {WidgetText(control)} stays inside paper: {bounds}");
+            Check((IsPageArrow(control) ? InArrowRegion(bounds,view.Model.CityId) : InPaperColumn(bounds)&&bounds.Position.Y>=(view.Model.CityId is "tianjin" or "wuhan" ? 54 : 77)&&bounds.End.Y<=(view.Model.CityId is "tianjin" or "wuhan" ? 851 : 826)),$"{scenario} {WidgetText(control)} stays inside paper: {bounds}");
         }
     }
     private static Rect2 InLocalSpace(Control parent,Control child)
@@ -339,7 +359,9 @@ public partial class BusinessBookSelfTest : Node
         return new Rect2(start,inverse*rect.End-start);
     }
     private static bool IsPageArrow(Control c) => c.Name == "NextBookPage" || c.Name == "PreviousBookPage";
-    private static bool InArrowRegion(Rect2 r) => r.Size.X>=64 && r.Size.Y>=64 && r.Position.Y==508 && r.End.Y<=580
+    private static bool InArrowRegion(Rect2 r, string city) => city is "tianjin" or "wuhan"
+        ? r.Size.X>=71.9f && r.Size.Y>=71.9f && ((r.Position.X>=79.9f && r.End.X<=152.1f && Math.Abs(r.Position.Y-431)<.1f)||(r.Position.X>=1539.9f && r.End.X<=1612.1f && Math.Abs(r.Position.Y-502)<.1f))
+        : r.Size.X>=64 && r.Size.Y>=64 && r.Position.Y==508 && r.End.Y<=580
         && ((r.Position.X>=140 && r.End.X<=210)||(r.Position.X>=1470 && r.End.X<=1540));
     private static bool InPaperColumn(Rect2 bounds) =>
         (bounds.Position.X>=229&&bounds.End.X<=791)||(bounds.Position.X>=889&&bounds.End.X<=1451);

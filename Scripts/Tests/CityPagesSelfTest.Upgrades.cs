@@ -25,7 +25,7 @@ public partial class CityPagesSelfTest
             Click("UpgradeTab"); await Frames();
             Check(_screen.Page == JourneyPage.Upgrades && _screen.SelectedCityId == city.Id, city.Name + " home upgrade route");
             CheckBookTheme(city.Id);
-            Check(Find<Button>("Home").IsVisibleInTree() && Find<Button>("MapTab").IsVisibleInTree(), city.Name + " home retains navigation");
+            Check(Find<Button>("Home").IsVisibleInTree() && !_screen.Descendants<Button>().Any(b => b.Name == "MapTab"), city.Name + " upgrade page retains home without map bookmark");
             Check(!_screen.Descendants<Button>().Any(b => b.Name == "CloseUpgrades"), city.Name + " home has no settlement return");
             var offer = model.Equipment(city.Id).First(e => e.CanBuy);
             Click("Select_" + offer.Id);
@@ -41,10 +41,13 @@ public partial class CityPagesSelfTest
             Click("UpgradeEquipment"); await Frames();
             Check(_save.Data.Coins == 10000 - offer.Price && _save.Data.GetCity(city.Id).EquipmentLevels[offer.Id] == offer.Level + 1, city.Name + " home purchase uses correct city and price");
             Check(_screen.Descendants<EquipmentUpgradeView>().Single().SelectedId == offer.Id, city.Name + " home retains purchased selection");
-            Check(_screen.Descendants<Label>().Any(l => l.Text == $"{_save.Data.Coins} 金币"), city.Name + " home refreshes wallet");
+            Check(_screen.Descendants<Label>().Any(l => l.Name == "Coins" && l.Text == _save.Data.Coins.ToString()), city.Name + " home refreshes wallet");
             await Capture(city.Name + "-shared-upgrade-home");
-            Click("MapTab"); await Frames(); Click("Back"); await Frames();
-            Check(_screen.Page == JourneyPage.Upgrades && _screen.SelectedCityId == city.Id, city.Name + " map returns to home upgrade page");
+            Click("LedgerTab"); await Frames();
+            Check(_screen.Page == JourneyPage.Ledger && !_screen.Descendants<Button>().Any(b => b.Name == "MapTab"), city.Name + " ledger has no map bookmark");
+            await Capture(city.Name + "-ledger-no-map");
+            Click("UpgradeTab"); await Frames();
+            Check(_screen.Page == JourneyPage.Upgrades && _screen.SelectedCityId == city.Id, city.Name + " bookmarks retain city navigation");
         }
     }
 }

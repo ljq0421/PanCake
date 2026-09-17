@@ -6,13 +6,16 @@ namespace ProjectCake.UI;
 
 public partial class StartScreen
 {
-    // Help owns its larger spread; settings and city books retain BookBounds.
-    private static readonly Rect2 HelpBookBounds = new(30, 30, 1860, 1020);
+    // Preserve the authored layout while fitting it into the shared settings book.
+    private static readonly Rect2 HelpLayoutBounds = new(30, 30, 1860, 1020);
 
     private void OpenHelp()
     {
         OpenModal("help");
-        var content = new Control { Name = "HelpContent", Size = new(1920, 1080), MouseFilter = MouseFilterEnum.Ignore };
+        float scale = Mathf.Min(BookBounds.Size.X / HelpLayoutBounds.Size.X, BookBounds.Size.Y / HelpLayoutBounds.Size.Y);
+        var content = new Control { Name = "HelpContent", Size = new(1920, 1080),
+            Position = BookBounds.GetCenter() - HelpLayoutBounds.GetCenter() * scale,
+            Scale = Vector2.One * scale, MouseFilter = MouseFilterEnum.Ignore };
         _modal.AddChild(content);
 
         HelpPanel(content, "TitleUnderline", new(286, 174, 580, 16), "#FFD16A", "#FFD16A", 8, 0);
@@ -42,17 +45,26 @@ public partial class StartScreen
         DrawHelpKeys(content);
 
         {
-            var credits = Button(_modal, "MusicCredits", "配乐与署名", new(164, 919, 270, 40), OpenDemoMusicCredits, bare: true);
+            var credits = Button(content, "MusicCredits", "配乐与署名", new(164, 919, 270, 40), OpenDemoMusicCredits, bare: true);
             credits.AddThemeFontSizeOverride("font_size", 22);
         }
-        var close = Button(_modal, "Close", "记住了", new(800, 945, 320, 82), CloseModal, bare: true);
+        var close = Button(content, "Close", "记住了", new(800, 945, 320, 82), CloseModal, bare: true);
         var closeArt = HomeArt(close, "首页地图按钮底板", new(0, 0, 320, 82), stretch: true);
         closeArt.Name = "HelpCloseArt";
         closeArt.ShowBehindParent = true;
         close.AddThemeFontSizeOverride("font_size", 41);
-        var teaching = Button(_modal, "ReplayInterfaceTeaching", "经营教学", new(1370, 948, 290, 68), () =>
+        var teaching = Button(content, "ReplayInterfaceTeaching", "经营教学", new(1370, 948, 290, 68), () =>
             InterfaceTeaching.Offer(_modal, "replay", InterfaceLessons.Replay(HelpCityId()), replay: true));
         teaching.AddThemeFontSizeOverride("font_size", 29);
+        if (Page == JourneyPage.City && _city is StableIds.Cities.Tianjin or StableIds.Cities.Wuhan)
+        {
+            var replay = Button(content, "ReplayTutorial", "重看首份教学", new(440, 948, 330, 68), () =>
+            {
+                CloseModal();
+                DemoTutorialRequested?.Invoke();
+            });
+            replay.AddThemeFontSizeOverride("font_size", 29);
+        }
         close.GrabFocus();
     }
 

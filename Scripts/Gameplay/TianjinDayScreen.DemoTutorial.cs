@@ -18,6 +18,7 @@ public partial class TianjinDayScreen
     private Label? _demoGestureLabel;
     private ProgressBar? _demoGestureBar;
     private bool _demoLessonComplete;
+    private bool _demoLessonReplay;
     private string _demoLessonSaveError = "";
     private string _demoLessonLayout = "";
     private int _demoBusinessDay;
@@ -29,20 +30,22 @@ public partial class TianjinDayScreen
     internal bool DemoLessonComplete => _demoLessonComplete;
     internal string DemoLessonHint => _demoLessonHint?.Text ?? "";
 
-    private bool BeginDemoLesson()
+    private bool BeginDemoLesson(bool retry = false)
     {
-        if (!_save.IsDemo && !ForceDemoTutorial) return false;
+        bool replay = retry ? _demoLessonReplay : ForceDemoTutorial;
+        if (!_save.IsDemo && !replay) return false;
         _demoBusinessDay = _controller.CurrentConfig!.Day;
         var stage = _save.IsDemo ? _save.DemoContent!.Stage(_demoBusinessDay) : null;
-        _demoTeachingDay = !_save.IsDemo || ForceDemoTutorial && stage!.Tutorial.Length == 0 ? 1 : _demoBusinessDay;
+        _demoTeachingDay = !_save.IsDemo || replay && stage!.Tutorial.Length == 0 ? 1 : _demoBusinessDay;
         var lesson = _save.IsDemo ? _save.DemoContent!.Stage(_demoTeachingDay) : null;
-        bool requested = ForceDemoTutorial || lesson is { Tutorial.Length: > 0 }
+        bool requested = retry || replay || lesson is { Tutorial.Length: > 0 }
             && !_save.DemoProgress.CompletedTutorials.Contains(lesson.Id) && !_save.DemoProgress.SkippedTutorials.Contains(lesson.Id);
         ForceDemoTutorial = false;
         if (!requested) return false;
+        _demoLessonReplay = replay;
         if (!_controller.TryPrepareTutorial(StableIds.Cities.Tianjin, _demoTeachingDay, _catalog, out string error)) { ShowFeedback(error, true); return true; }
         _workstation.Initialize(_catalog, 1, 1, _demoTeachingDay >= 4 ? 1 : 0, _controller.CurrentConfig!, _art);
-        _workstation.ConfigureTutorial(null);
+        _workstation.ConfigureTutorial(replay ? null : _save.Data.Tianjin.LearnedWorkbenchActions);
         _workstation.ResetForDay();
         if (_demoTeachingDay == 1 && _demoBusinessDay == 1)
             _workstation.ConfigureFirstPancakeEggLesson(1);
@@ -109,28 +112,14 @@ public partial class TianjinDayScreen
         _demoLessonAction!.Disabled = _manualPaused || _focusPaused || _detailsPaused;
         _demoLessonTitle!.Text = _demoLessonComplete ? "第一份早餐，做好了！" : _save.IsDemo ? _save.DemoContent!.Stage(_demoTeachingDay)!.TitleZh : "第一张煎饼";
         _demoLessonAction.Text = _demoLessonSaveError.Length > 0 ? "重试保存" : _demoLessonComplete ? "开始营业" : "跳过教学";
-        _demoLessonHint!.Visible = true;
-        var r = _workstation.Machine.Runtime;
         _demoLessonHint!.Text = _demoLessonSaveError.Length > 0 ? _demoLessonSaveError
             : _demoLessonComplete ? "接下来自己试试。营业时留意火候，并按订单添加配料。"
-            : _workstation.PancakeTray.Count > 0 ? "把装袋的煎饼拖给上方顾客。"
-            : r.State switch
-            {
-                PancakeState.Empty => "把右侧碗里的面糊拖到中间饼炉。",
-                PancakeState.BatterPlaced or PancakeState.Spreading => "按住左键在面糊上划动，用刮板摊成一张饼。",
-                PancakeState.SideACooking when !r.HasEgg => "点击右侧鸡蛋，把蛋打到饼上。",
-                PancakeState.SideACooking => "等第一面成熟。教学时会停在合适的火候。",
-                PancakeState.SideAReady => "点击“翻面”（或按 F），煎熟另一面。",
-                PancakeState.SideBCooking => "等第二面成熟，再刷酱。",
-                PancakeState.SideBReady => "点击右侧酱碗拿刷子，在煎饼上刷酱。",
-                PancakeState.Saucing => "刷至正常酱量，再短按右键收刷（或按 F）。",
-                PancakeState.Sauced or PancakeState.Toppings => "基础煎饼不用额外配料。点击“折叠”（或按 F）。",
-                PancakeState.Folded => "点击“装袋”（或按 F），把煎饼装好。",
-                PancakeState.Bagged => "把装袋的煎饼拖给上方顾客。",
-                _ => "完成手上的动作；需要时可跳过教学后重试。",
-            };
+            : "";
+        _demoLessonHint.Visible = _demoLessonHint.Text.Length > 0;
+        // Operation copy comes only from the focus resolver, which respects learned actions.
         TeachingFocus.Refresh();
         LayoutDemoLesson();
+        if (_demoLessonComplete) RestDemoLesson();
     }
 
     internal void FinishDemoLesson()
@@ -171,6 +160,13 @@ public partial class TianjinDayScreen
             ? "看清订单里的薄脆图标。刷完酱后，将薄脆拖进煎饼，再折叠装袋。"
             : "订单需要葱时，刷完酱再点击香葱。料盒不足时可长按补货，留意空档。";
         LayoutDemoLesson();
+        RestDemoLesson();
+    }
+
+    private void RestDemoLesson()
+    {
+        // Context/completion cards must not inherit a previous operation's placement.
+        _demoLesson!.Position = new(40, Mathf.Min(635, 1080 - _demoLesson.Size.Y - 24));
     }
 
     private void LayoutDemoLesson()
@@ -205,7 +201,7 @@ public partial class TianjinDayScreen
             Callable.From(() =>
             {
                 int businessDay = _demoBusinessDay;
-                ForceDemoTutorial = true; BeginDemoLesson(); _demoBusinessDay = businessDay;
+                BeginDemoLesson(retry: true); _demoBusinessDay = businessDay;
             }).CallDeferred();
         }
     }

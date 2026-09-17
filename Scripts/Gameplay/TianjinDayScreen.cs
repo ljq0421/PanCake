@@ -321,7 +321,6 @@ public partial class TianjinDayScreen : Control
             ProductKind.SoyMilk when _workstation.SoyMilkTray is not null => _controller.TryDeliverSoyMilkTo(customerId, _workstation.SoyMilkTray),
             _ => new DeliveryEvaluation(DeliveryGrade.Rejected, 0, 0, 0, "当前商品不可交付。"),
         };
-        if (kind == ProductKind.Youtiao && (evaluation.ItemAccepted || evaluation.CompletesOrder)) _controller.Ledger?.RecordYoutiaoUsed();
         _deliveryTeaches = evaluation.Grade != DeliveryGrade.Incorrect && (evaluation.ItemAccepted || evaluation.CompletesOrder);
         if (!(evaluation.CompletesOrder && evaluation.Grade is DeliveryGrade.Correct or DeliveryGrade.Perfect))
             _sceneFeedback.Delivery(evaluation, _orderCards[slot]);

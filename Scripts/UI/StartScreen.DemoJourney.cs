@@ -6,15 +6,10 @@ namespace ProjectCake.UI;
 public partial class StartScreen
 {
     private string _selectedBreakfast = "pancake";
-    private void DemoBookTabs()
-    {
-        Button(_body, "BusinessRecords", "营业记录", new(1015, 193, 220, 44), RenderLedgerPage, bare: true);
-        Button(_body, "BreakfastRecords", "旅途收藏", new(1250, 193, 220, 44), PresentBreakfastCollection, bare: true);
-    }
     public void PresentBreakfastCollection()
     {
         if (_save is null) return;
-        CityFrame(JourneyPage.Collection, "早餐旅行手账"); DemoBookTabs();
+        Begin(JourneyPage.Collection); Chrome(ReturnFromBreakfastCollection, "早餐旅行手账"); BookFrame();
         var available = DemoBreakfastCollection.Cards.Where(c => c.CityId == StableIds.Cities.Tianjin
             || _save.Data.UnlockedCityIds.Contains(c.CityId)).ToArray();
         var selected = available.FirstOrDefault(c => c.Id == _selectedBreakfast) ?? available[0];
@@ -43,8 +38,12 @@ public partial class StartScreen
         Text(_body, "BreakfastSteps", selected.Steps, new(1025, 660, 490, 112), 24, true);
         Text(_body, "BreakfastOrigin", firstDay.HasValue ? $"首次记录 · {JourneyModel.City(selected.CityId).Name} · 第 {firstDay.Value} 天"
             : "正确送出一份火候合适的早餐，收摊保存后入册。", new(1025, 793, 490, 64), 22, true);
-        Button(_body, "BackToBusiness", "返回营业", new(1050, 882, 450, 65), () => PresentCity(selected.CityId), true);
+        Button(_body, "CollectionHome", "返回首页", new(1050, 882, 450, 65), ReturnFromBreakfastCollection, true);
         Focus("Breakfast_" + selected.Id);
+    }
+    private void ReturnFromBreakfastCollection()
+    {
+        RenderHome(); Focus("BreakfastRecords");
     }
     private void PresentDemoWuhanOpening()
     {

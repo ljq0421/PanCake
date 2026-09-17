@@ -174,10 +174,9 @@ public partial class DayController : Node
             }
             DayElapsedSeconds = Math.Min(CurrentConfig.DurationSeconds, DayElapsedSeconds + deltaSeconds);
             CustomerQueue.Tick(DayElapsedSeconds, deltaSeconds, true);
-            // Opt-in short stages can close after the final served guest's exit animation.
-            // IsResolved also checks future arrivals and the door queue; an empty counter is insufficient.
-            if (CurrentConfig.FinishWhenAllCustomersServed && Ledger!.CompletedCustomers == CurrentConfig.CustomerCount
-                && TryFinishIfResolved()) return;
+            // Every shift closes once all planned guests have left, served or lost.
+            // IsResolved includes future arrivals, the door queue and exit animations.
+            if (TryFinishIfResolved()) return;
             if (DayElapsedSeconds >= CurrentConfig.DurationSeconds)
             {
                 ClosingRemainingSeconds = ClosingDurationSeconds;
@@ -261,12 +260,30 @@ public partial class DayController : Node
 
     private DeliveryEvaluation TryDeliverYoutiaoToCore(string? customerId, YoutiaoInventory inventory)
     {
-        if (!inventory.TryPeek(out YoutiaoQuality quality))
+        if (inventory.IsEmpty)
             return Rejected("没有可用的成品油条。");
         CustomerRuntime? customer = FindDeliveryCustomer(customerId);
         if (customer is null) return Rejected("这位顾客已经不能接餐，请拖给仍在等待的顾客。");
-        var item = new DeliveredItem(ProductKind.Youtiao, StableIds.Products.Youtiao, null, quality);
-        return TryDeliverItem(customer, item, () => inventory.TryTake(out _), null);
+        int remaining = customer.Order.Lines.Select((line, index) => line.ProductKind == ProductKind.Youtiao
+            ? customer.Progress.GetRemainingQuantity(index) : 0).Sum();
+        int count = Math.Min(inventory.Count, remaining);
+        if (count == 0) return Rejected("这位顾客不需要更多这种商品。");
+        DeliveryEvaluation result = Rejected("油条交付未生效。");
+        // Preserve FIFO quality and per-piece patience, but notify the order only once per drag.
+        for (int i = 0; i < count; i++)
+        {
+            if (!inventory.TryPeek(out YoutiaoQuality quality)) break;
+            var item = new DeliveredItem(ProductKind.Youtiao, StableIds.Products.Youtiao, null, quality);
+            result = TryDeliverItem(customer, item, () =>
+            {
+                if (!inventory.TryTake(out _)) return false;
+                Ledger?.RecordYoutiaoUsed();
+                return true;
+            }, null, false);
+            if (!result.ItemAccepted || result.CompletesOrder) break;
+        }
+        if (result.ItemAccepted || result.CompletesOrder) DeliveryCompleted?.Invoke(result);
+        return result;
     }
 
     public DeliveryEvaluation TryDeliverSoyMilkSelected(SoyMilkTrayRuntime tray) =>
@@ -280,7 +297,21 @@ public partial class DayController : Node
         CustomerRuntime? customer = FindDeliveryCustomer(customerId);
         if (customer is null) return Rejected("这位顾客已经不能接餐，请拖给仍在等待的顾客。");
         var item = new DeliveredItem(ProductKind.SoyMilk, StableIds.Products.SoyMilk);
-        return TryDeliverItem(customer, item, tray.TryConsumeForDelivery, null);
+        int remaining = customer.Order.Lines.Select((line, index) => line.ProductKind == ProductKind.SoyMilk
+            ? customer.Progress.GetRemainingQuantity(index) : 0).Sum();
+        int count = Math.Min(tray.Quantity, remaining);
+        if (count == 0 || !tray.CanStartDrag) return Rejected("没有可交付的豆浆或顾客已不再需要。");
+        if (!customer.Progress.CanAccept(item, out string error)) return Rejected(error);
+        // Reserve the whole drag once; the take animation must not block its later cups.
+        if (!tray.TryConsumeForDelivery(count)) return Rejected("商品库存已经变化，请重试。");
+        DeliveryEvaluation result = Rejected("豆浆交付未生效。");
+        for (int i = 0; i < count; i++)
+        {
+            result = TryDeliverItem(customer, item, null, null, false);
+            if (!result.ItemAccepted || result.CompletesOrder) break;
+        }
+        if (result.ItemAccepted || result.CompletesOrder) DeliveryCompleted?.Invoke(result);
+        return result;
     }
 
     public DeliveryEvaluation TryDeliverWuhanSelected(DeliveredItem item, Func<bool> consume) =>
@@ -377,7 +408,7 @@ public partial class DayController : Node
 
     private DeliveryEvaluation WithFeedback(string? customerId, Func<DeliveryEvaluation> deliver)
     {
-        // One transaction per player action, including multi-piece doupi delivery.
+        // One transaction per player action, including multi-piece delivery.
         if (IsPaused || State is not (DayState.Running or DayState.Closing)) return Rejected("当前不能交付。");
         _deliveryMatches = true;
         DeliveryEvaluation result = deliver();

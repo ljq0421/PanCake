@@ -10,6 +10,7 @@ public sealed record TutorialFocusTarget(CanvasItem Owner, Vector2[] Points, boo
     public Texture2D? Texture { get; init; }
     public Rect2 Bounds { get; init; }
     public Rect2? Source { get; init; }
+    public Rect2? ClipBounds { get; init; }
     public static TutorialFocusTarget Sprite(CanvasItem owner, Texture2D texture, Rect2 bounds, Rect2? source = null) =>
         new(owner, Rectangle(bounds)) { Texture = texture, Bounds = bounds, Source = source };
     public static TutorialFocusTarget Background(CanvasItem owner, Texture2D texture, Vector2[] guide, bool dark = false, int radius = 10)
@@ -194,7 +195,7 @@ public partial class TutorialFocusLayer : Control
             canvas.DrawSetTransformMatrix(shape.Transform);
             var target = shape.Target;
             if (target.Texture is { } texture)
-                DrawnArtContour.Draw(canvas, texture, target.Bounds, InteractionHighlightState.Hover, target.Source, drawingTransform: shape.Transform);
+                DrawnArtContour.Draw(canvas, texture, target.Bounds, InteractionHighlightState.Hover, target.Source, drawingTransform: shape.Transform, clipBounds: target.ClipBounds);
             else {
                 canvas.DrawSetTransformMatrix(Transform2D.Identity);
                 InteractionHighlightPresentation.DrawPath(canvas, target.Points.Select(p => shape.Transform * p).ToArray(), InteractionHighlightState.Hover);
@@ -210,7 +211,8 @@ internal partial class TutorialFocusMask : Control
     public bool SetImages(List<(TutorialFocusTarget Target, Transform2D Transform)> images)
     {
         bool same = _images.Count == images.Count && _images.Zip(images).All(p => p.First.Transform == p.Second.Transform
-            && p.First.Target.Texture == p.Second.Target.Texture && p.First.Target.Bounds == p.Second.Target.Bounds && p.First.Target.Source == p.Second.Target.Source);
+            && p.First.Target.Texture == p.Second.Target.Texture && p.First.Target.Bounds == p.Second.Target.Bounds && p.First.Target.Source == p.Second.Target.Source
+            && p.First.Target.ClipBounds == p.Second.Target.ClipBounds);
         if (same) return false;
         _images = images; QueueRedraw(); return true;
     }
@@ -226,8 +228,13 @@ internal partial class TutorialFocusMask : Control
         foreach (var shape in _images)
         {
             DrawSetTransformMatrix(shape.Transform);
-            DrawTextureRectRegion(shape.Target.Texture!, shape.Target.Bounds,
-                shape.Target.Source ?? new Rect2(Vector2.Zero, shape.Target.Texture!.GetSize()));
+            Rect2 bounds = shape.Target.Bounds;
+            Rect2 visible = shape.Target.ClipBounds is { } clip ? bounds.Intersection(clip) : bounds;
+            if (!visible.HasArea()) continue;
+            Rect2 source = shape.Target.Source ?? new Rect2(Vector2.Zero, shape.Target.Texture!.GetSize());
+            DrawTextureRectRegion(shape.Target.Texture!, visible,
+                new Rect2(source.Position + (visible.Position - bounds.Position) / bounds.Size * source.Size,
+                    visible.Size / bounds.Size * source.Size));
         }
         DrawSetTransformMatrix(Transform2D.Identity);
     }

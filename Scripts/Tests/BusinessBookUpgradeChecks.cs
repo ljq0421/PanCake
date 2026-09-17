@@ -68,7 +68,7 @@ public partial class BusinessBookSelfTest
                 Click(Entry()); await Frames();
                 var modal = view.Descendants<Control>().Single(n => n.Name == "BookUpgradeModal");
                 Check(modal.IsVisibleInTree(), city + " click opens modal");
-                Check(modal.Descendants<Label>().Any(l => l.Text == $"{source.Coins} 金币"), city + " wallet shown");
+                Check(modal.Descendants<Label>().Any(l => l.Name == "Coins" && l.Text == source.Coins.ToString()), city + " wallet shown");
                 var page = modal.Descendants<StartScreen>().Single();
                 Check(page.Page == JourneyPage.Upgrades && page.SelectedCityId == cityId, city + " reuses home upgrade page for source city");
                 Check(!page.GetNode<Control>("Canvas/Background").Visible && !page.GetNode<Control>("Letterbox").Visible
@@ -117,7 +117,7 @@ public partial class BusinessBookSelfTest
             Click(buy); await Frames();
             Check(view.Descendants<EquipmentUpgradeView>().Single().SelectedId == first.EquipmentId, city + " purchase retains selection");
             Check(source.Coins == 10000 - first.Price && model.Result.TotalRevenue == income, city + " UI purchase debits once without recommitting revenue");
-            Check(view.Descendants<Label>().Any(l => l.Text == $"{source.Coins} 金币"), city + " shared page refreshes balance after purchase");
+            Check(view.Descendants<Label>().Any(l => l.Name == "Coins" && l.Text == source.Coins.ToString()), city + " shared page refreshes balance after purchase");
             Check(!source.Purchase(first, out _) && source.Coins == 10000 - first.Price, city + " stale duplicate rejected");
             save.Load();
             Check(source.Coins == 10000 - first.Price && save.Data.GetCity(cityId).EquipmentLevels[first.EquipmentId] == first.TargetLevel, city + " purchase persists across reload");

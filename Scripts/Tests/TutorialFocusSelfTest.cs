@@ -142,6 +142,10 @@ public partial class TutorialFocusSelfTest : Node
                 Do(PancakeCommand.BeginSauce); machine.SetSauceCoverage(1); Do(PancakeCommand.CompleteSauce);
                 station.FryerMachine!.Inventory.TryStore(1, ProjectCake.Fryer.YoutiaoQuality.Golden); screen.RefreshForCapture(true);
                 station.Descendants<DragItem>().Single(d => d.PayloadId == "stored_youtiao").TryBeginDrag();
+                focus.Refresh();
+                Check(focus.CurrentAction == "deliver:stored_youtiao", "held youtiao spotlights actual recipient");
+                CheckRecipientCrop(focus);
+                await Shot("tianjin-youtiao-customer");
                 var toppingOrder = new TutorialOrder("fixture", ProductKind.Pancake, "fixture", new[] { "scallion", "youtiao" });
                 Check(station.ResolveFocus(new[] { toppingOrder }, (_, _) => Array.Empty<TutorialFocusTarget>())?.ActionId == "take:youtiao",
                     "held youtiao takes priority over another missing topping");
@@ -157,6 +161,20 @@ public partial class TutorialFocusSelfTest : Node
             controller.AbandonDay();
         }
         screen.Hide(); focus.Refresh(); Check(!focus.Visible, "hidden city has no mask"); screen.QueueFree(); controller.QueueFree(); await Frames();
+    }
+    private void CheckRecipientCrop(TutorialFocusLayer focus)
+    {
+        var targets = focus.Resolve()!.Targets;
+        Check(targets.Length > 0, "recipient focus contains artwork");
+        foreach (var target in targets)
+        {
+            Check(target.ClipBounds is not null, "recipient carries portrait clipping into teaching overlay");
+            Rect2 clip = target.ClipBounds!.Value;
+            Check(target.Points.All(p => p.X >= clip.Position.X - .01f && p.X <= clip.End.X + .01f
+                && p.Y >= clip.Position.Y - .01f && p.Y <= clip.End.Y + .01f),
+                "recipient spotlight stays inside visible portrait window");
+            Check(target.Bounds.End.Y > clip.End.Y, "fixture includes hidden lower body beyond the counter");
+        }
     }
     private async Task Wuhan(DataCatalog catalog, SaveService save)
     {

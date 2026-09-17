@@ -31,6 +31,7 @@ public partial class YangzhouDayScreen : Control
     {
         SceneNodeBinder.Bind(this);
         BuildBusinessBook();
+        BuildBusinessHud();
         void FitCanvas()
         {
             float scale = Math.Min(Size.X / 1920, Size.Y / 1080);
@@ -175,6 +176,7 @@ public partial class YangzhouDayScreen : Control
     {
         if (Session is null) return;
         var s = Session; var k = s.Kitchen;
+        RenderBusinessHud();
         _header.Text = $"扬州 · Day {s.Day.Day}  {s.Day.Title}     " + (s.Phase == YangzhouPhase.Prep ? $"备货 {s.PrepRemaining:0.0}秒" : s.Phase == YangzhouPhase.Closing ? s.Day.Day == 1 ? "教学收尾 · 上齐最后的干丝" : $"收尾 {s.ClosingRemaining:0}秒" : $"营业剩余 {Math.Max(0, s.Day.Duration - s.Elapsed):0}秒") + $"     ¥{s.Revenue}   已完成{s.Served.Count}/{s.Day.Customers}组";
         _hint.Text = s.Paused ? "已暂停 · 点击继续营业恢复" : s.Phase == YangzhouPhase.Prep ? "开店前5秒：先切干丝或装第一笼；到时自动开门。" : s.Day.Hint;
         _pause.Text = s.Paused ? "继续营业" : "暂停";

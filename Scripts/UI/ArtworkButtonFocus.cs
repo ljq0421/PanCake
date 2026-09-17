@@ -36,14 +36,11 @@ public partial class ArtworkButtonFocus : Control
         if (!IsInsideTree() || IsQueuedForDeletion() || _button.IsQueuedForDeletion()) return;
         _art ??= _button.GetChildren().OfType<TextureRect>().FirstOrDefault();
         _patch = _button.GetChildren().OfType<NinePatchRect>().FirstOrDefault();
+        // A button can contain both a foreground icon and a nine-patch backing.
+        if (_patch is not null) _patchColor = _patch.SelfModulate;
         if (_art is not null)
             ArtContourHighlight.Attach(_art, () => Active ? InteractionHighlightState.Selected : InteractionHighlightState.None);
-        else if (_patch is not null)
-        {
-            // Nine-patch geometry is already authored; tint that exact rendered silhouette.
-            _patchColor = _patch.SelfModulate;
-        }
-        else _textOnly = true;
+        else if (_patch is null) _textOnly = true;
         _button.FocusEntered += Refresh;
         _button.FocusExited += Refresh;
         _button.VisibilityChanged += Refresh;

@@ -35,7 +35,7 @@ public partial class CityPagesSelfTest
         if (_screen.DeveloperToolsVisible)
         {
             Check(_screen.Page == JourneyPage.City && _screen.SelectedCityId == StableIds.Cities.Wuhan, "developer node previews locked city");
-            await MapClick("Back");
+            _screen._Input(new InputEventKey { Keycode = Key.Escape, Pressed = true }); await Frames();
         }
         else Check(_screen.Page == JourneyPage.Map, "locked city node only displays its goal");
         Check(Find<Label>("MapSelection").Text == "所选城市" && Find<Label>("SummaryCity").Text == "武汉", "mouse selects a locked city without entering");
@@ -58,8 +58,8 @@ public partial class CityPagesSelfTest
         GetViewport().PushInput(new InputEventKey { Keycode = Key.Enter, Pressed = false }, true);
         await Frames();
         Check(_screen.Page == JourneyPage.City && _screen.SelectedCityId == StableIds.Cities.Tianjin, "keyboard activation opens Tianjin continue page");
-        await MapClick("Back");
-        Check(_screen.Page == JourneyPage.Map && Find<Button>("Node0").HasFocus(), "city Back returns to the Tianjin map node");
+        _screen._Input(new InputEventKey { Keycode = Key.Escape, Pressed = true }); await Frames();
+        Check(_screen.Page == JourneyPage.Map && Find<Button>("Node0").HasFocus(), "city Escape returns to the Tianjin map node");
         await Capture(prefix + "tianjin-return");
         await MapClick("Back"); Check(_screen.Page == JourneyPage.Home, "map Back returns to its source");
 
@@ -79,7 +79,7 @@ public partial class CityPagesSelfTest
                 "entering demo Wuhan preserves existing stage recording");
             persisted = File.ReadAllText(_path);
         }
-        await MapClick("Back");
+        _screen._Input(new InputEventKey { Keycode = Key.Escape, Pressed = true }); await Frames();
         Check(_screen.Page == JourneyPage.Map && Find<Button>("Node1").HasFocus(), "city return restores Wuhan selection and focus");
         if (demo)
         {
@@ -99,7 +99,7 @@ public partial class CityPagesSelfTest
             {
                 await MapClick("Node" + i);
                 Check(_screen.Page == JourneyPage.City && _screen.SelectedCityId == playable[i].Id, "unlocked node opens city " + playable[i].Name);
-                await MapClick("Back");
+                _screen._Input(new InputEventKey { Keycode = Key.Escape, Pressed = true }); await Frames();
                 Check(Find<Label>("SummaryCity").Text == playable[i].Name && Find<Button>("Node" + i).HasFocus(), "return preserves city selection and focus " + playable[i].Name);
                 CheckMapLayout();
             }
@@ -117,7 +117,7 @@ public partial class CityPagesSelfTest
         Check(Find<Label>("SummaryCity").Text == "武汉", "cross-city navigation starts on Wuhan");
         await MapClick("Node0");
         Check(_screen.Page == JourneyPage.City && _screen.SelectedCityId == StableIds.Cities.Tianjin, "Tianjin node opens Tianjin when the saved current city is Wuhan");
-        await MapClick("Back");
+        _screen._Input(new InputEventKey { Keycode = Key.Escape, Pressed = true }); await Frames();
         Check(_screen.Page == JourneyPage.Map && Find<Label>("SummaryCity").Text == "天津"
             && Find<Button>("Node0").HasFocus(), "cross-city return preserves Tianjin selection and focus");
         await MapClick("Home"); Check(_screen.Page == JourneyPage.Home, "map Home opens home");

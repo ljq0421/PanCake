@@ -75,8 +75,9 @@ public partial class BusinessDetailsView : Control
         ApplyBookSkin();
         _city.Text = $"{model.CityName} · DAY {model.Result.Day:00}";
         _status.Text = model.Closing ? "已收摊" : "营业中 · 已暂停";
+        _status.Visible = !UsesTravelBook || !model.Closing;
         _save.Text = model.SaveMessage;
-        _save.Visible = _save.Text.Length > 0;
+        _save.Visible = _save.Text.Length > 0 && !(UsesTravelBook && _save.Text.Contains("已入账", StringComparison.Ordinal));
         _retry.Visible = model.CanRetry; CloseButton.Disabled = !model.CanClose;
         BuildSummary(); RefreshRows(); SelectPage(false, false); Show();
         (model.CanClose ? CloseButton : _retry).GrabFocus(); StartAnimation();
@@ -143,6 +144,11 @@ public partial class BusinessDetailsView : Control
         if (UsesBookArt) PaintBookPaper();
         _title.Text = details ? "顾客明细" : "营业小结";
         _previousPage.Visible = details; _nextPage.Visible = !details;
+        if (UsesTravelBook)
+        {
+            SetButtonBounds(CloseButton, details ? new(1145, 776, 280, 70) : new(1230, 703, 220, 64));
+            CloseButton.AddThemeFontSizeOverride("font_size", details ? 30 : TravelActionFontSize);
+        }
         if (!changed) return;
         (details ? _previousPage : _nextPage).GrabFocus();
         if (!animate || ProjectSettings.GetSetting("accessibility/reduce_motion", false).AsBool()) return;
@@ -254,29 +260,30 @@ public partial class BusinessDetailsView : Control
         var box = TianjinUi.Box(fill, 9, selected ? 2 : 1, false);
         box.BorderColor = UsesBookArt ? (selected ? CityTheme.Primary : CitySettlementTheme.Section) : selected ? Accent : new("#BAA385");
         b.AddThemeStyleboxOverride("normal", box);
+        if (b.GetNodeOrNull<Control>("SelectionMarker") is { } marker) marker.Visible = UsesTravelBook && selected;
     }
     internal static string ProductCaption(BookProduct product) =>
         product.Name + (product.Preference.Length > 0 ? "·" + product.Preference : "")
         + (product.Quantity == 1 ? "" : $" ×{product.Quantity}");
 
     // Wrap whole food items first; only a single over-wide caption wraps within its item.
-    private float BuildProducts(Control row, IReadOnlyList<BookProduct> products, float left, float top, float width)
+    private float BuildProducts(Control row, IReadOnlyList<BookProduct> products, float left, float top, float width, int fontSize = 20, float icon = 40)
     {
-        const float icon = 40, gap = 10, itemGap = 20;
+        const float gap = 10, itemGap = 20;
         float x = 0, y = top, bandHeight = 0;
         foreach (var product in products)
         {
             string caption = ProductCaption(product);
             float textWidth = Math.Min(width - icon - gap,
-                Mathf.Ceil(GetThemeFont("font", "Label").GetStringSize(caption, fontSize: 20).X) + 2);
+                Mathf.Ceil(GetThemeFont("font", "Label").GetStringSize(caption, fontSize: fontSize).X) + 2);
             float itemWidth = icon + gap + textWidth;
             if (x > 0 && x + itemWidth > width)
             {
                 y += bandHeight + 10; x = 0; bandHeight = 0;
             }
-            float height = Math.Max(icon, WrappedHeight(caption, textWidth, 20));
+            float height = Math.Max(icon, WrappedHeight(caption, textWidth, fontSize));
             Place(row, new BookFoodIcon { Product = product }, new(left + x, y, icon, icon));
-            var label = Text(row, caption, new(left + x + icon + gap, y, textWidth, height), 20, wrap: true);
+            var label = Text(row, caption, new(left + x + icon + gap, y, textWidth, height), fontSize, wrap: true);
             label.Name = $"ProductCaption{row.GetChildCount()}";
             bandHeight = Math.Max(bandHeight, height); x += itemWidth + itemGap;
         }
@@ -296,8 +303,12 @@ public partial class BusinessDetailsView : Control
             (Name: "Score", Icon: order.Score is >= 60 ? "满意图标" : "不满意图标-v1", Value: score),
             (Name: "Tips", Icon: "小费图标-v1", Value: $"+¥{order.Tips}")
         };
+        bool columns = UsesTravelBook && items.All(item =>
+            GetThemeFont("font", "Label").GetStringSize(item.Value, fontSize: fontSize).X + iconSize + iconGap + 12 <= width / 3);
+        int column = 0;
         foreach (var item in items)
         {
+            if (columns) cursor = column * width / 3;
             float textWidth = Math.Min(width - iconSize - iconGap,
                 Mathf.Ceil(GetThemeFont("font", "Label").GetStringSize(item.Value, fontSize: fontSize).X) + 2);
             float groupWidth = iconSize + iconGap + textWidth;
@@ -312,6 +323,8 @@ public partial class BusinessDetailsView : Control
             label.Name = item.Name + "Value";
             label.VerticalAlignment = VerticalAlignment.Center;
             bandHeight = Math.Max(bandHeight, height); cursor += groupWidth + groupGap;
+            if (columns && column > 0) Line(metrics, new(column * width / 3 - 14, 3, 1, height - 6), CityTheme.Secondary with { A = .8f });
+            column++;
         }
         metrics.Size = new(width, top + bandHeight);
         float bottom = y + metrics.Size.Y;

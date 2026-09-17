@@ -414,7 +414,8 @@ public partial class StageFourSelfTest : Node
                 for (int lineIndex = 0; lineIndex < customer.Order.Lines.Count; lineIndex++)
                 {
                     OrderLineData line = customer.Order.Lines[lineIndex];
-                    for (int quantity = customer.Progress.GetDeliveredQuantity(lineIndex); quantity < line.Quantity; quantity++)
+                    for (int quantity = customer.Progress.GetDeliveredQuantity(lineIndex);
+                        quantity < line.Quantity && customer.Progress.GetRemainingQuantity(lineIndex) > 0; quantity++)
                     {
                         if (line.ProductKind == ProductKind.Pancake)
                         {

@@ -157,7 +157,8 @@ public partial class StartScreen : Control
             else if (Page == JourneyPage.Opening && _save?.IsDemo == true && _save.Data.UnlockedCityIds.Contains(ProjectCake.Data.StableIds.Cities.Wuhan)) PresentCity(ProjectCake.Data.StableIds.Cities.Wuhan);
             else if (Page == JourneyPage.Opening) RenderNewJourney();
             else if (Page == JourneyPage.Completion) FinishCompletion();
-            else if (Page is JourneyPage.Ledger or JourneyPage.Upgrades or JourneyPage.Collection) RenderCity();
+            else if (Page == JourneyPage.Collection) ReturnFromBreakfastCollection();
+            else if (Page is JourneyPage.Ledger or JourneyPage.Upgrades) RenderCity();
             else if (Page == JourneyPage.City) (_cityReturn ?? RenderHome)();
             else if (Page == JourneyPage.Map) (_mapReturn ?? RenderHome)();
             else RenderHome();

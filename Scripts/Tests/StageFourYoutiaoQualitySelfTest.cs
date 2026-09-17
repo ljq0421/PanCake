@@ -99,8 +99,7 @@ public partial class StageFourSelfTest
             if (customer is null) { Fail("找到单卖油条顾客", "Day5未生成可交付顾客"); controller.Free(); continue; }
             var inventory = new YoutiaoInventory(8);
             inventory.TryStore(customer.Order.Lines[0].Quantity, quality);
-            DeliveryEvaluation? delivered = null;
-            for (int i = 0; i < customer.Order.Lines[0].Quantity; i++) delivered = controller.TryDeliverYoutiaoTo(customer.Id, inventory);
+            DeliveryEvaluation delivered = controller.TryDeliverYoutiaoTo(customer.Id, inventory);
             var ledger = controller.Ledger!.Build();
             Check(delivered is not null && delivered.SaleRevenue == customer.Order.BasePrice
                 && delivered.SatisfactionScore == (quality == YoutiaoQuality.Golden ? 100 : 85)

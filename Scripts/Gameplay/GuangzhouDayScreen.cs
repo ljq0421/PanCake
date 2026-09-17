@@ -42,6 +42,7 @@ public partial class GuangzhouDayScreen : Control
     {
         SceneNodeBinder.Bind(this);
         BuildBusinessBook();
+        BuildBusinessHud();
         void FitCanvas()
         {
             float scale = Math.Min(Size.X / 1920, Size.Y / 1080);
@@ -264,6 +265,7 @@ public partial class GuangzhouDayScreen : Control
     public void Render()
     {
         if (Session is null) return;
+        _hud.Render(_controller, false);
         _pause.Text = _manuallyPaused ? "继续" : "暂停";
         _clock.Text = _manuallyPaused || !_focused || _abandon.Visible ? "已暂停" : _controller.State switch
         {

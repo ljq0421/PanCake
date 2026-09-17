@@ -147,7 +147,23 @@ public partial class ArtContourHighlight : Control
             }
             _focusMatte = ImageTexture.CreateFromImage(matte); _focusBounds = bounds; _focusKey = key;
         }
-        yield return TutorialFocusTarget.Sprite(_source, _focusMatte!, _focusBounds);
+        // Teaching is drawn outside the portrait tree, so carry its ancestor crop along.
+        // Keep the complete matte: crop the finished outline, avoiding a false line across the waist.
+        Rect2? clip = null;
+        Transform2D sourceInverse = _source.GetGlobalTransform().AffineInverse();
+        for (Node? ancestor = _source.GetParent(); ancestor is not null; ancestor = ancestor.GetParent())
+        {
+            if (ancestor is not Control { ClipContents: true } control) continue;
+            Rect2 local = (sourceInverse * control.GetGlobalTransform()) * new Rect2(Vector2.Zero, control.Size);
+            clip = clip is { } previous ? previous.Intersection(local) : local;
+        }
+        Rect2 visible = clip is { } crop ? _focusBounds.Intersection(crop) : _focusBounds;
+        if (!visible.HasArea()) yield break;
+        yield return TutorialFocusTarget.Sprite(_source, _focusMatte!, _focusBounds) with
+        {
+            ClipBounds = clip,
+            Points = TutorialFocusTarget.Rectangle(visible),
+        };
     }
 
     internal static Texture2D ResolveTexture(Texture2D texture) => texture is AtlasTexture

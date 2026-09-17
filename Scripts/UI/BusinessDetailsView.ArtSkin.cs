@@ -27,6 +27,10 @@ public partial class BusinessDetailsView
 
     private void ApplyBookSkin()
     {
+        foreach (string state in new[] { "normal", "hover", "pressed", "disabled", "focus" })
+            CloseButton.RemoveThemeStyleboxOverride(state);
+        _book.Scale = Vector2.One * (UsesTravelBook ? 1.12f : 1f);
+        _book.Position = UsesTravelBook ? new(19.2f, 36) : new(120, 90);
         Theme = TianjinUi.CreateTheme();
         if (UsesBookArt)
         {
@@ -52,6 +56,8 @@ public partial class BusinessDetailsView
         _save.MaxLinesVisible = -1; _save.TextOverrunBehavior = TextServer.OverrunBehavior.NoTrimming;
         _save.AddThemeFontSizeOverride("font_size", 20); _save.MouseFilter = MouseFilterEnum.Ignore;
         SetButtonBounds(CloseButton, new(1320, 798, 240, 72)); SetButtonBounds(_retry, new(1100, 809, 190, 58));
+        CloseButton.AddThemeFontSizeOverride("font_size", 24);
+        foreach (var filter in _filters) filter.TooltipText = "";
         _city.Size = new(600, 38);
         _city.Position = new(80, 32); _title.Position = new(80, 76); _title.Size = new(650, 40); _title.HorizontalAlignment = HorizontalAlignment.Left; _title.AddThemeFontSizeOverride("font_size", 28);
         _status.Position = new(900, 32); _status.Size = new(650, 38);
@@ -65,7 +71,7 @@ public partial class BusinessDetailsView
             arrow.AddThemeStyleboxOverride("focus", focus);
             foreach (string state in new[] { "normal", "hover", "pressed" })
             {
-                var paper = TianjinUi.Box(state == "normal" ? new Color("#F5E8CF") : new Color("#EFDDBD"), 28, 2, false);
+                var paper = TianjinUi.Box(state == "normal" ? new Color("#F5E8CF") : new Color("#EFDDBD"), UsesTravelBook ? 36 : 28, 2, false);
                 paper.BorderColor = Accent;
                 arrow.AddThemeStyleboxOverride(state, paper);
             }
@@ -104,12 +110,7 @@ public partial class BusinessDetailsView
         SetButtonBounds(CloseButton, new(1220, 738, 230, 56));
         if (UsesTravelBook)
         {
-            // Leave the travel stamp and lower corner illustrations clear.
-            _city.Position = new(410, 78); _city.Size = new(380, 32);
-            _title.Position = new(410, 115); _title.Size = new(380, 36);
-            _save.Position = new(300, 732); _save.Size = new(490, 52);
-            SetButtonBounds(_retry, new(990, 738, 180, 56));
-            SetButtonBounds(CloseButton, new(1190, 738, 230, 56));
+            ApplyTravelLayout();
         }
     }
 
@@ -120,6 +121,12 @@ public partial class BusinessDetailsView
         var board = Picture(_illustratedPaper, BookArtCatalog.GetBoard(_model.CityId), new((1680 - width) / 2, 0, width, 900));
         board.Name = "BookBoard";
         board.Material = BookArtCatalog.BoardMaterial(_model.CityId);
+        if (UsesTravelBook)
+        {
+            var underline = new Control { Position = new(405, 147), MouseFilter = MouseFilterEnum.Ignore };
+            _illustratedPaper.AddChild(underline);
+            underline.Draw += () => underline.DrawPolyline(new Vector2[] { new(0, 5), new(58, 1), new(132, -1), new(197, 0) }, CityTheme.Secondary, 6, true);
+        }
     }
 
     private void BookDivider(Control parent, Rect2 bounds)
@@ -130,6 +137,7 @@ public partial class BusinessDetailsView
 
     private void BuildArtSummary()
     {
+        if (UsesTravelBook) { BuildTravelSummary(); return; }
         var r = _model.Result;
         float incomeInset = UsesTravelBook ? 40 : 0;
         Art(_summary, "总收入图标", new(ArtPageLeft + incomeInset, 38, 100, 100));
@@ -192,11 +200,20 @@ public partial class BusinessDetailsView
         Place(_summary, sticker, bounds);
         var artwork = Art(sticker, art, new(0, 0, bounds.Size.X, bounds.Size.Y));
         var paper = FittedArtBounds(artwork);
+        bool travelUpgrade = UsesTravelBook && !unlock;
         float textWidth = unlock ? 158 : 181;
         string shortCaption = unlock ? "新解锁 · 回店查看" : CanUpgrade ? "可升级 · 查看效果" : "可升级 · 回店查看";
         string caption = items.Length == 1 ? items[0] : shortCaption;
         if (GetThemeFont("font", "Label").GetStringSize(caption, fontSize: 17).X > textWidth) caption = shortCaption;
         var label = Text(sticker, caption, new(unlock ? 72 : 18, paper.Position.Y + (paper.Size.Y - 28) / 2, textWidth, 28), 17);
+        if (travelUpgrade)
+        {
+            label.Text = CanUpgrade ? "店铺升级 · 查看设备" : "可升级 · 回店查看";
+            label.Position = paper.Position + new Vector2(16, (paper.Size.Y - 32) / 2);
+            label.Size = new(paper.Size.X - 72, 32);
+            label.AddThemeFontSizeOverride("font_size", TravelActionFontSize);
+            label.HorizontalAlignment = HorizontalAlignment.Center;
+        }
         label.MaxLinesVisible = 1; label.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
         if (!unlock && CanUpgrade)
         {
@@ -251,6 +268,7 @@ public partial class BusinessDetailsView
 
     private void BuildArtOrderRow(BookOrder order)
     {
+        if (UsesTravelBook) { BuildTravelOrderRow(order); return; }
         const float rightWidth = ArtRowWidth - ArtRowRight;
         float nameHeight = WrappedHeight(order.Customer, 425, 26);
         float productY = Math.Max(78, nameHeight + 12);

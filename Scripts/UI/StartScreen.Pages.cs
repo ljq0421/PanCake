@@ -11,11 +11,11 @@ public partial class StartScreen
         Begin(JourneyPage.Splash); Ambient(); Art(_body, "LOGO", new(475, 200, 970, 470));
         Text(_body, "Tagline", "从一份早餐开始，点亮世界。", new(510, 715, 900, 70), 36, true);
         Button(_body, "Skip", "点击任意位置或按 Enter 开启旅程", new(560, 835, 800, 65), RenderHome, bare: true);
-        Schedule(3, RenderHome); Focus("Skip");
+        Focus("Skip");
     }
     private void RenderHome()
     {
-        // Home composition: breakfast-shop wall, overlapping left logo and three tabletop actions.
+        // Home composition: breakfast-shop wall, overlapping left logo and four tabletop actions.
         // Art is user supplied; layout and live progress remain independent of the textures.
         Begin(JourneyPage.Home); Ambient();
         HomeArt(_body, "世界地图墙挂底板", new(445, 100, 1080, 640), stretch: true);
@@ -49,7 +49,8 @@ public partial class StartScreen
         var card = HomeAction("Continue", "继续旅程", "小火车", new(400, 835, 500, 150), RenderContinue);
         card.Disabled = !canContinue; card.Modulate = new Color(1, 1, 1, canContinue ? 1 : .68f);
         HomeAction("NewGame", "新的旅程", "闭合旅行手账封面｜新旅程入口", new(940, 835, 500, 150), RenderOpening);
-        HomeAction("WorldMap", "世界地图", "世界地图入口图标", new(1480, 850, 310, 110), () => PresentMap(), small: true);
+        HomeAction("BreakfastRecords", "旅途收藏", "已有旅程手账封面", new(1475, 855, 170, 145), PresentBreakfastCollection, small: true);
+        HomeAction("WorldMap", "世界地图", "世界地图入口图标", new(1655, 855, 170, 145), () => PresentMap(), small: true);
         Utilities(); Focus(canContinue ? "Continue" : "NewGame");
         // The wall remains an additional map entrance, after the main actions in keyboard order.
         Button(_body, "WallMap", "", new(490, 205, 990, 470), () => PresentMap(), bare: true);
@@ -71,7 +72,6 @@ public partial class StartScreen
     {
         Begin(JourneyPage.NewJourney); Chrome(RenderHome);
         BookFrame();
-        JournalTab("JournalMap", "世界地图", () => PresentMap(RenderNewJourney));
         var city = JourneyModel.Cities[0];
         JourneyIntroduction(city, "第一站", RequestNewGame);
         Focus("Depart");

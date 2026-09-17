@@ -37,6 +37,11 @@ public partial class StartScreenSelfTest : Node
             GetNode<JourneySettings>("/root/JourneySettings").UsePathForTests(Path.Combine(directory, "settings.cfg"));
             InterfaceLessons.MarkAllSeen(GetNode<JourneySettings>("/root/JourneySettings"));
             await Launch();
+            if (args.Contains("--collection-only"))
+            {
+                await CollectionNavigation();
+                GD.Print($"COLLECTION_NAVIGATION_OK {_passed}"); GetTree().Quit(); return;
+            }
             if (args.Contains("--dialogs-only"))
             {
                 await PanelPreview();
@@ -82,11 +87,15 @@ public partial class StartScreenSelfTest : Node
             Check(_main.GetNode("UI").GetChildren().OfType<Control>().Count(c => c.Visible) == 1 && _screen.Visible, "only the title page is visible at startup");
             Check(Find<Button>("NewGame").HasFocus(), "first run focuses new game");
             KeyPress(Key.Down);
+            Check(Find<Button>("BreakfastRecords").HasFocus(), "keyboard reaches global collection");
+            KeyPress(Key.Down);
             Check(Find<Button>("WorldMap").HasFocus(), "keyboard reaches the new tabletop map entrance");
             KeyPress(Key.Down);
             Check(Find<Button>("Settings").HasFocus(), "keyboard skips unavailable continue");
             KeyPress(Key.Up);
             Check(Find<Button>("WorldMap").HasFocus(), "keyboard returns through map entrance");
+            KeyPress(Key.Up);
+            Check(Find<Button>("BreakfastRecords").HasFocus(), "keyboard returns through collection");
             KeyPress(Key.Up);
             Check(Find<Button>("NewGame").HasFocus(), "keyboard navigates back to new journey");
             await Capture("first-run");
@@ -233,12 +242,22 @@ public partial class StartScreenSelfTest : Node
         await Click(Find<Button>("NewGame"));
         await Click(Find<Button>("Skip"));
         await Capture("new-journey");
-        await Click(Find<Button>("JournalMap"));
-        Check(_screen.Page == JourneyPage.Map, "journey map tab accepts viewport input");
-        await Click(Find<Button>("Back"));
-        Check(_screen.Page == JourneyPage.NewJourney && Find<Button>("Depart").HasFocus(), "map returns to journey with departure focus");
+        Check(!_screen.Descendants<Button>().Any(b => b.Name == "JournalMap"), "new journey has no map bookmark");
         await Click(Find<Button>("Depart"));
         Check(_save.CanContinue && _screen.Page == JourneyPage.City, "new departure artwork starts the journey through viewport input");
+        _screen.PresentHome(); await Frames(); await Click(Find<Button>("Continue"));
+        Check(!_screen.Descendants<Button>().Any(b => b.Name == "MapTab"), "continue journey has no map bookmark");
+        await Capture("continue-no-map-tab");
+        var settings = GetNode<JourneySettings>("/root/JourneySettings");
+        settings.SetLanguage("en"); await Frames();
+        foreach (string tabName in new[] { "LedgerTab", "UpgradeTab" })
+        {
+            var tabCaption = Find<Button>(tabName).GetNode<Label>("Caption");
+            Check(!tabCaption.Tr(tabCaption.Text).ToString().Contains('\n') && tabCaption.GetLineCount() <= 2,
+                tabName + " translates and fits after a live language change");
+        }
+        await Capture("continue-bookmarks-english");
+        settings.SetLanguage("zh_CN"); await Frames();
         await NewJourney();
         Check(_screen.ConfirmationOpen, "departure still protects existing progress");
         KeyPress(Key.Escape);
@@ -275,8 +294,8 @@ public partial class StartScreenSelfTest : Node
         await Click(Find<Button>("Back"));
         await Click(Find<Button>("Back"));
         Check(_screen.Page == JourneyPage.Home, "map returns to home source");
-        await Click(Find<Button>("Continue")); await Click(Find<Button>("MapTab")); await Click(Find<Button>("Back"));
-        Check(_screen.Page == JourneyPage.City, "map returns to city source");
+        await Click(Find<Button>("Continue"));
+        Check(_screen.Page == JourneyPage.City && !_screen.Descendants<Button>().Any(b => b.Name == "MapTab"), "continue opens city without map bookmark");
         foreach (var city in JourneyModel.Cities) { if (!_save.Data.UnlockedCityIds.Contains(city.Id)) _save.Data.UnlockedCityIds.Add(city.Id); _save.Data.GetCity(city.Id); }
         _save.Data.GetCity(StableIds.Cities.Tianjin).Completed = true;
         _save.Data.GetCity(StableIds.Cities.Tianjin).BestStars = 1;
@@ -345,8 +364,7 @@ public partial class StartScreenSelfTest : Node
         Check(settings.Master == 63 && settings.Effects == 41, "new journey retains preferences");
         _screen.PresentHome(); await Frames();
         await Click(Find<Button>("NewGame")); await Click(Find<Button>("Skip"));
-        await Click(Find<Button>("JournalMap")); await Click(Find<Button>("Back"));
-        Check(_screen.Page == JourneyPage.NewJourney && _save.Data.Coins == 0, "new journal map bookmark returns without creating progress");
+        Check(_screen.Page == JourneyPage.NewJourney && !_screen.Descendants<Button>().Any(b => b.Name == "JournalMap") && _save.Data.Coins == 0, "new journal has no map bookmark and preserves progress");
         _screen.PresentHome(); await Frames();
         string bad = Path.Combine(Path.GetDirectoryName(_path)!, "blocked-settings"); Directory.CreateDirectory(bad);
         settings.UsePathForTests(bad); settings.SetVolume("effects", 44);
@@ -487,7 +505,7 @@ public partial class StartScreenSelfTest : Node
         _save.Data.LastVisitedCityId = StableIds.Cities.Wuhan; _save.TrySave(out _);
         _screen.PresentHome(); await Capture("continue");
         await Click(Find<Button>("Continue")); await Capture("journal");
-        await Click(Find<Button>("MapTab")); await Capture("map-progress");
+        _screen.PresentHome(); await Frames(); await Click(Find<Button>("WorldMap")); await Capture("map-progress");
         foreach (var city in JourneyModel.Cities) { _screen.OpenCard(city.Id); await Capture("city-" + city.Name); }
         _screen.PresentCompletion(StableIds.Cities.Tianjin, () => _screen.PresentHome());
         await ToSignal(GetTree().CreateTimer(.5), SceneTreeTimer.SignalName.Timeout); await Capture("completion-tianjin");
@@ -507,6 +525,46 @@ public partial class StartScreenSelfTest : Node
         _screen.PresentHome(); await Click(Find<Button>("Settings")); await Capture("settings");
         KeyPress(Key.Escape); await Click(Find<Button>("Help")); await Capture("help"); KeyPress(Key.Escape);
         await Click(Find<Button>("NewGame")); await Click(Find<Button>("Skip")); await Click(Find<Button>("Depart")); await Capture("confirmation");
+    }
+
+    private async Task CollectionNavigation()
+    {
+        Check(!_save.CanContinue, "collection fixture starts without a save");
+        KeyPress(Key.Down);
+        Check(Find<Button>("BreakfastRecords").HasFocus(), "new journey leads to collection in keyboard order");
+        KeyPress(Key.Down);
+        Check(Find<Button>("WorldMap").HasFocus(), "collection leads to world map in keyboard order");
+        await Capture("collection-home-new");
+        await Click(Find<Button>("BreakfastRecords"));
+        Check(_screen.Page == JourneyPage.Collection && Find<Label>("BreakfastOrigin").Text.Contains("正确送出"), "new players can browse uncollected breakfasts");
+        Check(!File.Exists(_path), "browsing does not create a save");
+        await Click(Find<Button>("Breakfast_youtiao"));
+        await Click(Find<Button>("Back"));
+        Check(_screen.Page == JourneyPage.Home && Find<Button>("BreakfastRecords").HasFocus(), "back returns home and restores collection focus");
+        Check(_save.ResetProgress(out _), "create isolated journey");
+        _save.Data.UnlockedCityIds.Add(StableIds.Cities.Wuhan);
+        Check(_save.TrySave(out _), "persist unlocked city fixture");
+        string before = File.ReadAllText(_path);
+        _screen.PresentHome(); await Frames(); await Capture("collection-home");
+        await Click(Find<Button>("BreakfastRecords"));
+        Check(_screen.Descendants<Button>().Count(b => b.Name.ToString().StartsWith("Breakfast_")) == 5, "home collection includes both unlocked cities");
+        await Click(Find<Button>("Breakfast_doupi"));
+        Check(_screen.Page == JourneyPage.Collection && Find<Label>("BreakfastName").Text.Length > 0, "cross-city selection remains in collection");
+        Check(!_screen.Descendants<Button>().Any(b => b.Name == "LedgerTab" || b.Name == "UpgradeTab"), "global collection has no city navigation tabs");
+        await Capture("collection-global");
+        KeyPress(Key.Escape); await Frames();
+        Check(_screen.Page == JourneyPage.Home && Find<Button>("BreakfastRecords").HasFocus(), "Escape returns home after selecting a different city");
+        await Click(Find<Button>("BreakfastRecords")); await Click(Find<Button>("CollectionHome"));
+        Check(_screen.Page == JourneyPage.Home, "footer returns home");
+        Check(File.ReadAllText(_path) == before, "collection navigation preserves saved progress and resume city");
+        foreach (var city in JourneyModel.Cities.Where(c => !_save.IsDemo || _save.Data.UnlockedCityIds.Contains(c.Id)))
+        {
+            _screen.PresentCity(city.Id); _screen.PresentLedger(); await Frames();
+            Check(!_screen.Descendants<Button>().Any(b => b.Name == "BreakfastRecords" || b.Name == "BusinessRecords"), "ledger keeps only business content " + city.Id);
+        }
+        File.WriteAllText(_path, "{broken"); _save.Load(); _screen.PresentHome(); await Frames();
+        await Click(Find<Button>("BreakfastRecords")); KeyPress(Key.Escape); await Frames();
+        Check(_screen.Page == JourneyPage.Home && File.ReadAllText(_path) == "{broken", "corrupt-save browsing returns safely without overwriting data");
     }
 
     private async Task Launch()

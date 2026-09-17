@@ -41,7 +41,6 @@ public partial class StartScreen
         DrawHelpCityTips(content);
         DrawHelpKeys(content);
 
-        if (ExperienceProfile.IsDemo)
         {
             var credits = Button(_modal, "MusicCredits", "配乐与署名", new(164, 919, 270, 40), OpenDemoMusicCredits, bare: true);
             credits.AddThemeFontSizeOverride("font_size", 22);

@@ -37,7 +37,15 @@ public partial class StartScreen
                 stamp.RotationDegrees = 8;
             }
         }
-        else HomeArt(_modal, "旅行手账双页母版", kind == "help" ? HelpBookBounds : BookBounds);
+        else
+        {
+            var book = HomeArt(_modal, "旅行手账双页母版", kind == "help" ? HelpBookBounds : BookBounds);
+            if (kind == "settings")
+            {
+                book.Name = "SettingsBook";
+                book.Material = new ShaderMaterial { Shader = GD.Load<Shader>("res://resource/shaders/settings_book_decor.gdshader") };
+            }
+        }
         foreach (var button in _buttons) button.FocusMode = FocusModeEnum.None;
     }
     private void AddPanelTitleTape(Control parent, string name, Rect2 bounds)
@@ -57,61 +65,18 @@ public partial class StartScreen
     private void CloseModal()
     {
         if (_modal is null || !_modal.Visible) return;
+        CloseSettingsPopups();
         _settings.RevertDisplay(); _modal.Hide(); _modalKind = "";
         _settingsMessage = null; _countdown = null; _displayConfirmation = null;
         foreach (var button in _buttons) if (GodotObject.IsInstanceValid(button)) button.FocusMode = FocusModeEnum.All;
         if (GodotObject.IsInstanceValid(_previousFocus) && _previousFocus!.IsInsideTree() && _previousFocus.IsVisibleInTree()) _previousFocus.GrabFocus();
         _previousFocus = null;
     }
-    private void OpenSettings()
-    {
-        OpenModal("settings");
-        Text(_modal, "DisplayTitle", "旅途设置", new(355, 280, 490, 70), 45);
-        Button(_modal, "Language", _settings.Language == "en" ? "语言：English" : "语言：简体中文", new(1040, 849, 510, 45),
-            () => { _settings.SetLanguage(_settings.Language == "en" ? "zh_CN" : "en"); OpenSettings(); });
-        Text(_modal, "DisplayCaption", "画面与窗口", new(355, 380, 490, 60), 31);
-        int y = 465;
-        foreach (var size in JourneySettings.AvailableSizes())
-        {
-            Button(_modal, "Size" + size.X, $"{size.X} × {size.Y}  窗口", new(355, y, 480, 60), () => PreviewDisplay(false, size)).AddThemeFontSizeOverride("font_size", 26); y += 78;
-        }
-        Button(_modal, "Fullscreen", "无边框全屏", new(355, y, 480, 60), () => PreviewDisplay(true, GetWindow().Size)).AddThemeFontSizeOverride("font_size", 26);
-        Text(_modal, "DisplayHint", "切换后 15 秒内确认，超时自动恢复。", new(355, 813, 500, 48), 23);
-        Text(_modal, "AudioTitle", "声音", new(1040, 280, 460, 70), 45);
-        Volume("master", "主音量", _settings.Master, 390);
-        Volume("music", ExperienceProfile.IsDemo ? "音乐" : "音乐 · 暂无背景音乐", _settings.Music, 510);
-        Volume("effects", "音效", _settings.Effects, 630);
-        Button(_modal, "Mute", _settings.Muted ? "取消静音" : "全部静音", new(1040, 780, 245, 62), () => { _settings.ToggleMute(); RefreshMute(); }).AddThemeFontSizeOverride("font_size", 25);
-        Button(_modal, "Close", "完成", new(1360, 780, 190, 62), CloseModal, true).AddThemeFontSizeOverride("font_size", 26);
-        _settingsMessage = Text(_modal, "SettingsMessage", _settings.ErrorMessage, new(430, 938, 1060, 58), 24, true);
-        _settingsMessage.AddThemeColorOverride("font_color", StartScreenTheme.Cream);
-        _modalControls[0].GrabFocus();
-    }
-    private void Volume(string key, string title, double value, int y)
-    {
-        Text(_modal, "Label" + key, title, new(1040, y, 440, 46), 27);
-        TextureRect? icon = key == "master" ? null : Art(_modal, (key == "music" ? "音乐" : "音效") + (_settings.Muted || value == 0 ? "关闭" : "开启"), new(987, y + 2, 40, 40));
-        var percent = Text(_modal, "Value" + key, value.ToString("0") + "%", new(1480, y + 40, 100, 45), 26, true);
-        var slider = new HSlider { Name = "Volume" + key, Position = new(1040, y + 57), Size = new(415, 38), MinValue = 0, MaxValue = 100, Step = 1, Value = value };
-        _modal.AddChild(slider); _modalControls.Add(slider);
-        slider.ValueChanged += volume => { _settings.SetVolume(key, volume); percent.Text = volume.ToString("0") + "%"; };
-        if (icon is not null) icon.Name = "ChannelIcon" + key;
-    }
-    private void RefreshMute()
-    {
-        var mute = _modalControls.OfType<Button>().FirstOrDefault(b => b.Name == "Mute");
-        if (mute is not null) mute.Text = _settings.Muted ? "取消静音" : "全部静音";
-        RefreshChannelIcons();
-    }
-    private void RefreshChannelIcons()
-    {
-        foreach (string key in new[] { "music", "effects" })
-            if (_modal.GetNodeOrNull<TextureRect>("ChannelIcon" + key) is { } icon)
-                icon.Texture = Texture((key == "music" ? "音乐" : "音效") + (_settings.Muted || (key == "music" ? _settings.Music : _settings.Effects) == 0 ? "关闭" : "开启"));
-    }
     private void PreviewDisplay(bool fullscreen, Vector2I size)
     {
+        _displayReturnFocus = GetViewport().GuiGetFocusOwner();
         _settings.PreviewDisplay(fullscreen, size);
+        if (!_settings.DisplayPending) return;
         if (_displayConfirmation is not null)
         {
             _modalControls.RemoveAll(c => _displayConfirmation.IsAncestorOf(c));
@@ -138,24 +103,31 @@ public partial class StartScreen
     }
     private void SettingsChanged()
     {
+        if (_body is not null)
+        {
+            if (_body.GetNodeOrNull<Label>("PageTitle") is { } heading) FitTextWidth(heading, 42, 26);
+            foreach (string name in new[] { "Home", "Settings", "Help", "Quit" })
+                if (_body.GetNodeOrNull<Button>(name)?.GetNodeOrNull<Label>("Caption") is { } caption)
+                    FitTextWidth(caption, 26, 20);
+        }
         // Existing home buttons also need their translated text measured after a locale change.
         if (Page == JourneyPage.Home && _body is not null)
             foreach (string name in new[] { "Continue", "NewGame", "WorldMap" })
                 if (_body.FindChild(name, true, false)?.GetNodeOrNull<Label>("Caption") is { } caption)
                     FitTextWidth(caption, name == "WorldMap" ? 34 : 48, name == "WorldMap" ? 25 : 32);
-        RefreshChannelIcons();
+        RefreshSettingsControls();
         if (_audioButton is not null && GodotObject.IsInstanceValid(_audioButton))
         {
             _audioButton.GetNode<Label>("Caption").Text = _settings.Muted ? "已静音" : "声音";
             if (_audioIcon is not null && GodotObject.IsInstanceValid(_audioIcon)) _audioIcon.Texture = Texture(_settings.Muted ? "音效关闭" : "音效开启");
         }
-        if (_settingsMessage is not null) _settingsMessage.Text = _settings.ErrorMessage;
+        if (_settingsMessage is not null) _settingsMessage.Text = string.IsNullOrEmpty(_settings.ErrorMessage) ? _settings.DisplayMessage : _settings.ErrorMessage;
         if (_countdown is not null) _countdown.Text = $"{_settings.SecondsRemaining} 秒后恢复原设置";
-        if (_displayConfirmation is not null && !_settings.DisplayPending)
+        if (_displayConfirmation is { Visible: true } && !_settings.DisplayPending)
         {
             _displayConfirmation.Hide();
             foreach (var c in _modalControls) c.FocusMode = _displayConfirmation.IsAncestorOf(c) ? FocusModeEnum.None : FocusModeEnum.All;
-            _modalControls.FirstOrDefault(c => c.Name == "Fullscreen")?.GrabFocus();
+            if (GodotObject.IsInstanceValid(_displayReturnFocus) && _displayReturnFocus!.IsVisibleInTree()) _displayReturnFocus.GrabFocus();
         }
     }
     private void OpenDemoMusicCredits()

@@ -8,7 +8,7 @@ namespace ProjectCake.Tests;
 
 public partial class CityDialogVerification : Node
 {
-    private const string Output = "res://.tmp/dialog-fixes-20260916";
+    private const string Output = "res://.tmp/tianjin-dialog-art/verification";
     private int _checks;
     public override async void _Ready()
     {
@@ -48,6 +48,17 @@ public partial class CityDialogVerification : Node
                     double before = controller.DayElapsedSeconds; controller.Tick(2);
                     Require(controller.IsPaused && controller.DayElapsedSeconds == before, city + " pause freezes business");
                     await Shot(viewport, $"{city}-{width}-pause");
+                    if (city == "Wuhan")
+                    {
+                        save.Data.UnlockedCityIds.Remove(id);
+                        Require(!main.OpenCity(id), "Wuhan internal navigation failure"); await Frames();
+                        var internalError = main.GetNode<AcceptDialog>("NavigationError");
+                        Require(((StyleBoxTexture)internalError.GetThemeStylebox("panel", "AcceptDialog")).Texture.ResourcePath
+                            == "res://resource/art/Wuhan/DialogUI/dialog-panel-v1.png", "Wuhan internal prompt uses green frame");
+                        await Shot(viewport, $"{city}-{width}-internal-navigation");
+                        Click(internalError, internalError.GetOkButton()); await Frames();
+                        save.Data.UnlockedCityIds.Add(id);
+                    }
                     Control menu = city switch { "Tianjin" => (Control)screen.FindChild("PausePanel", true, false),
                         "Wuhan" => screen.GetNode<Control>("HudPauseMenu"), _ => screen.GetNode<Control>("Workbench/PauseMenu") };
                     Button abandon = menu.Descendants<Button>().First(b => b.Text.Contains("放弃") || b.Text.Contains("离开") || b.Text.Contains("返回首页"));
@@ -59,14 +70,27 @@ public partial class CityDialogVerification : Node
                     var coveredPanel = city == "Tianjin" ? menu : menu.GetNode<Control>(city == "Wuhan" ? "HudPausePanel" : "Panel");
                     Require(!coveredPanel.Visible, city + " underlying pause panel hidden");
                     Require(dialog.GetThemeStylebox("panel", "AcceptDialog") is StyleBoxTexture, city + " confirmation uses artwork");
+                    if (city is "Tianjin" or "Wuhan")
+                    {
+                        Require(dialog.Size == new Vector2I(1200, 630), city + " confirmation keeps its designed size after layout");
+                        Require(!dialog.GetLabel().Text.Contains("\n\n"), city + " line breaks remain stable across resize callbacks");
+                    }
                     controller.Tick(2); Require(controller.DayElapsedSeconds == before, city + " confirmation stays paused");
                     await Shot(viewport, $"{city}-{width}-abandon");
                     Click(dialog, dialog.GetCancelButton()); await Frames();
                     Require(!dialog.Visible && controller.IsPaused && menu.Visible, city + " cancel restores paused menu");
                     Click(viewport, abandon); await Frames();
                     var close = dialog.GetNode<Button>("CityDialogHeader/Artwork/Close");
-                    Require(!close.Disabled, city + " close remains enabled while business paused");
-                    Click(dialog, close); await Frames();
+                    if (city is "Tianjin" or "Wuhan")
+                    {
+                        Require(!close.Visible, city + " has no close icon or hit target");
+                        KeyInput(viewport, Key.Escape); await Frames();
+                    }
+                    else
+                    {
+                        Require(!close.Disabled, city + " close remains enabled while business paused");
+                        Click(dialog, close); await Frames();
+                    }
                     Require(!dialog.Visible && coveredPanel.Visible && controller.IsPaused, city + " close restores pause panel");
                     Click(viewport, abandon); await Frames();
                     dialog.GetCancelButton().GrabFocus();
@@ -86,6 +110,18 @@ public partial class CityDialogVerification : Node
                     var error = main.GetNode<AcceptDialog>("NavigationError");
                     Require(error.GetNode<Label>("CityDialogHeader/Artwork/Title").Text == error.Title, "navigation header uses current title");
                     Require(error.Visible && error.GetThemeStylebox("panel", "AcceptDialog") is StyleBoxTexture, city + " navigation error uses artwork");
+                    if (city is "Tianjin" or "Wuhan")
+                    {
+                        var frame = (StyleBoxTexture)error.GetThemeStylebox("panel", "AcceptDialog");
+                        Require(frame.Texture.ResourcePath == "res://resource/art/TianJin/DialogUI/dialog-panel-v1.png",
+                            city + " home navigation retains the warm frame");
+                        Require(error.GetLabel().GetThemeColor("font_color") == new Color("#542D16"),
+                            city + " home navigation retains brown text");
+                        Require(!error.GetNode<Control>("CityDialogHeader/Artwork/Close").Visible,
+                            city + " navigation has no close icon");
+                    }
+                    else Require(error.GetLabel().GetThemeFontSize("font_size") == 22,
+                        city + " navigation restores its original typography");
                     await Shot(viewport, $"{city}-{width}-navigation");
                     Click(error, error.GetOkButton()); await Frames();
                     Require(!error.Visible, city + " navigation acknowledgment closes dialog");
@@ -118,7 +154,10 @@ public partial class CityDialogVerification : Node
     private async Task Frames() { for (int i = 0; i < 4; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame); }
     private async Task Shot(SubViewport viewport, string name)
     {
-        await Frames(); await ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
+        await Frames();
+        // A minimized test window does not emit FramePostDraw automatically.
+        // Draw the offscreen viewport explicitly so capture remains deterministic.
+        RenderingServer.ForceDraw(false);
         Require(viewport.GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath(Output + "/" + name + ".png")) == Error.Ok, "saved " + name);
     }
 }

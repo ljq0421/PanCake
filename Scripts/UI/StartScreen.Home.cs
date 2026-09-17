@@ -41,7 +41,7 @@ public partial class StartScreen
 
     private Button HomeAction(string name, string caption, string icon, Rect2 rect, Action action, bool small = false)
     {
-        var button = Button(_body, name, "", rect, action, bare: true);
+        var button = Button(_body, name, "", rect, action, bare: true, highlightFocus: name != "Continue");
         HomeArt(button, small ? "首页地图按钮底板" : "首页主按钮底板", new(Vector2.Zero, rect.Size), stretch: true);
         HomeArt(button, icon, small ? new(14, -12, 110, 112) : new(18, -34, 180, 178));
         var label = Text(button, "Caption", caption,
@@ -58,6 +58,7 @@ public partial class StartScreen
         HomeArt(button, "圆形功能按钮底板", new(6, 0, 96, 96));
         HomeArt(button, icon, new(29, 23, 50, 50));
         var label = Text(button, "Caption", caption, new(0, 96, 108, 32), 26, true);
+        FitTextWidth(label, 26, 20);
         label.AddThemeColorOverride("font_color", StartScreenTheme.Cream);
         label.AddThemeColorOverride("font_outline_color", StartScreenTheme.Ink);
         label.AddThemeConstantOverride("outline_size", 6);

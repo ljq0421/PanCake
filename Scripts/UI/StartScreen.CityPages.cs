@@ -100,7 +100,7 @@ public partial class StartScreen
         HomeArt(_body, "Dayx背景", new(320, 695, 595, 145)).Name = "DayRibbon";
         var dayCaption = Text(_body, "DayTitle", $"第{day}天 {overview?.Title ?? ""}", new(383, 722, 443, 74), 32, true);
         FitTextWidth(dayCaption, 32, 22);
-        if (_save!.IsDemo)
+        if (_city is StableIds.Cities.Tianjin or StableIds.Cities.Wuhan)
         {
             var replay = Button(_body, "ReplayTutorial", "重看首份教学", new(350, 838, 315, 36), () => DemoTutorialRequested?.Invoke(), bare: true);
             replay.AddThemeFontSizeOverride("font_size", 22);
@@ -145,7 +145,7 @@ public partial class StartScreen
     {
         var city = JourneyModel.City(_city); var p = JourneyModel.Progress(_save!, _city);
         CityFrame(JourneyPage.Ledger, city.Name + " · 经营手账");
-        if (_save!.IsDemo) DemoBookTabs();
+        DemoBookTabs();
         var calendarTitle = Text(_body, "CalendarTitle", "营业日历", new(604, 248, 270, 65), 43, true);
         FitTextWidth(calendarTitle, 43, 20);
         calendarTitle.RotationDegrees = -4;

@@ -90,16 +90,25 @@ public partial class StartScreen : Control
         Art(previous, "账本翻页箭头｜左", new(0, 7, 55, 48));
         Text(previous, "Caption", "返回", new(62, 0, 78, 62), 25);
         if (!string.IsNullOrEmpty(title))
-            Text(_body, "PageTitle", title, new(350, 38, 1220, 76), 42, true).AddThemeColorOverride("font_color", StartScreenTheme.Cream);
-        Button(_body, "Home", "首页", new(1690, 48, 140, 62), RenderHome);
+        {
+            var heading = Text(_body, "PageTitle", title, new(520, 38, 880, 76), 42, true);
+            heading.AddThemeColorOverride("font_color", StartScreenTheme.Cream);
+            FitTextWidth(heading, 42, 26);
+        }
+        NavigationUtilities(includeHome: true);
+    }
+    private void NavigationUtilities(bool includeHome = false)
+    {
+        if (includeHome) HomeUtility("Home", "首页", "首页", 1416, RenderHome);
+        HomeUtility("Settings", "设置", "设置图标", 1540, OpenSettings);
+        HomeUtility("Help", "帮助", "帮助图标", 1664, OpenHelp);
+        HomeUtility("Quit", "退出", "返回主界面图标", 1788, () => { _busy = true; QuitRequested?.Invoke(); });
     }
     private void Utilities()
     {
         if (Page == JourneyPage.Home)
         {
-            HomeUtility("Settings", "设置", "设置图标", 1540, OpenSettings);
-            HomeUtility("Help", "帮助", "帮助图标", 1664, OpenHelp);
-            HomeUtility("Quit", "退出", "返回主界面图标", 1788, () => { _busy = true; QuitRequested?.Invoke(); });
+            NavigationUtilities();
             return;
         }
         Utility("Settings", "设置", "设置图标", 1390, OpenSettings);
@@ -133,6 +142,7 @@ public partial class StartScreen : Control
         if (!IsVisibleInTree() || _busy) return;
         if (Page == JourneyPage.Splash && input is InputEventMouseButton { Pressed: true }) { RenderHome(); GetViewport().SetInputAsHandled(); return; }
         if (input is not InputEventKey { Pressed: true, Echo: false } key) return;
+        if (SettingsPopupOpen()) return;
         if (key.Keycode == Key.Escape)
         {
             if (ModalOpen) { if (_settings.DisplayPending) _settings.RevertDisplay(); else CloseModal(); }

@@ -9,16 +9,32 @@ public static class TianjinTeachingUi
     private const string ActionPath = "res://resource/art/TianJin/TutorialUI/teaching-action-v1.png";
 
     public static void ApplyPanel(Panel panel)
-        => panel.AddThemeStyleboxOverride("panel", GD.Load<StyleBoxTexture>(PanelFramePath));
+    {
+        // Scale the whole nine-patch uniformly; only its undecorated paper stretches.
+        const float artScale = .65f;
+        panel.AddThemeStyleboxOverride("panel", new StyleBoxEmpty());
+        var art = new Panel
+        {
+            Name = "TeachingPanelArt", Scale = Vector2.One * artScale,
+            MouseFilter = Control.MouseFilterEnum.Ignore, ShowBehindParent = true,
+            UseParentMaterial = true,
+        };
+        art.AddThemeStyleboxOverride("panel", GD.Load<StyleBoxTexture>(PanelFramePath));
+        panel.AddChild(art);
+        void ResizeArtwork() => art.Size = panel.Size / artScale;
+        panel.Resized += ResizeArtwork;
+        ResizeArtwork();
+    }
 
     public static Panel ActionFrame(Button action, Vector2 position, Vector2 size)
     {
         var frame = new Panel { Position = position, Size = size, MouseFilter = Control.MouseFilterEnum.Ignore };
+        frame.AddThemeStyleboxOverride("panel", new StyleBoxEmpty());
         var art = new TextureRect
         {
             Texture = GD.Load<Texture2D>(ActionPath),
             ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
-            StretchMode = TextureRect.StretchModeEnum.Scale,
+            StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
             MouseFilter = Control.MouseFilterEnum.Ignore,
         };
         FullRect(art);

@@ -118,7 +118,7 @@ public partial class CityPagesSelfTest : Node
                 Check(File.ReadAllText(_path) == before, "browsing never writes " + city.Name);
                 Click("MapTab"); await Frames(); Click("Back");
                 Check(_screen.Page == JourneyPage.Upgrades && _screen.SelectedCityId == city.Id, "map restores source city and tab " + city.Name);
-                Click("Home"); Click("Settings"); await Frames();
+                Click("Settings"); await Frames();
                 var settingsBooks = _screen.GetNode<Control>("Canvas/Modal").GetChildren().OfType<TextureRect>().ToArray();
                 Check(settingsBooks.Length > 0 && settingsBooks.All(t => t.Material is null), "settings book remains original " + city.Name);
                 Click("Close"); _screen.PresentCity(city.Id); await Frames(); CheckBookTheme(city.Id);

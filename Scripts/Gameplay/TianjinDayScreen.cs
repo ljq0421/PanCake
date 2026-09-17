@@ -374,9 +374,7 @@ public partial class TianjinDayScreen : Control
 
     private void StylePausePanel()
     {
-        CityDialogChrome.ApplyPausePanel(_pausePanel, StableIds.Cities.Tianjin);
-        _pausePanel.Descendants<Label>().First(label => label.Text == "营业暂停").ZIndex = 2;
-        _pauseTitleTape = CityDialogChrome.AddTitleTape(this, "TianjinPauseTitleTape", new(760, 356, 400, 66), StableIds.Cities.Tianjin, 93);
+        _pauseTitleTape = IllustratedCityDialogTheme.BuildPause(_pausePanel, StableIds.Cities.Tianjin);
         _pauseTitleTape.Visible = false;
     }
 

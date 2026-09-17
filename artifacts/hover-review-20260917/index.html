@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>悬停提示 · 15项运行截图</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f5f3ee;color:#26241f;font:16px/1.6 system-ui,"Microsoft YaHei",sans-serif}header,main{max-width:1500px;margin:auto;padding:26px 32px}h1{font-size:27px;margin:0 0 8px}p{margin:8px 0}.meta{color:#68645b}nav{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}button{font:inherit;border:1px solid #c9c4ba;background:white;border-radius:6px;padding:6px 13px;cursor:pointer}button[aria-pressed=true]{color:white;background:#493827;border-color:#493827}main{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;padding-top:0}article{background:white;border:1px solid #ded9ce;border-radius:8px;overflow:hidden}article h2{font-size:18px;padding:18px 22px 0;margin:0}article p{padding:0 22px;white-space:pre-wrap}figure{margin:18px 0 0;padding:12px;background:#e9e5de;min-height:280px;display:flex;align-items:center;justify-content:center}img{max-width:100%;max-height:470px;object-fit:contain}a{color:#745022}footer{padding:12px 22px}article[hidden]{display:none}.note{padding:12px 16px;border-left:3px solid #b5a58b;background:#ebe7df;font-size:14px}#mode{margin-left:auto}@media(max-width:850px){main{grid-template-columns:1fr}header,main{padding:20px}#mode{margin-left:0}}
+</style>
+<header><h1>悬停提示 · 15项运行截图</h1><p class="meta">2026-09-17 · 23张截图 · 原始画面1920×1080 · 编号对应上一轮排查清单</p><p>点击编号筛选；点击图片打开完整运行画面。</p><p class="note">截图来自当前游戏场景的实际渲染与原生鼠标悬停弹窗。使用隔离测试存档，账本用测试营业快照展示；未删除提示、未更改其样式。第15项使用西安弹窗，当前天津、武汉弹窗的关闭叉号已隐藏。第2项是墙面地图入口。</p><nav id="nav"></nav></header><main id="shots"></main>
+<script>
+const data=[
+  {
+    "id": "01-continue",
+    "title": "1 · 首页继续旅程",
+    "requested": "天津 · 第 15 天",
+    "shown": "天津 · 第 15 天",
+    "target": "/root/HoverTooltipCapture/@SubViewport@2/Main/UI/StartScreen/Canvas/Page/Continue",
+    "x": 650,
+    "y": 906,
+    "popupCount": 1
+  },
+  {
+    "id": "02-map",
+    "title": "2 · 首页墙面地图入口",
+    "requested": "查看世界地图",
+    "shown": "查看世界地图",
+    "target": "/root/HoverTooltipCapture/@SubViewport@2/Main/UI/StartScreen/Canvas/Page/WallMap",
+    "x": 985,
+    "y": 440,
+    "popupCount": 1
+  },
+  {
+    "id": "03-calendar",
+    "title": "3 · 经营日历日期",
+    "requested": "第 8 天 · 火腿新品\n历史最佳收入 386 金币 · 满意度 96%",
+    "shown": "第 8 天 · 火腿新品\n历史最佳收入 386 金币 · 满意度 96%",
+    "target": "/root/HoverTooltipCapture/@SubViewport@2/Main/UI/StartScreen/Canvas/Page/Date8",
+    "x": 599.5,
+    "y": 615,
+    "popupCount": 1
+  },
+  {
+    "id": "04-day",
+    "title": "4 · 天津营业日签",
+    "requested": "天津 · 第 15 天 · 最终高峰",
+    "shown": "天津 · 第 15 天 · 最终高峰",
+    "target": "/root/HoverTooltipCapture/@SubViewport@2/Main/UI/TianjinDayScreen/BusinessHud/DaySign",
+    "x": 149,
+    "y": 53,
+    "popupCount": 1
+  },
+  {
+    "id": "04b-wuhan-day",
+    "title": "4 · 武汉营业日签（第12天）",
+    "requested": "武汉 · 第 12 天 · 最终挑战\n",
+    "shown": "武汉 · 第 12 天 · 最终挑战",
+    "target": "/root/HoverTooltipCapture/@SubViewport@2/Main/UI/WuhanDayScreen/BusinessHud/DaySign",
+    "x": 149,
+    "y": 53,
+    "popupCount": 1
+  },
+  {
+    "id": "05-orders",
+    "title": "5 · 订单数量",
+    "requested": "今日已完成订单 / 计划订单",
+    "shown": "今日已完成订单 / 计划订单",
+    "target": "/root/HoverTooltipCapture/@SubViewport@2/Main/UI/TianjinDayScreen/BusinessHud/ProgressSign/@Label@109",
+    "x": 885,
+    "y": 59,
+    "popupCount": 1
+  },
+  {
+    "id": "06-time",
+    "title": "6 · 营业计时器",
+    "requested": "剩余营业时间",
+    "shown": "剩余营业时间",
+    "target": "/root/HoverTooltipCapture/@SubViewport@2/Main/UI/TianjinDayScreen/BusinessHud/ProgressSign/@Label@111",
+    "x": 1080,
+    "y": 58,
+    "popupCount": 1
+  },
+  {
+    "id": "07-income",
+    "title": "7 · 收入数字",
+    "requested": "今日收入（含小费）",
+    "shown": "今日收入（含小费）",
+    "target": "/root/HoverTooltipCapture/@SubViewport@2/Main/UI/TianjinDayScreen/BusinessHud/IncomeSign/@Label@113",
+    "x": 1734,
+    "y": 59,
+    "popupCount": 1
+  },
+  {
+    "id": "08-pause",
+    "title": "8 · 暂停按钮",
+    "requested": "暂停营业（Esc）",
+    "shown": "暂停营业（Esc）",
+    "target": "/root/HoverTooltipCapture/@SubViewport@2/Main/UI/TianjinDayScreen/BusinessHud/HudPause",
+    "x": 1868,
+    "y": 56,
+    "popupCount": 1
+  },
+  {
+    "id": "09-pendant",
+    "title": "9 · 天津收银挂件",
+    "requested": "查看营业明细",
+    "shown": "查看营业明细",
+    "target": "/root/HoverTooltipCapture/@SubViewport@2/Main/UI/TianjinDayScreen/CashPendant",
+    "x": 1471.5789,
+    "y": 207.73645,
+    "popupCount": 1
+  },
+  {
+    "id": "10a-book-entry",
+    "title": "10 · 西安账本入口",
+    "requested": "营业账本",
+    "shown": "营业账本",
+    "target": "/root/HoverTooltipCapture/@SubViewport@2/Main/UI/XianDayScreen/Workbench/BusinessHud/OpenBusinessBook",
+    "x": 310,
+    "y": 56,
+    "popupCount": 1
+  },
+  {
+    "id": "10b-collect",
+    "title": "10 · 西安收钱入口",
+    "requested": "暂无待收收入",
+    "shown": "点击收钱",
+    "target": "/root/HoverTooltipCapture/@SubViewport@2/Main/UI/XianDayScreen/Workbench/CoinTray",
+    "x": 1646,
+    "y": 58,
+    "popupCount": 1
+  },
+  {
+    "id": "11a-next",
+    "title": "11 · 账本翻页：顾客明细",
+    "requested": "顾客明细",
+    "shown": "顾客明细",
+    "target": "/root/HoverTooltipCapture/@SubViewport@2/Main/UI/XianDayScreen/BusinessDetails/@Control@175/@Control@176/NextBookPage",
+    "x": 1623,
+    "y": 630,
+    "popupCount": 1
+  },
+  {
+    "id": "11b-close-book",
+    "title": "11 · 收好账本",
+    "requested": "收好账本（Esc）",
+    "shown": "收好账本（Esc）",
+    "target": "/root/HoverTooltipCapture/@SubViewport@2/Main/UI/XianDayScreen/BusinessDetails/@Control@175/@Control@176/CloseBusinessDetails",
+    "x": 1455,
+    "y": 856,
+    "popupCount": 1
+  },
+  {
+    "id": "11c-previous",
+    "title": "11 · 账本翻页：营业小结",
+    "requested": "营业小结",
+    "shown": "营业小结",
+    "target": "/root/HoverTooltipCapture/@SubViewport@2/Main/UI/XianDayScreen/BusinessDetails/@Control@175/@Control@176/PreviousBookPage",
+    "x": 297,
+    "y": 630,
+    "popupCount": 1
+  },
+  {
+    "id": "12a-completion",
+    "title": "12 · 完成率统计说明",
+    "requested": "完成率 = 完成 ÷（完成 + 流失），只计算已结束客单；错误完成也计入完成。",
+    "shown": "完成率 = 完成 ÷（完成 + 流失），只计算已结束客单；错误完成也计入完成。",
+    "target": "/root/HoverTooltipCapture/@SubViewport@2/Main/UI/XianDayScreen/BusinessDetails/@Control@175/@Control@176/@Control@188/@Control@445/@Label@452",
+    "x": 1290,
+    "y": 459,
+    "popupCount": 1
+  },
+  {
+    "id": "12b-satisfaction",
+    "title": "12 · 满意度统计说明",
+    "requested": "仅按已完成订单的顾客计算满意度，流失顾客不计入平均值。",
+    "shown": "仅按已完成订单的顾客计算满意度，流失顾客不计入平均值。",
+    "target": "/root/HoverTooltipCapture/@SubViewport@2/Main/UI/XianDayScreen/BusinessDetails/@Control@175/@Control@176/@Control@188/@Control@445/@Label@455",
+    "x": 1231,
+    "y": 543,
+    "popupCount": 1
+  },
+  {
+    "id": "13a-food-name",
+    "title": "13 · 热销菜品完整名称",
+    "requested": "多肉加汁肉夹馍",
+    "shown": "多肉加汁肉夹馍",
+    "target": "/root/HoverTooltipCapture/@SubViewport@2/Main/UI/XianDayScreen/BusinessDetails/@Control@175/@Control@176/@Control@188/@Label@443",
+    "x": 675,
+    "y": 600,
+    "popupCount": 1
+  },
+  {
+    "id": "13b-unlock",
+    "title": "13 · 解锁贴片完整信息",
+    "requested": "章节已点亮\n新开放内容 · 回店查看",
+    "shown": "章节已点亮\n新开放内容 · 回店查看",
+    "target": "/root/HoverTooltipCapture/@SubViewport@2/Main/UI/XianDayScreen/BusinessDetails/@Control@175/@Control@176/@Control@188/UnlockSticker",
+    "x": 1144,
+    "y": 731,
+    "popupCount": 1
+  },
+  {
+    "id": "13c-upgrade",
+    "title": "13 · 查看升级效果与价格",
+    "requested": "查看升级效果与价格",
+    "shown": "查看升级效果与价格",
+    "target": "/root/HoverTooltipCapture/@SubViewport@2/Main/UI/XianDayScreen/BusinessDetails/@Control@175/@Control@176/@Control@188/UpgradeSticker/OpenBookUpgrades",
+    "x": 1436,
+    "y": 731,
+    "popupCount": 1
+  },
+  {
+    "id": "14a-save-message",
+    "title": "14 · 保存消息",
+    "requested": "已保存 · 已入账 ¥386 · 新纪录",
+    "shown": "已保存 · 已入账 ¥386 · 新纪录",
+    "target": "/root/HoverTooltipCapture/@SubViewport@2/Main/UI/XianDayScreen/BusinessDetails/@Control@175/@Control@176/@Label@197",
+    "x": 630,
+    "y": 848,
+    "popupCount": 1
+  },
+  {
+    "id": "14b-upgrade-feedback",
+    "title": "14 · 升级反馈完整消息",
+    "requested": "升级成功，下次营业生效。",
+    "shown": "升级成功，下次营业生效。",
+    "target": "/root/HoverTooltipCapture/@SubViewport@2/Main/UI/XianDayScreen/BusinessDetails/@Control@175/BookUpgradeModal/UpgradeFeedback",
+    "x": 800,
+    "y": 896,
+    "popupCount": 1
+  },
+  {
+    "id": "15-close-dialog",
+    "title": "15 · 西安确认弹窗关闭叉号",
+    "requested": "关闭",
+    "shown": "关闭",
+    "target": "/root/HoverTooltipCapture/@SubViewport@2/Main/UI/XianDayScreen/Workbench/@ConfirmationDialog@445/CityDialogHeader/Artwork/Close",
+    "x": 1281,
+    "y": 399,
+    "popupCount": 1
+  }
+];
+const nav=document.getElementById('nav'), shots=document.getElementById('shots');let full=false;
+for(let i=0;i<=15;i++){let b=document.createElement('button');b.textContent=i?String(i):'全部';b.setAttribute('aria-pressed',i===0);b.onclick=()=>{nav.querySelectorAll('[data-group]').forEach(n=>n.setAttribute('aria-pressed',n===b));shots.querySelectorAll('article').forEach(n=>n.hidden=i!==0&&Number(n.dataset.group)!==i)};b.dataset.group=i;nav.append(b)}
+const mode=document.createElement('button');mode.id='mode';mode.textContent='切换为完整画面';mode.onclick=()=>{full=!full;shots.querySelectorAll('img').forEach(n=>n.src=n.dataset.id+(full?'':'-detail')+'.png');mode.textContent=full?'切换为局部特写':'切换为完整画面'};nav.append(mode);
+for(const s of data){const a=document.createElement('article');a.dataset.group=parseInt(s.id,10);const h=document.createElement('h2');h.textContent=s.title;const p=document.createElement('p');p.textContent='提示：'+s.shown;const f=document.createElement('figure');const link=document.createElement('a');link.href=s.id+'.png';link.target='_blank';const img=document.createElement('img');img.src=s.id+'-detail.png';img.dataset.id=s.id;img.alt=s.title+'：'+s.shown;img.loading='lazy';link.append(img);f.append(link);const foot=document.createElement('footer');const raw=document.createElement('a');raw.href=s.id+'.png';raw.target='_blank';raw.textContent='打开完整截图 ↗';foot.append(raw);a.append(h,p,f,foot);shots.append(a)}
+</script></html>

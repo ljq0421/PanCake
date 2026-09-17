@@ -36,6 +36,11 @@ public partial class StartScreenSelfTest : Node
             _save.UsePathForTests(_path);
             GetNode<JourneySettings>("/root/JourneySettings").UsePathForTests(Path.Combine(directory, "settings.cfg"));
             await Launch();
+            if (args.Contains("--settings-only"))
+            {
+                await SettingsPageChecks.Run(_screen, _save, GetNode<JourneySettings>("/root/JourneySettings"), Capture);
+                GD.Print("SETTINGS_FULL_SELF_TEST_OK"); GetTree().Quit(); return;
+            }
             if (args.Contains("--help-only"))
             {
                 await HelpPageChecks.Run(_screen, _save, GetNode<JourneySettings>("/root/JourneySettings"), Capture);
@@ -299,13 +304,13 @@ public partial class StartScreenSelfTest : Node
         _screen.PresentHome(); await Frames();
         await Click(Find<Button>("Settings")); await Capture("settings");
         var settings = GetNode<JourneySettings>("/root/JourneySettings");
-        await Click(Find<Button>("Language"));
-        Check(settings.Language == "en" && Find<Label>("DisplayTitle").Tr("旅途设置").ToString() == "Settings", "full game language button changes displayed text to English");
+        await SettingsPageChecks.SelectLanguage(_screen, 1);
+        Check(settings.Language == "en" && Find<Label>("LanguageLabel").Tr("语言").ToString() == "Language", "full game language choice changes displayed text to English");
         await Capture("settings-english");
         settings.LoadPreferences();
         Check(settings.Language == "en" && _screen.Tr("新的旅程").ToString() == "New journey", "full game language preference persists");
         Check(_screen.Tr("尚未翻译的城市文案").ToString() == "尚未翻译的城市文案", "missing English translation retains source text");
-        await Click(Find<Button>("Language"));
+        await SettingsPageChecks.SelectLanguage(_screen, 0);
         Check(settings.Language == "zh_CN" && _screen.Tr("旅途设置").ToString() == "旅途设置", "full game switches back to Chinese without English fallback");
         await Capture("settings-chinese");
         Find<HSlider>("Volumemaster").Value = 63;
@@ -322,7 +327,7 @@ public partial class StartScreenSelfTest : Node
         Find<HSlider>("Volumemusic").Value = 0;
         Check(Find<TextureRect>("ChannelIconmusic").Texture.ResourcePath.Contains("音乐关闭") && Find<TextureRect>("ChannelIconeffects").Texture.ResourcePath.Contains("音效开启"), "zero music volume leaves effects icon active");
         Vector2I oldSize = GetWindow().Size;
-        await Click(Find<Button>(_width == 1280 ? "Size1280" : "Fullscreen")); await Capture("display-confirmation");
+        await Click(Find<Button>("Fullscreen")); await Capture("display-confirmation");
         Check(settings.DisplayPending, "display asks for confirmation");
         Check(Find<Panel>("DisplayConfirmationPanel").GetThemeStylebox("panel") is StyleBoxTexture
             && Find<Panel>("DisplayConfirmationMessagePanel").Visible

@@ -26,7 +26,6 @@ public partial class DemoMusicPlayer : Node
             _voices[i] = new AudioStreamPlayer { Name = "Bed" + i, Bus = JourneySettings.MusicBus, VolumeDb = -80, ProcessMode = ProcessModeEnum.Always };
             AddChild(_voices[i]);
         }
-        if (!ExperienceProfile.IsDemo) return;
         foreach (var (key, filename) in new[] { ("home", "Wholesome"), (StableIds.Cities.Tianjin, "Carefree"), (StableIds.Cities.Wuhan, "Local Forecast - Elevator") })
         {
             string path = "res://resource/audio/demo/" + filename + ".mp3";
@@ -46,12 +45,14 @@ public partial class DemoMusicPlayer : Node
     }
     internal void SetContext(string key, bool ducked, double delta)
     {
-        if (_key != key && _tracks.TryGetValue(key, out var stream))
+        if (_key != key)
         {
+            _tracks.TryGetValue(key, out var stream);
             // At most two voices, even if the user changes cities again during a fade.
             _active = 1 - _active; _voices[_active].Stop();
             _voices[_active].Stream = stream; _voices[_active].VolumeDb = -80;
-            _voices[_active].Play(); _voices[_active].StreamPaused = !_focused;
+            if (stream is not null) _voices[_active].Play();
+            _voices[_active].StreamPaused = !_focused;
             _key = key; _crossfade = 0;
         }
         if (!_focused) return;

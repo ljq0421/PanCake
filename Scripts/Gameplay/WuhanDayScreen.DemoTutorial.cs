@@ -18,12 +18,12 @@ public partial class WuhanDayScreen
     private BusinessBookModel? _demoPendingResult;
     private bool BeginWuhanDemoLesson()
     {
-        if (!_save.IsDemo) return false;
+        if (!_save.IsDemo && !ForceDemoTutorial) return false;
         _demoBusinessDay = _controller.CurrentConfig!.Day;
-        var stage = _save.DemoContent!.Stage(StableIds.Cities.Wuhan, _demoBusinessDay)!;
-        _demoTeachingDay = ForceDemoTutorial && stage.Tutorial.Length == 0 ? (_demoBusinessDay >= 4 ? 4 : 1) : _demoBusinessDay;
-        var lesson = _save.DemoContent.Stage(StableIds.Cities.Wuhan, _demoTeachingDay)!;
-        bool requested = ForceDemoTutorial || lesson.Tutorial.Length > 0
+        var stage = _save.IsDemo ? _save.DemoContent!.Stage(StableIds.Cities.Wuhan, _demoBusinessDay) : null;
+        _demoTeachingDay = !_save.IsDemo ? 1 : ForceDemoTutorial && stage!.Tutorial.Length == 0 ? (_demoBusinessDay >= 4 ? 4 : 1) : _demoBusinessDay;
+        var lesson = _save.IsDemo ? _save.DemoContent!.Stage(StableIds.Cities.Wuhan, _demoTeachingDay) : null;
+        bool requested = ForceDemoTutorial || lesson is { Tutorial.Length: > 0 }
             && !_save.DemoProgress.CompletedTutorials.Contains(lesson.Id) && !_save.DemoProgress.SkippedTutorials.Contains(lesson.Id);
         ForceDemoTutorial = false;
         if (!requested) return false;
@@ -46,7 +46,10 @@ public partial class WuhanDayScreen
             _demoLesson.AddChild(WuhanTeachingUi.ActionFrame(_demoLessonAction, new(160, 98), new(200, 52)));
             _demoLessonAction.Pressed += FinishWuhanDemoLesson;
         }
-        _demoLessonTitle!.Text = lesson.TitleZh; _demoLessonAction!.Text = "跳过教学"; _demoLesson.Show();
+        Workstation.AllowedIngredients = _controller.CurrentConfig!.AvailableRecipeIds.SelectMany(id => _catalog.RecipesById[id].ExtraIngredients)
+            .Append(StableIds.Ingredients.WuhanBaseSeasoning).ToHashSet();
+        GetNode<TextureRect>("WorkbenchBackground").Texture = _art.WorkbenchBackground(_doupi is not null);
+        _demoLessonTitle!.Text = lesson?.TitleZh ?? "第一碗热干面"; _demoLessonAction!.Text = "跳过教学"; _demoLesson.Show();
         _controller.TryStartDay(out _); _controller.Tick(3); _controller.Tick(.01); Render();
         return true;
     }
@@ -55,8 +58,10 @@ public partial class WuhanDayScreen
         if (!_controller.TutorialActive || !_focused || _controller.IsPaused || _abandon.Visible) return;
         var old = _save.Data.Wuhan.LearnedWorkbenchActions.ToHashSet();
         if (_demoLessonComplete) _save.Data.Wuhan.LearnedWorkbenchActions.UnionWith(_demoLearned);
-        string id = _save.DemoContent!.Stage(StableIds.Cities.Wuhan, _demoTeachingDay)!.Id;
-        if (!_save.SaveDemoTutorial(id, !_demoLessonComplete, out _))
+        bool saved = _save.IsDemo
+            ? _save.SaveDemoTutorial(_save.DemoContent!.Stage(StableIds.Cities.Wuhan, _demoTeachingDay)!.Id, !_demoLessonComplete, out _)
+            : _save.TrySave(out _);
+        if (!saved)
         {
             _save.Data.Wuhan.LearnedWorkbenchActions = old;
             _demoLessonTitle!.Text = "教学记录未保存，请重试。"; _demoLessonAction!.Text = "重试保存"; return;
@@ -67,7 +72,7 @@ public partial class WuhanDayScreen
     }
     private void DemoLessonDelivered(DeliveryEvaluation result)
     {
-        if (!_controller.TutorialActive || !result.CompletesOrder) return;
+        if (!_controller.TutorialActive || _demoLesson?.Visible != true || !result.CompletesOrder) return;
         if (result.Grade is DeliveryGrade.Correct or DeliveryGrade.Perfect)
         {
             _demoLessonComplete = true;

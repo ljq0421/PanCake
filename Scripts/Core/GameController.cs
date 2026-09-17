@@ -74,6 +74,14 @@ public partial class GameController : Node
         _startScreen.Initialize(save);
         _startScreen.ConfigureCities(catalog, yangzhouCatalog);
         _startScreen.BusinessRequested += (city, day) => StartCityBusiness(city, day);
+        _startScreen.DemoTutorialRequested += () =>
+        {
+            if (_startScreen.SelectedCityId == StableIds.Cities.Wuhan) wuhanDay.ForceDemoTutorial = true;
+            else if (_startScreen.SelectedCityId == StableIds.Cities.Tianjin) dayScreen.ForceDemoTutorial = true;
+            else return;
+            if (!StartCityBusiness(_startScreen.SelectedCityId, _startScreen.SelectedDay))
+            { dayScreen.ForceDemoTutorial = false; wuhanDay.ForceDemoTutorial = false; }
+        };
         _startScreen.UpgradeRequested += (city, id) =>
         {
             string error;
@@ -127,6 +135,7 @@ public partial class GameController : Node
         {
             OpenCity(cityId, mapScreen.DeveloperToolsVisible);
         };
+        InitializeMusic();
         ShowOnly(_startScreen);
         _startScreen.Present();
     }
@@ -156,7 +165,10 @@ public partial class GameController : Node
             _startScreen.ShowError(message);
             return;
         }
-        CityDialogChrome.ApplyConfirmation(_navigationError, cityId);
+        // Wuhan's green frame belongs to its business screen, not the home/map pages.
+        string themeCity = GetNode<Control>(WuhanDayPath).Visible ? StableIds.Cities.Wuhan
+            : cityId == StableIds.Cities.Wuhan ? StableIds.Cities.Tianjin : cityId;
+        CityDialogChrome.ApplyConfirmation(_navigationError, themeCity);
         _navigationError.Title = "暂时无法前往";
         _navigationError.DialogText = message;
         _navigationError.PopupCentered(new Vector2I(680, 300));

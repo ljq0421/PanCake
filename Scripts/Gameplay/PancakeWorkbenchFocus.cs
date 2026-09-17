@@ -43,10 +43,13 @@ public partial class PancakeWorkstation
         }
         TutorialFocusStep? Step(string action, string text, params TutorialFocusTarget[] targets) =>
             NeedsTeaching(action) ? new(action, text, targets) : null;
+        TutorialFocusStep? RefillFocus(string id) => Step("refill:" + id,
+            Inventory.IsRefilling(id) ? $"{IngredientName(id)}补货中，等待补满。"
+                : $"左键长按{IngredientName(id)}料盒 0.45 秒补货。", Ingredient(id));
         TutorialFocusStep? Take(string id, string text)
         {
             if (!Inventory.HasAvailable(id))
-                return Inventory.CanRefill(id) ? Step("refill:" + id, $"按住{IngredientName(id)}料盒补货。", Ingredient(id)) : null;
+                return Inventory.CanRefill(id) || Inventory.IsRefilling(id) ? RefillFocus(id) : null;
             return Step("take:" + id, text, Ingredient(id));
         }
         TutorialFocusStep? Deliver(string payload, ProductKind kind, Control source, string name, string? recipe = null)
@@ -73,9 +76,29 @@ public partial class PancakeWorkstation
             if (CanDrop(id) && (id == "batter" || _ingredientSlots.ContainsKey(id))) return Step("take:" + id, $"把{IngredientName(id)}拖到饼面后松手。", Surface());
             return null;
         }
-        if (_focusLastChannel == "fryer" && r.State is not (PancakeState.BatterPlaced or PancakeState.Spreading or PancakeState.Saucing))
-        { var step = FryerFocus(); if (step is not null) return step; }
+        // Urgent cleanup precedes idle production hints, even when the fryer was used last.
+        if (r.State == PancakeState.Burnt && NeedsTeaching("discard"))
+            return Step("discard", "在焦饼上长按右键 0.45 秒，再拖入垃圾桶。", Surface());
+        bool busyStroke = r.State is PancakeState.BatterPlaced or PancakeState.Spreading or PancakeState.Saucing;
+        if (!busyStroke && FryerMachine?.Runtime.State == FryerState.Burnt && NeedsTeaching("discard"))
+            return FryerFocus();
+        // Offer low-stock help in a safe gap, before the next pancake, without stealing a delivery.
+        // Missing ingredients in an active recipe are handled immediately by Take above.
+        if (!IsTransferringBag && r.State == PancakeState.Empty && !HasFinishedPancake)
+        {
+            foreach (string id in _ingredientSlots.Keys.Where(_enabledIngredients.Contains).OrderBy(id => id, StringComparer.Ordinal))
+                if (NeedsTeaching("refill:" + id) && Inventory.GetStatus(id) is IngredientStockStatus.Low or IngredientStockStatus.Empty or IngredientStockStatus.Refilling)
+                    return RefillFocus(id);
+            if (SoyMilkTray is { IsTaking: false } soy && NeedsTeaching("refill:soy_milk") && (soy.Quantity <= 2 || soy.IsRefilling))
+                return SoyRefillFocus();
+        }
         TutorialOrder? order = orders.FirstOrDefault(o => o.Kind == ProductKind.Pancake && r.ExtraIngredients.All(o.Toppings.Contains));
+        string? blockedIngredient = r.State is PancakeState.Spread or PancakeState.SideACooking && !r.HasEgg && !Inventory.HasAvailable("egg")
+            ? "egg" : r.State is PancakeState.Sauced or PancakeState.Toppings
+                ? order?.Toppings.FirstOrDefault(id => _ingredientSlots.ContainsKey(id) && _enabledIngredients.Contains(id) && !r.ExtraIngredients.Contains(id) && !Inventory.HasAvailable(id)) : null;
+        if (blockedIngredient is not null && NeedsTeaching("refill:" + blockedIngredient)) return RefillFocus(blockedIngredient);
+        if (_focusLastChannel == "fryer" && !busyStroke)
+        { var step = FryerFocus(); if (step is not null) return step; }
         if (r.State is PancakeState.Sauced or PancakeState.Toppings)
         {
             foreach (string id in order?.Toppings ?? Array.Empty<string>())
@@ -117,11 +140,14 @@ public partial class PancakeWorkstation
         }
         if (SoyMilkTray is not null && orders.Any(o => o.Kind == ProductKind.SoyMilk))
         {
-            if (SoyMilkTray.Quantity < SoyMilkTray.Capacity && !SoyMilkTray.IsRefilling && !SoyMilkTray.IsTaking && NeedsTeaching("refill:soy_milk"))
-                return Step("refill:soy_milk", "按住豆浆托盘补货。", Painted(TianjinPaintedObject.SoyTray));
+            if (!busyStroke && !SoyMilkTray.IsTaking && NeedsTeaching("refill:soy_milk") && (SoyMilkTray.Quantity == 0 || SoyMilkTray.IsRefilling))
+                return SoyRefillFocus();
             return Deliver(SoyMilkPayload, ProductKind.SoyMilk, _soyPanel, "豆浆");
         }
         return null;
+
+        TutorialFocusStep? SoyRefillFocus() => Step("refill:soy_milk", SoyMilkTray!.IsRefilling
+            ? "豆浆补货中，等待补满。" : "左键长按豆浆托盘 0.45 秒补货。", Painted(TianjinPaintedObject.SoyTray));
 
         TutorialFocusStep? FryerFocus()
         {
@@ -132,7 +158,7 @@ public partial class PancakeWorkstation
                 FryerState.Empty or FryerState.Stored when FryerMachine.Inventory.Count == 0 => Step("fryer:load", "在炸锅上按住左键，装入油条。", basket),
                 FryerState.Loaded => Step("fryer:lower", "点击下锅，或按 G。", TutorialFocusTarget.Control(_lowerBasket)),
                 FryerState.Frying when !FryerMachine.Level.AutoRaise => Step("fryer:raise", f.Quality == YoutiaoQuality.Light ? "等待油条金黄，再升篮。" : "点击升篮，或按 G。", f.Quality == YoutiaoQuality.Light ? basket : TutorialFocusTarget.Control(_raiseBasket)),
-                FryerState.Burnt => Step("discard", "在焦油条上长按右键，再拖入垃圾桶。", basket),
+                FryerState.Burnt => Step("discard", "在焦油条上长按右键 0.45 秒，再拖入垃圾桶。", basket),
                 _ => null,
             };
         }

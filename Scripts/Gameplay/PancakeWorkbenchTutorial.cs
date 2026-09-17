@@ -10,6 +10,7 @@ namespace ProjectCake.Gameplay;
 public partial class PancakeWorkstation
 {
     private readonly HashSet<string> _learnedActions = new(StringComparer.Ordinal);
+    private readonly HashSet<string> _pendingRefillLessons = new(StringComparer.Ordinal);
     private readonly Dictionary<string, Label> _firstUseHints = new(StringComparer.Ordinal);
     private bool _tutorialMemory;
     private Label? _trashHint;
@@ -40,6 +41,25 @@ public partial class PancakeWorkstation
     }
 
     private bool NeedsTeaching(string action) => !_learnedActions.Contains(action);
+
+    private void TrackRefillLesson(string id)
+    {
+        if (IsTianjinWorkbench) _pendingRefillLessons.Add(id);
+        else LearnWorkbenchAction("refill:" + id);
+    }
+
+    private void CompleteRefillLessons()
+    {
+        foreach (string id in _pendingRefillLessons.ToArray())
+        {
+            bool complete = id == "soy_milk"
+                ? SoyMilkTray is { IsRefilling: false } soy && soy.Quantity == soy.Capacity
+                : !Inventory.IsRefilling(id) && Inventory.GetQuantity(id) == Inventory.GetCapacity(id);
+            if (!complete) continue;
+            _pendingRefillLessons.Remove(id);
+            LearnWorkbenchAction("refill:" + id);
+        }
+    }
 
     private void LearnPancakeAction(PancakeCommand command, string? ingredient)
     {

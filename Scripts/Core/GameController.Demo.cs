@@ -53,15 +53,7 @@ public partial class GameController
             else _startScreen.ShowError("试玩存档或配置无法读取，请检查后重试。");
         };
         _startScreen.QuitRequested += () => GetTree().Quit();
-        var music = new DemoMusicPlayer { Name = "DemoMusic" }; AddChild(music);
-        music.Bind(() =>
-        {
-            bool business = screen.IsVisibleInTree() || wuhan.IsVisibleInTree();
-            string key = business ? controller.CurrentConfig?.CityId ?? "home"
-                : _startScreen.Page is JourneyPage.City or JourneyPage.Ledger or JourneyPage.Upgrades or JourneyPage.Collection
-                    ? _startScreen.SelectedCityId : "home";
-            return (key, business ? controller.IsPaused : _startScreen.ModalOpen);
-        });
+        InitializeMusic();
         ShowOnly(_startScreen); _startScreen.Present();
         if (!catalog.IsValid) _startScreen.ShowError("试玩配置无法读取，请重新安装后重试。");
     }

@@ -1,4 +1,17 @@
 {
+  "显示模式": "Display mode",
+  "保留这个显示设置？": "Keep these display settings?",
+  "{0} 秒后恢复原设置": "Reverting in {0} seconds",
+  "窗口化": "Windowed",
+  "分辨率": "Resolution",
+  "垂直同步": "V-Sync",
+  "跟随桌面分辨率": "Desktop resolution",
+  "语言与辅助": "Language & accessibility",
+  "语言": "Language",
+  "简体中文": "简体中文",
+  "开": "On",
+  "关": "Off",
+  "当前设备不支持关闭垂直同步，已保持开启。": "V-Sync cannot be disabled on this device. It remains on.",
   "一本早餐旅行手册": "A breakfast travel guide",
   "第一次来？从这里开始": "First visit? Start here",
   "从天津出发，建立新的旅行进度。": "Start a new journey from Tianjin.",
@@ -634,5 +647,10 @@
   "{0}已开放": "{0} unlocked",
   "下一站：{0}": "Next stop: {0}",
   "完成扬州章节，收集五城旅行印记。": "Complete Yangzhou to collect all five city stamps.",
-  "五城旅程已完成，回访喜欢的早餐铺。": "All five cities complete. Revisit your favorite breakfast shops."
+  "五城旅程已完成，回访喜欢的早餐铺。": "All five cities complete. Revisit your favorite breakfast shops.",
+  "左键长按{0}料盒 0.45 秒补货。": "Hold left mouse on the {0} tray for 0.45s to restock.",
+  "{0}补货中，等待补满。": "Restocking {0}. Wait until full.",
+  "豆浆补货中，等待补满。": "Restocking soy milk. Wait until full.",
+  "左键长按豆浆托盘 0.45 秒补货。": "Hold left mouse on the soy milk tray for 0.45s to restock.",
+  "在焦油条上长按右键 0.45 秒，再拖入垃圾桶。": "Hold right mouse on burnt youtiao for 0.45s, then drag it to the bin."
 }

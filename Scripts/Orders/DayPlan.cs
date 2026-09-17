@@ -5,7 +5,7 @@ public sealed class DayPlan
     [System.Text.Json.Serialization.JsonIgnore]
     public HashSet<string> PendingBreakfastRecords { get; } = new(StringComparer.Ordinal);
     [System.Text.Json.Serialization.JsonIgnore] public string StageId { get; init; } = string.Empty;
-    [System.Text.Json.Serialization.JsonIgnore] public string RunId { get; init; } = string.Empty;
+    [System.Text.Json.Serialization.JsonIgnore] public string RunId { get; init; } = Guid.NewGuid().ToString("N");
     public int Day { get; init; }
     public int RandomSeed { get; init; }
     public IReadOnlyList<PlannedCustomer> Customers { get; init; } = Array.Empty<PlannedCustomer>();

@@ -8,6 +8,7 @@
       "titleZh": "第一张煎饼",
       "titleEn": "Your first jianbing",
       "durationSeconds": 75,
+      "finishWhenAllCustomersServed": true,
       "patienceMultiplier": 1.6,
       "arrivals": [
         0,

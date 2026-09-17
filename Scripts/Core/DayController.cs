@@ -28,11 +28,10 @@ public partial class DayController : Node
     public event Action<DayResult>? DayFinished;
     public event Action<DeliveryEvaluation>? DeliveryCompleted;
     public event Action<DeliveryReceipt>? ItemDelivered;
-    private bool _demoRun;
     private void PublishItem(DeliveredItem item, bool matched)
     {
         var receipt = new DeliveryReceipt(CurrentPlan!.RunId, CurrentPlan.StageId, item, matched, true, TutorialActive);
-        if (_demoRun) DemoBreakfastCollection.Observe(receipt, CurrentPlan);
+        DemoBreakfastCollection.Observe(receipt, CurrentPlan);
         ItemDelivered?.Invoke(receipt);
     }
     public BusinessFeedback Feedback { get; } = new();
@@ -93,7 +92,7 @@ public partial class DayController : Node
         _paused = false; _pauseReasons.Clear();
         Tutorial = tutorial ?? config.Tutorial;
         Feedback.Reset();
-        CurrentConfig = config; _demoRun = catalog.Demo is not null;
+        CurrentConfig = config;
         CurrentPlan = catalog.Demo is { } demo
             ? demo.Stage(cityId, dayNumber)!.Plan(catalog)
             : new OrderGenerator().Generate(config, catalog.RecipesById, catalog.ProductsById, catalog.CustomersById);
@@ -175,6 +174,10 @@ public partial class DayController : Node
             }
             DayElapsedSeconds = Math.Min(CurrentConfig.DurationSeconds, DayElapsedSeconds + deltaSeconds);
             CustomerQueue.Tick(DayElapsedSeconds, deltaSeconds, true);
+            // Opt-in short stages can close after the final served guest's exit animation.
+            // IsResolved also checks future arrivals and the door queue; an empty counter is insufficient.
+            if (CurrentConfig.FinishWhenAllCustomersServed && Ledger!.CompletedCustomers == CurrentConfig.CustomerCount
+                && TryFinishIfResolved()) return;
             if (DayElapsedSeconds >= CurrentConfig.DurationSeconds)
             {
                 ClosingRemainingSeconds = ClosingDurationSeconds;

@@ -41,6 +41,9 @@ public static class CityDialogChrome
     /// <summary>Sets the dialog body, title bar and controls without changing dialog behaviour or copy.</summary>
     public static void ApplyConfirmation(AcceptDialog dialog, string cityId)
     {
+        bool illustrated = cityId is StableIds.Cities.Tianjin or StableIds.Cities.Wuhan;
+        dialog.SetMeta("illustrated_dialog", illustrated);
+        dialog.SetMeta("dialog_city", cityId);
         Palette palette = For(cityId);
         var theme = new Theme();
         var frame = Frame(MainFramePath);
@@ -66,6 +69,7 @@ public static class CityDialogChrome
         message.AddThemeStyleboxOverride("normal", Frame(GroupFramePath));
         message.AddThemeColorOverride("font_color", palette.Ink);
         message.AddThemeColorOverride("font_shadow_color", Colors.Transparent);
+        message.AddThemeFontSizeOverride("font_size", 22);
 
         StyleButton(dialog.GetOkButton(), palette, dialog is ConfirmationDialog, dialog is not ConfirmationDialog);
         if (dialog is ConfirmationDialog confirmation)
@@ -93,6 +97,17 @@ public static class CityDialogChrome
             {
                 float width = dialog.Size.X;
                 root.Size = dialog.Size;
+                bool usesIllustration = dialog.GetMeta("illustrated_dialog", false).AsBool();
+                root.GetNode<NinePatchRect>("TitleTape").Visible = !usesIllustration;
+                if (usesIllustration)
+                {
+                    IllustratedCityDialogTheme.LayoutHeader(root, dialog, dialog.GetMeta("dialog_city").AsString());
+                    return;
+                }
+                title.AddThemeFontSizeOverride("font_size", 30);
+                title.AddThemeConstantOverride("outline_size", 0);
+                close.Show();
+                close.Text = "×";
                 title.Text = dialog.Title;
                 title.Position = new(80, 28); title.Size = new(width - 160, 64);
                 var tape = root.GetNode<NinePatchRect>("TitleTape");
@@ -110,6 +125,8 @@ public static class CityDialogChrome
             closeButton.AddThemeColorOverride(state, palette.Ink);
         var material = (ShaderMaterial)artwork.GetNode<NinePatchRect>("TitleTape").Material;
         material.SetShaderParameter("paper_color", palette.SoftAccent);
+        if (illustrated) IllustratedCityDialogTheme.ApplyConfirmation(dialog, cityId);
+        else message.AddThemeConstantOverride("line_spacing", 0);
     }
 
     public static NinePatchRect AddTitleTape(Control parent, string name, Rect2 bounds, string cityId, int zIndex = 1)
@@ -172,6 +189,7 @@ public static class CityDialogChrome
             BorderColor = palette.Ink, BorderWidthBottom = 3, ExpandMarginBottom = 3,
             ContentMarginLeft = 24, ContentMarginRight = 24, ContentMarginTop = 12, ContentMarginBottom = 12 });
         var shader = (ShaderMaterial)art.Material;
+        art.Show();
         shader.SetShaderParameter("paper_color", fill);
         shader.SetShaderParameter("lighten_amount", .88f);
         foreach (string state in new[] { "font_color", "font_hover_color", "font_pressed_color", "font_focus_color" })

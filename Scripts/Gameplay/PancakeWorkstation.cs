@@ -350,6 +350,7 @@ public partial class PancakeWorkstation : Control
     public void Initialize(DataCatalog catalog, int stoveLevel, int stationLevel, int fryerLevel = 0, DayConfig? config = null, TianjinArtCatalog? art = null)
     {
         CancelInput();
+        _pendingRefillLessons.Clear();
         Tutorial = config?.Tutorial ?? TutorialProtection.None;
         foreach ((Control target, Tween tween) in _interactionTweens)
         {
@@ -414,6 +415,7 @@ public partial class PancakeWorkstation : Control
         FryerMachine?.Tick(fryerDelta);
         _fryerVisual.Tick(deltaSeconds);
         SoyMilkTray?.Tick(deltaSeconds);
+        CompleteRefillLessons();
         foreach (StockGesture gesture in _stockGestures) gesture.Tick(deltaSeconds);
         _rawYoutiaoInput.Tick(deltaSeconds);
         TickRightFoodPress(deltaSeconds);
@@ -437,6 +439,7 @@ public partial class PancakeWorkstation : Control
     public void ResetForDay()
     {
         CancelInput();
+        _pendingRefillLessons.Clear();
         CoinTray?.RenderRevenue(0);
         PancakeTray.Clear();
         ResetBagPresentation();
@@ -777,12 +780,12 @@ public partial class PancakeWorkstation : Control
     private void RefillSoyMilk()
     {
         if (!CanInteract || SoyMilkTray?.TryBeginRefill() != true) Reject("豆浆托盘已满或当前不能补货。");
-        else { LearnWorkbenchAction("refill:soy_milk"); Inform("开始补豆浆，0.6 秒后补满。", false); }
+        else { TrackRefillLesson("soy_milk"); Inform("开始补豆浆，0.6 秒后补满。", false); }
     }
     private void Refill(string id)
     {
         if (!CanInteract || !Inventory.TryBeginRefill(id)) Reject("料盒已满或正在补料。");
-        else { LearnWorkbenchAction($"refill:{id}"); Inform($"{IngredientName(id)}开始补货，{Inventory.LevelData.RefillSeconds:0.0} 秒后补满。", false); }
+        else { TrackRefillLesson(id); Inform($"{IngredientName(id)}开始补货，{Inventory.LevelData.RefillSeconds:0.0} 秒后补满。", false); }
     }
     private void Discard()
     {

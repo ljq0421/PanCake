@@ -35,6 +35,7 @@ public sealed class CityProgressData
 
 public sealed class SaveData
 {
+    public Dictionary<string, int> BreakfastRecords { get; set; } = new(StringComparer.Ordinal);
     public int Version { get; set; } = SaveService.CurrentVersion;
     public string LastVisitedCityId { get; set; } = StableIds.Cities.Tianjin;
     public int Coins { get; set; }
@@ -243,6 +244,8 @@ public partial class SaveService : Node
         EnsureGuangzhouUnlocked();
         EnsureYangzhouUnlocked();
         Data.UnlockedCityIds.Sort(StringComparer.Ordinal);
+        foreach (var card in DemoBreakfastCollection.Cards.Where(c => c.CityId == config.CityId && plan.PendingBreakfastRecords.Contains(c.Id)))
+            Data.BreakfastRecords.TryAdd(card.Id, result.Day);
         if (!TrySave(out string error)) { Data = snapshot; throw new IOException(error); }
         _settledRuns.Add(plan, new object());
         Changed?.Invoke(); return new DayCommitResult(gain, newBest, stars, newlyCompleted);
@@ -395,6 +398,10 @@ public partial class SaveService : Node
     private static void Validate(SaveData? data)
     {
         if (data is null || data.Version != CurrentVersion || data.Coins < 0) throw new InvalidDataException("存档版本或金币数值无效。");
+        if (data.BreakfastRecords is null || data.BreakfastRecords.Any(p =>
+            DemoBreakfastCollection.Cards.FirstOrDefault(c => c.Id == p.Key) is not { } card
+            || p.Value < 1 || p.Value > ChapterDays(card.CityId)))
+            throw new InvalidDataException("早餐收藏记录无效。");
         foreach ((string id, CityProgressData city) in data.Cities)
         {
             city.LearnedWorkbenchActions ??= new(StringComparer.Ordinal);

@@ -58,7 +58,8 @@ public partial class TutorialFocusSelfTest : Node
             var catalog = GetNode<DataCatalog>("/root/DataCatalog");
             string savePath = Path.Combine(_directory, Guid.NewGuid() + ".json");
             var save = new SaveService(); save.UsePathForTests(savePath); AddChild(save);
-            await Tianjin(catalog, save); await Wuhan(catalog, save);
+            await TianjinMaintenance(catalog, save);
+            if (!OS.GetCmdlineUserArgs().Contains("--maintenance-only")) { await Tianjin(catalog, save); await Wuhan(catalog, save); }
             Check(save.TrySave(out _), "learned operations persist");
             var reloaded = new SaveService(); reloaded.UsePathForTests(savePath); AddChild(reloaded);
             Check(reloaded.Data.Tianjin.LearnedWorkbenchActions.SetEquals(save.Data.Tianjin.LearnedWorkbenchActions)

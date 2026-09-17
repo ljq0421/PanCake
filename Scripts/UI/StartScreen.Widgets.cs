@@ -40,7 +40,7 @@ public partial class StartScreen
             AutowrapMode = TextServer.AutowrapMode.WordSmart, MouseFilter = MouseFilterEnum.Ignore };
         label.AddThemeFontSizeOverride("font_size", fontSize); parent.AddChild(label); label.Size = rect.Size; return label;
     }
-    private Button Button(Control parent, string name, string caption, Rect2 rect, Action action, bool primary = false, bool bare = false)
+    private Button Button(Control parent, string name, string caption, Rect2 rect, Action action, bool primary = false, bool bare = false, bool highlightFocus = true)
     {
         var button = new Button { Name = name, Text = caption, Position = rect.Position, Size = rect.Size, MouseDefaultCursorShape = CursorShape.PointingHand };
         parent.AddChild(button); StartScreenTheme.Apply(button, primary);
@@ -66,7 +66,7 @@ public partial class StartScreen
         bool modalButton = parent == _modal || _modal.IsAncestorOf(parent);
         if (modalButton) _modalControls.Add(button); else _buttons.Add(button);
         button.Pressed += () => { if (!button.Disabled && !_busy && IsVisibleInTree() && (!ModalOpen || modalButton) && button.IsVisibleInTree()) action(); };
-        ArtworkButtonFocus.Attach(button);
+        if (highlightFocus) ArtworkButtonFocus.Attach(button);
         Vector2 position = rect.Position;
         void RefreshHover()
         {

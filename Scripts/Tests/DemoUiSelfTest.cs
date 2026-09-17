@@ -63,6 +63,11 @@ public partial class DemoUiSelfTest : Node
             var settings = GetNode<JourneySettings>("/root/JourneySettings"); settings.UsePathForTests(Path.Combine(dir, "settings.cfg")); settings.SetLanguage(english ? "en" : "zh_CN");
             var main = GD.Load<PackedScene>("res://Scenes/Main/Main.tscn").Instantiate<GameController>(); AddChild(main);
             _screen = main.GetNode<StartScreen>("UI/StartScreen"); await Frames();
+            if (args.Contains("--settings-only"))
+            {
+                await SettingsPageChecks.Run(_screen, save, settings, name => Capture(name, _screen));
+                GD.Print("SETTINGS_DEMO_SELF_TEST_OK"); GetTree().Quit(); return;
+            }
             if (args.Contains("--help-only"))
             {
                 await HelpPageChecks.Run(_screen, save, settings, name => Capture(name, _screen));
@@ -71,10 +76,10 @@ public partial class DemoUiSelfTest : Node
             CheckLanguage(settings.Language);
             _screen.PresentHome(); await Capture("home", _screen);
             await Click("Settings"); Check(_screen.ModalOpen, "viewport click opens settings"); await Capture("settings", _screen);
-            await Click("Language"); Check(settings.Language == (english ? "zh_CN" : "en"), "viewport language click changes locale");
+            await SettingsPageChecks.SelectLanguage(_screen, english ? 0 : 1); Check(settings.Language == (english ? "zh_CN" : "en"), "viewport language choice changes locale");
             CheckLanguage(settings.Language); await Capture("language-switched", _screen);
             settings.LoadPreferences(); await Frames(); CheckLanguage(settings.Language);
-            await Click("Language"); CheckLanguage(settings.Language); await Click("Close");
+            await SettingsPageChecks.SelectLanguage(_screen, english ? 1 : 0); CheckLanguage(settings.Language); await Click("Close");
             Check(main.OpenCity(StableIds.Cities.Tianjin), "Tianjin hub opens"); await Capture("hub", _screen);
             CheckContinueOverview(catalog, save, Path.Combine(dir, "save.json"));
             await Click("LedgerTab");

@@ -35,7 +35,7 @@ public partial class StartScreen
         if (name == "LatestUnlock") return row;
         // Keep the first value clear of the luggage tag painted into the note's upper right.
         var field = Text(row, name, value, new(154, 3, name == "Coins" ? 190 : 300, 64), wrap ? 22 : 25);
-        field.HorizontalAlignment = wrap ? HorizontalAlignment.Left : HorizontalAlignment.Right;
+        field.HorizontalAlignment = HorizontalAlignment.Right;
         if (wrap) FitContinueLines(field, 22, 17, 2);
         else { FitTextWidth(field, 25, 17); field.AutowrapMode = TextServer.AutowrapMode.Off; }
         return row;
@@ -54,7 +54,11 @@ public partial class StartScreen
 
     private void DrawLatestUnlocks(Control row, IReadOnlyList<CityUnlockView> unlocks)
     {
-        if (unlocks.Count == 0) { Text(row, "LatestUnlock", "暂无解锁", new(154, 3, 300, 64), 24); return; }
+        if (unlocks.Count == 0)
+        {
+            Text(row, "LatestUnlock", "暂无解锁", new(154, 3, 300, 64), 24).HorizontalAlignment = HorizontalAlignment.Right;
+            return;
+        }
         var font = row.GetThemeFont("font");
         int size = 23;
         float[] widths;
@@ -67,11 +71,19 @@ public partial class StartScreen
             if (lines <= 2 && widths.All(w => w <= 300) || size <= 16) break;
             size--;
         } while (true);
-        float x = 154, y = lines == 1 ? 19 : 3;
+        float LineStart(int first)
+        {
+            float width = widths[first];
+            for (int next = first + 1; next < widths.Length && width + widths[next] <= 300; next++)
+                width += widths[next];
+            return 454 - (width - 8);
+        }
+        float x = LineStart(0), y = lines == 1 ? 19 : 3;
+        float lineWidth = 0;
         for (int i = 0; i < unlocks.Count; i++)
         {
             var item = unlocks[i];
-            if (x > 154 && x + widths[i] > 454) { x = 154; y += 32; }
+            if (lineWidth > 0 && lineWidth + widths[i] > 300) { x = LineStart(i); y += 32; lineWidth = 0; }
             if (!string.IsNullOrEmpty(item.Art))
             {
                 if (item.Art.StartsWith("res://resource/art/"))
@@ -79,9 +91,10 @@ public partial class StartScreen
                 else Art(row, item.Art, new(x, y, 28, 30)).Name = "UnlockFood" + i;
             }
             else row.AddChild(new BookFoodIcon { Name = "UnlockFood" + i, Position = new(x, y), Size = new(28, 30), Product = new(item.Id, item.Name, 1, item.Visual) });
-            var text = Text(row, "UnlockName" + i, item.Name, new(x + 30, y, widths[i] - 30, 30), size);
+            var text = Text(row, "UnlockName" + i, item.Name, new(x + 30, y, widths[i] - 38, 30), size);
             text.AutowrapMode = TextServer.AutowrapMode.Off;
             x += widths[i];
+            lineWidth += widths[i];
         }
     }
 }

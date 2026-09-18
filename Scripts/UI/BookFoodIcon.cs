@@ -24,6 +24,7 @@ public partial class BookStatusMark : Control
 /// <summary>Existing food art where available; otherwise a named, vector food symbol.</summary>
 public partial class BookFoodIcon : Control
 {
+    public bool CropTransparentMargins { get; set; }
     public BookProduct Product { get; set; } = new("", "", 0, "");
     private static readonly Dictionary<string, Texture2D> Cache = new();
     public override void _Ready() => MouseFilter = MouseFilterEnum.Ignore;
@@ -42,6 +43,17 @@ public partial class BookFoodIcon : Control
         if (path is not null && ResourceLoader.Exists("res://resource/art/" + path))
         {
             if (!Cache.TryGetValue(path, out var texture)) Cache[path] = texture = GD.Load<Texture2D>("res://resource/art/" + path);
+            if (CropTransparentMargins)
+            {
+                string cropKey = path + "#collection";
+                if (!Cache.TryGetValue(cropKey, out var cropped))
+                {
+                    using var image = texture.GetImage();
+                    cropped = new AtlasTexture { Atlas = texture, Region = image.GetUsedRect() };
+                    Cache[cropKey] = cropped;
+                }
+                texture = cropped;
+            }
             Vector2 s = texture.GetSize(); s *= Math.Min(Size.X / s.X, Size.Y / s.Y);
             DrawTextureRect(texture, new Rect2((Size - s) / 2, s), false); return;
         }

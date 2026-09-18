@@ -131,7 +131,7 @@ public partial class BusinessDetailsView : Control
         var note = Text(_note, _model.DailyNote, new(22, 51, 602, 80), 28, wrap: true);
         if (_model.Stickers.Length > 0)
         {
-            var sticker = Text(_summary, string.Join("  ·  ", _model.Stickers.Where(s => !CanUpgrade || !s.Contains("升级"))), new(100, 582, 1440, 52), 20, Accent, wrap: true);
+            var sticker = Text(_summary, string.Join("  ·  ", _model.Stickers.Where(s => (!CanUpgrade || !s.Contains("升级")) && !s.StartsWith("早餐新记录：", StringComparison.Ordinal))), new(100, 582, 1440, 52), 20, Accent, wrap: true);
             sticker.AutowrapMode = TextServer.AutowrapMode.WordSmart;
         }
         AddPlainUpgradeEntry();
@@ -209,8 +209,6 @@ public partial class BusinessDetailsView : Control
             else Line(row, new(0, row.CustomMinimumSize.Y - 1, 1480, 1), new Color(.47f, .32f, .20f, .16f));
         }
         if (!_model.Filter(_filter).Any()) _rows.AddChild(TianjinUi.Label(_model.Orders.Count == 0 ? "还没有结束的客单，第一笔收入值得期待。" : "这一类客单还没有记录。", 26, Muted));
-        if (_model.ExtraNotes.Length > 0) { _rows.AddChild(TianjinUi.Label("补充记录", 24, Accent)); foreach (var extra in _model.ExtraNotes) _rows.AddChild(TianjinUi.Label(extra, 22, Muted)); }
-        if (UsesBookArt) foreach (var sticker in _model.Stickers) _rows.AddChild(TianjinUi.Label(sticker, 22, Accent));
         _scroll.ScrollVertical = 0;
     }
     private void RequestClose() { FinishAnimation(); if (_upgradeModal is null && _model.CanClose) CloseRequested?.Invoke(); }

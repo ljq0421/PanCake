@@ -29,8 +29,20 @@ public static class DemoBreakfastCollection
     };
     public static void Observe(DeliveryReceipt receipt, DayPlan plan)
     {
-        if (!receipt.Tutorial && receipt.Matched && receipt.Accepted && receipt.RunId == plan.RunId
-            && receipt.StageId == plan.StageId && Qualifies(receipt.Item) is { } id)
+        if (receipt.Tutorial || !receipt.Matched || !receipt.Accepted || receipt.RunId != plan.RunId
+            || receipt.StageId != plan.StageId) return;
+        string? id = receipt.Item.ProductKind switch
+        {
+            ProductKind.Pancake => "pancake", ProductKind.Youtiao => "youtiao", ProductKind.SoyMilk => "soy_milk",
+            ProductKind.HotDryNoodles => "noodles", ProductKind.Doupi => "doupi", _ => null,
+        };
+        if (id is null) return;
+        if (!plan.PendingBreakfastStats.TryGetValue(id, out var stats)) plan.PendingBreakfastStats[id] = stats = new();
+        stats.Delivered++;
+        if (Qualifies(receipt.Item) is not null)
+        {
             plan.PendingBreakfastRecords.Add(id);
+            if (id != "soy_milk") stats.Perfect++;
+        }
     }
 }

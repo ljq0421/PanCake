@@ -5,42 +5,6 @@ namespace ProjectCake.UI;
 
 public partial class StartScreen
 {
-    private string _selectedBreakfast = "pancake";
-    public void PresentBreakfastCollection()
-    {
-        if (_save is null) return;
-        Begin(JourneyPage.Collection); Chrome(ReturnFromBreakfastCollection, "早餐旅行手账"); BookFrame();
-        var available = DemoBreakfastCollection.Cards.Where(c => c.CityId == StableIds.Cities.Tianjin
-            || _save.Data.UnlockedCityIds.Contains(c.CityId)).ToArray();
-        var selected = available.FirstOrDefault(c => c.Id == _selectedBreakfast) ?? available[0];
-        _selectedBreakfast = selected.Id;
-        Text(_body, "CollectionTitle", "旅途收藏", new(335, 270, 520, 62), 40);
-        for (int i = 0; i < available.Length; i++)
-        {
-            var card = available[i]; bool owned = _save.BreakfastRecordDay(card.Id).HasValue;
-            var button = Button(_body, "Breakfast_" + card.Id, "", new(325, 350 + i * 88, 550, 76),
-                () => { _selectedBreakfast = card.Id; PresentBreakfastCollection(); }, bare: true);
-            var paper = new Panel { Size = button.Size, MouseFilter = MouseFilterEnum.Ignore };
-            paper.AddThemeStyleboxOverride("panel", StartScreenTheme.Box(card.Id == selected.Id ? new Color("#FFE29C") : StartScreenTheme.Cream, 1));
-            button.AddChild(paper);
-            button.AddChild(new BookFoodIcon { Position = new(12, 7), Size = new(65, 62), Product = new(card.Id, card.Name, 1, card.Visual), MouseFilter = MouseFilterEnum.Ignore });
-            var name = Text(button, "Name", card.Name, new(98, 9, 280, 52), 28);
-            FitTextWidth(name, 28, 19);
-            Text(button, "State", owned ? "已入册" : "待记录", new(394, 14, 140, 44), 23, true);
-        }
-        if (!_save.Data.UnlockedCityIds.Contains(StableIds.Cities.Wuhan))
-            Text(_body, "NextCityHint", "下一站武汉，还有新的早餐等你记录。", new(335, 800, 540, 60), 23);
-        int? firstDay = _save.BreakfastRecordDay(selected.Id);
-        Text(_body, "BreakfastName", selected.Name, new(1020, 262, 490, 64), 43, true);
-        _body.AddChild(new BookFoodIcon { Position = new(1120, 346), Size = new(270, 190),
-            Product = new(selected.Id, selected.Name, 1, selected.Visual), MouseFilter = MouseFilterEnum.Ignore });
-        Text(_body, "BreakfastDescription", selected.Description, new(1025, 568, 490, 74), 25, true);
-        Text(_body, "BreakfastSteps", selected.Steps, new(1025, 660, 490, 112), 24, true);
-        Text(_body, "BreakfastOrigin", firstDay.HasValue ? $"首次记录 · {JourneyModel.City(selected.CityId).Name} · 第 {firstDay.Value} 天"
-            : "正确送出一份火候合适的早餐，收摊保存后入册。", new(1025, 793, 490, 64), 22, true);
-        Button(_body, "CollectionHome", "返回首页", new(1050, 882, 450, 65), ReturnFromBreakfastCollection, true);
-        Focus("Breakfast_" + selected.Id);
-    }
     private void ReturnFromBreakfastCollection()
     {
         RenderHome(); Focus("BreakfastRecords");

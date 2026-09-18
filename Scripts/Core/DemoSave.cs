@@ -12,6 +12,7 @@ public sealed class DemoSaveFile
     public int ContentRevision { get; set; } = 1;
     public Dictionary<string, int> WuhanEquipment { get; set; } = new() { ["noodle_cooker"] = 1, ["ingredient_station"] = 1, ["doupi_griddle"] = 0, ["egg_rice_wine_station"] = 0 };
     public HashSet<string> WuhanLearnedActions { get; set; } = new(StringComparer.Ordinal);
+    public Dictionary<string, BreakfastStatistics> BreakfastStats { get; set; } = new(StringComparer.Ordinal);
     public Dictionary<string, string> BreakfastRecords { get; set; } = new(StringComparer.Ordinal);
     public int Coins { get; set; }
     public string LastStartedStageId { get; set; } = "demo_tj_01";
@@ -114,6 +115,7 @@ public partial class SaveService
             throw new InvalidDataException("Invalid Demo progress or equipment.");
         if (file.BreakfastRecords.Any(p => !DemoBreakfastCollection.Cards.Any(c => c.Id == p.Key) || content.Stage(p.Value) is null))
             throw new InvalidDataException("Invalid breakfast record.");
+        BreakfastStatistics.Validate(file.BreakfastStats);
         bool gap = false;
         foreach (var stage in content.Stages)
         {
@@ -208,6 +210,7 @@ public partial class SaveService
         }
         foreach (string id in plan.PendingBreakfastRecords)
             DemoProgress.BreakfastRecords.TryAdd(id, stage.Id);
+        BreakfastStatistics.Merge(DemoProgress.BreakfastStats, plan.PendingBreakfastStats, config.CityId);
         DemoProgress.AcceptedRuns.Add(plan.RunId);
         if (!TrySave(out string error)) { Data = snapshot; DemoProgress = demoSnapshot; throw new IOException(error); }
         Changed?.Invoke(); return new(gain, newBest, 0, !snapshot.GetCity(stage.CityId).Completed && city.Completed);

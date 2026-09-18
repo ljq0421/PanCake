@@ -194,7 +194,7 @@ public partial class StartScreen
         var satisfaction = Text(_body, "BestMetrics", hasRecord ? $"满意度 {best!.Satisfaction:0}%" : "满意度 —", new(1100, 710, 235, 38), 28);
         FitTextWidth(satisfaction, 28, 19);
         if (hasRecord && best!.PerfectOrders > 0)
-            Art(_body, "res://resource/art/Global/BookUI/Perfect 印章.png", new(1370, 603, 70, 70)).Name = "PerfectStamp";
+            Art(_body, "res://resource/art/Global/StartPage/Perfect印章.png", new(1370, 603, 70, 70)).Name = "PerfectStamp";
         var perfect = Text(_body, "BestPerfect", hasRecord ? $"Perfect {best!.PerfectOrders} 单" : "", new(1335, 687, 108, 60), 18, true);
         FitTextWidth(perfect, 18, 12);
         if (_save.HasLoadError)
@@ -229,7 +229,7 @@ public partial class StartScreen
         CityFrame(JourneyPage.Upgrades, "");
         var wallet = EquipmentUpgradeView.AddWallet(_body, _bookUpgradeSource?.Coins ?? _save!.Data.Coins, new(1220, 158, 360, 64));
         wallet.PivotOffset = wallet.Size;
-        wallet.Scale = Vector2.One * .7f;
+        wallet.Scale = Vector2.One * .49f;
         if (_equipmentCity != _city) { _selectedEquipment = null; _equipmentCity = _city; }
         var view = new EquipmentUpgradeView { Name = "UpgradeView", Position = new(320, 230) };
         _body.AddChild(view);

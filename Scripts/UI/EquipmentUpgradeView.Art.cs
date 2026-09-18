@@ -45,10 +45,12 @@ public partial class EquipmentUpgradeView
             Size = new(rect.Size.X, height), MouseFilter = MouseFilterEnum.Ignore };
         parent.AddChild(plate);
         Sprite(plate, "WalletArt", artPath, new(Vector2.Zero, plate.Size));
+        // Compensate for the wallet's compact display scale so the balance stays readable.
+        const int balanceFontSize = 48;
         var label = LabelAt(plate, "Coins", coins.ToString(),
-            new(plate.Size.X * .40f, height * .23f, plate.Size.X * .54f, height * .62f), 28, Ink, true);
+            new(plate.Size.X * .40f, height * .23f, plate.Size.X * .54f, height * .62f), balanceFontSize, Ink, true);
         label.AutowrapMode = TextServer.AutowrapMode.Off;
-        int fontSize = 28;
+        int fontSize = balanceFontSize;
         while (fontSize > 16 && label.GetThemeFont("font").GetStringSize(label.Text, fontSize: fontSize).X > label.Size.X) fontSize--;
         label.AddThemeFontSizeOverride("font_size", fontSize);
         return plate;

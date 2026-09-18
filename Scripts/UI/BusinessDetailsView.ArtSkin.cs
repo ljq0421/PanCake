@@ -187,7 +187,7 @@ public partial class BusinessDetailsView
         Text(_note, _model.DailyNote, new(notePaper.Position + new Vector2(28, 52), new(notePaper.Size.X - 56, 62)), 20, wrap: true);
         var rating = _model.Stickers.Where(s => s.Contains("评级")).ToArray();
         if (rating.Length > 0) Text(_summary, string.Join(" · ", rating), new(ArtPageRight, 408, ArtPageWidth, 30), 21);
-        var unlocked = _model.Stickers.Where(s => !s.Contains("评级") && !s.Contains("升级")).ToArray();
+        var unlocked = _model.Stickers.Where(s => !s.Contains("评级") && !s.Contains("升级") && !s.StartsWith("早餐新记录：", StringComparison.Ordinal)).ToArray();
         var upgrades = _model.Stickers.Where(s => s.Contains("升级")).ToArray();
         AddSummarySticker(unlocked, "新解锁提示贴片", "UnlockSticker", new(ArtPageRight, 445, 268, 82), true);
         AddSummarySticker(upgrades, "可升级提示贴片", "UpgradeSticker", new(1182, 445, 268, 82), false);
@@ -250,12 +250,6 @@ public partial class BusinessDetailsView
     {
         foreach (var order in _model.Filter(_filter)) BuildArtOrderRow(order);
         if (!_model.Filter(_filter).Any()) AddArtRowNote(_model.Orders.Count == 0 ? "还没有结束的客单，第一笔收入值得期待。" : "这一类客单还没有记录。", 26, Muted);
-        if (_model.ExtraNotes.Length > 0)
-        {
-            AddArtRowNote("补充记录", 24, Accent);
-            foreach (var extra in _model.ExtraNotes) AddArtRowNote(extra, 22, Muted);
-        }
-        foreach (var sticker in _model.Stickers) AddArtRowNote(sticker, 22, Accent);
         _scroll.ScrollVertical = 0;
     }
 

@@ -35,6 +35,7 @@ public sealed class CityProgressData
 
 public sealed class SaveData
 {
+    public Dictionary<string, BreakfastStatistics> BreakfastStats { get; set; } = new(StringComparer.Ordinal);
     public Dictionary<string, int> BreakfastRecords { get; set; } = new(StringComparer.Ordinal);
     public int Version { get; set; } = SaveService.CurrentVersion;
     public string LastVisitedCityId { get; set; } = StableIds.Cities.Tianjin;
@@ -246,6 +247,7 @@ public partial class SaveService : Node
         Data.UnlockedCityIds.Sort(StringComparer.Ordinal);
         foreach (var card in DemoBreakfastCollection.Cards.Where(c => c.CityId == config.CityId && plan.PendingBreakfastRecords.Contains(c.Id)))
             Data.BreakfastRecords.TryAdd(card.Id, result.Day);
+        BreakfastStatistics.Merge(Data.BreakfastStats, plan.PendingBreakfastStats, config.CityId);
         if (!TrySave(out string error)) { Data = snapshot; throw new IOException(error); }
         _settledRuns.Add(plan, new object());
         Changed?.Invoke(); return new DayCommitResult(gain, newBest, stars, newlyCompleted);
@@ -402,6 +404,7 @@ public partial class SaveService : Node
             DemoBreakfastCollection.Cards.FirstOrDefault(c => c.Id == p.Key) is not { } card
             || p.Value < 1 || p.Value > ChapterDays(card.CityId)))
             throw new InvalidDataException("早餐收藏记录无效。");
+        BreakfastStatistics.Validate(data.BreakfastStats);
         foreach ((string id, CityProgressData city) in data.Cities)
         {
             city.LearnedWorkbenchActions ??= new(StringComparer.Ordinal);

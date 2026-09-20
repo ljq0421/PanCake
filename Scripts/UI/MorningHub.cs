@@ -60,7 +60,7 @@ public partial class MorningHub : Control
     private void Render()
     {
         if (_save is null) return;
-        int day = Math.Clamp(_save.Data.HighestUnlockedDay, 1, 15);
+        int day = Math.Max(1, _save.Data.HighestUnlockedDay);
         _coins.Text = $"¥{_save.Data.Coins}";
         _progress.Text = $"已到 Day {day}  ·  天津 {_save.Data.TianjinBestStars} 星";
         _dayTitle.Text = $"Day {day}";
@@ -110,7 +110,7 @@ public partial class MorningHub : Control
         if (_save is not null) _ledger.Refresh(_save);
     }
 
-    private void StartPrimaryDay() => DayRequested?.Invoke(Math.Clamp(_save.Data.HighestUnlockedDay, 1, 15));
+    private void StartPrimaryDay() => DayRequested?.Invoke(Math.Max(1, _save.Data.HighestUnlockedDay));
 
     private void Purchase(string id)
     {

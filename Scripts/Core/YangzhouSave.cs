@@ -66,7 +66,7 @@ public partial class SaveService
             TotalRevenue = result.Revenue, CompletedCustomers = result.Completed, Satisfaction = result.Satisfaction,
             PerfectOrders = result.PerfectOrders, PerfectGansi = result.PerfectGansi,
         };
-        city.HighestUnlockedDay = Math.Min(12, Math.Max(city.HighestUnlockedDay, result.Day + 1));
+        city.HighestUnlockedDay = Math.Max(city.HighestUnlockedDay, checked(result.Day + 1));
         if (city.HighestUnlockedDay >= 3 && city.EquipmentLevels.GetValueOrDefault(YangzhouCatalog.SteamerId) < 1) city.EquipmentLevels[YangzhouCatalog.SteamerId] = 1;
         bool complete = !city.Completed && result.Stars >= 1;
         city.Completed |= result.Stars >= 1; city.BestStars = Math.Max(city.BestStars, result.Stars);

@@ -5,13 +5,12 @@ namespace ProjectCake.UI;
 
 public partial class StartScreen
 {
-    private int? _pendingNewSlot;
     private bool _selectEmptySlot;
 
     private void RenderSaves(bool selectEmpty = false)
     {
         if (_save is null) return;
-        _selectEmptySlot = selectEmpty; _pendingNewSlot = null;
+        _selectEmptySlot = selectEmpty;
         Begin(JourneyPage.Saves); Chrome(RenderHome, selectEmpty ? "选择一本新手账" : "存档管理"); BookFrame();
         var slots = _save.GetSlots();
         Text(_body, "SavesHeading", "五段旅程 · 各自珍藏", new(385, 225, 450, 50), 32);
@@ -31,7 +30,7 @@ public partial class StartScreen
             {
                 Text(panel, "Details", "空白手账，等待新的旅程", new(18, 51, 490, 35), 23);
                 Button(panel, "CreateSlot" + slot.Id, "新建旅程", new(18, 115, 180, 48), () =>
-                { _pendingNewSlot = slot.Id; RenderOpening(); }, true);
+                { RequestNewGame(slot.Id); }, true);
                 continue;
             }
             string city = JourneyModel.Cities.FirstOrDefault(c => c.Id == slot.CityId)?.Name ?? "";
@@ -59,7 +58,7 @@ public partial class StartScreen
         if (!_save!.TryLoadSlot(id, out string error)) { RenderSaves(); ShowError(error); return; }
         // No page-local selection or deferred celebration should survive a profile switch.
         _selectedEquipment = null; _equipmentCity = null; _completedCity = null;
-        _mapReturn = null; _cityReturn = null; _pendingNewSlot = null;
+        _mapReturn = null; _cityReturn = null;
         ContinueRequested?.Invoke();
     }
     private void DeleteSlot(SaveSlotSummary slot)

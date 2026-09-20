@@ -87,8 +87,8 @@ public partial class CityPagesSelfTest : Node
             {
                 var city = JourneyModel.Cities[i];
                 Click("Node" + i); await Frames();
-                Check(_screen.Page == JourneyPage.City && _screen.SelectedCityId == city.Id, "unlocked node directly opens city page " + city.Name);
-                _screen._Input(new InputEventKey { Keycode = Key.Escape, Pressed = true }); await Frames();
+                Check(!_screen.Visible && _screen.SelectedCityId == city.Id && _screen.SelectedDay == city.Days, "unlocked node starts latest day " + city.Name);
+                _main.OpenCity(city.Id); _screen.PresentMap(); await Frames();
                 var mapCard = Find<Panel>("MapJourneyStrip");
                 Check(Find<TextureRect>("MapJourneyStripArt").Texture is AtlasTexture, "map uses supplied three-column strip " + city.Name);
                 Check(Find<Label>("MapLitCount").Text == "5/5", "map counts unlocked cities " + city.Name);
@@ -194,9 +194,8 @@ public partial class CityPagesSelfTest : Node
             Click("Date1");
             Check(_screen.FindChildren("FinalDayCrown", "TextureRect", true, false).Count == 0, "ordinary day has no crown");
             Check(_screen.Page == JourneyPage.Ledger && _screen.SelectedDay == 1 && !_screen.Descendants<Button>().Any(b => b.Name == "MapTab"), "ledger retains selected date without map bookmark");
-            _screen.PresentHome(); Click("NewGame"); Click("Skip");
-            Check(Find<TextureRect>("SharedBook").GetRect() == StartScreen.BookBounds, "new journey shares book geometry"); await Capture("new-journey");
-            Check(Find<TextureRect>("SharedBook").Material is null, "new journey book remains original");
+            _screen.PresentHome(); Click("Continue");
+            Check(_screen.Page == JourneyPage.Map, "continue opens map"); await Capture("continue-map");
             _save.Data.LastVisitedCityId = StableIds.Cities.Tianjin; _save.TrySave(out _);
             _screen.PresentMap(); await Capture("map");
             foreach (var city in JourneyModel.Cities) { var p = _save.Data.GetCity(city.Id); p.Completed = true; p.BestStars = 3; }

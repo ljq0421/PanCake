@@ -11,7 +11,7 @@ public enum YangzhouPhase { Prep, Running, Closing, Results }
 public sealed record YangzhouResult(int Day, int Planned, int Completed, int Lost, int Sales, int Tips, double Satisfaction, int PerfectOrders, int PerfectGansi)
 {
     public int Revenue => Sales + Tips;
-    public int Stars => Day != 12 ? 0 : Completed >= 18 && Satisfaction >= 90 && PerfectGansi >= 10 ? 3 : Completed >= 17 && Satisfaction >= 82 ? 2 : Completed >= 14 && Satisfaction >= 70 ? 1 : 0;
+    public int Stars => Day < 12 ? 0 : Completed >= 18 && Satisfaction >= 90 && PerfectGansi >= 10 ? 3 : Completed >= 17 && Satisfaction >= 82 ? 2 : Completed >= 14 && Satisfaction >= 70 ? 1 : 0;
 }
 
 /// <summary>Whole-tray service, prep time and city-specific pressure rules share one deterministic clock.</summary>

@@ -200,11 +200,16 @@ public partial class DataCatalog : Node
 
     public bool TryGetProduct(string id, out ProductData product) => _productsById.TryGetValue(id, out product!);
 
-    public bool TryGetDay(int day, out DayConfig config) => _daysByNumber.TryGetValue(day, out config!);
+    public bool TryGetDay(int day, out DayConfig config) => TryGetDay(StableIds.Cities.Tianjin, day, out config);
     public bool TryGetDay(string cityId, int day, out DayConfig config)
     {
         config = null!;
-        return _daysByCity.TryGetValue(cityId, out Dictionary<int, DayConfig>? days) && days.TryGetValue(day, out config!);
+        if (day < 1 || !_daysByCity.TryGetValue(cityId, out Dictionary<int, DayConfig>? days) || days.Count == 0) return false;
+        if (days.TryGetValue(day, out config!)) return true;
+        int last = days.Keys.Max();
+        if (day <= last) return false;
+        config = days[last].ForBusinessDay(day);
+        return true;
     }
     public IReadOnlyDictionary<int, DayConfig> GetDays(string cityId) =>
         _daysByCity.TryGetValue(cityId, out Dictionary<int, DayConfig>? days) ? days : new Dictionary<int, DayConfig>();
@@ -220,7 +225,7 @@ public partial class DataCatalog : Node
             throw new InvalidOperationException("DataCatalog 存在配置错误，不能开始营业。");
         }
 
-        if (!_daysByNumber.TryGetValue(day, out DayConfig? config))
+        if (!TryGetDay(day, out DayConfig config))
         {
             throw new KeyNotFoundException($"找不到 Day {day} 配置。");
         }

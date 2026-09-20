@@ -133,7 +133,7 @@ public partial class StartScreenSelfTest : Node
         await Capture("continue-bookmarks-english");
         settings.SetLanguage("zh_CN"); await Frames();
         int? active = _save.ActiveSlotId;
-        await SelectNewSlot(); await Click(Find<Button>("Skip"));
+        await SelectNewSlot();
         KeyPress(Key.Escape);
         Check(_save.ActiveSlotId == active && _save.GetSlots().Count(s => s.Exists) == 1, "cancelled second journey preserves first slot");
     }
@@ -141,9 +141,9 @@ public partial class StartScreenSelfTest : Node
     private async Task SelectNewSlot()
     {
         if (_screen.Page != JourneyPage.Home) _screen.PresentHome();
+        if (!_save.UsesSlots) _save.UseSlotsForTests(Path.Combine(Path.GetDirectoryName(_path)!, "gallery-slots"));
         await Frames(); await Click(Find<Button>("NewGame"));
-        int id = _save.GetSlots().First(s => !s.Exists).Id;
-        await Click(Find<Button>("CreateSlot" + id));
+        Check(_screen.Page == JourneyPage.Map, "new journey opens map");
     }
     private async Task TravelChecks()
     {
@@ -162,13 +162,13 @@ public partial class StartScreenSelfTest : Node
         else
             Check(_screen.Page == JourneyPage.Map && File.ReadAllText(_path) == before, "locked card cannot open or mutate save");
         await Click(Find<Button>("Node0"));
-        Check(_screen.Page == JourneyPage.City && _screen.SelectedCityId == StableIds.Cities.Tianjin, "Tianjin node directly opens shared city hub");
+        Check(!_screen.Visible && _screen.SelectedDay == 1, "Tianjin node directly starts business");
         await Capture("city-tianjin");
-        await Click(Find<Button>("Back"));
+        _main.OpenCity(StableIds.Cities.Tianjin); _screen.PresentMap(); await Frames();
         await Click(Find<Button>("Back"));
         Check(_screen.Page == JourneyPage.Home, "map returns to home source");
         await Click(Find<Button>("Continue"));
-        Check(_screen.Page == JourneyPage.City && !_screen.Descendants<Button>().Any(b => b.Name == "MapTab"), "continue opens city without map bookmark");
+        Check(_screen.Page == JourneyPage.Map, "continue opens world map");
         foreach (var city in JourneyModel.Cities) { if (!_save.Data.UnlockedCityIds.Contains(city.Id)) _save.Data.UnlockedCityIds.Add(city.Id); _save.Data.GetCity(city.Id); }
         _save.Data.GetCity(StableIds.Cities.Tianjin).Completed = true;
         _save.Data.GetCity(StableIds.Cities.Tianjin).BestStars = 1;
@@ -238,8 +238,8 @@ public partial class StartScreenSelfTest : Node
         _save.ResetProgress(out _);
         Check(settings.Master == 63 && settings.Effects == 41, "new journey retains preferences");
         _screen.PresentHome(); await Frames();
-        await SelectNewSlot(); await Click(Find<Button>("Skip"));
-        Check(_screen.Page == JourneyPage.NewJourney && !_screen.Descendants<Button>().Any(b => b.Name == "JournalMap") && _save.Data.Coins == 0, "new journal has no map bookmark and preserves progress");
+        await SelectNewSlot();
+        Check(_screen.Page == JourneyPage.Map && !_screen.Descendants<Button>().Any(b => b.Name == "JournalMap") && _save.Data.Coins == 0, "new journal has no map bookmark and preserves progress");
         _screen.PresentHome(); await Frames();
         string bad = Path.Combine(Path.GetDirectoryName(_path)!, "blocked-settings"); Directory.CreateDirectory(bad);
         settings.UsePathForTests(bad); settings.SetVolume("effects", 44);
@@ -316,8 +316,8 @@ public partial class StartScreenSelfTest : Node
         Find<Button>("Node0").GrabFocus(); await Capture("focus-map-node");
         AuditButtonFocus();
         await Click(Find<Button>("Back"));
-        await SelectNewSlot(); await Click(Find<Button>("Skip"));
-        Find<Button>("Depart").GrabFocus(); await Capture("focus-journey-patch");
+        await SelectNewSlot();
+        Find<Button>("Node0").GrabFocus(); await Capture("focus-new-map-node");
         _save.ResetProgress(out _);
         foreach (var city in JourneyModel.Cities)
             if (!_save.Data.UnlockedCityIds.Contains(city.Id)) _save.Data.UnlockedCityIds.Add(city.Id);
@@ -369,7 +369,7 @@ public partial class StartScreenSelfTest : Node
     private async Task Gallery()
     {
         await Capture("first-run");
-        await SelectNewSlot(); await Capture("opening"); await Click(Find<Button>("Skip")); await Capture("new-journey");
+        await SelectNewSlot(); await Capture("new-journey-map");
         _save.ResetProgress(out _);
         foreach (var city in JourneyModel.Cities)
         {
@@ -451,7 +451,10 @@ public partial class StartScreenSelfTest : Node
         AddChild(_main);
         _screen = _main.GetNode<StartScreen>("UI/StartScreen");
         await Frames(3);
-        if (_screen.Page == JourneyPage.Splash) { await Capture("splash"); await Click(Find<Button>("Skip")); }
+        Check(_screen.Page == JourneyPage.Home, "first frame opens home");
+        foreach (string name in new[] { "Continue", "NewGame", "BreakfastRecords", "WorldMap" })
+            Check(Find<Button>(name).Visible, "home action visible " + name);
+        Check(!_screen.FindChildren("Skip", "Button", true, false).Any(), "splash prompt removed");
         if (_capture) await ToSignal(GetTree().CreateTimer(0.3), SceneTreeTimer.SignalName.Timeout);
     }
 

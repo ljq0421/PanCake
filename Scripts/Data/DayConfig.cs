@@ -28,6 +28,13 @@ public enum SatisfactionAverageMode
 
 public sealed class DayConfig
 {
+    public DayConfig ForBusinessDay(int day)
+    {
+        var copy = (DayConfig)MemberwiseClone();
+        copy.Day = day;
+        return copy;
+    }
+
     [JsonIgnore]
     public string SourcePath { get; set; } = string.Empty;
 

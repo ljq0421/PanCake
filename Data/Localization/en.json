@@ -274,6 +274,12 @@
   "当前金币": "Coins",
   "最新解锁": "Unlocked",
   "城市进度": "Progress",
+  "日常营业": "Daily business",
+  "上一页": "Previous",
+  "下一页": "Next",
+  "已营业 {0} 天 · 可持续营业": "{0} days served · Keep going",
+  "已开放至第 {0} 天": "Open through Day {0}",
+  "已开放至第 {0} 天 · {1} 星": "Open through Day {0} · {1} stars",
   "历史最佳": "Best income",
   "暂无记录": "No record yet",
   "暂无解锁": "Nothing unlocked",
@@ -811,5 +817,7 @@
   "可返回首页，在存档管理中选择其他旅程。": "Return Home and choose another journey in Manage saves.",
   "可在存档管理中选择其他旅程。": "Choose another journey in Manage saves.",
   "存档无法读取。请返回首页管理存档。": "Unable to read save. Open Manage saves from Home.",
-  "上次使用的存档无法读取，请打开存档管理选择旅程。": "The last save cannot be read. Choose a journey in Manage saves."
+  "上次使用的存档无法读取，请打开存档管理选择旅程。": "The last save cannot be read. Choose a journey in Manage saves.",
+  "五个槽位已满，请前往存档管理删除一个存档后重试。": "All five slots are full. Delete a save in Manage saves, then try again.",
+  "配置无法读取，请检查后重试。": "Unable to read game configuration. Please check and try again."
 }

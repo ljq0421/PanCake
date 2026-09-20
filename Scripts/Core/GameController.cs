@@ -91,15 +91,12 @@ public partial class GameController : Node
             _startScreen.RefreshCityPage();
             _startScreen.ShowError(ok ? "设备已升级，下次营业生效。" : error);
         };
-        _startScreen.NewGameRequested += slotId =>
-        {
-            if (!save.TryCreateSlot(slotId, out string error)) { _startScreen.ShowError(error); return; }
-            ShowOnly(hub);
-        };
+        _startScreen.NewGameRequested += slotId => CreateJourney(slotId, startBusiness: false);
+        _startScreen.NewGameBusinessRequested += slotId => CreateJourney(slotId, startBusiness: true);
         _startScreen.ContinueRequested += () =>
         {
             if (!save.CanContinue) { _startScreen.ShowError("存档无法继续，请检查存档状态。"); return; }
-            OpenCity(save.ContinueCityId);
+            _startScreen.PresentMap();
         };
         _startScreen.QuitRequested += () => GetTree().Quit();
         hub.DayRequested += day =>
@@ -138,6 +135,15 @@ public partial class GameController : Node
         InitializeMusic();
         ShowOnly(_startScreen);
         _startScreen.Present();
+    }
+
+    private void CreateJourney(int slotId, bool startBusiness)
+    {
+        if (!GetNode<DataCatalog>("/root/DataCatalog").IsValid)
+        { _startScreen.ShowError("配置无法读取，请检查后重试。"); return; }
+        if (!_save.TryCreateSlot(slotId, out string error)) { _startScreen.ShowError(error); return; }
+        if (startBusiness) StartCityBusiness(StableIds.Cities.Tianjin, 1);
+        else _startScreen.PresentMap();
     }
 
     public bool OpenCity(string cityId, bool allowDeveloperPreview = false)
@@ -183,7 +189,7 @@ public partial class GameController : Node
         bool cityAvailable = _save.Data.UnlockedCityIds.Contains(cityId)
             || _startScreen.DeveloperToolsVisible && cityId == Data.StableIds.Cities.Wuhan;
         if (!_save.CanContinue || !catalog.IsValid || !cityAvailable
-            || !JourneyModel.Cities.Any(c => c.Id == cityId) || day < 1 || day > SaveService.ChapterDays(cityId)
+            || !JourneyModel.Cities.Any(c => c.Id == cityId) || day < 1
             || day > JourneyModel.Progress(_save, cityId).HighestUnlockedDay)
         { _startScreen.ShowError("无法开张，请检查营业日、城市解锁和存档状态。"); return false; }
         Control screen; bool ready;

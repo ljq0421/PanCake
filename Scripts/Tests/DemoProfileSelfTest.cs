@@ -23,7 +23,7 @@ public partial class DemoProfileSelfTest : Node
             var save = GetNode<SaveService>("/root/SaveService");
             save.UseDemoPathForTests(path);
             Check(save.ResetProgress(out _), "new isolated shared-format save");
-            Check(save.ChapterLength(StableIds.Cities.Tianjin) == 15 && save.ChapterLength(StableIds.Cities.Wuhan) == 12, "27 available days");
+            Check(save.ChapterLength(StableIds.Cities.Tianjin) == 15 && save.ChapterLength(StableIds.Cities.Wuhan) == 12, "27 configured chapter days, followed by endless business");
             save.Data.UnlockedCityIds.Add(StableIds.Cities.Wuhan);
             save.Data.LastVisitedCityId = StableIds.Cities.Wuhan;
             save.Data.Coins = 987; save.Data.Tianjin.HighestUnlockedDay = 15;
@@ -31,7 +31,7 @@ public partial class DemoProfileSelfTest : Node
             save.Data.Tianjin.EquipmentLevels["pancake_stove"] = 3;
             save.Data.Tianjin.UnlockedContentIds.Add("equipment:pancake_stove_lv3");
             save.Data.Tianjin.LearnedWorkbenchActions.Add("flip");
-            save.Data.Wuhan.HighestUnlockedDay = 12; save.Data.Wuhan.BestStars = 2; save.Data.Wuhan.Completed = true;
+            save.Data.Wuhan.HighestUnlockedDay = 13; save.Data.Wuhan.BestStars = 2; save.Data.Wuhan.Completed = true;
             save.Data.Wuhan.EquipmentLevels["noodle_cooker"] = 3;
             save.Data.Wuhan.EquipmentLevels["doupi_griddle"] = 3;
             save.Data.Wuhan.EquipmentLevels["egg_rice_wine_station"] = 1;
@@ -42,7 +42,7 @@ public partial class DemoProfileSelfTest : Node
             Check(save.TrySave(out _), "Lv3, egg wine and full city fields save");
             save.Load();
             Check(!save.HasLoadError && JsonSerializer.Serialize(save.Data) == snapshot, "all shared city data round trips without loss");
-            Check(save.ContinueCityId == StableIds.Cities.Wuhan && save.ContinueDay == 12, "continue uses full city progress");
+            Check(save.ContinueCityId == StableIds.Cities.Wuhan && save.ContinueDay == 13, "continue uses extended city progress");
             Check(!save.Data.UnlockedCityIds.Contains(StableIds.Cities.Xian), "completed Wuhan never unlocks Demo Xian");
             string formal = Path.Combine(dir, "formal.json");
             File.WriteAllText(formal, snapshot); string formalBefore = File.ReadAllText(formal);

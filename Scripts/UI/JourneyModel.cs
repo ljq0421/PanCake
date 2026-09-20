@@ -64,7 +64,7 @@ public static class JourneyModel
         if (!save.IsCityAvailable(city.Id)) return "下一站预告 · 本次不可营业";
         if (!save.Data.UnlockedCityIds.Contains(city.Id)) return "尚未抵达";
         var p = Progress(save, city.Id);
-        return p.Completed ? "章节已完成" : $"已开放至第 {p.HighestUnlockedDay} / {city.Days} 天";
+        return $"已开放至第 {p.HighestUnlockedDay} 天";
     }
     public static string Goal(SaveService save, JourneyCity city)
     {

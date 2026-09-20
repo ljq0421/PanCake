@@ -213,7 +213,7 @@ public partial class XianDayScreen : Control
         if (Session is null) return;
         RenderBusinessHud();
         var s = Session;
-        _heading.Text = $"西安 Day {s.Day} · {XianRules.Titles[s.Day - 1]}";
+        _heading.Text = $"西安 Day {s.Day} · {XianRules.Titles[Math.Min(s.Day, XianRules.Titles.Length) - 1]}";
         _clock.Text = !_focused || _controller.IsPaused ? "已暂停" : _controller.State switch { DayState.Opening => $"开门 {_controller.OpeningRemainingSeconds:0.0}s", DayState.Closing => $"收尾 {_controller.ClosingRemainingSeconds:0.0}s", DayState.Results => "今日已打烊", _ => $"剩余 {_controller.DayRemainingSeconds:0}s  ·  ¥{_controller.Ledger?.Build().TotalRevenue ?? 0}" };
         _inventory.Text = $"熟馍 {s.Buns.Count}/{s.Buns.Capacity}" + (s.Buns.Count == 0 ? " · 缺馍" : s.Buns.Count <= 3 ? " · 记得烙馍" : "");
         _feedback.Hide();

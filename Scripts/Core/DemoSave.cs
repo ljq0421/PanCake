@@ -34,7 +34,7 @@ public partial class SaveService
     public bool IsCityAvailable(string cityId) => ExperienceProfile.IsCityAvailable(cityId, IsDemo);
     public int ChapterLength(string cityId) => IsCityAvailable(cityId) ? ChapterDays(cityId) : 0;
     public bool CanEnter(string cityId, int day) => CanContinue && IsCityAvailable(cityId)
-        && Data.UnlockedCityIds.Contains(cityId) && day >= 1 && day <= ChapterLength(cityId)
+        && Data.UnlockedCityIds.Contains(cityId) && day >= 1
         && day <= Data.GetCity(cityId).HighestUnlockedDay;
 
     public void UseDemoPathForTests(string path)

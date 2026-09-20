@@ -52,7 +52,7 @@ public sealed partial class CityPageModel(DataCatalog? catalog, SaveService save
         }
         return Array.Empty<string>();
     }
-    public string DayTitle(string city, int day) => city switch
+    public string DayTitle(string city, int day) => day > SaveService.ChapterDays(city) ? "日常营业" : city switch
     {
         StableIds.Cities.Tianjin => MorningHub.DaySubtitle(day),
         StableIds.Cities.Wuhan => WuhanHub.DaySubtitle(day),

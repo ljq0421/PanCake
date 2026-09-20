@@ -21,10 +21,10 @@ public partial class StartScreen
     {
         if (_save?.IsDemo == true && (_save.ChapterLength(cityId) == 0 || !_save.Data.UnlockedCityIds.Contains(cityId))) return;
         _city = cityId; _cityReturn = returnToSource ?? RenderHome;
-        SelectedDay = Math.Clamp(JourneyModel.Progress(_save!, cityId).HighestUnlockedDay, 1, _save!.ChapterLength(cityId));
+        SelectedDay = Math.Max(1, JourneyModel.Progress(_save!, cityId).HighestUnlockedDay);
         Show(); RenderCity();
     }
-    public void PresentLedger() { SelectedDay = Math.Clamp(JourneyModel.Progress(_save!, _city).HighestUnlockedDay, 1, _save!.ChapterLength(_city)); RenderLedgerPage(); }
+    public void PresentLedger() { SelectedDay = Math.Max(1, JourneyModel.Progress(_save!, _city).HighestUnlockedDay); RenderLedgerPage(); }
     public void PresentUpgrades() => RenderUpgradePage();
     public void RefreshCityPage()
     {
@@ -102,7 +102,7 @@ public partial class StartScreen
     private void RenderCity()
     {
         var city = JourneyModel.City(_city); var p = JourneyModel.Progress(_save!, _city);
-        int day = Math.Clamp(p.HighestUnlockedDay, 1, _save!.ChapterLength(_city));
+        int day = Math.Max(1, p.HighestUnlockedDay);
         var overview = _cityModel?.Overview(_city, day);
         day = overview?.Day ?? day;
         CityFrame(JourneyPage.City, city.Name + "早餐铺");
@@ -126,7 +126,7 @@ public partial class StartScreen
         var unlockRow = ContinueSummaryRow(note, "LatestUnlock", "最新解锁", "", 76);
         DrawLatestUnlocks(unlockRow, overview?.LatestUnlocks ?? Array.Empty<CityUnlockView>());
         ContinueSummaryRow(note, "Goal", "下一目标", overview?.Goal ?? JourneyModel.Goal(_save, city), 152, true);
-        ContinueSummaryRow(note, "Progress", "城市进度", $"已完成 {overview?.CompletedDays ?? 0} / {overview?.TotalDays ?? _save.ChapterLength(_city)} 天", 228);
+        ContinueSummaryRow(note, "Progress", "城市进度", $"已营业 {overview?.CompletedDays ?? 0} 天 · 可持续营业", 228);
         ContinueSummaryRow(note, "BestRecord", "历史最佳", overview?.BestRevenue is { } best ? $"{best} 金币(第{overview.BestDay}天)" : "暂无记录", 304);
         var goals = new Control { Name = "JourneyGoals", Position = new(1015, 755), Size = new(425, 90), MouseFilter = MouseFilterEnum.Ignore };
         _body.AddChild(goals);
@@ -155,13 +155,22 @@ public partial class StartScreen
         var calendarTitle = Text(_body, "CalendarTitle", "营业日历", new(604, 248, 270, 65), 43, true);
         FitTextWidth(calendarTitle, 43, 20);
         calendarTitle.RotationDegrees = -4;
-        var progress = Text(_body, "CalendarProgress", $"已开放 {p.HighestUnlockedDay} / {_save!.ChapterLength(_city)} 天 · 章节 {p.BestStars} 星", new(596, 348, 286, 32), 19, true);
+        var progress = Text(_body, "CalendarProgress", $"已开放至第 {p.HighestUnlockedDay} 天 · {p.BestStars} 星", new(596, 348, 286, 32), 19, true);
         FitTextWidth(progress, 19, 14);
-        for (int d = 1; d <= _save!.ChapterLength(_city); d++)
+        int pageStart = (SelectedDay - 1) / 15 * 15 + 1;
+        int lastDay = Math.Max(_save!.ChapterLength(_city), p.HighestUnlockedDay);
+        if (lastDay > 15)
+        {
+            var previous = Button(_body, "PreviousDays", "上一页", new(320, 844, 150, 48), () => { SelectedDay = Math.Max(1, pageStart - 15); RenderLedgerPage(); });
+            previous.Disabled = pageStart == 1;
+            var next = Button(_body, "NextDays", "下一页", new(690, 844, 150, 48), () => { SelectedDay = Math.Min(lastDay, pageStart + 15); RenderLedgerPage(); });
+            next.Disabled = pageStart + 14 >= lastDay;
+        }
+        for (int d = pageStart; d <= Math.Min(lastDay, pageStart + 14); d++)
         {
             int date = d; bool unlocked = d <= p.HighestUnlockedDay;
             bool recorded = p.DayBestRecords.TryGetValue(d, out var record) && unlocked && !_save!.HasLoadError;
-            var at = new Vector2(320 + ((d - 1) % 3) * 190, 406 + ((d - 1) / 3) * 84);
+            var at = new Vector2(320 + ((d - pageStart) % 3) * 190, 406 + ((d - pageStart) / 3) * 84);
             var b = Button(_body, "Date" + d, "", new(at, new(179, 82)), () => { SelectedDay = date; RenderLedgerPage(); Focus("Date" + date); }, bare: true);
             var panel = new Panel { Size = b.Size, MouseFilter = MouseFilterEnum.Ignore };
             bool wuhan = CityPageArtSkin.UsesWuhanPalette(_city);

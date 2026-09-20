@@ -9,6 +9,7 @@ public enum JourneyPage { Splash, Home, Opening, NewJourney, Continue, Map, City
 public partial class StartScreen : Control
 {
     public event Action<int>? NewGameRequested;
+    public event Action<int>? NewGameBusinessRequested;
     public event Action? ContinueRequested;
     public event Action? QuitRequested;
     public JourneyPage Page { get; private set; }
@@ -21,7 +22,7 @@ public partial class StartScreen : Control
     private Label _status = null!;
     private string _city = JourneyModel.Cities[0].Id, _modalKind = "", _error = "";
     private string? _completedCity;
-    private bool _busy, _started, _ownsAspect;
+    private bool _busy, _ownsAspect;
     private Action? _mapReturn;
     private Window.ContentScaleAspectEnum _previousAspect;
     private readonly List<Tween> _tweens = new();
@@ -61,7 +62,7 @@ public partial class StartScreen : Control
         _save = save; _save.Changed += SaveChanged;
     }
     private void SaveChanged() { if (!IsVisibleInTree() || _busy) return; if (Page == JourneyPage.Home) RenderHome(); else if (Page == JourneyPage.Saves) RenderSaves(_selectEmptySlot); else if (Page is JourneyPage.City or JourneyPage.Ledger or JourneyPage.Upgrades) RefreshCityPage(); }
-    public void Present() { Show(); if (!_started) { _started = true; RenderSplash(); } else RenderHome(); }
+    public void Present() { Show(); RenderHome(); }
     public void PresentHome() { Show(); RenderHome(); }
     public void PresentMap(Action? returnToSource = null) { Show(); _mapReturn = returnToSource ?? RenderHome; _city = _save?.ContinueCityId ?? JourneyModel.Cities[0].Id; RenderMap(); }
     public void PresentCompletion(string cityId, Action returnToSource, bool overCityWorkbench = false)
@@ -163,14 +164,13 @@ public partial class StartScreen : Control
     public override void _Input(InputEvent input)
     {
         if (!IsVisibleInTree() || _busy) return;
-        if (Page == JourneyPage.Splash && input is InputEventMouseButton { Pressed: true }) { RenderHome(); GetViewport().SetInputAsHandled(); return; }
         if (input is not InputEventKey { Pressed: true, Echo: false } key) return;
         if (SettingsPopupOpen()) return;
         if (key.Keycode == Key.Escape)
         {
             if (ModalOpen) { if (_settings.DisplayPending) _settings.RevertDisplay(); else CloseModal(); }
             else if (Page == JourneyPage.Opening && _save?.IsDemo == true && _save.Data.UnlockedCityIds.Contains(ProjectCake.Data.StableIds.Cities.Wuhan)) PresentCity(ProjectCake.Data.StableIds.Cities.Wuhan);
-            else if (Page == JourneyPage.Opening) RenderNewJourney();
+            else if (Page == JourneyPage.Opening) RenderHome();
             else if (Page == JourneyPage.Completion) FinishCompletion();
             else if (Page == JourneyPage.Collection) ReturnFromBreakfastCollection();
             else if (Page is JourneyPage.Ledger or JourneyPage.Upgrades) RenderCity();
@@ -183,7 +183,9 @@ public partial class StartScreen : Control
         if (!ModalOpen && Page == JourneyPage.Ledger && key.Keycode != Key.Tab && GetViewport().GuiGetFocusOwner()?.Name.ToString() is { } dateName && dateName.StartsWith("Date") && int.TryParse(dateName[4..], out int date))
         {
             int offset = key.Keycode == Key.Up ? -3 : key.Keycode == Key.Down ? 3 : key.Keycode == Key.Left ? -1 : 1;
-            Focus("Date" + Math.Clamp(date + offset, 1, _save!.ChapterLength(_city))); GetViewport().SetInputAsHandled(); return;
+            int target = Math.Clamp(date + offset, 1, Math.Max(_save!.ChapterLength(_city), JourneyModel.Progress(_save, _city).HighestUnlockedDay));
+            if ((target - 1) / 15 != (SelectedDay - 1) / 15) { SelectedDay = target; RenderLedgerPage(); }
+            Focus("Date" + target); GetViewport().SetInputAsHandled(); return;
         }
         if (GetViewport().GuiGetFocusOwner() is HSlider or LineEdit && key.Keycode is Key.Left or Key.Right) return;
         Control[] candidates = ModalOpen ? _modalControls.Where(c => c.IsVisibleInTree() && (c is not BaseButton b || !b.Disabled)).ToArray()

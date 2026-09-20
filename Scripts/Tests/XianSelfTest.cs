@@ -258,6 +258,6 @@ public partial class XianSelfTest : Node
             GD.Print($"XIAN_SIM day={day} completed={result.CompletedCustomers} chops={session.Board.CompletedChops} no_bun={session.NoBunSeconds:0.0}s no_meat={session.NoChoppedMeatSeconds:0.0}s coins={save.Data.Coins}");
             controller.QueueFree();
         }
-        Check(save.Data.Xian.Completed && save.Data.Xian.BestStars == 3 && save.Data.Xian.HighestUnlockedDay == 12, "零初始金币完整12天升级并三星点亮西安");
+        Check(save.Data.Xian.Completed && save.Data.Xian.BestStars == 3 && save.Data.Xian.HighestUnlockedDay == 13, "零初始金币完整12天升级并三星点亮西安，继续第13天");
     }
 }

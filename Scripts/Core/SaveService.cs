@@ -232,12 +232,12 @@ public partial class SaveService : Node
         bool newBest = !hadBest || result.TotalRevenue > previousBest;
         Data.Coins += gain; if (newBest) city.DayBestRecords[result.Day] = ToRecord(result);
         int chapterDays = ChapterDays(config.CityId);
-        city.HighestUnlockedDay = Math.Min(chapterDays, Math.Max(city.HighestUnlockedDay, result.Day + 1));
+        city.HighestUnlockedDay = Math.Max(city.HighestUnlockedDay, checked(result.Day + 1));
         foreach (string unlock in config.CompletionUnlocks) if (!city.UnlockedContentIds.Contains(unlock, StringComparer.Ordinal)) city.UnlockedContentIds.Add(unlock);
         city.UnlockedContentIds.Sort(StringComparer.Ordinal); city.LastDayPlan = plan;
         int stars = EvaluateStars(result, config); bool newlyCompleted = false;
         if (stars > city.BestStars) city.BestStars = stars;
-        if (result.Day == chapterDays && stars >= 1 && !city.Completed) { city.Completed = true; newlyCompleted = true; }
+        if (result.Day >= chapterDays && stars >= 1 && !city.Completed) { city.Completed = true; newlyCompleted = true; }
         if (config.CityId == StableIds.Cities.Tianjin && city.Completed)
         {
             if (!Data.UnlockedCityIds.Contains(StableIds.Cities.Wuhan, StringComparer.Ordinal)) Data.UnlockedCityIds.Add(StableIds.Cities.Wuhan);
@@ -372,6 +372,7 @@ public partial class SaveService : Node
             tianjin.HighestUnlockedDay = Math.Clamp(legacy.HighestUnlockedDay, 1, 15); tianjin.BestStars = legacy.TianjinBestStars; tianjin.Completed = legacy.TianjinCompleted;
             tianjin.EquipmentLevels["pancake_stove"] = legacy.PurchasedStoveLevel; tianjin.EquipmentLevels["ingredient_station"] = legacy.PurchasedIngredientStationLevel; tianjin.EquipmentLevels["fryer"] = legacy.PurchasedFryerLevel;
             tianjin.UnlockedContentIds = legacy.UnlockedUpgradeIds; tianjin.DayBestRecords = legacy.DayBestRecords; tianjin.LastDayPlan = legacy.LastDayPlan;
+            if (tianjin.HighestUnlockedDay == 15 && tianjin.DayBestRecords.ContainsKey(15)) tianjin.HighestUnlockedDay = 16;
             Data = new SaveData { Coins = legacy.Coins, Cities = new(StringComparer.Ordinal) { [StableIds.Cities.Tianjin] = tianjin }, UnlockedCityIds = new() { StableIds.Cities.Tianjin } };
             if (legacy.TianjinCompleted || legacy.UnlockedCityIds.Contains(StableIds.Cities.Wuhan, StringComparer.Ordinal)) { Data.UnlockedCityIds.Add(StableIds.Cities.Wuhan); Data.Cities[StableIds.Cities.Wuhan] = NewWuhanProgress(); }
             if (!TrySave(out string error)) throw new IOException(error); MigratedLegacySave = true;
@@ -407,14 +408,16 @@ public partial class SaveService : Node
         if (data is null || data.Version != CurrentVersion || data.Coins < 0) throw new InvalidDataException("存档版本或金币数值无效。");
         if (data.BreakfastRecords is null || data.BreakfastRecords.Any(p =>
             DemoBreakfastCollection.Cards.FirstOrDefault(c => c.Id == p.Key) is not { } card
-            || p.Value < 1 || p.Value > ChapterDays(card.CityId)))
+            || p.Value < 1))
             throw new InvalidDataException("早餐收藏记录无效。");
         BreakfastStatistics.Validate(data.BreakfastStats);
         foreach ((string id, CityProgressData city) in data.Cities)
         {
             city.LearnedWorkbenchActions ??= new(StringComparer.Ordinal);
             int max = ChapterDays(id);
-            if (city.HighestUnlockedDay is < 1 || city.HighestUnlockedDay > max || city.BestStars is < 0 or > 3 || city.Completed && city.BestStars < 1) throw new InvalidDataException($"{id} 存档进度无效。");
+            if (city.HighestUnlockedDay is < 1 || city.BestStars is < 0 or > 3 || city.Completed && city.BestStars < 1) throw new InvalidDataException($"{id} 存档进度无效。");
+            // Old saves capped the next day at the chapter milestone, even after settlement.
+            if (city.HighestUnlockedDay == max && city.DayBestRecords.ContainsKey(max)) city.HighestUnlockedDay = max + 1;
         }
     }
     private void SetCorruptError(string absolute, Exception exception)

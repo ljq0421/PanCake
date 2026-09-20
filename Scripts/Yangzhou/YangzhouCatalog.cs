@@ -28,7 +28,7 @@ public sealed class YangzhouCatalog
     public YangzhouProduct Product(string id) => Products.Single(p => p.Id == id);
     public YangzhouTemplate Template(string id) => Templates.Single(t => t.Id == id);
     public YangzhouCustomerType Customer(string id) => Customers.Single(c => c.Id == id);
-    public YangzhouDay Day(int day) => Days.Single(d => d.Day == day);
+    public YangzhouDay Day(int day) => Days.Single(d => d.Day == Math.Min(day, Days.Max(d => d.Day))) with { Day = day };
     public int Price(YangzhouTemplate template) => template.Items.Sum(i => Product(i.Key).Price * i.Value);
     public static YangzhouCatalog Load()
     {

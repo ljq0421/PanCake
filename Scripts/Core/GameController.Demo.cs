@@ -40,15 +40,11 @@ public partial class GameController
             bool ok = _save.TryPurchase(city, id, catalog, out string error);
             _startScreen.RefreshCityPage(); _startScreen.ShowError(ok ? "设备已升级，下次营业生效。" : error);
         };
-        _startScreen.NewGameRequested += slotId =>
-        {
-            if (!catalog.IsValid) { _startScreen.ShowError("试玩配置无法读取，请重新安装后重试。"); return; }
-            if (!_save.TryCreateSlot(slotId, out string error)) { _startScreen.ShowError(error); return; }
-            _startScreen.PresentCity(StableIds.Cities.Tianjin);
-        };
+        _startScreen.NewGameRequested += slotId => CreateJourney(slotId, startBusiness: false);
+        _startScreen.NewGameBusinessRequested += slotId => CreateJourney(slotId, startBusiness: true);
         _startScreen.ContinueRequested += () =>
         {
-            if (_save.CanContinue && catalog.IsValid) _startScreen.PresentCity(_save.ContinueCityId);
+            if (_save.CanContinue && catalog.IsValid) _startScreen.PresentMap();
             else _startScreen.ShowError("试玩存档或配置无法读取，请检查后重试。");
         };
         _startScreen.QuitRequested += () => GetTree().Quit();

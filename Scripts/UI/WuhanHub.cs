@@ -27,7 +27,7 @@ public partial class WuhanHub : Control
         _art = new WuhanArtCatalog();
         ((Button)FindChild("StartWuhanDay", true, false)).Pressed += () =>
         {
-            if (!_save.HasLoadError) DayRequested?.Invoke(Math.Clamp(_save.Data.Wuhan.HighestUnlockedDay, 1, 12));
+            if (!_save.HasLoadError) DayRequested?.Invoke(Math.Max(1, _save.Data.Wuhan.HighestUnlockedDay));
         };
         ((Button)FindChild("OpenWuhanLedger", true, false)).Pressed += ShowLedger;
         this.FindButton("早餐地图").Pressed += () => MapRequested?.Invoke();
@@ -46,7 +46,7 @@ public partial class WuhanHub : Control
     private void Render()
     {
         if (_save is null) return; CityProgressData city = _save.Data.Wuhan; _coins.Text = $"¥{_save.Data.Coins}";
-        int day = Math.Clamp(city.HighestUnlockedDay, 1, 12);
+        int day = Math.Max(1, city.HighestUnlockedDay);
         _primary.Text = city.Completed ? "再次挑战 · Day 12" : $"打开铺门 · Day {day}";
         _primary.Disabled = _save.HasLoadError;
         _dayTitle.Text = $"Day {day}";

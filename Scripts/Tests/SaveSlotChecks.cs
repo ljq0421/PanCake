@@ -28,21 +28,29 @@ internal static class SaveSlotChecks
         screen.PresentHome(); await Frames();
         Check(Find<Button>("Continue").Disabled, "no active journey cannot continue");
         await capture("slots-home");
+        await Click("WorldMap");
+        Check(screen.Page == JourneyPage.Map && !save.GetSlots().Any(s => s.Exists), "browsing map does not create a save");
+        await Click("Back");
+        string blocked = Path.Combine(root, "slot-1.json");
+        Directory.CreateDirectory(blocked);
         await Click("NewGame");
-        Check(screen.Page == JourneyPage.Saves && Find<Button>("CreateSlot1").HasFocus(), "new journey selects an empty slot first");
-        await capture("slots-empty");
-        await Click("CreateSlot2"); await Click("Skip");
-        KeyPress(Key.Escape); await Frames();
-        Check(!save.GetSlots().Any(s => s.Exists), "cancel before departure does not occupy a slot");
-        await Click("NewGame"); await Click("CreateSlot1"); await Click("Skip"); await Click("Depart");
-        Check(save.ActiveSlotId == 1 && screen.Page == JourneyPage.City, "departure creates requested slot and enters Tianjin");
+        Check(screen.Page == JourneyPage.Home && !save.CanContinue && Find<Label>("Status").Text.Length > 0,
+            "failed creation stays on home and exposes error");
+        Directory.Delete(blocked);
+        var newButton = Find<Button>("NewGame");
+        newButton.EmitSignal(Button.SignalName.Pressed);
+        newButton.EmitSignal(Button.SignalName.Pressed);
+        await Frames();
+        Check(save.ActiveSlotId == 1 && screen.Page == JourneyPage.Map && save.GetSlots().Count(s => s.Exists) == 1,
+            "new journey uses first empty slot, opens map, and ignores duplicate activation");
+        await capture("slots-new-map");
         save.Data.Coins = 321; save.Data.Tianjin.HighestUnlockedDay = 4;
         save.Data.Tianjin.LearnedWorkbenchActions.Add("flip");
         Check(save.TrySave(out _), "save first journey");
         string first = File.ReadAllText(Path.Combine(root, "slot-1.json"));
         screen.PresentHome(); await Click("ManageSaves");
         Check(File.ReadAllText(Path.Combine(root, "slot-1.json")) == first, "listing is read only");
-        await Click("CreateSlot2"); await Click("Skip"); await Click("Depart");
+        await Click("CreateSlot2");
         Check(save.ActiveSlotId == 2 && save.Data.Coins == 0 && save.Data.Tianjin.HighestUnlockedDay == 1,
             "second journey starts fresh");
         Check(File.ReadAllText(Path.Combine(root, "slot-1.json")) == first, "new journey preserves first file");
@@ -53,9 +61,9 @@ internal static class SaveSlotChecks
         Find<LineEdit>("SlotName").Text = "  我的早餐旅程  "; await Click("Confirm");
         Check(save.GetSlots()[0].Name == "我的早餐旅程" && save.ActiveSlotId == 2, "rename trims and does not switch");
         await Click("LoadSlot1");
-        Check(save.Data.Coins == 321 && save.Data.Tianjin.HighestUnlockedDay == 4 && screen.Page == JourneyPage.City,
+        Check(save.Data.Coins == 321 && save.Data.Tianjin.HighestUnlockedDay == 4 && screen.Page == JourneyPage.Map,
             "continue restores the selected journey");
-        screen.PresentLedger(); await Frames();
+        screen.PresentCity(StableIds.Cities.Tianjin); screen.PresentLedger(); await Frames();
         Check(!screen.FindChildren("ResetLedgerProgress", "Button", true, false).Any(), "ledger reset removed");
         screen.PresentHome(); await Click("ManageSaves");
         await Click("DeleteSlot1");
@@ -69,6 +77,9 @@ internal static class SaveSlotChecks
         await Click("ManageSaves"); await Click("LoadSlot2");
         for (int id = 1; id <= 5; id++) if (id != 2) Check(save.TryCreateSlot(id, out _), "fill slot " + id);
         save.TryLoadSlot(2, out _); screen.PresentHome(); await Click("NewGame");
+        Check(screen.Page == JourneyPage.Home && Find<Label>("Status").Text.Contains("已满") && save.ActiveSlotId == 2,
+            "full slots stay on home without replacing current journey");
+        await Click("ManageSaves");
         Check(Find<Label>("SlotsFull").Text.Contains("已满"), "full slots explain deletion requirement");
         Check(!screen.FindChildren("CreateSlot*", "Button", true, false).Any(), "full slots offer no overwrite");
         await capture("slots-full");

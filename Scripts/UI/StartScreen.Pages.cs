@@ -6,13 +6,6 @@ namespace ProjectCake.UI;
 
 public partial class StartScreen
 {
-    private void RenderSplash()
-    {
-        Begin(JourneyPage.Splash); Ambient(); Art(_body, "LOGO", new(475, 200, 970, 470));
-        Text(_body, "Tagline", "从一份早餐开始，点亮世界。", new(510, 715, 900, 70), 36, true);
-        Button(_body, "Skip", "点击任意位置或按 Enter 开启旅程", new(560, 835, 800, 65), RenderHome, bare: true);
-        Focus("Skip");
-    }
     private void RenderHome()
     {
         // Home composition: breakfast-shop wall, overlapping left logo and four tabletop actions.
@@ -52,7 +45,7 @@ public partial class StartScreen
             }, bare: true);
         var card = HomeAction("Continue", "继续旅程", "小火车", new(400, 835, 500, 150), RenderContinue);
         card.Disabled = !canContinue; card.Modulate = new Color(1, 1, 1, canContinue ? 1 : .68f);
-        HomeAction("NewGame", "新的旅程", "闭合旅行手账封面｜新旅程入口", new(940, 835, 500, 150), () => RenderSaves(true));
+        HomeAction("NewGame", "新的旅程", "闭合旅行手账封面｜新旅程入口", new(940, 835, 500, 150), () => RequestNewGame());
         HomeAction("BreakfastRecords", "旅途收藏", "已有旅程手账封面", new(1475, 855, 170, 145), PresentBreakfastCollection, small: true);
         HomeAction("WorldMap", "世界地图", "世界地图入口图标", new(1655, 855, 170, 145), () => PresentMap(), small: true);
         Button(_body, "ManageSaves", "存档管理", new(1610, 725, 225, 60), () => RenderSaves());
@@ -61,35 +54,38 @@ public partial class StartScreen
         Button(_body, "WallMap", "", new(490, 205, 990, 470), () => PresentMap(), bare: true, hoverVisual: wall);
         _status.MoveToFront();
     }
-    private void RenderOpening()
+    private void RequestNewGame(int? requestedSlot = null, bool startBusiness = false)
     {
-        Begin(JourneyPage.Opening);
-        var map = Art(_body, "卡通世界地图母版", new(160, 180, 1600, 720));
-        Art(map, "第一站天津节点专属素材", new(1155, 240, 140, 130));
-        map.PivotOffset = new(1230, 300);
-        var t = CreateTween(); _tweens.Add(t);
-        t.TweenProperty(map, "scale", new Vector2(1.65f, 1.65f), 1.8).SetTrans(Tween.TransitionType.Sine).SetEase(Tween.EaseType.InOut);
-        Text(_body, "Destination", "第一站 · 天津", new(520, 190, 850, 100), 62, true);
-        Button(_body, "Skip", "跳过演出", new(1530, 920, 230, 65), RenderNewJourney);
-        Schedule(2.2, RenderNewJourney); Focus("Skip");
+        if (_save is null || _busy) return;
+        int? slot = requestedSlot ?? _save.GetSlots().FirstOrDefault(s => !s.Exists)?.Id;
+        if (slot is null)
+        {
+            ShowError("五个槽位已满，请前往存档管理删除一个存档后重试。");
+            return;
+        }
+        CloseModal(); _busy = true;
+        if (startBusiness) NewGameBusinessRequested?.Invoke(slot.Value);
+        else NewGameRequested?.Invoke(slot.Value);
     }
-    private void RenderNewJourney()
+    private void StartMapCity(string cityId)
     {
-        Begin(JourneyPage.NewJourney); Chrome(RenderHome);
-        BookFrame();
-        var city = JourneyModel.Cities[0];
-        JourneyIntroduction(city, "第一站", RequestNewGame);
-        Focus("Depart");
-    }
-    private void RequestNewGame()
-    {
-        if (_save is null || _pendingNewSlot is not int slot) return;
-        CloseModal(); _busy = true; NewGameRequested?.Invoke(slot);
+        if (_save is null || _busy) return;
+        if (!_save.CanContinue)
+        {
+            if (cityId == StableIds.Cities.Tianjin) RequestNewGame(startBusiness: true);
+            return;
+        }
+        var progress = JourneyModel.Progress(_save, cityId);
+        int days = _save.ChapterLength(cityId);
+        if (days <= 0) return;
+        SelectedDay = Math.Max(1, progress.HighestUnlockedDay);
+        _busy = true;
+        BusinessRequested?.Invoke(cityId, SelectedDay);
     }
     private void RenderContinue()
     {
         if (_save?.CanContinue != true) return;
-        ContinueRequested?.Invoke();
+        _busy = true; ContinueRequested?.Invoke();
     }
     private void CityPicture(Control parent, JourneyCity city, Rect2 rect)
     {
@@ -161,8 +157,7 @@ public partial class StartScreen
                 _city = city.Id;
                 if (!preview && (unlocked || (_save?.CanContinue == true && DeveloperToolsVisible)))
                 {
-                    if (_save?.CanContinue == true) OpenCard(city.Id);
-                    else RenderOpening();
+                    StartMapCity(city.Id);
                 }
                 else RenderMap();
             }, bare:true);

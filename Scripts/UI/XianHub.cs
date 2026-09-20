@@ -51,7 +51,7 @@ public partial class XianHub : Control
     {
         if (_save is null || _coins is null) return;
         var city = _save.Data.Xian; _coins.Text = $"¥ {_save.Data.Coins}";
-        _message.Text = _save.HasLoadError ? _save.LoadErrorMessage : city.Completed ? $"西安已点亮  {new string('★', city.BestStars)}{new string('☆', 3 - city.BestStars)} · 可以重玩挑战更高星级" : $"今日推荐：Day {city.HighestUnlockedDay} · {XianRules.Titles[city.HighestUnlockedDay - 1]}";
+        _message.Text = _save.HasLoadError ? _save.LoadErrorMessage : city.Completed ? $"西安已点亮  {new string('★', city.BestStars)}{new string('☆', 3 - city.BestStars)} · 可以重玩挑战更高星级" : $"今日推荐：Day {city.HighestUnlockedDay} · {XianRules.Titles[Math.Min(city.HighestUnlockedDay, XianRules.Titles.Length) - 1]}";
         for (int i = 0; i < _days.Count; i++)
         {
             int day = i + 1; _days[i].Disabled = day > city.HighestUnlockedDay || _save.HasLoadError;

@@ -12,6 +12,7 @@ public partial class JourneySettings : Node
     public double Music { get; private set; } = 100;
     public double Effects { get; private set; } = 100;
     public bool Muted { get; private set; }
+    public bool ReduceMotion { get; private set; }
     public bool VSyncEnabled { get; private set; } = true;
     public string DisplayMessage { get; private set; } = "";
     public Vector2I WindowedSize { get; private set; } = new(1920, 1080);
@@ -65,6 +66,8 @@ public partial class JourneySettings : Node
         ErrorMessage = load is Error.Ok or Error.FileNotFound ? "" : "设置无法读取，已使用默认值。";
         Master = ReadVolume(cfg, "master"); Music = ReadVolume(cfg, "music"); Effects = ReadVolume(cfg, "effects");
         Muted = cfg.GetValue("audio", "muted", false).AsBool(); ApplyAudio();
+        ReduceMotion = cfg.GetValue("accessibility", "reduce_motion", false).AsBool();
+        ProjectSettings.SetSetting("accessibility/reduce_motion", ReduceMotion);
         WindowedSize = ResolveWindowedSize(new Vector2I(
             cfg.GetValue("display", "window_width", cfg.GetValue("display", "width", 1920)).AsInt32(),
             cfg.GetValue("display", "window_height", cfg.GetValue("display", "height", 1080)).AsInt32()));
@@ -172,6 +175,7 @@ public partial class JourneySettings : Node
     public bool SavePreferences()
     {
         var cfg = new ConfigFile();
+        cfg.SetValue("accessibility", "reduce_motion", ReduceMotion);
         cfg.SetValue("teaching", "seen_interface_lessons", _seenInterfaceLessons.OrderBy(key => key).ToArray());
         cfg.SetValue("language", "locale", Language);
         Error directory = DirAccess.MakeDirRecursiveAbsolute(Path.GetDirectoryName(ProjectSettings.GlobalizePath(SettingsPath))!);
@@ -192,5 +196,11 @@ public partial class JourneySettings : Node
     {
         if (language is not ("zh_CN" or "en")) return;
         Language = language; TranslationServer.SetLocale(language); SavePreferences(); Changed?.Invoke();
+    }
+    public void SetReduceMotion(bool enabled)
+    {
+        ReduceMotion = enabled;
+        ProjectSettings.SetSetting("accessibility/reduce_motion", enabled);
+        SavePreferences(); Changed?.Invoke();
     }
 }

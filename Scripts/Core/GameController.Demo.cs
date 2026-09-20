@@ -42,9 +42,10 @@ public partial class GameController
         };
         _startScreen.NewGameRequested += slotId => CreateJourney(slotId, startBusiness: false);
         _startScreen.NewGameBusinessRequested += slotId => CreateJourney(slotId, startBusiness: true);
+        _startScreen.FirstStationDepartureRequested += () => StartCityBusiness(StableIds.Cities.Tianjin, 1, firstJourneyDeparture: true);
         _startScreen.ContinueRequested += () =>
         {
-            if (_save.CanContinue && catalog.IsValid) _startScreen.PresentMap();
+            if (_save.CanContinue && catalog.IsValid) _startScreen.PresentCity(_save.ContinueCityId, fromHome: true);
             else _startScreen.ShowError("试玩存档或配置无法读取，请检查后重试。");
         };
         _startScreen.QuitRequested += () => GetTree().Quit();

@@ -42,11 +42,12 @@ public partial class JourneyTransition : CanvasLayer
             ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, MouseFilter = Control.MouseFilterEnum.Stop };
         AddChild(_frame); _frame.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
         _frame.Hide();
-        GetViewport().SizeChanged += Finish;
+        GetViewport().SizeChanged += ViewportChanged;
     }
 
-    public void Play(Effect effect, bool reverse = false, Rect2? bounds = null, DayController? day = null, bool ledger = false)
+    public void Play(Effect effect, bool reverse = false, Rect2? bounds = null, DayController? day = null, bool ledger = false, bool dimBackdrop = true)
     {
+        if (_paperDeparture) return;
         // A scene curtain owns this frame even when the destination builds its book or closes a dialog.
         if (_active && _effect == Effect.Curtain && effect != Effect.Curtain) return;
         Finish();
@@ -60,7 +61,7 @@ public partial class JourneyTransition : CanvasLayer
         if (effect is Effect.SpreadOpen or Effect.SpreadClose)
         {
             PrepareBookMask(ledger);
-            _material.SetShaderParameter("backdrop", ledger ? new Color(.12f, .08f, .04f, .4f) : new Color(.15f, .1f, .06f, .65f));
+            _material.SetShaderParameter("backdrop", !dimBackdrop ? Colors.Transparent : ledger ? new Color(.12f, .08f, .04f, .4f) : new Color(.15f, .1f, .06f, .65f));
         }
         Vector2 size = GetViewport().GetVisibleRect().Size;
         Rect2 area = bounds ?? new Rect2(Vector2.Zero, size);
@@ -122,6 +123,7 @@ public partial class JourneyTransition : CanvasLayer
     internal void HoldForCapture(float value) { _tween?.Pause(); SetProgress(value); }
     public void Finish()
     {
+        if (_paperDeparture) { CompletePaperDeparture(); return; }
         _tween?.Kill(); _tween = null; _active = false;
         if (IsInstanceValid(_day)) { _day!.DayPrepared -= KeepPause; _day.SetPauseReason("journey-transition", false); }
         _day = null;
@@ -133,17 +135,24 @@ public partial class JourneyTransition : CanvasLayer
     }
     public override void _Process(double delta)
     {
-        if (_active && Reduced) Finish();
+        if (_active && Reduced && !_paperDeparture) Finish();
     }
     public override void _Notification(int what)
     {
-        if (what == NotificationApplicationFocusOut) Finish();
+        if (_paperDeparture)
+        {
+            if (what == NotificationApplicationFocusOut) { _tween?.Pause(); _departureAudio?.Stop(); }
+            else if (what == NotificationApplicationFocusIn) _tween?.Play();
+        }
+        else if (what == NotificationApplicationFocusOut) Finish();
     }
     public override void _ExitTree()
     {
-        GetViewport().SizeChanged -= Finish;
+        GetViewport().SizeChanged -= ViewportChanged;
+        if (_paperDeparture) CancelPaperDeparture();
         Finish();
     }
+    private void ViewportChanged() { if (!_paperDeparture) Finish(); }
 
     /// <summary>Visibility belongs to the host; the previous rendered frame supplies the closing sheet.</summary>
     public static void Watch(Control panel, Func<bool>? enabled = null, Func<Rect2>? bounds = null, Func<bool>? book = null, bool ledger = false)

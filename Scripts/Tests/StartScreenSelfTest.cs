@@ -37,6 +37,7 @@ public partial class StartScreenSelfTest : Node
             GetNode<JourneySettings>("/root/JourneySettings").UsePathForTests(Path.Combine(directory, "settings.cfg"));
             InterfaceLessons.MarkAllSeen(GetNode<JourneySettings>("/root/JourneySettings"));
             await Launch();
+            if (args.Contains("--new-journey-only")) { await NewJourneyChecks(directory); GD.Print($"NEW_JOURNEY_TEST_PASS checks={_passed} demo={ExperienceProfile.IsDemo}"); GetTree().Quit(); return; }
             if (args.Contains("--collection-only"))
             {
                 await CollectionNavigation();
@@ -86,6 +87,7 @@ public partial class StartScreenSelfTest : Node
             GetTree().Quit(1);
         }
     }
+
 
     private async Task PanelPreview()
     {
@@ -168,7 +170,7 @@ public partial class StartScreenSelfTest : Node
         await Click(Find<Button>("Back"));
         Check(_screen.Page == JourneyPage.Home, "map returns to home source");
         await Click(Find<Button>("Continue"));
-        Check(_screen.Page == JourneyPage.Map, "continue opens world map");
+        Check(_screen.Page == JourneyPage.City && _screen.SelectedCityId == _save.ContinueCityId, "continue opens saved city");
         foreach (var city in JourneyModel.Cities) { if (!_save.Data.UnlockedCityIds.Contains(city.Id)) _save.Data.UnlockedCityIds.Add(city.Id); _save.Data.GetCity(city.Id); }
         _save.Data.GetCity(StableIds.Cities.Tianjin).Completed = true;
         _save.Data.GetCity(StableIds.Cities.Tianjin).BestStars = 1;

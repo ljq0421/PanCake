@@ -42,6 +42,10 @@ public partial class StartScreen
         SettingsRule(1021, 590, 496);
         SettingsRowLabel("MuteLabel", "全部静音", "02_全部静音", 1020, 597, 305);
         SettingsSwitch("Mute", new(1374, 596, 124, 52), _settings.ToggleMute);
+        SettingsGroup("MotionGroup", new(1005, 682, 528, 64));
+        var motionLabel = Text(_modal, "ReduceMotionLabel", "减少动态效果", new(1034, 688, 320, 52), 26);
+        FitTextWidth(motionLabel, 26, 20);
+        SettingsSwitch("ReduceMotion", new(1374, 688, 124, 52), () => _settings.SetReduceMotion(!_settings.ReduceMotion));
 
         var done = Button(_modal, "Close", "完成", new(1150, 796, 262, 63), CloseModal, true, bare: true);
         Art(done, "首页地图按钮底板", new(0, 0, 262, 63)).ShowBehindParent = true;
@@ -190,6 +194,7 @@ public partial class StartScreen
         RefreshResolutionChoices();
         RefreshSettingsSwitch("Mute", _settings.Muted);
         RefreshSettingsSwitch("VSync", _settings.VSyncEnabled);
+        RefreshSettingsSwitch("ReduceMotion", _settings.ReduceMotion);
         if (_modal.GetNodeOrNull<OptionButton>("Language") is { } language) language.Select(_settings.Language == "en" ? 1 : 0);
         foreach (var (key, value) in new[] { ("master", _settings.Master), ("music", _settings.Music), ("effects", _settings.Effects) })
         {
@@ -198,7 +203,7 @@ public partial class StartScreen
             if (key != "master" && _modal.GetNodeOrNull<TextureRect>("ChannelIcon" + key) is { } icon)
                 icon.Texture = Texture((key == "music" ? "音乐" : "音效") + (_settings.Muted || _settings.Master == 0 || value == 0 ? "关闭" : "开启"));
         }
-        foreach (string name in new[] { "DisplayModeLabel", "ResolutionLabel", "VSyncLabel", "MuteLabel", "LanguageLabel" })
+        foreach (string name in new[] { "DisplayModeLabel", "ResolutionLabel", "VSyncLabel", "MuteLabel", "LanguageLabel", "ReduceMotionLabel" })
             if (_modal.GetNodeOrNull<Label>(name) is { } label) FitTextWidth(label, 26, 20);
         if (_settingsMessage is not null) _settingsMessage.Text = string.IsNullOrEmpty(_settings.ErrorMessage) ? _settings.DisplayMessage : _settings.ErrorMessage;
     }

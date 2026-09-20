@@ -8,6 +8,7 @@ public partial class StartScreen
 {
     private void RenderHome()
     {
+        _homeBookPalette = true;
         // Home composition: breakfast-shop wall, overlapping left logo and four tabletop actions.
         // Art is user supplied; layout and live progress remain independent of the textures.
         Begin(JourneyPage.Home); Ambient();
@@ -176,7 +177,7 @@ public partial class StartScreen
     {
         if (_save?.IsDemo == true && _save.ChapterLength(cityId) == 0) return;
         if (_save is null || (!DeveloperToolsVisible && !_save.Data.UnlockedCityIds.Contains(cityId))) return;
-        PresentCity(cityId, RenderMap);
+        PresentCity(cityId, RenderMap, fromHome: _homeBookPalette);
     }
     private void RenderCompletion()
     {

@@ -70,8 +70,8 @@ public partial class BusinessDetailsView : Control
         BuildUpgradeTeaching();
         VisibilityChanged += () => { if (!Visible) { RemoveUpgradeModal(); FinishAnimation(); _audio.Stop(); } };
         Hide();
-        JourneyTransition.Watch(this, () => _model.CityId is "tianjin" or "wuhan" or "city:tianjin" or "city:wuhan",
-            () => new Rect2(_book.GetGlobalTransformWithCanvas().Origin, _book.Size * _canvas.Scale), book: () => true,
+        JourneyTransition.Watch(this,
+            bounds: () => new Rect2(_book.GetGlobalTransformWithCanvas().Origin, _book.Size * _canvas.Scale), book: () => true,
             ledger: true);
     }
     internal void Open(DayResult result, IReadOnlyList<BusinessOrderRecord> records, DataCatalog catalog) =>
@@ -148,6 +148,7 @@ public partial class BusinessDetailsView : Control
     internal void SelectPage(bool details, bool animate = true)
     {
         bool changed = IsVisibleInTree() && DetailVisible != details;
+        if (changed && animate) PlayBookSpread();
         FinishAnimation(); _summary.Visible = !details; _details.Visible = details;
         if (changed) PageChanged?.Invoke();
         if (UsesBookArt) PaintBookPaper();
@@ -160,19 +161,6 @@ public partial class BusinessDetailsView : Control
         }
         if (!changed) return;
         (details ? _previousPage : _nextPage).GrabFocus();
-        if (!animate || ProjectSettings.GetSetting("accessibility/reduce_motion", false).AsBool()) return;
-        var incoming = details ? _details : _summary;
-        var outgoing = details ? _summary : _details;
-        var origin = incoming.Position;
-        float direction = details ? -1 : 1;
-        outgoing.Show(); incoming.Position = origin - new Vector2(direction * 24, 0);
-        incoming.Modulate = new(1, 1, 1, 0);
-        _pageTween = CreateTween().SetParallel();
-        _pageTween.TweenProperty(outgoing, "position", origin + new Vector2(direction * 24, 0), .2).SetTrans(Tween.TransitionType.Cubic).SetEase(Tween.EaseType.Out);
-        _pageTween.TweenProperty(outgoing, "modulate", new Color(1, 1, 1, 0), .2);
-        _pageTween.TweenProperty(incoming, "position", origin, .2).SetTrans(Tween.TransitionType.Cubic).SetEase(Tween.EaseType.Out);
-        _pageTween.TweenProperty(incoming, "modulate", Colors.White, .2);
-        _pageTween.Chain().TweenCallback(Callable.From(FinishPageAnimation));
     }
 
     private void FinishPageAnimation()
@@ -227,18 +215,9 @@ public partial class BusinessDetailsView : Control
         _audio.Play(PancakeSound.BookOpen);
         if (UsesTravelBook && _model.Closing) { StartTravelAnimation(); return; }
         _entrance = CreateTween();
-        if (_model.CityId is "tianjin" or "wuhan" or "city:tianjin" or "city:wuhan")
-        {
-            // The shared paper turn reveals an opaque book. Start settlement
-            // details after it lands instead of fading the paper at the same time.
-            _book.Modulate = Colors.White;
-            _entrance.TweenInterval(.52);
-        }
-        else
-        {
-            _book.Modulate = new(1, 1, 1, .3f);
-            _entrance.TweenProperty(_book, "modulate", Colors.White, .2);
-        }
+        // The shared unfold owns the paper; settlement details follow it.
+        _book.Modulate = Colors.White;
+        _entrance.TweenInterval(.52);
         if (!_model.Closing) return;
         _income.Text = "¥0"; _metrics.Modulate = new(1, 1, 1, 0); _stamp.Modulate = new(1, 1, 1, 0); _note.Modulate = new(1, 1, 1, 0);
         _entrance.TweenMethod(Callable.From<float>(n => _income.Text = $"¥{Mathf.RoundToInt(n)}"), 0f, (float)_model.Result.TotalRevenue, .6);

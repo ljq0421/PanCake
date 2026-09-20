@@ -71,7 +71,7 @@ internal static class SettingsPageChecks
         await Click(Find<Button>(screen, "Settings"));
         Check(Find<TextureRect>(screen, "SettingsBook").GetRect() == StartScreen.BookBounds, "book size and position unchanged");
         Check(Find<Button>(screen, "Windowed").HasFocus(), "first display option initially focused");
-        foreach (string name in new[] { "Fullscreen", "Resolution", "VSync", "Language", "Volumemaster", "Volumemusic", "Volumeeffects", "Mute", "Close", "Windowed" })
+        foreach (string name in new[] { "Fullscreen", "Resolution", "VSync", "Language", "Volumemaster", "Volumemusic", "Volumeeffects", "Mute", "ReduceMotion", "Close", "Windowed" })
         {
             await KeyPress(screen.GetViewport(), Key.Tab);
             Check(screen.GetViewport().GuiGetFocusOwner()?.Name == name, "Tab reaches " + name);

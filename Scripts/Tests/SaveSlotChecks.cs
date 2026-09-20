@@ -30,7 +30,7 @@ internal static class SaveSlotChecks
         await capture("slots-home");
         await Click("WorldMap");
         Check(screen.Page == JourneyPage.Map && !save.GetSlots().Any(s => s.Exists), "browsing map does not create a save");
-        await Click("Back");
+        await Click("Home");
         string blocked = Path.Combine(root, "slot-1.json");
         Directory.CreateDirectory(blocked);
         await Click("NewGame");
@@ -41,9 +41,9 @@ internal static class SaveSlotChecks
         newButton.EmitSignal(Button.SignalName.Pressed);
         newButton.EmitSignal(Button.SignalName.Pressed);
         await Frames();
-        Check(save.ActiveSlotId == 1 && screen.Page == JourneyPage.Map && save.GetSlots().Count(s => s.Exists) == 1,
-            "new journey uses first empty slot, opens map, and ignores duplicate activation");
-        await capture("slots-new-map");
+        Check(save.ActiveSlotId == 1 && screen.Page == JourneyPage.NewJourneyMap && save.GetSlots().Count(s => s.Exists) == 1,
+            "new journey uses first empty slot, opens first-station animation, and ignores duplicate activation");
+        await capture("slots-new-opening");
         save.Data.Coins = 321; save.Data.Tianjin.HighestUnlockedDay = 4;
         save.Data.Tianjin.LearnedWorkbenchActions.Add("flip");
         Check(save.TrySave(out _), "save first journey");
@@ -51,7 +51,7 @@ internal static class SaveSlotChecks
         screen.PresentHome(); await Click("ManageSaves");
         Check(File.ReadAllText(Path.Combine(root, "slot-1.json")) == first, "listing is read only");
         await Click("CreateSlot2");
-        Check(save.ActiveSlotId == 2 && save.Data.Coins == 0 && save.Data.Tianjin.HighestUnlockedDay == 1,
+        Check(save.ActiveSlotId == 2 && screen.Page == JourneyPage.NewJourneyMap && save.Data.Coins == 0 && save.Data.Tianjin.HighestUnlockedDay == 1,
             "second journey starts fresh");
         Check(File.ReadAllText(Path.Combine(root, "slot-1.json")) == first, "new journey preserves first file");
         screen.PresentHome(); await Click("ManageSaves");
@@ -61,7 +61,8 @@ internal static class SaveSlotChecks
         Find<LineEdit>("SlotName").Text = "  我的早餐旅程  "; await Click("Confirm");
         Check(save.GetSlots()[0].Name == "我的早餐旅程" && save.ActiveSlotId == 2, "rename trims and does not switch");
         await Click("LoadSlot1");
-        Check(save.Data.Coins == 321 && save.Data.Tianjin.HighestUnlockedDay == 4 && screen.Page == JourneyPage.Map,
+        Check(save.Data.Coins == 321 && save.Data.Tianjin.HighestUnlockedDay == 4 && screen.Page == JourneyPage.City
+            && screen.SelectedCityId == StableIds.Cities.Tianjin && screen.SelectedDay == 4,
             "continue restores the selected journey");
         screen.PresentCity(StableIds.Cities.Tianjin); screen.PresentLedger(); await Frames();
         Check(!screen.FindChildren("ResetLedgerProgress", "Button", true, false).Any(), "ledger reset removed");
@@ -106,6 +107,13 @@ internal static class SaveSlotChecks
             Check(main.OpenCity(city) && main.StartCityBusiness(city, 1), "city initializes against active slot " + city);
             main.OpenCity(city); screen.PresentHome(); await Frames();
             Check(save.ContinueCityId == city, "business records resume city " + city);
+            string saved = File.ReadAllText(Path.Combine(root, "slot-2.json"));
+            await Click("Continue");
+            Check(screen.Page == JourneyPage.City && screen.SelectedCityId == city
+                && screen.SelectedDay == save.Data.GetCity(city).HighestUnlockedDay,
+                "home continue opens saved city and day " + city);
+            Check(File.ReadAllText(Path.Combine(root, "slot-2.json")) == saved,
+                "opening saved city preserves progress " + city);
         }
         GD.Print($"SAVE_SLOTS_TEST_RESULT passed={_checks} failed=0");
 

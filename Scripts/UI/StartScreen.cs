@@ -3,7 +3,7 @@ using ProjectCake.Core;
 
 namespace ProjectCake.UI;
 
-public enum JourneyPage { Splash, Home, Opening, NewJourney, Continue, Map, City, Completion, Ledger, Upgrades, Collection, Saves }
+public enum JourneyPage { Splash, Home, Opening, NewJourney, Continue, Map, City, Completion, Ledger, Upgrades, Collection, Saves, NewJourneyMap }
 
 /// <summary>Travel navigation uses a single fitted canvas, independent of gameplay views.</summary>
 public partial class StartScreen : Control
@@ -82,12 +82,18 @@ public partial class StartScreen : Control
         if (_status is not null) _status.Text = _error.Length > 0 ? _error : _save?.DemoMigrationRetryAvailable == true ? "旧试玩存档升级失败，请检查写入权限后重试。原存档已保留。"
             : !string.IsNullOrEmpty(_save?.SlotError) ? _save.SlotError : _save?.HasLoadError == true ? "存档无法读取。请返回首页管理存档。" : "";
     }
-    private void Begin(JourneyPage page)
+    private void Begin(JourneyPage page, bool animate = true)
     {
         CloseModal();
-        if (_hasPresentedPage && IsVisibleInTree() && (Page != page || _presentedCity != _city))
-            JourneyTransition.For(this).Play(JourneyTransition.Effect.Page,
-                reverse: page == JourneyPage.Home || page == JourneyPage.City && Page is JourneyPage.Ledger or JourneyPage.Upgrades);
+        if (animate && _hasPresentedPage && IsVisibleInTree() && (Page != page || _presentedCity != _city))
+        {
+            bool openingBook = IsBookPage(page), closingBook = IsBookPage(Page);
+            JourneyTransition.For(this).Play(openingBook ? JourneyTransition.Effect.SpreadOpen
+                : closingBook ? JourneyTransition.Effect.SpreadClose : JourneyTransition.Effect.Page,
+                reverse: page == JourneyPage.Home,
+                bounds: openingBook || closingBook ? new Rect2(_canvas.GetGlobalTransformWithCanvas() * BookBounds.Position, BookBounds.Size * _canvas.Scale) : null,
+                dimBackdrop: false);
+        }
         _hasPresentedPage = true; _presentedCity = _city;
         KillAnimations(); Clear(_body); _buttons.Clear(); _audioButton = null;
         Page = page; _busy = false; _error = "";
@@ -104,6 +110,8 @@ public partial class StartScreen : Control
     }
     private static void Clear(Node parent)
     { foreach (Node child in parent.GetChildren()) { parent.RemoveChild(child); child.QueueFree(); } }
+    private static bool IsBookPage(JourneyPage page) => page is JourneyPage.City or JourneyPage.Ledger or JourneyPage.Upgrades
+        or JourneyPage.Collection or JourneyPage.Saves or JourneyPage.NewJourney or JourneyPage.Opening or JourneyPage.Completion;
     private void Focus(string name)
     { (_body.Descendants<Button>().FirstOrDefault(b => b.Name == name && !b.Disabled) ?? _buttons.FirstOrDefault(b => !b.Disabled))?.GrabFocus(); }
     private void Chrome(Action back, string? title = null, bool showBack = true)
@@ -145,6 +153,7 @@ public partial class StartScreen : Control
     { var t = CreateTween(); _tweens.Add(t); t.TweenInterval(seconds); t.TweenCallback(Callable.From(action)); }
     private void KillAnimations()
     {
+        CancelJourneyOpening();
         foreach (var t in _tweens) t.Kill(); _tweens.Clear();
     }
     private void FitCanvas()
@@ -172,6 +181,7 @@ public partial class StartScreen : Control
             if (ModalOpen) { if (_settings.DisplayPending) _settings.RevertDisplay(); else CloseModal(); }
             else if (Page == JourneyPage.Opening && _save?.IsDemo == true && _save.Data.UnlockedCityIds.Contains(ProjectCake.Data.StableIds.Cities.Wuhan)) PresentCity(ProjectCake.Data.StableIds.Cities.Wuhan);
             else if (Page == JourneyPage.Opening) RenderHome();
+            else if (Page == JourneyPage.NewJourney) RenderNewJourneyMap();
             else if (Page == JourneyPage.Completion) FinishCompletion();
             else if (Page == JourneyPage.Collection) ReturnFromBreakfastCollection();
             else if (Page is JourneyPage.Ledger or JourneyPage.Upgrades) RenderCity();

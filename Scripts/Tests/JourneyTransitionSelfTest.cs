@@ -39,6 +39,16 @@ public partial class JourneyTransitionSelfTest : Node
             await Frames();
             _home.PresentHome(); await Complete();
             Check(!_motion.Active, "automatic completion releases transition");
+            if (OS.GetCmdlineUserArgs().Contains("--shared-books-only"))
+            {
+                await SharedBookChecks(save);
+                GD.Print($"SHARED_BOOKS_TEST_PASS checks={_checks}"); GetTree().Quit(); return;
+            }
+            if (OS.GetCmdlineUserArgs().Contains("--home-books-only"))
+            {
+                await HomeBookChecks(save);
+                GD.Print($"HOME_BOOKS_TEST_PASS checks={_checks} demo={ExperienceProfile.IsDemo}"); GetTree().Quit(); return;
+            }
             if (OS.GetCmdlineUserArgs().Contains("--settings-fold-preview"))
             {
                 await SettingsFoldPreview();
@@ -165,6 +175,83 @@ public partial class JourneyTransitionSelfTest : Node
         if (DisplayServer.GetName() == "headless") return;
         var material = (ShaderMaterial)_motion.GetNode<TextureRect>("TransitionFrame").Material;
         Check(_motion.Active && material.GetShaderParameter("effect").AsInt32() == (int)expected, message);
+    }
+    private async Task HomeBookChecks(SaveService save)
+    {
+        foreach (var city in JourneyModel.Cities.Where(c => ExperienceProfile.IsCityAvailable(c.Id, ExperienceProfile.IsDemo)))
+        {
+            if (!save.Data.UnlockedCityIds.Contains(city.Id)) save.Data.UnlockedCityIds.Add(city.Id);
+            save.Data.GetCity(city.Id).HighestUnlockedDay = 4;
+            save.Data.LastVisitedCityId = city.Id;
+            Check(save.TrySave(out _), city.Id + " fixture saved");
+            _home.PresentHome(); await Complete();
+            FindButton("Continue").EmitSignal(BaseButton.SignalName.Pressed);
+            CheckEffect(JourneyTransition.Effect.SpreadOpen, city.Id + " continue unfolds from spine");
+            if (city.Id == StableIds.Cities.Wuhan) { await Sample("home-continue-fold", .5f); _motion.Finish(); }
+            await Complete();
+            foreach (var entry in new[] { ("ContinueTab", JourneyPage.City), ("LedgerTab", JourneyPage.Ledger), ("UpgradeTab", JourneyPage.Upgrades), ("ContinueTab", JourneyPage.City) })
+            {
+                if (_home.Page != entry.Item2)
+                {
+                    FindButton(entry.Item1).EmitSignal(BaseButton.SignalName.Pressed);
+                    CheckEffect(JourneyTransition.Effect.SpreadOpen, city.Id + " unfolds " + entry.Item2);
+                    await Complete();
+                }
+                Check(_home.Page == entry.Item2 && _home.SelectedCityId == city.Id, city.Id + " tab reaches " + entry.Item2);
+                var book = _home.GetNode<TextureRect>("Canvas/Page/SharedBook");
+                Check(book.Material is null, city.Id + " home book keeps original palette " + entry.Item2);
+                Check(new[] { "ContinueTab", "LedgerTab", "UpgradeTab" }.All(n => FindButton(n).IsVisibleInTree()), "three persistent bookmarks");
+                Check(FindButton(entry.Item1).Disabled, "current bookmark selected");
+                if (city.Id is StableIds.Cities.Tianjin or StableIds.Cities.Wuhan) await Capture("home-" + city.Id + "-" + entry.Item2);
+            }
+            _home.PresentCity(city.Id); await Complete();
+            if (city.Id is StableIds.Cities.Tianjin or StableIds.Cities.Wuhan or StableIds.Cities.Xian)
+                Check(_home.GetNode<TextureRect>("Canvas/Page/SharedBook").Material is ShaderMaterial, "city chapter retains its palette " + city.Id);
+        }
+        _home.PresentHome(); await Complete();
+        foreach (string entry in new[] { "ManageSaves", "BreakfastRecords" })
+        {
+            FindButton(entry).EmitSignal(BaseButton.SignalName.Pressed);
+            CheckEffect(JourneyTransition.Effect.SpreadOpen, entry + " uses shared book unfolding");
+            await Complete();
+            _home.PresentHome();
+            CheckEffect(JourneyTransition.Effect.SpreadClose, entry + " folds on return home");
+            await Complete();
+        }
+    }
+    private async Task SharedBookChecks(SaveService save)
+    {
+        var catalog = GetNode<DataCatalog>("/root/DataCatalog");
+        foreach (string city in new[] { "tianjin", "wuhan", "xian", "guangzhou", "yangzhou" })
+        {
+            save.Data.GetCity("city:" + city);
+            var book = new BusinessDetailsView(); _main.GetNode("UI").AddChild(book);
+            book.Open(new BusinessBookModel { CityId = city, Closing = true,
+                Upgrades = city == "yangzhou" ? new BookUpgradeSource(save, ProjectCake.Yangzhou.YangzhouCatalog.Load())
+                    : new BookUpgradeSource(save, catalog, "city:" + city) });
+            CheckEffect(JourneyTransition.Effect.SpreadOpen, city + " business book unfolds");
+            await Complete(); book.FinishAnimation(); await Frames();
+            book.SelectPage(true);
+            CheckEffect(JourneyTransition.Effect.SpreadOpen, city + " detail page unfolds");
+            await Complete();
+            book.SelectPage(false);
+            CheckEffect(JourneyTransition.Effect.SpreadOpen, city + " summary unfolds");
+            await Complete();
+            book.Descendants<Button>().Single(b => b.Name == "UpgradeSticker" || b.Name == "OpenBookUpgrades").EmitSignal(BaseButton.SignalName.Pressed);
+            CheckEffect(JourneyTransition.Effect.SpreadOpen, city + " upgrades unfold");
+            if (city == "yangzhou") { await Sample("shared-yangzhou-upgrades-fold", .5f); _motion.Finish(); }
+            await Complete();
+            book.Descendants<Button>().Single(b => b.Name == "CloseUpgrades").EmitSignal(BaseButton.SignalName.Pressed);
+            CheckEffect(JourneyTransition.Effect.SpreadOpen, city + " return from upgrades unfolds");
+            await Complete();
+            book.Hide();
+            CheckEffect(JourneyTransition.Effect.SpreadClose, city + " business book closes");
+            await Complete(); book.QueueFree(); await Frames();
+        }
+        ProjectSettings.SetSetting("accessibility/reduce_motion", true);
+        _home.PresentCity(StableIds.Cities.Tianjin, fromHome: true);
+        Check(!_motion.Active, "reduced motion skips unfolding");
+        ProjectSettings.SetSetting("accessibility/reduce_motion", false);
     }
     private void Check(bool condition, string message) { if (!condition) throw new InvalidOperationException(message); _checks++; GD.Print("PASS " + message); }
     private async Task Frames() { for (int i = 0; i < 3; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame); }

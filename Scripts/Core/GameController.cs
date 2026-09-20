@@ -93,10 +93,11 @@ public partial class GameController : Node
         };
         _startScreen.NewGameRequested += slotId => CreateJourney(slotId, startBusiness: false);
         _startScreen.NewGameBusinessRequested += slotId => CreateJourney(slotId, startBusiness: true);
+        _startScreen.FirstStationDepartureRequested += () => StartCityBusiness(StableIds.Cities.Tianjin, 1, firstJourneyDeparture: true);
         _startScreen.ContinueRequested += () =>
         {
             if (!save.CanContinue) { _startScreen.ShowError("存档无法继续，请检查存档状态。"); return; }
-            _startScreen.PresentMap();
+            _startScreen.PresentCity(save.ContinueCityId, fromHome: true);
         };
         _startScreen.QuitRequested += () => GetTree().Quit();
         hub.DayRequested += day =>
@@ -143,7 +144,7 @@ public partial class GameController : Node
         { _startScreen.ShowError("配置无法读取，请检查后重试。"); return; }
         if (!_save.TryCreateSlot(slotId, out string error)) { _startScreen.ShowError(error); return; }
         if (startBusiness) StartCityBusiness(StableIds.Cities.Tianjin, 1);
-        else _startScreen.PresentMap();
+        else _startScreen.PresentNewJourney();
     }
 
     public bool OpenCity(string cityId, bool allowDeveloperPreview = false)
@@ -180,7 +181,7 @@ public partial class GameController : Node
         _navigationError.PopupCentered(new Vector2I(680, 300));
     }
 
-    public bool StartCityBusiness(string cityId, int day)
+    public bool StartCityBusiness(string cityId, int day, bool firstJourneyDeparture = false)
     {
         if (_save.IsDemo && !_save.CanEnter(cityId, day))
         { _startScreen.ShowError("本次试玩尚未开放该营业日。"); return false; }
@@ -205,6 +206,11 @@ public partial class GameController : Node
         }
         if (!ready) { _startScreen.ShowError("营业准备失败，请检查配置或存档写入权限后重试。"); return false; }
         if (!_save.TryRecordCityVisit(cityId, out string error)) { _startScreen.ShowError(error); return false; }
+        if (firstJourneyDeparture && screen is TianjinDayScreen firstDay)
+        {
+            JourneyTransition.For(this).PlayPaperDeparture(controller, () => ShowOnly(screen), firstDay.BeginDay);
+            return true;
+        }
         ShowOnly(screen);
         if (screen is TianjinDayScreen td) td.BeginDay();
         else if (screen is WuhanDayScreen wd) wd.BeginDay();

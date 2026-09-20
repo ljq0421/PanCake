@@ -93,6 +93,7 @@ public partial class StartScreen
     }
     private void SettingsChanged()
     {
+        if (_body is not null) FitJourneyIntroduction();
         if (_body is not null)
         {
             if (_body.GetNodeOrNull<Label>("PageTitle") is { } heading) FitTextWidth(heading, 42, 26);

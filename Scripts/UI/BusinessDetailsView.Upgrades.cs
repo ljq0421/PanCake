@@ -44,8 +44,7 @@ public partial class BusinessDetailsView
     private void OpenUpgrades()
     {
         if (!CanUpgrade || _upgradeModal is not null) return;
-        if (_model.CityId is "tianjin" or "wuhan" or "city:tianjin" or "city:wuhan")
-            JourneyTransition.For(this).Play(JourneyTransition.Effect.Page);
+        PlayBookSpread();
         string message = "";
         if (_model.Upgrades!.NeedsUpgradeTeaching)
             _model.Upgrades.CompleteUpgradeTeaching(out message);
@@ -89,10 +88,11 @@ public partial class BusinessDetailsView
     }
     private void CloseUpgrades()
     {
-        if (_model.CityId is "tianjin" or "wuhan" or "city:tianjin" or "city:wuhan")
-            JourneyTransition.For(this).Play(JourneyTransition.Effect.Page, reverse: true);
+        PlayBookSpread();
         RemoveUpgradeModal();
         if (IsInstanceValid(_upgradeEntry) && _upgradeEntry!.IsVisibleInTree()) _upgradeEntry.GrabFocus();
         else CloseButton.GrabFocus();
     }
+    private void PlayBookSpread() => JourneyTransition.For(this).Play(JourneyTransition.Effect.SpreadOpen,
+        bounds: new Rect2(_book.GetGlobalTransformWithCanvas().Origin, _book.Size * _canvas.Scale), ledger: true, dimBackdrop: false);
 }

@@ -31,9 +31,9 @@ public partial class StartScreen
         parent.AddChild(row);
         var icon = HomeArt(row, caption, new(0, 17, 34, 36));
         icon.Name = name + "Icon";
-        CityPageArtSkin.Apply(icon, _city);
+        CityPageArtSkin.Apply(icon, BookPaletteCity);
         var label = Text(row, name + "Label", caption, new(44, 8, 99, 54), 23);
-        if (CityPageArtSkin.UsesWuhanPalette(_city))
+        if (CityPageArtSkin.UsesWuhanPalette(BookPaletteCity))
             label.AddThemeColorOverride("font_color", CitySettlementTheme.For("wuhan").Primary.Darkened(.42f));
         FitTextWidth(label, 23, 17);
         if (name == "LatestUnlock") return row;

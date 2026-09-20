@@ -284,6 +284,7 @@ public partial class PancakeWorkstation : Control
         _stroke.ResolveSpreadGeometry = ResolveSpreadGeometry;
         _stroke.SpreadToolTexture = _art.Scraper;
         _stroke.SauceToolTexture = _art.Ingredient(StableIds.Ingredients.Sauce);
+        _stroke.ResolveSauceAmount = () => Machine.Runtime.SauceCoverage;
         _stroke.IsToolHeld = () => _initialized && IsVisibleInTree() && CanInteract && !_drag.IsDragging
             && Machine.Runtime.State == PancakeState.Saucing;
         _stroke.StrokeStarted = BeginStroke;

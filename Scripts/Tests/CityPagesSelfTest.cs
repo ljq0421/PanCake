@@ -30,6 +30,15 @@ public partial class CityPagesSelfTest : Node
             _main = GD.Load<PackedScene>("res://Scenes/Main/Main.tscn").Instantiate<GameController>(); AddChild(_main);
             _screen = _main.GetNode<StartScreen>("UI/StartScreen");
             await Frames();
+            if (args.Contains("--completion-overlay-only"))
+            {
+                _save.QueueJourneyCompletion(StableIds.Cities.Tianjin);
+                _main.OpenCity(StableIds.Cities.Tianjin);
+                Check(_screen.Page == JourneyPage.Completion, "chapter completion opens after returning from business");
+                Check(_main.GetNode<Control>("UI/MorningHub").Visible && !_screen.GetNode<TextureRect>("Canvas/Background").Visible,
+                    "completion keeps the finished city workbench behind the book");
+                GD.Print($"COMPLETION_OVERLAY_TEST_RESULT passed={_passed} failed=0"); GetTree().Quit(); return;
+            }
             if (args.Contains("--note-review"))
             {
                 await ReviewBusinessNote();
@@ -194,6 +203,8 @@ public partial class CityPagesSelfTest : Node
             _screen.PresentMap(); await Capture("map-complete");
             _save.QueueJourneyCompletion(StableIds.Cities.Tianjin); _main.OpenCity(StableIds.Cities.Tianjin);
             Check(_screen.Page == JourneyPage.Completion, "completion presentation retained");
+            Check(_main.GetNode<Control>("UI/MorningHub").Visible && !_screen.GetNode<TextureRect>("Canvas/Background").Visible,
+                "completion keeps the finished city's workbench behind the book");
             Check(Find<TextureRect>("SharedBook").GetRect() == StartScreen.BookBounds, "completion uses same book bounds");
             Check(Find<TextureRect>("SharedBook").Material is null, "completion book remains original");
             await Capture("completion"); Click("Skip"); Check(_screen.SelectedCityId == StableIds.Cities.Wuhan, "completion goes to next city");

@@ -242,7 +242,7 @@ public partial class PancakeCanvas : Control
             }
             Vector2 start = surface.GetCenter() + surface.Size * new Vector2(.13f, -.22f) - new Vector2(0, 26);
             Vector2 position = start.Lerp(end, 1 - Mathf.Pow(1 - progress, 2));
-            Vector2 size = new(16 + i % 3 * 2, 13 + i % 3 * 2);
+            Vector2 size = new Vector2(16 + i % 3 * 2, 13 + i % 3 * 2) * 1.6f;
             painter.DrawSetTransform(position, angle * .14f * progress, Vector2.One);
             painter.DrawTextureRect(_art!.ScallionPieces[i % 3], new Rect2(-size / 2, size), false);
             painter.DrawSetTransform(Vector2.Zero, 0, Vector2.One);

@@ -10,6 +10,22 @@ public partial class BusinessDetailsView
     private bool _buying;
     private string? _selectedUpgrade;
     private bool CanUpgrade => _model.Closing && _model.Upgrades is not null;
+    private TutorialFocusLayer _upgradeTeaching = null!;
+    private void BuildUpgradeTeaching()
+    {
+        _upgradeTeaching = new TutorialFocusLayer
+        {
+            AllowDismiss = false,
+            Resolve = () => CanUpgrade && _model.CanClose && !DetailVisible && _upgradeModal is null
+                && _entrance?.IsRunning() != true && _pageTween?.IsRunning() != true
+                && GetNodeOrNull<InterfaceTeaching>("InterfaceTeaching") is null
+                && IsInstanceValid(_upgradeEntry) && _upgradeEntry!.IsVisibleInTree()
+                && _model.Upgrades!.NeedsUpgradeTeaching
+                ? new TutorialFocusStep("first-shop-upgrade", "店铺可以升级了！\n点击「升级」查看设备效果和价格。\n升级后，下次营业生效。",
+                    new[] { TutorialFocusTarget.Control(_upgradeEntry) }) : null
+        };
+        _canvas.AddChild(_upgradeTeaching);
+    }
     private void RefreshUpgradeCaptions()
     {
         if (_model.Upgrades is null) return;
@@ -30,7 +46,11 @@ public partial class BusinessDetailsView
         if (!CanUpgrade || _upgradeModal is not null) return;
         if (_model.CityId is "tianjin" or "wuhan" or "city:tianjin" or "city:wuhan")
             JourneyTransition.For(this).Play(JourneyTransition.Effect.Page);
-        FinishAnimation(); _selectedUpgrade = null; RenderUpgradeModal("");
+        string message = "";
+        if (_model.Upgrades!.NeedsUpgradeTeaching)
+            _model.Upgrades.CompleteUpgradeTeaching(out message);
+        FinishAnimation(); _selectedUpgrade = null; RenderUpgradeModal(message);
+        _upgradeTeaching.Refresh();
     }
     private void RenderUpgradeModal(string message)
     {

@@ -1899,21 +1899,6 @@ horizontal_alignment = 1
 vertical_alignment = 1
 metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_feedback")
 
-[node name="@Label@366" type="Label" parent="." unique_id=1618166176]
-z_index = 65
-layout_mode = 0
-offset_left = 400.0
-offset_top = 92.0
-offset_right = 1520.0
-offset_bottom = 136.0
-theme_override_colors/font_color = Color(0.14117648, 0.34901962, 0.30980393, 1)
-theme_override_colors/font_outline_color = Color(0.96862745, 0.9529412, 0.9098039, 1)
-theme_override_constants/outline_size = 5
-theme_override_font_sizes/font_size = 18
-horizontal_alignment = 1
-vertical_alignment = 1
-metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_tutorial")
-
 [node name="@ConfirmationDialog@375" type="ConfirmationDialog" parent="." unique_id=2083357355]
 title = "提前打烊？"
 theme = SubResource("Theme_o3bxv")

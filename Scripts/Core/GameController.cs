@@ -219,8 +219,7 @@ public partial class GameController : Node
         }
         if (_cityHubs.Values.Contains(show) && _save.TakeJourneyCompletion() is { } completedCity)
         {
-            ShowOnly(_startScreen);
-            _startScreen.PresentCompletion(completedCity, () => ShowOnly(show));
+            PresentCompletionOverHub(show, completedCity);
             return;
         }
         if (_cityHubs.Values.Contains(show))
@@ -234,5 +233,15 @@ public partial class GameController : Node
             JourneyTransition.For(this).Play(JourneyTransition.Effect.Curtain, day: GetNode<DayController>(DayControllerPath));
         foreach (Control page in GetNode("UI").GetChildren().OfType<Control>()) page.Visible = page == show;
         GetNode<Node2D>("ShopRoot").Visible = show != _startScreen;
+    }
+
+    private void PresentCompletionOverHub(Control hub, string completedCity)
+    {
+        // Keep the city that just closed below the completion book.  The start-screen
+        // overlay suppresses only its own home artwork for this presentation.
+        foreach (Control page in GetNode("UI").GetChildren().OfType<Control>())
+            page.Visible = page == hub || page == _startScreen;
+        GetNode<Node2D>("ShopRoot").Visible = true;
+        _startScreen.PresentCompletion(completedCity, () => ShowOnly(hub), overCityWorkbench: true);
     }
 }

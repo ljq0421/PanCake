@@ -21,9 +21,8 @@ public partial class GameController
         wuhan.ConnectController(controller);
         void ReturnFromBusiness(string city)
         {
-            ShowOnly(_startScreen);
-            if (_save.TakeJourneyCompletion() is { } completed) _startScreen.PresentCompletion(completed, () => _startScreen.PresentCity(city));
-            else _startScreen.PresentCity(city);
+            if (_save.TakeJourneyCompletion() is { } completed) PresentCompletionOverHub(_cityHubs[city], completed);
+            else { ShowOnly(_startScreen); _startScreen.PresentCity(city); }
         }
         screen.HubRequested += () => ReturnFromBusiness(StableIds.Cities.Tianjin);
         wuhan.HubRequested += () => ReturnFromBusiness(StableIds.Cities.Wuhan);

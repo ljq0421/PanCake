@@ -22,7 +22,6 @@ public partial class TianjinDayScreen
         foreach (var target in _workstation.FocusClearAreas()) yield return target;
         foreach (var card in _orderCards)
             if (card.IsVisibleInTree()) yield return TutorialFocusTarget.Control(card, false);
-        if (_demoGesture?.IsVisibleInTree() == true) yield return TutorialFocusTarget.Control(_demoGesture, false);
     }
     private TutorialFocusStep? ResolveTeachingFocus()
     {

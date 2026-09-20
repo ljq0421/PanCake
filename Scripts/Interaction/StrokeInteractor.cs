@@ -1,4 +1,5 @@
 using Godot;
+using ProjectCake.Pancake;
 
 namespace ProjectCake.Interaction;
 
@@ -38,6 +39,15 @@ public partial class StrokeInteractor : Control
     public Vector2 SpreadToolContactAnchor { get; set; } = new(47, 79);
     public Texture2D? SauceToolTexture { get; set; }
     public Func<bool>? IsToolHeld { get; set; }
+    public Func<double>? ResolveSauceAmount { get; set; }
+    internal bool SauceMeterVisible => IsVisibleInTree() && _toolVisible
+        && ResolveMode?.Invoke() == StrokeMode.Sauce && ResolveSauceAmount is not null;
+    private readonly StyleBoxFlat _sauceMeterStyle = new()
+    {
+        BgColor = new Color("#FFF1D9"),
+        CornerRadiusTopLeft = 8, CornerRadiusTopRight = 8,
+        CornerRadiusBottomLeft = 8, CornerRadiusBottomRight = 8,
+    };
     public float PancakeRadius { get; set; } = 180;
 
     public double SpreadProgress => _spread.Progress;
@@ -215,6 +225,7 @@ public partial class StrokeInteractor : Control
             EllipseGeometry sauceGeometry = GetSpreadGeometry();
             DrawPolyline(EllipsePoints(sauceGeometry, -Mathf.Pi / 2.0f, Mathf.Tau, 72), new Color(0.96f, 0.49f, 0.18f, 0.62f), 6, true);
             DrawTool(SauceToolTexture, new Vector2(104, 104), new Vector2(38, 72));
+            if (SauceMeterVisible) DrawSauceMeter();
             return;
         }
 
@@ -227,6 +238,33 @@ public partial class StrokeInteractor : Control
             DrawPolyline(EllipsePoints(geometry, -Mathf.Pi / 2.0f, sweep, Math.Max(8, Mathf.CeilToInt(72 * (float)_spread.Progress))), new Color("#F5B83D"), 10.0f, true);
         }
         DrawTool(SpreadToolTexture, SpreadToolSize, SpreadToolContactAnchor);
+    }
+
+    private void DrawSauceMeter()
+    {
+        double amount = Math.Clamp(ResolveSauceAmount!(), 0, SauceRules.MaximumAmount);
+        Vector2 size = new(176, 58);
+        // Work in viewport coordinates to keep the readout inside the screen even
+        // when the held brush moves beyond the stove's input rectangle.
+        Transform2D transform = GetGlobalTransformWithCanvas();
+        Rect2 viewport = GetViewportRect();
+        Vector2 pointer = transform * _toolPosition;
+        Vector2 position = pointer + new Vector2(78, -38);
+        if (position.X + size.X > viewport.End.X - 12) position.X = pointer.X - size.X - 64;
+        position.X = Mathf.Clamp(position.X, viewport.Position.X + 12, viewport.End.X - size.X - 12);
+        position.Y = Mathf.Clamp(position.Y, viewport.Position.Y + 12, viewport.End.Y - size.Y - 12);
+        position = transform.AffineInverse() * position;
+        DrawStyleBox(_sauceMeterStyle, new Rect2(position, size));
+        DrawString(GetThemeFont("font"), position + new Vector2(12, 26), SauceRules.Describe(amount),
+            HorizontalAlignment.Left, size.X - 24, 20, new Color("#553322"));
+        Rect2 track = new(position + new Vector2(12, 38), new Vector2(size.X - 24, 9));
+        DrawRect(track, new Color("#D8BE99"));
+        DrawRect(new Rect2(track.Position, new Vector2(track.Size.X * (float)(amount / SauceRules.MaximumAmount), track.Size.Y)), new Color("#A9562D"));
+        foreach (float fraction in new[] { 1f / 3, 2f / 3 })
+        {
+            Vector2 tick = track.Position + new Vector2(track.Size.X * fraction, -2);
+            DrawLine(tick, tick + new Vector2(0, track.Size.Y + 4), new Color("#553322"), 2);
+        }
     }
 
     private EllipseGeometry GetSpreadGeometry() => ResolveSpreadGeometry?.Invoke()

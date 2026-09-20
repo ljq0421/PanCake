@@ -14,9 +14,6 @@ public partial class TianjinDayScreen
     private Label? _demoLessonTitle, _demoLessonHint;
     private Button? _demoLessonAction;
     private Panel? _demoLessonActionFrame;
-    private Panel? _demoGesture;
-    private Label? _demoGestureLabel;
-    private ProgressBar? _demoGestureBar;
     private bool _demoLessonComplete;
     private bool _demoLessonReplay;
     private string _demoLessonSaveError = "";
@@ -81,29 +78,10 @@ public partial class TianjinDayScreen
         _demoLessonActionFrame = TianjinTeachingUi.ActionFrame(_demoLessonAction, new(285, 46), new(160, 58));
         _demoLesson.AddChild(_demoLessonActionFrame);
         _demoLessonAction.Pressed += () => { if (_controller.TutorialActive) FinishDemoLesson(); else _demoLesson.Hide(); };
-        _demoGesture = new Panel { Name = "DemoGestureProgress", Position = new(40, 940), Size = new(475, 76), MouseFilter = MouseFilterEnum.Ignore };
-        _demoGesture.Size = new(475, 112);
-        TianjinTeachingUi.ApplyPanel(_demoGesture); AddChild(_demoGesture);
-        _demoGestureLabel = new Label { Position = new(60, 34), Size = new(379, 36), MouseFilter = MouseFilterEnum.Ignore };
-        _demoGestureLabel.AddThemeFontSizeOverride("font_size", 22); _demoGesture.AddChild(_demoGestureLabel);
-        _demoGestureBar = new ProgressBar { Position = new(60, 76), Size = new(379, 14), MinValue = 0, MaxValue = 1, ShowPercentage = false, MouseFilter = MouseFilterEnum.Ignore };
-        _demoGesture.AddChild(_demoGestureBar); _demoGesture.Hide();
     }
 
     private void UpdateDemoLesson()
     {
-        if (_demoGesture is not null)
-        {
-            var runtime = _workstation.Machine.Runtime;
-            bool spreading = runtime.State is PancakeState.BatterPlaced or PancakeState.Spreading;
-            _demoGesture.Visible = _save.IsDemo && _controller.State == DayState.Running && (spreading || runtime.State == PancakeState.Saucing);
-            if (_demoGesture.Visible)
-            {
-                _demoGestureBar!.MaxValue = spreading ? 1 : SauceRules.MaximumAmount;
-                _demoGestureBar.Value = spreading ? runtime.SpreadCoverage : runtime.SauceCoverage;
-                _demoGestureLabel!.Text = spreading ? $"摊饼进度 {runtime.SpreadCoverage:P0}" : $"酱量 {runtime.SauceCoverage:P0} · {SauceRules.Name(SauceRules.Classify(runtime.SauceCoverage))}";
-            }
-        }
         if (_demoLesson?.Visible != true || !_controller.TutorialActive) return;
         if (_demoTeachingDay == 6 && !_demoPartialSeeded && _controller.CustomerQueue!.Slots.FirstOrDefault(c => c.State == ProjectCake.Customers.CustomerState.Happy) is { } example)
         {

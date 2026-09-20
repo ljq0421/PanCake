@@ -22,6 +22,7 @@ public partial class BusinessBookSelfTest
             var source = city == "yangzhou" ? new BookUpgradeSource(save, yc) : new BookUpgradeSource(save, catalog, cityId);
             save.Data.Coins = 10000;
             Check(source.Offers.Count == 0, city + " locked offers hidden");
+            Check(!source.NeedsUpgradeTeaching, city + " locked upgrades do not teach");
             if (city != "yangzhou")
             {
                 progress.UnlockedContentIds = catalog.GetDays(cityId).Values.SelectMany(d => d.StartUnlocks.Concat(d.CompletionUnlocks)).Distinct().ToList();
@@ -34,7 +35,10 @@ public partial class BusinessBookSelfTest
             var first = source.Offers[0];
             save.Data.Coins = first.Price - 1;
             Check(!source.Offers.Contains(first), city + " insufficient offer hidden");
+            save.Data.Coins = 0;
+            Check(!source.NeedsUpgradeTeaching, city + " no affordable upgrade does not teach");
             save.Data.Coins = 10000;
+            Check(source.NeedsUpgradeTeaching, city + " first affordable upgrade teaches");
             foreach (var offer in source.Offers) Check(source.Effects(offer).Length > 0, city + " effects present");
             if (city == "wuhan")
             {
@@ -59,13 +63,31 @@ public partial class BusinessBookSelfTest
             var model = Fixture(city); model.Closing = true; model.Upgrades = source;
             var view = new BusinessDetailsView(); AddChild(view); bool closed = false; view.CloseRequested += () => closed = true;
             model.Closing = false; view.Open(model);
+            view.FinishAnimation(); await Frames();
+            var teaching = view.Descendants<TutorialFocusLayer>().Single();
+            Check(teaching.CurrentAction is null, city + " no upgrade teaching during business");
             Check(!view.Descendants<Button>().Any(b => b.Name == "OpenBookUpgrades" || b.Name == "UpgradeSticker"), city + " affordable live upgrades hidden");
             model.Closing = true;
             Button Entry() => view.Descendants<Button>().Single(b => b.Name == (city is "tianjin" or "wuhan" or "xian" ? "OpenBookUpgrades" : "UpgradeSticker"));
             foreach (var size in CaptureSizes)
             {
                 GetWindow().Size = size; await Frames(5); view.Open(model); view.FinishAnimation(); await Frames();
+                if (!save.Data.UpgradeTeachingCompleted)
+                {
+                    Check(teaching.CurrentAction == "first-shop-upgrade", city + " summary highlights affordable upgrade");
+                    view.SelectPage(true, false); await Frames();
+                    Check(teaching.CurrentAction is null, city + " details hide upgrade teaching");
+                    view.SelectPage(false, false); await Frames();
+                    if (Capture) await Shot(city + "-first-upgrade-teaching");
+                }
                 Click(Entry()); await Frames();
+                Check(save.Data.UpgradeTeachingCompleted && teaching.CurrentAction is null && source.Coins == 10000,
+                    city + " clicking entry acknowledges teaching without purchase");
+                save.Load();
+                Check(save.Data.UpgradeTeachingCompleted && !source.NeedsUpgradeTeaching, city + " teaching acknowledgement persists");
+                Check(!new BookUpgradeSource(save, catalog, ProjectCake.Data.StableIds.Cities.Tianjin).NeedsUpgradeTeaching,
+                    city + " acknowledgement shared across cities");
+                if (OS.GetCmdlineUserArgs().Contains("--teaching-only")) break;
                 var modal = view.Descendants<Control>().Single(n => n.Name == "BookUpgradeModal");
                 Check(modal.IsVisibleInTree(), city + " click opens modal");
                 Check(modal.Descendants<Label>().Any(l => l.Name == "Coins" && l.Text == source.Coins.ToString()), city + " wallet shown");
@@ -104,6 +126,11 @@ public partial class BusinessBookSelfTest
                 Click(Entry()); await Frames();
                 Click(view.Descendants<Button>().Single(b => b.Name == "CloseUpgrades")); await Frames();
                 Check(!closed && Entry().HasFocus() && !view.Descendants<Control>().Any(n => n.Name == "BookUpgradeModal"), city + " return button restores original book");
+            }
+            if (OS.GetCmdlineUserArgs().Contains("--teaching-only"))
+            {
+                view.QueueFree(); workstation?.QueueFree(); controller?.QueueFree(); save.QueueFree(); await Frames();
+                continue;
             }
             int income = model.Result.TotalRevenue;
             Click(Entry()); await Frames();

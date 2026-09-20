@@ -317,6 +317,8 @@ public partial class StartScreenSelfTest : Node
         _save.QueueJourneyCompletion(StableIds.Cities.Tianjin);
         _main.OpenCity(StableIds.Cities.Tianjin);
         Check(_screen.Page == JourneyPage.Completion && _save.PendingJourneyCompletion is null, "return to hub consumes pending completion exactly once");
+        Check(_main.GetNode<Control>("UI/MorningHub").Visible && !_screen.GetNode<TextureRect>("Canvas/Background").Visible,
+            "completion overlays the finished city workbench without the home backdrop");
         await Click(Find<Button>("Skip"));
         _main.OpenCity(StableIds.Cities.Tianjin);
         Check(_screen.Page == JourneyPage.City, "second hub return never replays completion");

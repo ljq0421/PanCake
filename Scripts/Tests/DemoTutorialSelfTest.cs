@@ -144,9 +144,12 @@ public partial class DemoTutorialSelfTest : Node
             station.Tick(100); Do(PancakeCommand.Flip); station.Tick(100);
             Do(PancakeCommand.BeginSauce); machine.SetSauceCoverage(.7); screen.RefreshForCapture(true);
             await CheckLessonCard(screen, "sauce-stroke");
-            var progress = screen.GetNode("DemoGestureProgress").GetChildren().OfType<ProgressBar>().Single();
-            Check(progress.IsVisibleInTree() && Math.Abs(progress.Value - .7) < .001, "visible sauce progress comes from actual production state");
+            var stroke = station.Descendants<StrokeInteractor>().Single();
+            stroke.RefreshVisualState();
+            Check(screen.GetNodeOrNull("DemoGestureProgress") is null, "redundant gesture progress panel is removed");
+            Check(stroke.SauceMeterVisible && Math.Abs(stroke.ResolveSauceAmount!() - .7) < .001, "brush-side sauce progress comes from actual production state");
             screen.Notification((int)NotificationApplicationFocusOut); station.Tick(100);
+            Check(!stroke.SauceMeterVisible, "brush-side sauce progress hides on focus loss");
             Check(station.Paused && Math.Abs(machine.Runtime.SauceCoverage - .7) < .001, "focus loss cancels input while retaining sauce progress");
             screen.Notification((int)NotificationApplicationFocusIn);
             Check(!station.Paused && controller.TutorialActive, "focus return resumes the same lesson");

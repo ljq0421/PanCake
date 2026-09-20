@@ -34,6 +34,7 @@ public partial class StartScreen : Control
     private readonly Dictionary<string, Texture2D> _textures = new();
     private bool _hasPresentedPage;
     private string _presentedCity = "";
+    private bool _completionOverWorkbench;
 
     public override void _Ready()
     {
@@ -63,8 +64,12 @@ public partial class StartScreen : Control
     public void Present() { Show(); if (!_started) { _started = true; RenderSplash(); } else RenderHome(); }
     public void PresentHome() { Show(); RenderHome(); }
     public void PresentMap(Action? returnToSource = null) { Show(); _mapReturn = returnToSource ?? RenderHome; _city = _save?.ContinueCityId ?? JourneyModel.Cities[0].Id; RenderMap(); }
-    public void PresentCompletion(string cityId, Action returnToSource)
-    { Show(); _mapReturn = returnToSource; _completedCity = cityId; RenderCompletion(); }
+    public void PresentCompletion(string cityId, Action returnToSource, bool overCityWorkbench = false)
+    {
+        Show(); _mapReturn = returnToSource; _completedCity = cityId;
+        _completionOverWorkbench = overCityWorkbench;
+        RenderCompletion();
+    }
     public void ShowError(string message)
     {
         _busy = false; CloseModal();
@@ -83,6 +88,11 @@ public partial class StartScreen : Control
         _hasPresentedPage = true; _presentedCity = _city;
         KillAnimations(); Clear(_body); _buttons.Clear(); _audioButton = null;
         Page = page; _busy = false; _error = "";
+        // A result reached from a city hub is an overlay: keep that workbench visible
+        // behind the book instead of exposing the start-page artwork.
+        bool showStartBackdrop = !HostedByBook && (page != JourneyPage.Completion || !_completionOverWorkbench);
+        GetNode<Control>("Letterbox").Visible = showStartBackdrop;
+        GetNode<Control>("Canvas/Background").Visible = showStartBackdrop;
         _body.Modulate = Colors.White;
         if (page is JourneyPage.Opening)
             _body.AddChild(new ColorRect { Size = new(1920, 1080), Color = new Color(.23f, .15f, .08f, .36f), MouseFilter = MouseFilterEnum.Ignore });

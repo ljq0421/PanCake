@@ -13,6 +13,16 @@ public sealed class BookUpgradeSource
     public string CityId => _city;
     public CityEquipmentView[] Equipment => new CityPageModel(_catalog, _save, _yangzhou).Equipment(_city);
     public int Coins => _save.Data.Coins;
+    public bool NeedsUpgradeTeaching => !_save.Data.UpgradeTeachingCompleted && Offers.Count > 0;
+    public bool CompleteUpgradeTeaching(out string error)
+    {
+        error = "";
+        if (_save.Data.UpgradeTeachingCompleted) return true;
+        _save.Data.UpgradeTeachingCompleted = true;
+        if (_save.TrySave(out error)) return true;
+        _save.Data.UpgradeTeachingCompleted = false;
+        return false;
+    }
     public BookUpgradeSource(SaveService save, DataCatalog catalog, string city) { _save = save; _catalog = catalog; _city = city; }
     public BookUpgradeSource(SaveService save, YangzhouCatalog catalog) { _save = save; _yangzhou = catalog; _city = YangzhouCatalog.CityId; }
     public IReadOnlyList<BookUpgradeOffer> Offers => _yangzhou is not null ? _save.BookOffers(_yangzhou) : _save.BookOffers(_city, _catalog!);

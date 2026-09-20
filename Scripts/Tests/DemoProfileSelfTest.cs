@@ -38,6 +38,17 @@ public partial class DemoProfileSelfTest : Node
             File.WriteAllText(formal, "formal-progress-sentinel");
             using var save = new SaveService(); save.UseDemoPathForTests(path, content);
             Check(!save.HasSavedGame && !save.MigratedLegacySave && save.ResetProgress(out _), "new isolated Demo does not migrate formal progress");
+            Check(!save.Data.UpgradeTeachingCompleted, "new Demo has pending upgrade teaching");
+            var teachingSource = new ProjectCake.UI.BookUpgradeSource(save, catalog, StableIds.Cities.Tianjin);
+            Check(teachingSource.CompleteUpgradeTeaching(out _), "Demo upgrade teaching acknowledgement saved");
+            save.Load();
+            Check(save.Data.UpgradeTeachingCompleted, "Demo upgrade teaching acknowledgement survives reload");
+            Check(save.ResetProgress(out _) && !save.Data.UpgradeTeachingCompleted, "new Demo resets upgrade teaching");
+            if (OS.GetCmdlineUserArgs().Contains("--upgrade-teaching-only"))
+            {
+                GD.Print($"DEMO_UPGRADE_TEACHING_TEST_RESULT passed={_checks} failed=0");
+                GetTree().Quit(); return;
+            }
             var first = content.Stages[0];
             DayPlan Plan(DemoStage stage) => stage.Plan(catalog.RecipesById, catalog.CustomersById["normal"]);
             DayResult Result(int day, int revenue, int completed) => new() { Day = day, SaleRevenue = revenue, CompletedCustomers = completed };

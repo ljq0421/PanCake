@@ -26,7 +26,7 @@ public partial class WuhanDayScreen : Control
     private NoodleCookerStateMachine _cooker = null!; private HotDryNoodlesStateMachine _bowl = null!; private DoupiStateMachine? _doupi;
     private DoupiInventory _doupiStock = null!; private WuhanIngredientInventory _ingredients = null!; private bool _eggUnlocked;
     private int _stationLevel; private int _cookerLevel; private int _doupiLevel;
-    private Label _day = null!, _clock = null!, _income = null!, _door = null!, _feedback = null!, _bowlStatus = null!, _doupiStatus = null!, _eggStatus = null!, _tutorial = null!;
+    private Label _day = null!, _clock = null!, _income = null!, _door = null!, _feedback = null!, _bowlStatus = null!, _doupiStatus = null!, _eggStatus = null!;
     internal WuhanWorkstationView Workstation { get; private set; } = null!;
     internal CoinTrayView CoinTray { get; private set; } = null!;
     internal CoinCollectionFeedback CollectionFeedback { get; private set; } = null!;
@@ -142,7 +142,6 @@ public partial class WuhanDayScreen : Control
             }
         }
         _door.Visible = false;
-        _tutorial.Visible = false;
         foreach (Label label in _basketLabels) label.Visible = false;
         _bowlStatus.Visible = _doupiStatus.Visible = _eggStatus.Visible = false;
         GetNode<Control>("@PanelContainer@312").Hide();
@@ -347,8 +346,6 @@ public partial class WuhanDayScreen : Control
             _ => $"{(int)_controller.DayRemainingSeconds / 60:00}:{(int)_controller.DayRemainingSeconds % 60:00}",
         };
         _income.Text = $"{_controller.Ledger?.Build().TotalRevenue ?? 0}";
-        _tutorial.Text = $"武汉 Day {day} · {Subtitle(day)}\n{Tutorial(day)}";
-        _tutorial.Visible = _controller.State == DayState.Opening;
         Workstation.PendingDoupiDemand = _controller.CustomerQueue?.Slots
             .Where(customer => customer.State is CustomerState.Entering or CustomerState.Happy
                 or CustomerState.Normal or CustomerState.Impatient or CustomerState.Angry)
@@ -433,6 +430,4 @@ public partial class WuhanDayScreen : Control
         BusinessBookSettlement.Commit(model, _save, _controller.CurrentPlan!, _controller.CurrentConfig!, _catalog, allowFailedReturn: true);
         _blocker.Hide(); _results.Hide(); BusinessDetails.Open(model);
     }
-    private static string Subtitle(int day)=>day switch{1=>"初到武汉",4=>"豆皮开锅",6=>"双线熟练",7=>"牛肉与上班族",8=>"完整早餐",9=>"带走大单",12=>"最终挑战",_=>"过早高峰"};
-    private static string Tutorial(int day)=>day switch{1=>"拖面入锅，漏勺亮起后向上提篮并拖到空碗。点击调味，划动至酱料拌匀，再拖给顾客。",4=>"倒浆即煎制：拖浆入锅，及时点击蛋液；定型后上划翻面。\n翻面后及时拖馅入锅松手，自动铺匀；成熟后点击右下小刀取刀，横竖各一刀，8 块自动入盘。",6=>"热干面与豆皮搭配出餐；豆皮一次拖拽按顾客所需数量交付",7=>"上班族耐心只有 34 秒；牛肉要等热干面搅拌完成后再加入",8=>"熟客和游客加入：短耐心不一定是最高价值订单",_=>string.Empty};
 }

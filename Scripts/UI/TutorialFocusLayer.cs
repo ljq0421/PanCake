@@ -54,6 +54,7 @@ public partial class TutorialFocusLayer : Control
     public Func<IEnumerable<TutorialFocusTarget>> KeepClear { get; set; } = () => Array.Empty<TutorialFocusTarget>();
     public TutorialFocusCardSkin CardSkin { get; init; } = TutorialFocusCardSkin.Tianjin;
     public bool PlaceNearTargets { get; init; }
+    public bool AllowDismiss { get; init; } = true;
     public Func<Control?> PresentationCard { get; set; } = () => null;
     public bool Dismissed { get; private set; }
     public string? CurrentAction { get; private set; }
@@ -106,6 +107,15 @@ public partial class TutorialFocusLayer : Control
 
     private void LayoutCard()
     {
+        if (!AllowDismiss)
+        {
+            _close.GetParent<Control>().Hide();
+            float width = Mathf.Clamp(TeachingCardLayout.NaturalWidth(_hint), 300, 540);
+            float height = TeachingCardLayout.Place(_hint, 64, 36, width);
+            _card.Size = new(64 + width + 36, 36 + height + 22);
+            _card.Position = new((1920 - _card.Size.X) / 2, 32);
+            return;
+        }
         if (PlaceNearTargets)
         {
             float width = Mathf.Clamp(TeachingCardLayout.NaturalWidth(_hint), 300, 440);

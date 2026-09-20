@@ -7,6 +7,7 @@ namespace ProjectCake.Core;
 
 public sealed class DemoSaveFile
 {
+    public bool UpgradeTeachingCompleted { get; set; }
     public string ProfileId { get; set; } = ExperienceProfile.DemoId;
     public int SchemaVersion { get; set; } = 2;
     public int ContentRevision { get; set; } = 1;
@@ -126,7 +127,7 @@ public partial class SaveService
 
     private SaveData RestoreDemoData(DemoSaveFile file)
     {
-        var data = new SaveData { Coins = file.Coins, LastVisitedCityId = DemoContent!.Stage(file.LastStartedStageId)!.CityId };
+        var data = new SaveData { Coins = file.Coins, UpgradeTeachingCompleted = file.UpgradeTeachingCompleted, LastVisitedCityId = DemoContent!.Stage(file.LastStartedStageId)!.CityId };
         data.Tianjin.EquipmentLevels = new(file.Equipment, StringComparer.Ordinal);
         data.Tianjin.LearnedWorkbenchActions = new(file.LearnedActions, StringComparer.Ordinal);
         data.Wuhan.EquipmentLevels = new(file.WuhanEquipment, StringComparer.Ordinal);
@@ -169,6 +170,7 @@ public partial class SaveService
     {
         var file = CloneDemoProgress();
         file.Coins = Data.Coins;
+        file.UpgradeTeachingCompleted = Data.UpgradeTeachingCompleted;
         file.Equipment = new(Data.Tianjin.EquipmentLevels, StringComparer.Ordinal);
         file.LearnedActions = new(Data.Tianjin.LearnedWorkbenchActions, StringComparer.Ordinal);
         file.WuhanEquipment = new(Data.Wuhan.EquipmentLevels, StringComparer.Ordinal);

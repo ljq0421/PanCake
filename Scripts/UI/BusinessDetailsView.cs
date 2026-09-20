@@ -67,6 +67,7 @@ public partial class BusinessDetailsView : Control
         CloseButton = ButtonAt(_bookContent, "收好账本", new(1320, 798, 240, 72), RequestClose); CloseButton.Name = "CloseBusinessDetails";
         _retry = ButtonAt(_bookContent, "重试保存", new(1100, 809, 190, 58), () => RetryRequested?.Invoke());
         _audio = new PancakeAudio(); AddChild(_audio);
+        BuildUpgradeTeaching();
         VisibilityChanged += () => { if (!Visible) { RemoveUpgradeModal(); FinishAnimation(); _audio.Stop(); } };
         Hide();
         JourneyTransition.Watch(this, () => _model.CityId is "tianjin" or "wuhan" or "city:tianjin" or "city:wuhan",

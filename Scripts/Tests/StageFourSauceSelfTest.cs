@@ -124,11 +124,14 @@ public partial class StageFourSelfTest
         {
             PrepareSauce();
             station.Machine.SetSauceCoverage(amount);
+            stroke.RefreshVisualState();
+            Check(stroke.SauceMeterVisible && stroke.ResolveSauceAmount!() == amount, "刷子旁指示器读取实际酱量");
             int stock = station.Inventory.GetQuantity(StableIds.Ingredients.Sauce);
             Check(finish.Visible && !finish.Disabled, $"{amount:P0} 可提前收刷");
             if (amount == 1)
                 Check(station.TryInvokeProductionShortcut(Key.F), "F可收刷");
             else finish.EmitSignal(Button.SignalName.Pressed);
+            Check(!stroke.SauceMeterVisible, "提前收刷后隐藏酱量指示器");
             Check(station.Machine.Runtime.State == PancakeState.Sauced && station.Machine.Runtime.SauceCoverage == amount
                 && station.Inventory.GetQuantity(StableIds.Ingredients.Sauce) == stock && stroke.IsToolHeld?.Invoke() == false,
                 "收刷保留酱量、仅扣一次库存并释放光标");
@@ -179,9 +182,11 @@ public partial class StageFourSelfTest
 
         if (OS.GetCmdlineUserArgs().Contains("--sauce-capture", StringComparer.Ordinal))
         {
-            foreach (double amount in new[] { .4375, 1.25 })
+            foreach (double amount in new[] { .4375, .75, 1.25 })
             {
                 PrepareSauce(); station.Machine.SetSauceCoverage(amount); screen.RefreshForCapture(true);
+                GetViewport().WarpMouse(stroke.GetGlobalTransformWithCanvas() * stroke.ResolveSpreadGeometry!().Center);
+                stroke.RefreshVisualState();
                 await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
                 await ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
                 string path = $"res://.godot/sauce-{amount * 100:0}.png";

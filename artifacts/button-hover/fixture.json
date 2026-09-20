@@ -1,0 +1,100 @@
+{
+  "BreakfastStats": {},
+  "BreakfastRecords": {},
+  "Version": 3,
+  "LastVisitedCityId": "city:yangzhou",
+  "Coins": 10000,
+  "Cities": {
+    "city:tianjin": {
+      "HighestUnlockedDay": 1,
+      "BestStars": 0,
+      "Completed": false,
+      "EquipmentLevels": {
+        "pancake_stove": 1,
+        "ingredient_station": 1,
+        "fryer": 0
+      },
+      "UnlockedContentIds": [
+        "recipe:pancake_basic"
+      ],
+      "UnlockedCollectibleIds": [],
+      "DayBestRecords": {},
+      "LastDayPlan": null,
+      "LearnedWorkbenchActions": []
+    },
+    "city:wuhan": {
+      "HighestUnlockedDay": 1,
+      "BestStars": 0,
+      "Completed": false,
+      "EquipmentLevels": {
+        "noodle_cooker": 1,
+        "ingredient_station": 1,
+        "doupi_griddle": 0,
+        "egg_rice_wine_station": 0
+      },
+      "UnlockedContentIds": [
+        "recipe:hot_dry_noodles_classic"
+      ],
+      "UnlockedCollectibleIds": [],
+      "DayBestRecords": {},
+      "LastDayPlan": null,
+      "LearnedWorkbenchActions": []
+    },
+    "city:xian": {
+      "HighestUnlockedDay": 1,
+      "BestStars": 0,
+      "Completed": false,
+      "EquipmentLevels": {
+        "xian_board": 1,
+        "xian_oven": 1,
+        "xian_soup": 0
+      },
+      "UnlockedContentIds": [
+        "equipment:xian_oven_lv1",
+        "recipe:roujiamo_standard"
+      ],
+      "UnlockedCollectibleIds": [],
+      "DayBestRecords": {},
+      "LastDayPlan": null,
+      "LearnedWorkbenchActions": []
+    },
+    "city:guangzhou": {
+      "HighestUnlockedDay": 1,
+      "BestStars": 0,
+      "Completed": false,
+      "EquipmentLevels": {
+        "guangzhou_stove": 1,
+        "guangzhou_station": 1,
+        "guangzhou_cabinet": 0
+      },
+      "UnlockedContentIds": [
+        "recipe:gz_plain"
+      ],
+      "UnlockedCollectibleIds": [],
+      "DayBestRecords": {},
+      "LastDayPlan": null,
+      "LearnedWorkbenchActions": []
+    },
+    "city:yangzhou": {
+      "HighestUnlockedDay": 1,
+      "BestStars": 0,
+      "Completed": false,
+      "EquipmentLevels": {
+        "yangzhou_board": 1,
+        "yangzhou_steamer": 0
+      },
+      "UnlockedContentIds": [],
+      "UnlockedCollectibleIds": [],
+      "DayBestRecords": {},
+      "LastDayPlan": null,
+      "LearnedWorkbenchActions": []
+    }
+  },
+  "UnlockedCityIds": [
+    "city:tianjin",
+    "city:wuhan",
+    "city:xian",
+    "city:guangzhou",
+    "city:yangzhou"
+  ]
+}

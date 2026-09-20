@@ -118,6 +118,7 @@ public partial class TianjinDayScreen : Control
             StopPaymentFeedback = () => { _paymentFeedback.Clear(); _hud.ResetIncomeEmphasis(); } };
         AddChild(_living);
         ((TianjinPendantButton)CashPendant).IndependentArtwork = true;
+        _living.BindPendantHover(CashPendant);
         _living.BindPendantHighlight(() => !CashPendant.Disabled && (CashPendant.IsHovered() || CashPendant.HasFocus())
             ? InteractionHighlightState.Hover : InteractionHighlightState.None);
         VisibilityChanged += () =>
@@ -234,6 +235,7 @@ public partial class TianjinDayScreen : Control
         }
         if (_controller is null || !_focused || !IsVisibleInTree()) return;
         _controller.Tick(delta);
+        _workstation.Paused = _controller.IsPaused;
         _workstation.InteractionEnabled = !_demoLessonComplete && _controller.State is DayState.Running or DayState.Closing;
         _workstation.Tick(delta);
         UpdateDemoLesson();
@@ -314,6 +316,9 @@ public partial class TianjinDayScreen : Control
     private bool SubmitToCustomer(string customerId, int slot, string payload)
     {
         ProductKind? kind = PancakeWorkstation.DeliveryProduct(payload);
+        CustomerRuntime? recipient = _controller.CustomerQueue?.CustomerAtSlot(slot);
+        int[] beforeDelivery = recipient?.Order.Lines.Select((_, index) => recipient.Progress.GetDeliveredQuantity(index)).ToArray()
+            ?? Array.Empty<int>();
         DeliveryEvaluation evaluation = kind switch
         {
             ProductKind.Pancake => _workstation.DeliverPancakeTo(_controller, customerId, _catalog),
@@ -322,6 +327,13 @@ public partial class TianjinDayScreen : Control
             _ => new DeliveryEvaluation(DeliveryGrade.Rejected, 0, 0, 0, "当前商品不可交付。"),
         };
         _deliveryTeaches = evaluation.Grade != DeliveryGrade.Incorrect && (evaluation.ItemAccepted || evaluation.CompletesOrder);
+        if (_deliveryTeaches && !evaluation.CompletesOrder && recipient is not null)
+        {
+            RenderOrder(slot, recipient);
+            for (int line = 0; line < beforeDelivery.Length; line++)
+                if (recipient.Progress.GetDeliveredQuantity(line) > beforeDelivery[line])
+                    _living.ReceiveItem(_orderCards[slot].LastDeliveredIcon(line));
+        }
         if (!(evaluation.CompletesOrder && evaluation.Grade is DeliveryGrade.Correct or DeliveryGrade.Perfect))
             _sceneFeedback.Delivery(evaluation, _orderCards[slot]);
         PlayDeliveryEffects(evaluation, slot);
@@ -372,6 +384,7 @@ public partial class TianjinDayScreen : Control
     private void StylePausePanel()
     {
         _pauseTitleTape = IllustratedCityDialogTheme.BuildPause(_pausePanel, StableIds.Cities.Tianjin);
+        JourneyTransition.Watch(_pausePanel, bounds: () => _pausePanel.GetGlobalRect());
         _pauseTitleTape.Visible = false;
     }
 
@@ -416,6 +429,7 @@ public partial class TianjinDayScreen : Control
             if (customer is null)
             {
                 button.Visible = false;
+                CustomerArrivalMotion.Apply(_portraits[index], _orderCards[index], null);
                 _portraits[index].Rotation = 0;
                 _portraits[index].Scale = Vector2.One;
                 _customerSignatures[index] = string.Empty;
@@ -426,7 +440,6 @@ public partial class TianjinDayScreen : Control
             }
             button.Visible = true;
             _orderCards[index].Visible = !customer.WasServed;
-            bool entering = !string.Equals(_deliveryCustomerIds[index], customer.Id, StringComparison.Ordinal);
             BindDeliveryCustomer(index, customer.Id);
             string progress = string.Join(',', customer.Order.Lines.Select((_, line) => customer.Progress.GetDeliveredQuantity(line)));
             string signature = customer.Id + ":" + progress;
@@ -434,12 +447,6 @@ public partial class TianjinDayScreen : Control
             {
                 _customerSignatures[index] = signature;
                 RenderOrder(index, customer);
-                // Order progress refreshes in place; only a new guest fades in.
-                if (entering && !ReducedMotion)
-                {
-                    button.Modulate = new Color(1, 1, 1, 0.35f);
-                    AnimateControl(button, Vector2.One, Colors.White, 0.22);
-                }
             }
             CustomerExpression expression = TianjinArtCatalog.ResolveCustomerExpression(customer.State, customer.WasServed);
             string portraitSignature = $"{customer.AppearanceId}:{expression}";
@@ -449,6 +456,7 @@ public partial class TianjinDayScreen : Control
                 _portraits[index].SetVisual(_art.CustomerPortrait(customer.AppearanceId, expression));
                 _portraits[index].SetCounterCalibration(_art.CustomerLayout(customer.AppearanceId));
             }
+            CustomerArrivalMotion.Apply(_portraits[index], _orderCards[index], customer);
             // Restored patience (for example Angry -> Impatient) is not a warning.
             if (_displayedCustomerStates[index] is CustomerState previousState && previousState < customer.State
                 && customer.State is CustomerState.Impatient or CustomerState.Angry)

@@ -14,12 +14,70 @@ public partial class PancakeCanvas : Control
     private int _stoveLevel = 1;
     private float _batterDropProgress = 1.0f;
     private bool _foodOnly;
+    private BrushRevealLayer? _sauceReveal;
+    private PancakeToppingLayer? _toppingLayer;
+    private long _visualGeneration = -1;
+    internal BrushRevealLayer? SauceReveal => _sauceReveal;
+    internal void EnableIngredientDetail(TianjinArtCatalog art)
+    {
+        if (_sauceReveal is not null) return;
+        _art = art;
+        _sauceReveal = new BrushRevealLayer { Name = "SauceTrail", ZIndex = 1 };
+        _sauceReveal.Configure(_art.PancakeSauce);
+        AddChild(_sauceReveal);
+        _toppingLayer = new PancakeToppingLayer { Name = "Toppings", ZIndex = 2, MouseFilter = MouseFilterEnum.Ignore, DrawFood = DrawToppings };
+        AddChild(_toppingLayer);
+    }
+    private void SyncIngredientDetail()
+    {
+        if (_sauceReveal is null || _runtime is null) return;
+        if (_visualGeneration != _runtime.Generation)
+        {
+            _visualGeneration = _runtime.Generation;
+            _sauceReveal.ResetReveal();
+            _ingredientMotion.Clear();
+        }
+        Rect2 surface = GetSurfaceRect();
+        _sauceReveal.Position = surface.Position;
+        _sauceReveal.Size = surface.Size;
+        _sauceReveal.Visible = !IsFlipping && (_runtime.HasSauce || _runtime.State == PancakeState.Saucing)
+            && _runtime.State is not (PancakeState.Empty or PancakeState.Folded or PancakeState.Bagged or PancakeState.Delivered);
+        _sauceReveal.Modulate = new Color(1, 1, 1, Mathf.Clamp((float)(_runtime.SauceCoverage / SauceRules.MaximumAmount), 0, 1));
+    }
+    internal void PaintSauce(Vector2 globalPoint) { SyncIngredientDetail(); _sauceReveal?.PaintAtGlobal(globalPoint); }
+    internal void EndSauceStroke() => _sauceReveal?.EndStroke();
     private double _lastSpread;
     private float _edgeRelaxation;
     internal float EdgeRelaxation => _edgeRelaxation;
     internal const float FlipDuration = .35f;
     internal float FlipProgress { get; private set; } = 1;
     internal bool IsFlipping => FlipProgress < 1;
+    private readonly Dictionary<string, (float Time, float Strength)> _ingredientMotion = new();
+    internal void LandIngredient(string id, float delay, float strength)
+    {
+        SyncIngredientDetail();
+        if (!ProjectSettings.GetSetting("accessibility/reduce_motion", false).AsBool())
+            _ingredientMotion[id] = (-delay, strength);
+        QueueRedraw();
+    }
+    internal void ResetIngredientMotion() { _ingredientMotion.Clear(); QueueRedraw(); }
+    private void DrawIngredient(string id, Texture2D texture, Vector2 center, Vector2 size, Color? tint = null, CanvasItem? painter = null)
+    {
+        if (_ingredientMotion.TryGetValue(id, out var motion))
+        {
+            if (motion.Time < 0) return;
+            float t = motion.Time;
+            float width = t < .055f ? Mathf.Lerp(1, 1 + motion.Strength, t / .055f)
+                : t < .14f ? Mathf.Lerp(1 + motion.Strength, 1 - motion.Strength * .6f, (t - .055f) / .085f)
+                : Mathf.Lerp(1 - motion.Strength * .6f, 1, Mathf.Clamp((t - .14f) / .14f, 0, 1));
+            size *= new Vector2(width, 1 / width);
+            if (id == StableIds.Ingredients.Egg && _sauceReveal is not null)
+                size *= Mathf.Lerp(.25f, 1, Mathf.SmoothStep(0, 1, Mathf.Clamp(t / .10f, 0, 1)));
+            if (id == StableIds.Ingredients.Crispy)
+                center.Y -= 2 * Mathf.Sin(Mathf.Clamp(t / .18f, 0, 1) * Mathf.Pi);
+        }
+        DrawCentered(texture, center, size, tint, painter);
+    }
 
     internal void SetFlipProgress(float progress)
     {
@@ -32,12 +90,22 @@ public partial class PancakeCanvas : Control
 
     public void TickLivingMotion(double delta, bool active, bool spreading)
     {
+        SyncIngredientDetail();
+        if (!active) _ingredientMotion.Clear();
+        else foreach (string id in _ingredientMotion.Keys.ToArray())
+        {
+            var motion = _ingredientMotion[id];
+            motion.Time += (float)Math.Max(0, delta);
+            if (motion.Time >= .28f) _ingredientMotion.Remove(id);
+            else _ingredientMotion[id] = motion;
+        }
         double coverage = _runtime?.SpreadCoverage ?? 0;
         if (!active) _edgeRelaxation = 0;
         else if (spreading && coverage > _lastSpread) _edgeRelaxation = .008f;
         else _edgeRelaxation = Mathf.MoveToward(_edgeRelaxation, 0, (float)delta * .04f);
         _lastSpread = coverage;
         QueueRedraw();
+        _toppingLayer?.QueueRedraw();
     }
 
     [Export] public float DisplayScale { get; set; } = 1.0f;
@@ -58,6 +126,7 @@ public partial class PancakeCanvas : Control
 
     public void Bind(PancakeRuntime runtime, TianjinArtCatalog art, int stoveLevel)
     {
+        if (!ReferenceEquals(_runtime, runtime)) _visualGeneration = -1;
         _runtime = runtime;
         _art = art;
         _stoveLevel = stoveLevel;
@@ -66,6 +135,7 @@ public partial class PancakeCanvas : Control
 
     public override void _Draw()
     {
+        SyncIngredientDetail();
         if (_art is null) return;
         (Vector2 stoveCenter, float stoveSize) = GetStoveGeometry();
         if (EmbeddedSurface is null && !_foodOnly)
@@ -84,7 +154,7 @@ public partial class PancakeCanvas : Control
 
         if (runtime.State == PancakeState.Folded)
         {
-            DrawCentered(_art.FoldedPancake, stoveCenter + new Vector2(0, -12), new Vector2(260, 220), qualityTint);
+            DrawIngredient("fold", _art.FoldedPancake, stoveCenter + new Vector2(0, -12), new Vector2(260, 220), qualityTint);
             return;
         }
         if (runtime.State is PancakeState.Bagged or PancakeState.Delivered)
@@ -118,30 +188,65 @@ public partial class PancakeCanvas : Control
         DrawPancakeSurface(pancakeRect, reveal);
 
         if (runtime.HasEgg)
-            DrawCentered(_art.PancakeEgg, surface.GetCenter(), surface.Size, qualityTint);
+            DrawIngredient(StableIds.Ingredients.Egg, _art.PancakeEgg, surface.GetCenter(), surface.Size, qualityTint);
 
-        if (runtime.HasSauce || runtime.State == PancakeState.Saucing)
+        if (_sauceReveal is null && (runtime.HasSauce || runtime.State == PancakeState.Saucing))
         {
             float alpha = Mathf.Clamp((float)(runtime.SauceCoverage / SauceRules.MaximumAmount), 0, 1f);
             DrawCentered(_art.PancakeSauce, surface.GetCenter(), surface.Size, new Color(1, 1, 1, alpha));
         }
 
+        if (_toppingLayer is null) DrawToppings(this);
+        else _toppingLayer.QueueRedraw();
+        if (!_foodOnly) DrawStateIndicator(surface, runtime.State);
+    }
+
+    private void DrawToppings(CanvasItem painter)
+    {
+        if (_runtime is not { } runtime || _art is null || IsFlipping || runtime.State is PancakeState.Empty or PancakeState.Folded or PancakeState.Bagged or PancakeState.Delivered) return;
+        Rect2 surface = GetSurfaceRect();
         if (runtime.ExtraIngredients.Contains(StableIds.Ingredients.Crispy))
-            DrawCentered(_art.Ingredient(StableIds.Ingredients.Crispy), surface.GetCenter() + new Vector2(-surface.Size.X * 0.13f, 0), surface.Size * new Vector2(0.42f, 0.58f));
+            DrawIngredient(StableIds.Ingredients.Crispy, _art.Ingredient(StableIds.Ingredients.Crispy), surface.GetCenter() + new Vector2(-surface.Size.X * 0.13f, 0), surface.Size * new Vector2(0.42f, 0.58f), painter: painter);
         if (runtime.ExtraIngredients.Contains(StableIds.Ingredients.Scallion))
-            DrawCentered(_art.Ingredient(StableIds.Ingredients.Scallion), surface.GetCenter() + new Vector2(surface.Size.X * 0.13f, -surface.Size.Y * 0.22f), surface.Size * new Vector2(0.34f, 0.46f));
+            DrawScallions(painter, surface);
         if (runtime.ExtraIngredients.Contains(StableIds.Ingredients.Ham))
-            DrawCentered(_art.Ingredient(StableIds.Ingredients.Ham), surface.GetCenter() + new Vector2(surface.Size.X * 0.14f, surface.Size.Y * 0.14f), surface.Size * new Vector2(0.38f, 0.5f));
+            DrawIngredient(StableIds.Ingredients.Ham, _art.Ingredient(StableIds.Ingredients.Ham), surface.GetCenter() + new Vector2(surface.Size.X * 0.14f, surface.Size.Y * 0.14f), surface.Size * new Vector2(0.38f, 0.5f), painter: painter);
         if (runtime.ExtraIngredients.Contains(StableIds.Ingredients.Youtiao))
         {
             Color youtiaoTint = YoutiaoPresentation.Tint(runtime.InternalYoutiaoQuality ?? YoutiaoQuality.Golden);
-            DrawCentered(_art.Ingredient(StableIds.Ingredients.Youtiao), surface.GetCenter() + new Vector2(-surface.Size.X * 0.03f, surface.Size.Y * 0.1f), surface.Size * new Vector2(0.51f, 0.66f), youtiaoTint);
+            DrawIngredient(StableIds.Ingredients.Youtiao, _art.Ingredient(StableIds.Ingredients.Youtiao), surface.GetCenter() + new Vector2(-surface.Size.X * 0.03f, surface.Size.Y * 0.1f), surface.Size * new Vector2(0.51f, 0.66f), youtiaoTint, painter);
         }
 
         if (runtime.Quality == PancakeQuality.Burnt || runtime.State == PancakeState.Burnt)
-            DrawCentered(_art.PancakeBurntOverlay, surface.GetCenter(), surface.Size * 1.03f);
+            DrawCentered(_art.PancakeBurntOverlay, surface.GetCenter(), surface.Size * 1.03f, painter: painter);
+    }
 
-        if (!_foodOnly) DrawStateIndicator(surface, runtime.State);
+    private void DrawScallions(CanvasItem painter, Rect2 surface)
+    {
+        if (_sauceReveal is null)
+        {
+            DrawIngredient(StableIds.Ingredients.Scallion, _art!.Ingredient(StableIds.Ingredients.Scallion), surface.GetCenter() + surface.Size * new Vector2(.13f, -.22f), surface.Size * new Vector2(.34f, .46f), painter: painter);
+            return;
+        }
+        // Stable anchors: the pieces that land are the pieces that remain on this pancake.
+        for (int i = 0; i < 10; i++)
+        {
+            float angle = i * 2.399963f;
+            float radius = .12f + .20f * (i % 4) / 3;
+            Vector2 end = surface.GetCenter() + surface.Size * new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * radius;
+            float progress = 1;
+            if (_ingredientMotion.TryGetValue(StableIds.Ingredients.Scallion, out var motion))
+            {
+                if (motion.Time < 0) continue;
+                progress = Mathf.Clamp((motion.Time - (i % 3) * .02f) / .18f, 0, 1);
+            }
+            Vector2 start = surface.GetCenter() + surface.Size * new Vector2(.13f, -.22f) - new Vector2(0, 26);
+            Vector2 position = start.Lerp(end, 1 - Mathf.Pow(1 - progress, 2));
+            Vector2 size = new(16 + i % 3 * 2, 13 + i % 3 * 2);
+            painter.DrawSetTransform(position, angle * .14f * progress, Vector2.One);
+            painter.DrawTextureRect(_art!.ScallionPieces[i % 3], new Rect2(-size / 2, size), false);
+            painter.DrawSetTransform(Vector2.Zero, 0, Vector2.One);
+        }
     }
 
     // Draw the same food layers and perspective as the stove, frozen at pickup.
@@ -176,6 +281,12 @@ public partial class PancakeCanvas : Control
         };
         food.Bind(snapshot, _art, _stoveLevel);
         preview.AddChild(food);
+        if (_sauceReveal is not null)
+        {
+            food.EnableIngredientDetail(_art);
+            food._visualGeneration = snapshot.Generation;
+            food._sauceReveal!.CopyReveal(_sauceReveal);
+        }
         return preview;
     }
 
@@ -324,9 +435,9 @@ public partial class PancakeCanvas : Control
         return new Rect2(rect.GetCenter() - size * 0.5f, size);
     }
 
-    private void DrawCentered(Texture2D texture, Vector2 center, Vector2 size, Color? modulate = null)
+    private void DrawCentered(Texture2D texture, Vector2 center, Vector2 size, Color? modulate = null, CanvasItem? painter = null)
     {
         Rect2 destination = new(center - size * 0.5f, size);
-        DrawTextureRect(texture, destination, false, modulate ?? Colors.White);
+        (painter ?? this).DrawTextureRect(texture, destination, false, modulate ?? Colors.White);
     }
 }

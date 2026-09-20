@@ -73,6 +73,7 @@ public partial class TutorialFocusLayer : Control
 
     public override void _Ready()
     {
+        Callable.From(() => ButtonHoverFeedback.AttachTree(this)).CallDeferred();
         Name = "TutorialFocus"; MouseFilter = MouseFilterEnum.Ignore; ZIndex = 85;
         Size = new Vector2(1920, 1080);
         _mask = new SubViewport { Size = new Vector2I(1920, 1080), TransparentBg = true, Disable3D = true,

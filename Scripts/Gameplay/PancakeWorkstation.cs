@@ -201,7 +201,7 @@ public partial class PancakeWorkstation : Control
     public override void _Ready()
     {
         SceneNodeBinder.Bind(this);
-        VisibilityChanged += () => { if (!IsVisibleInTree()) FinishFlipAnimation(); };
+        VisibilityChanged += () => { if (!IsVisibleInTree()) { if (IsTianjinWorkbench) CancelInput(); else FinishFlipAnimation(); } };
         _art = new TianjinArtCatalog();
         _ingredientSlots.Clear();
         foreach (IngredientStockSlotView slot in this.Descendants<IngredientStockSlotView>())
@@ -212,6 +212,7 @@ public partial class PancakeWorkstation : Control
         }
 
         _drag.Configure(this);
+        _drag.ImmediateAcceptance = IsTianjinWorkbench;
         _drag.DragStarted += _ => _audio.Play(PancakeSound.PickUp);
         _drag.DragStarted += payload => { if (IsTianjinWorkbench && payload == SoyMilkPayload) { _soyCupHeld = true; Render(); } };
         _drag.DragEnded += _ => { if (_soyCupHeld) { _soyCupHeld = false; if (_initialized) Render(); } };
@@ -276,7 +277,8 @@ public partial class PancakeWorkstation : Control
                 };
         }
 
-        _stoveDropZone.Configure(CanDrop, Drop, _ => _canvas.GetGlobalTransform() * _canvas.GetSurfaceRect().GetCenter());
+        _stoveDropZone.Configure(CanDrop, Drop, id => _canvas.GetGlobalTransform() * (_canvas.GetSurfaceRect().GetCenter()
+            + (IsTianjinWorkbench ? _canvas.GetSurfaceRect().Size * IngredientOffset(id) : Vector2.Zero)));
         _drag.RegisterZone(_stoveDropZone);
         _stroke.ResolveMode = ResolveStroke;
         _stroke.ResolveSpreadGeometry = ResolveSpreadGeometry;
@@ -293,6 +295,7 @@ public partial class PancakeWorkstation : Control
         _stroke.StrokeCompleted = mode =>
         {
             Execute(mode == StrokeMode.Spread ? PancakeCommand.CompleteSpread : PancakeCommand.CompleteSauce);
+            if (IsTianjinWorkbench) return;
             _canvas.PivotOffset = _canvas.Size * .5f;
             _canvas.Scale = new Vector2(.985f, .985f);
             CreateTween().SetTrans(Tween.TransitionType.Cubic).SetEase(Tween.EaseType.Out)
@@ -401,6 +404,7 @@ public partial class PancakeWorkstation : Control
     public void Tick(double deltaSeconds)
     {
         if (!_initialized) return;
+        if (IsTianjinWorkbench) SyncLoopGeneration();
         if (Paused || !InteractionEnabled)
         {
             _canvas.TickLivingMotion(0, false, false);
@@ -429,12 +433,16 @@ public partial class PancakeWorkstation : Control
 
     public void CancelInput()
     {
+        _loopMotion?.Reset();
+        _drag?.ClearAcceptedVisuals();
+        _canvas?.ResetIngredientMotion();
+        if (IsTianjinWorkbench) _audio?.Stop();
         FinishFlipAnimation();
         _canvas?.TickLivingMotion(0, false, false);
         CancelRightFoodPress();
         foreach (StockGesture gesture in _stockGestures) gesture.Cancel();
         _rawYoutiaoInput?.Cancel();
-        _drag.CancelDrag();
+        _drag?.CancelDrag();
         _stroke.CancelStroke();
         FinishBatterDropAnimation();
     }
@@ -524,7 +532,7 @@ public partial class PancakeWorkstation : Control
             1.0f);
     }
 
-    private bool CanInteract => InteractionEnabled && !Paused && !_batterDropAnimating;
+    private bool CanInteract => InteractionEnabled && !Paused && (IsTianjinWorkbench || !_batterDropAnimating);
     private bool CanUse(string id) => _initialized && CanInteract && !IsFlipping && _enabledIngredients.Contains(id) && Inventory.HasAvailable(id);
     private bool CanDrop(string id) => CanInteract && !IsFlipping && id switch
     {
@@ -545,6 +553,7 @@ public partial class PancakeWorkstation : Control
     };
     private void BeginStroke(StrokeMode mode)
     {
+        if (IsTianjinWorkbench && mode == StrokeMode.Spread) FinishBatterDropAnimation();
         PancakeActionResult result = Machine.TryExecute(mode == StrokeMode.Spread ? PancakeCommand.BeginSpread : PancakeCommand.BeginSauce);
         if (!result.Success && Machine.Runtime.State is not (PancakeState.Spreading or PancakeState.Saucing)) Reject(result.Message);
         else _audio.Play(PancakeSound.Stroke);
@@ -586,6 +595,7 @@ public partial class PancakeWorkstation : Control
         _stoveDropZone.SetAnchorsPreset(LayoutPreset.TopLeft);
         _stroke.SetAnchorsPreset(LayoutPreset.TopLeft);
         Place(_stoveDropZone, inputRect.Position.X, inputRect.Position.Y, inputRect.Size.X, inputRect.Size.Y);
+        if (IsTianjinWorkbench) _stoveDropZone.FixedHitRect = inputRect;
         Place(_stroke, inputRect.Position.X, inputRect.Position.Y, inputRect.Size.X, inputRect.Size.Y);
         _stroke.PancakeRadius = surface.Size.X * 0.5f;
     }
@@ -610,6 +620,7 @@ public partial class PancakeWorkstation : Control
     }
     private void StartBatterDropAnimation()
     {
+        if (IsTianjinWorkbench) { StartDetailedBatterDrop(); return; }
         Vector2 size = _batterLadle.Size;
         Transform2D globalToLocal = GetGlobalTransform().AffineInverse();
         Vector2 source = globalToLocal * _batterItem.GetGlobalRect().GetCenter();
@@ -646,6 +657,7 @@ public partial class PancakeWorkstation : Control
         {
             _batterLadle.Visible = false;
         }
+        _batterStream?.Hide();
         if (_canvas is not null)
         {
             _canvas.BatterDropProgress = 1;
@@ -689,8 +701,9 @@ public partial class PancakeWorkstation : Control
             YoutiaoConsumed?.Invoke(1);
         }
 
-        if (command is PancakeCommand.CompleteSpread or PancakeCommand.AddEgg) _audio.Play(PancakeSound.Sizzle);
-        else if (command == PancakeCommand.Flip) _audio.Play(PancakeSound.Flip);
+        if (IsTianjinWorkbench) PlayLoopAction(command, id);
+        if (command == PancakeCommand.CompleteSpread || (!IsTianjinWorkbench && command == PancakeCommand.AddEgg)) _audio.Play(PancakeSound.Sizzle);
+        else if (command == PancakeCommand.Flip && !IsTianjinWorkbench) _audio.Play(PancakeSound.Flip);
         // The food itself shows ingredient additions, spreading and flipping.
         if (!IsTianjinWorkbench || (result.ConsumedIngredient is null
             && command is not (PancakeCommand.Flip or PancakeCommand.CompleteSpread)))
@@ -706,7 +719,9 @@ public partial class PancakeWorkstation : Control
             FinishFlipAnimation();
             return;
         }
+        float previousFlip = FlipProgress;
         _canvas.SetFlipProgress(FlipProgress + (float)Math.Max(0, delta) / PancakeCanvas.FlipDuration);
+        if (previousFlip < .9f && FlipProgress >= .9f) _audio.Play(PancakeSound.Sizzle);
         if (!IsFlipping) Render();
     }
 
@@ -1171,6 +1186,7 @@ public partial class PancakeWorkstation : Control
 
     private void PulseAttention(Control control, Color tint)
     {
+        if (IsTianjinWorkbench) return;
         if (!IsInstanceValid(control) || control.IsQueuedForDeletion()) return;
         control.PivotOffset = control.Size * 0.5f;
         if (_interactionTweens.Remove(control, out Tween? previous)) previous.Kill();
@@ -1185,6 +1201,7 @@ public partial class PancakeWorkstation : Control
 
     private void ConfigureArtInteraction(Control control, Control? visualTarget = null)
     {
+        if (IsTianjinWorkbench) return;
         Control target = visualTarget ?? control;
         control.MouseEntered += () => AnimateArtInteraction(target, 1.035f, new Color(1.08f, 1.08f, 1.04f, 1), 0.12);
         control.MouseExited += () => AnimateArtInteraction(target, 1f, Colors.White, 0.12);

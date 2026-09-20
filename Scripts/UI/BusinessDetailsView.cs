@@ -65,6 +65,8 @@ public partial class BusinessDetailsView : Control
         _audio = new PancakeAudio(); AddChild(_audio);
         VisibilityChanged += () => { if (!Visible) { RemoveUpgradeModal(); FinishAnimation(); _audio.Stop(); } };
         Hide();
+        JourneyTransition.Watch(this, () => _model.CityId is "tianjin" or "wuhan" or "city:tianjin" or "city:wuhan",
+            () => new Rect2(_book.GetGlobalTransformWithCanvas().Origin, _book.Size * _canvas.Scale));
     }
     internal void Open(DayResult result, IReadOnlyList<BusinessOrderRecord> records, DataCatalog catalog) =>
         Open(BusinessBookModel.From("tianjin", result, records, catalog));
@@ -146,7 +148,7 @@ public partial class BusinessDetailsView : Control
         _previousPage.Visible = details; _nextPage.Visible = !details;
         if (UsesTravelBook)
         {
-            SetButtonBounds(CloseButton, details ? new(1145, 776, 280, 70) : new(1230, 703, 220, 64));
+            SetButtonBounds(CloseButton, details ? new(1145, 776, 280, 70) : new(1225, 703, 220, 64));
             CloseButton.AddThemeFontSizeOverride("font_size", details ? 30 : TravelActionFontSize);
         }
         if (!changed) return;
@@ -351,5 +353,5 @@ public partial class BusinessDetailsView : Control
     private static void Panel(Control p, Rect2 r, Color color, int radius, int border) { var panel = new Panel { MouseFilter = MouseFilterEnum.Ignore }; var box = TianjinUi.Box(color, radius, border, false); box.BorderColor = new("#9D794E"); panel.AddThemeStyleboxOverride("panel", box); Place(p, panel, r); }
     private static void Line(Control p, Rect2 r, Color color) => Place(p, new ColorRect { Color = color, MouseFilter = MouseFilterEnum.Ignore }, r);
     private static TextureRect Picture(Control p, Texture2D texture, Rect2 r) { var image = TianjinUi.Texture(texture, Vector2.Zero); Place(p, image, r); return image; }
-    private static Button ButtonAt(Control p, string text, Rect2 r, Action action) { var b = TianjinUi.Button(text, minimumSize: r.Size); b.AddThemeFontSizeOverride("font_size", 24); b.Pressed += action; Place(p, b, r); return b; }
+    private static Button ButtonAt(Control p, string text, Rect2 r, Action action, Control? visual = null) { var b = TianjinUi.Button(text, minimumSize: r.Size); ButtonHoverFeedback.Attach(b, visual); b.AddThemeFontSizeOverride("font_size", 24); b.Pressed += action; Place(p, b, r); return b; }
 }

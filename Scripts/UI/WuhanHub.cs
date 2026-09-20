@@ -22,6 +22,7 @@ public partial class WuhanHub : Control
 
     public override void _Ready()
     {
+        Callable.From(() => ButtonHoverFeedback.AttachTree(this)).CallDeferred();
         SceneNodeBinder.Bind(this);
         _art = new WuhanArtCatalog();
         ((Button)FindChild("StartWuhanDay", true, false)).Pressed += () =>

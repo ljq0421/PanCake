@@ -19,6 +19,7 @@ internal static class JournalSettingsTheme
 
     internal static void Apply(Button button, bool selected = false, int radius = 14)
     {
+        ButtonHoverFeedback.Attach(button);
         Color fill = selected ? Gold : Cream;
         button.AddThemeStyleboxOverride("normal", Box(fill, radius));
         button.AddThemeStyleboxOverride("hover", Box(fill.Lightened(.10f), radius));

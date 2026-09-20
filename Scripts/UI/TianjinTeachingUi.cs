@@ -119,6 +119,7 @@ public static class TianjinTeachingUi
         action.AddThemeColorOverride("font_focus_color", TianjinUi.BrownText);
         action.AddThemeColorOverride("font_disabled_color", new Color("#826F5D"));
         frame.AddChild(action);
+        ButtonHoverFeedback.Attach(action, frame);
         return frame;
     }
 

@@ -30,6 +30,8 @@ public partial class YangzhouDayScreen : Control
     public override void _Ready()
     {
         SceneNodeBinder.Bind(this);
+        foreach (var button in new[] { _pause, _return, this.FindButton("返回店铺") })
+            ButtonHoverFeedback.Attach(button);
         BuildBusinessBook();
         BuildBusinessHud();
         void FitCanvas()

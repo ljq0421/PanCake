@@ -20,6 +20,7 @@ run/main_scene.demo_qa="res://Scenes/Tests/DemoJourneySelfTest.tscn"
 DataCatalog="*res://Scripts/Core/DataCatalog.cs"
 SaveService="*res://Scripts/Core/SaveService.cs"
 JourneySettings="*res://Scripts/Core/JourneySettings.cs"
+JourneyTransition="*res://Scripts/UI/JourneyTransition.cs"
 
 [display]
 

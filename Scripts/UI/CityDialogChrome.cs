@@ -7,8 +7,12 @@ public static class CityDialogChrome
 {
     public static void ApplyConfirmation(AcceptDialog dialog, string cityId)
     {
+        ButtonHoverFeedback.Attach(dialog.GetOkButton());
+        if (dialog is ConfirmationDialog confirmation)
+            ButtonHoverFeedback.Attach(confirmation.GetCancelButton());
         dialog.SetMeta("illustrated_dialog", true);
         dialog.SetMeta("dialog_city", cityId);
+        if (cityId is "city:tianjin" or "city:wuhan") JourneyDialogMotion.Attach(dialog);
         dialog.Borderless = true;
         dialog.Transparent = true;
         dialog.TransparentBg = true;

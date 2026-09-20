@@ -13,6 +13,11 @@ public partial class TianjinLivingWorkbench : Control
     public Action? StopPaymentFeedback { get; set; }
     private TextureRect _pendant = null!, _scraper = null!, _spatula = null!;
     private Tween? _pendantTween;
+    private TianjinLoopMotion _deliveryMotion = null!;
+    public void ReceiveItem(Control? icon)
+    {
+        if (icon is not null) _deliveryMotion.Land(icon, .035f);
+    }
     private float _steamLeft;
     private PancakeState? _lastState;
     private bool _wasReduced;
@@ -22,6 +27,16 @@ public partial class TianjinLivingWorkbench : Control
     public float PendantRotation => _pendant.RotationDegrees;
     public bool ToolsAtRest => _scraper.Visible && _spatula.Position.IsEqualApprox(SpatulaRect.Position);
     public void BindPendantHighlight(Func<InteractionHighlightState> state) => ArtContourHighlight.Attach(_pendant, state);
+    public void BindPendantHover(BaseButton button)
+    {
+        // Centered hover lives above the artwork's existing top-pivot payment swing.
+        var hover = new Control { Name = "PendantHover", Position = _pendant.Position,
+            Size = _pendant.Size, MouseFilter = MouseFilterEnum.Ignore };
+        AddChild(hover);
+        _pendant.Reparent(hover, false);
+        _pendant.Position = Vector2.Zero;
+        ButtonHoverFeedback.Attach(button, hover);
+    }
     private static bool Reduced => ProjectSettings.GetSetting("accessibility/reduce_motion", false).AsBool();
     private static readonly Rect2 ScraperRect = TianjinWorkbenchLayout.FromSource(1138, 505, 135, 51);
     private static readonly Rect2 SpatulaRect = TianjinWorkbenchLayout.FromSource(1324, 512, 140, 43);
@@ -36,6 +51,8 @@ public partial class TianjinLivingWorkbench : Control
         _pendant.ZAsRelative = false; _pendant.ZIndex = 1;
         _scraper = Sprite("scraper", ScraperRect);
         _spatula = Sprite("spatula", SpatulaRect);
+        _deliveryMotion = new TianjinLoopMotion { Active = () => Active() && IsVisibleInTree() };
+        AddChild(_deliveryMotion);
     }
 
     private TextureRect Sprite(string name, Rect2 rect)
@@ -112,6 +129,7 @@ public partial class TianjinLivingWorkbench : Control
 
     public void ResetMotion()
     {
+        _deliveryMotion?.Reset();
         StopPaymentFeedback?.Invoke();
         _steamLeft = 0;
         _pendantTween?.Kill(); _pendantTween = null;

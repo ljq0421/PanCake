@@ -261,6 +261,7 @@ public partial class XianDayScreen : Control
                 _orders[i].RenderXianState(1 - customer.PatienceProgress, view.Selected);
             }
             view.Meter = customer?.PatienceProgress ?? 0;
+            CustomerArrivalMotion.Apply(_portraits[i], _orders[i], customer);
             view.Detail = customer is null ? "空档可以提前备货" : string.Join("\n", customer.Order.Lines.Select((line, index) => $"{(customer.Progress.GetRemainingQuantity(index) == 0 ? "✓" : "·")} {(line.ProductKind == ProductKind.Hulatang ? "胡辣汤" : _catalog.RecipesById[line.DefinitionId].DisplayName)}  {customer.Progress.GetDeliveredQuantity(index)}/{line.Quantity}"));
         }
         foreach (var surface in _surfaces.Values) surface.Refresh();

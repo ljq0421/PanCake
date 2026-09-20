@@ -25,7 +25,6 @@ public partial class StartScreen : Control
     private Action? _mapReturn;
     private Window.ContentScaleAspectEnum _previousAspect;
     private readonly List<Tween> _tweens = new();
-    private readonly Dictionary<Control, Tween> _hoverTweens = new();
     private readonly List<Button> _buttons = new();
     private readonly List<Control> _modalControls = new();
     private Control? _previousFocus;
@@ -33,6 +32,8 @@ public partial class StartScreen : Control
     private Label? _settingsMessage, _countdown;
     private Control? _displayConfirmation;
     private readonly Dictionary<string, Texture2D> _textures = new();
+    private bool _hasPresentedPage;
+    private string _presentedCity = "";
 
     public override void _Ready()
     {
@@ -42,6 +43,8 @@ public partial class StartScreen : Control
         _canvas = GetNode<Control>("Canvas");
         _body = GetNode<Control>("Canvas/Page");
         _modal = GetNode<Control>("Canvas/Modal");
+        JourneyTransition.Watch(_modal, bounds: () => new Rect2(
+            _canvas.GetGlobalTransformWithCanvas() * BookBounds.Position, BookBounds.Size * _canvas.Scale));
         if (HostedByBook)
         {
             SetProcessInput(false);
@@ -73,15 +76,14 @@ public partial class StartScreen : Control
     }
     private void Begin(JourneyPage page)
     {
-        CloseModal(); KillAnimations(); Clear(_body); _buttons.Clear(); _audioButton = null;
+        CloseModal();
+        if (_hasPresentedPage && IsVisibleInTree() && (Page != page || _presentedCity != _city))
+            JourneyTransition.For(this).Play(JourneyTransition.Effect.Page,
+                reverse: page == JourneyPage.Home || page == JourneyPage.City && Page is JourneyPage.Ledger or JourneyPage.Upgrades);
+        _hasPresentedPage = true; _presentedCity = _city;
+        KillAnimations(); Clear(_body); _buttons.Clear(); _audioButton = null;
         Page = page; _busy = false; _error = "";
         _body.Modulate = Colors.White;
-        if (page is JourneyPage.NewJourney or JourneyPage.Continue or JourneyPage.City)
-        {
-            _body.Modulate = new Color(1, 1, 1, .6f);
-            var fade = CreateTween(); _tweens.Add(fade);
-            fade.TweenProperty(_body, "modulate:a", 1f, .25).SetTrans(Tween.TransitionType.Expo).SetEase(Tween.EaseType.Out);
-        }
         if (page is JourneyPage.Opening)
             _body.AddChild(new ColorRect { Size = new(1920, 1080), Color = new Color(.23f, .15f, .08f, .36f), MouseFilter = MouseFilterEnum.Ignore });
         _status = Text(_body, "Status", "", new(340, 1006, 1240, 60), 23, true);
@@ -128,7 +130,6 @@ public partial class StartScreen : Control
     private void KillAnimations()
     {
         foreach (var t in _tweens) t.Kill(); _tweens.Clear();
-        foreach (var t in _hoverTweens.Values) t.Kill(); _hoverTweens.Clear();
     }
     private void FitCanvas()
     {

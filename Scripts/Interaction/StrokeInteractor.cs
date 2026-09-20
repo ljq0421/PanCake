@@ -28,6 +28,9 @@ public partial class StrokeInteractor : Control
     public Action<StrokeMode, double>? StrokeProgressed { get; set; }
     public Action<StrokeMode>? StrokeCompleted { get; set; }
     public Action? InvalidStroke { get; set; }
+    public Action<Vector2>? SaucePainted { get; set; }
+    public Action? StrokeEnded { get; set; }
+    public bool GentleSauceTool { get; set; }
     public Func<EllipseGeometry>? ResolveSpreadGeometry { get; set; }
     public Texture2D? SpreadToolTexture { get; set; }
     public bool SpreadToolOnlyDuringStroke { get; set; }
@@ -52,6 +55,7 @@ public partial class StrokeInteractor : Control
         MouseExited += () =>
         {
             _pointerInside = false;
+            StrokeEnded?.Invoke();
             RefreshVisualState();
         };
     }
@@ -71,6 +75,7 @@ public partial class StrokeInteractor : Control
                 break;
             case InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: false }:
                 _dragging = false;
+                StrokeEnded?.Invoke();
                 _spread.EndStroke();
                 _activeMode = StrokeMode.None;
                 AcceptEvent();
@@ -87,6 +92,7 @@ public partial class StrokeInteractor : Control
 
     public void CancelStroke()
     {
+        StrokeEnded?.Invoke();
         _dragging = false;
         _spread.EndStroke();
         _activeMode = StrokeMode.None;
@@ -105,6 +111,7 @@ public partial class StrokeInteractor : Control
     {
         bool held = IsToolHeld?.Invoke() == true;
         StrokeMode mode = ResolveMode?.Invoke() ?? StrokeMode.None;
+        if (mode != StrokeMode.Sauce) StrokeEnded?.Invoke();
         bool activeSpreadTool = SpreadToolOnlyDuringStroke && _dragging && mode == StrokeMode.Spread;
         bool show = IsVisibleInTree() && (_pointerInside || held || activeSpreadTool)
             && mode is StrokeMode.Spread or StrokeMode.Sauce
@@ -120,6 +127,7 @@ public partial class StrokeInteractor : Control
 
     public override void _ExitTree()
     {
+        StrokeEnded?.Invoke();
         SetToolVisible(false);
     }
 
@@ -151,6 +159,10 @@ public partial class StrokeInteractor : Control
 
     private void ContinueStroke(Vector2 position)
     {
+        if ((ResolveMode?.Invoke() ?? StrokeMode.None) != _activeMode || _activeMode == StrokeMode.None)
+        {
+            CancelStroke(); return;
+        }
         bool complete;
         double progress;
         if (_activeMode == StrokeMode.Spread)
@@ -165,6 +177,7 @@ public partial class StrokeInteractor : Control
         else
         {
             Vector2 current = SaucePoint(position);
+            SaucePainted?.Invoke(GetGlobalTransform() * position);
             _sauce.AddSegment(_lastPoint, current, PancakeRadius);
             _lastPoint = current;
             progress = _sauce.Progress;
@@ -181,6 +194,7 @@ public partial class StrokeInteractor : Control
 
         StrokeMode completedMode = _activeMode;
         _dragging = false;
+        StrokeEnded?.Invoke();
         _spread.EndStroke();
         _activeMode = StrokeMode.None;
         SetToolVisible(false);
@@ -239,6 +253,8 @@ public partial class StrokeInteractor : Control
         float angle = Mathf.Atan2(normalized.Y, normalized.X);
         _toolPosition = position;
         _toolRotation = angle + Mathf.Pi / 2.0f - 0.18f;
+        if (GentleSauceTool && (ResolveMode?.Invoke() ?? StrokeMode.None) == StrokeMode.Sauce)
+            _toolRotation = Mathf.Clamp(normalized.X * .045f, -.05f, .05f);
         QueueRedraw();
     }
 

@@ -136,6 +136,7 @@ public static class IllustratedCityDialogTheme
 
     public static void StyleAction(Button button, bool primary, string cityId)
     {
+        ButtonHoverFeedback.Attach(button);
         button.GetNodeOrNull<Control>("CityButtonArt")?.Hide();
         Texture2D texture = primary ? _primary ??= PrimaryTexture() : _secondary ??= GD.Load<Texture2D>(ArtRoot + "button-secondary-v1.png");
         button.CustomMinimumSize = new(410, 104);

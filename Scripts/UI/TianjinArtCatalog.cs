@@ -49,7 +49,7 @@ public sealed class TianjinArtCatalog
         Load("ledger_book", "Ledger/ledger_book.png", true);
         Load("ledger_bookmark", "Ledger/ledger_bookmark.png", true);
         Load("ledger_record_stamp", "Ledger/ledger_record_stamp.png", true);
-        Load("ledger_office_customer", "普通男上班族.png", true);
+        Load("ledger_office_customer", "../Global/Customer/普通男上班族.png", true);
         Load("workbench_stove_icon", "BusinessSign/stove.png", true);
         Load("workbench_fryer_icon", "BusinessSign/fryer.png", true);
         Load("pancake_base", "展开煎饼基础层-v2.png", true);
@@ -60,6 +60,8 @@ public sealed class TianjinArtCatalog
         Load("pancake_burnt_overlay", "煎饼焦糊覆盖层.png", true);
         Load("batter", "面糊勺.png", true);
         Load("egg", "鸡蛋.png", true);
+        Load("egg_shell", "独立半蛋壳.png", true);
+        Load("batter_stream", "面糊液流.png", true);
         Load("sauce_brush", "酱刷.png", true);
         Load("crispy", "薄脆.png", true);
         Load("scallion", "香葱碎.png", true);
@@ -134,6 +136,15 @@ public sealed class TianjinArtCatalog
     public Texture2D LedgerRecordStamp => Get("ledger_record_stamp");
     public Texture2D PancakeBase => Get("pancake_base");
     public Texture2D PancakeEgg => Get("pancake_egg");
+    public Texture2D EggShell => Get("egg_shell");
+    public Texture2D BatterStream => Get("batter_stream");
+    private Texture2D[]? _scallionPieces;
+    public Texture2D[] ScallionPieces => _scallionPieces ??= new[]
+    {
+        new AtlasTexture { Atlas = GD.Load<Texture2D>(Root + "香葱碎.png"), Region = new Rect2(456, 334, 183, 190) },
+        new AtlasTexture { Atlas = GD.Load<Texture2D>(Root + "香葱碎.png"), Region = new Rect2(731, 393, 173, 159) },
+        new AtlasTexture { Atlas = GD.Load<Texture2D>(Root + "香葱碎.png"), Region = new Rect2(327, 485, 146, 139) },
+    };
     public Texture2D PancakeSauce => Get("pancake_sauce");
     public Texture2D FoldedPancake => Get("pancake_folded");
     public Texture2D FinishedPancake => Get("pancake_bagged");

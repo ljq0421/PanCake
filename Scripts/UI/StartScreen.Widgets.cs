@@ -67,26 +67,7 @@ public partial class StartScreen
         if (modalButton) _modalControls.Add(button); else _buttons.Add(button);
         button.Pressed += () => { if (!button.Disabled && !_busy && IsVisibleInTree() && (!ModalOpen || modalButton) && button.IsVisibleInTree()) action(); };
         if (highlightFocus) ArtworkButtonFocus.Attach(button);
-        Vector2 position = rect.Position;
-        void RefreshHover()
-        {
-            bool active = button.IsHovered() || button.HasFocus();
-            Hover(button, active ? 1.015f : 1, active ? position - new Vector2(0, 4) : position);
-        }
-        button.MouseEntered += RefreshHover;
-        button.MouseExited += RefreshHover;
-        button.FocusEntered += RefreshHover;
-        button.FocusExited += RefreshHover;
-        button.ButtonDown += () => Hover(button, .98f, position);
-        button.ButtonUp += RefreshHover;
+        ButtonHoverFeedback.Attach(button);
         return button;
-    }
-    private void Hover(Control node, float scale, Vector2 position)
-    {
-        if (!node.IsInsideTree() || node is BaseButton { Disabled: true }) return;
-        if (_hoverTweens.Remove(node, out var old)) old.Kill(); node.PivotOffset = node.Size / 2;
-        var tween = CreateTween().SetParallel(); _hoverTweens[node] = tween;
-        tween.TweenProperty(node, "scale", Vector2.One * scale, .14).SetTrans(Tween.TransitionType.Expo).SetEase(Tween.EaseType.Out);
-        tween.TweenProperty(node, "position", position, .14).SetTrans(Tween.TransitionType.Expo).SetEase(Tween.EaseType.Out);
     }
 }

@@ -47,6 +47,17 @@ public partial class OrderBubbleView : PanelContainer
     private const float OrnamentOverhang = 24;
     private readonly Color _complete = new("#DCECC8");
     private OrderData? _order;
+    private float _arrivalPaperScale = 1;
+
+    public void SetArrivalMotion(double age, bool reduced)
+    {
+        float reveal = Math.Clamp((float)((age - .24) / .11), 0, 1);
+        Modulate = new Color(1, 1, 1, reveal);
+        float scale = reduced ? 1 : Mathf.Lerp(.96f, 1, 1 - MathF.Pow(1 - reveal, 3));
+        if (Mathf.IsEqualApprox(_arrivalPaperScale, scale)) return;
+        _arrivalPaperScale = scale;
+        QueueRedraw();
+    }
     private bool _compactLayout;
     private OrderProgress? _progress;
     private IReadOnlyDictionary<string, RecipeData>? _recipes;
@@ -105,7 +116,9 @@ public partial class OrderBubbleView : PanelContainer
     {
         // Slice beyond the complete ornaments and corner curves, then draw at UI scale.
         // Only straight edges and paper stretch; ornaments sit above the content box.
-        DrawSetTransform(new Vector2(0, -OrnamentOverhang), 0, Vector2.One * FrameScale);
+        Vector2 arrivalOffset = new Vector2(Size.X * .5f, Size.Y + 12) * (1 - _arrivalPaperScale);
+        DrawSetTransform(arrivalOffset + new Vector2(0, -OrnamentOverhang) * _arrivalPaperScale,
+            0, Vector2.One * FrameScale * _arrivalPaperScale);
         Vector2 frameSize = new(Size.X / FrameScale, (Size.Y + OrnamentOverhang) / FrameScale);
         DrawStyleBox(_frame, new Rect2(Vector2.Zero, frameSize));
         // The Wuhan source has a cut-out at the old tail. Use an intact straight strip
@@ -115,7 +128,7 @@ public partial class OrderBubbleView : PanelContainer
         DrawTextureRectRegion(_frame.Texture,
             new Rect2(left, frameSize.Y - bottom, frameSize.X - left - right, bottom),
             new Rect2(left, _frame.Texture.GetHeight() - bottom, 64, bottom));
-        DrawSetTransform(Vector2.Zero);
+        DrawSetTransform(arrivalOffset, 0, Vector2.One * _arrivalPaperScale);
         float x = Size.X * .5f;
         Vector2[] tail = { new(x - 15, Size.Y - 9), new(x, Size.Y + 12), new(x + 15, Size.Y - 9) };
         DrawColoredPolygon(tail, _paper);
@@ -312,6 +325,19 @@ public partial class OrderBubbleView : PanelContainer
             entry.Region.SetMeta("complete", done);
             if (entry.Quantity is not null) entry.Quantity.Text = $"{delivered}/{order.Lines[entry.Line].Quantity}";
         }
+    }
+
+    internal Control? LastDeliveredIcon(int line)
+    {
+        if (_order is null || _progress is null) return null;
+        foreach (var entry in _regions)
+        {
+            if (entry.Line != line) continue;
+            int delivered = _progress.GetDeliveredQuantity(entry.Line);
+            if (delivered <= 0 || entry.Portion >= 0 && entry.Portion != delivered - 1) continue;
+            return entry.Region.FindChild("OrderProductIcon", true, false) as Control;
+        }
+        return null;
     }
 
     private static bool IsMain(ProductKind kind) => kind is ProductKind.Pancake or ProductKind.HotDryNoodles or ProductKind.Roujiamo;

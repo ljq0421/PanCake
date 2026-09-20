@@ -32,6 +32,7 @@ public partial class MorningHub : Control
 
     public override void _Ready()
     {
+        Callable.From(() => ButtonHoverFeedback.AttachTree(this)).CallDeferred();
         SceneNodeBinder.Bind(this);
         _art = new TianjinArtCatalog();
         _openButton.Pressed += StartPrimaryDay;

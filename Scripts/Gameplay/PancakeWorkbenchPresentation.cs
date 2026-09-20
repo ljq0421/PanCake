@@ -187,6 +187,7 @@ public partial class PancakeWorkstation
             slot.ShowStockNumbers = false;
         }
         HideTianjinWorkbenchText();
+        ConfigureLoopMotion();
     }
 
     // Applied after every tutorial/live refresh, including fresh and restored saves.

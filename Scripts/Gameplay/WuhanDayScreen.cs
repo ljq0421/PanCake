@@ -380,7 +380,11 @@ public partial class WuhanDayScreen : Control
             int quantity = preview ? _controller.GetWuhanDoupiDeliveryQuantity(id, _doupiStock) : 0;
             _deliveryQuantityLabels[i].Text = quantity > 0 ? $"豆皮×{quantity}" : "";
             _deliveryQuantityLabels[i].Visible = quantity > 0;
-            if (customer is null) continue;
+            if (customer is null)
+            {
+                CustomerArrivalMotion.Apply(_portraits[i], _orders[i], null);
+                continue;
+            }
             _orders[i].Render(customer.Order,customer.Progress,_catalog.RecipesById);
             // All Wuhan cards share one compact width, with the tail over the customer.
             _orders[i].Size = new Vector2(OrderCardWidth, _orders[i].GetCombinedMinimumSize().Y);
@@ -389,6 +393,7 @@ public partial class WuhanDayScreen : Control
                 155 - _orders[i].Size.Y * _orders[i].Scale.Y);
             PatienceBarPresentation.Render(_patience[i], 1 - customer.PatienceProgress);
             _portraits[i].SetVisual(_art.Shared.CustomerPortrait(customer.AppearanceId,TianjinArtCatalog.ResolveCustomerExpression(customer.State,customer.WasServed)));
+            CustomerArrivalMotion.Apply(_portraits[i], _orders[i], customer);
         }
     }
     private InteractionHighlightState CustomerHighlight(int slot)

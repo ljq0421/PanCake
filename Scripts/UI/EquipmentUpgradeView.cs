@@ -166,6 +166,7 @@ public partial class EquipmentUpgradeView : Control
         foreach (string state in new[] { "normal", "hover", "pressed", "disabled" }) button.AddThemeStyleboxOverride(state, Box(new(state == "disabled" ? "#E6D7C4" : state == "pressed" ? "#FFE09B" : "#FFF4D7"), Gold, 2));
         var focus = Box(Colors.Transparent, Ink, 3); button.AddThemeStyleboxOverride("focus", focus);
         foreach (string state in new[] { "font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "font_disabled_color" }) button.AddThemeColorOverride(state, Ink);
+        ButtonHoverFeedback.Attach(button);
         return button;
     }
 }

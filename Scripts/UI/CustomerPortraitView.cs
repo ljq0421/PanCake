@@ -25,6 +25,16 @@ public partial class CustomerPortraitView : Control
     private CustomerPortraitLayout? _counterLayout;
     private bool _fitCounterToWindow;
     private ArtContourHighlight? _interactionOutline;
+    private Control _arrivalMotion = null!;
+
+    public void SetArrivalMotion(double age, int slot, bool reduced)
+    {
+        var pose = CustomerArrivalMotion.Sample(age, slot, reduced);
+        _arrivalMotion.PivotOffset = new Vector2(Size.X * .5f, Size.Y);
+        _arrivalMotion.Position = pose.Position;
+        _arrivalMotion.Scale = pose.Scale;
+        _arrivalMotion.Rotation = pose.Rotation;
+    }
 
     public void BindInteractionHighlight(Func<InteractionHighlightState> state)
     {
@@ -53,6 +63,11 @@ public partial class CustomerPortraitView : Control
     public override void _Ready()
     {
         SceneNodeBinder.Bind(this);
+        // Keep the existing crop and hit rectangle fixed; only the art inside moves.
+        _arrivalMotion = new Control { Name = "ArrivalMotion", MouseFilter = MouseFilterEnum.Ignore };
+        AddChild(_arrivalMotion);
+        _body.Reparent(_arrivalMotion, false);
+        _head.Reparent(_arrivalMotion, false);
         Resized += LayoutLayers;
         LayoutLayers();
     }

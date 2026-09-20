@@ -132,6 +132,7 @@ public partial class BusinessHud : Control
 
     public static void StyleIconButton(Button button, Texture2D texture)
     {
+        ButtonHoverFeedback.Attach(button);
         button.Text = ""; button.CustomMinimumSize = new(52, 52);
         button.MouseDefaultCursorShape = CursorShape.PointingHand;
         foreach (string state in new[] { "normal", "hover", "pressed", "disabled" })

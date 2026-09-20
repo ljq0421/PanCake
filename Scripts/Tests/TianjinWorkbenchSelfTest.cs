@@ -94,9 +94,12 @@ public partial class StageFourSelfTest
         Check(!save.Data.Tianjin.LearnedWorkbenchActions.Contains("refill:egg"), "满盘补货失败不学习");
         station.Inventory.TryConsume("egg");
         refill.Refill?.Invoke();
-        Check(station.Inventory.IsAnyRefilling && save.Data.Tianjin.LearnedWorkbenchActions.Contains("refill:egg"),
-            "补货成功启动后单独记录教学");
+        Check(station.Inventory.IsAnyRefilling && !save.Data.Tianjin.LearnedWorkbenchActions.Contains("refill:egg"),
+            "启动补货不提前记录完成教学");
         CheckWorkbenchText("制作和补货中");
+        station.Tick(station.Inventory.LevelData.RefillSeconds + .01);
+        Check(!station.Inventory.IsAnyRefilling && save.Data.Tianjin.LearnedWorkbenchActions.Contains("refill:egg"),
+            "实际补满后单独记录教学");
         var coins = (CoinTrayView)station.FindChild("CoinTray", true, false);
         Check(!coins.TryCollect() && !save.Data.Tianjin.LearnedWorkbenchActions.Contains("collect_coins"), "空盘收钱不学习");
         coins.RenderRevenue(20, 1);

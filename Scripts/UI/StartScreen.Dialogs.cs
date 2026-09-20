@@ -81,6 +81,8 @@ public partial class StartScreen
         }
         foreach (var control in _modalControls) control.FocusMode = FocusModeEnum.None;
         _displayConfirmation = new Control { Name = "DisplayConfirmation", Size = new(1920, 1080) }; _modal.AddChild(_displayConfirmation);
+        JourneyTransition.For(this).Play(JourneyTransition.Effect.OpenBook,
+            bounds: new Rect2(_canvas.GetGlobalTransformWithCanvas() * new Vector2(360, 225), new Vector2(1200, 630) * _canvas.Scale));
         _displayConfirmation.AddChild(new ColorRect { Size = new(1920, 1080), Color = new Color(.12f, .08f, .04f, .7f) });
         AddConfirmationPanel(_displayConfirmation, "DisplayConfirmation");
         ConfirmationTitle(_displayConfirmation, "DisplayConfirmationTitle", "保留这个显示设置？");
@@ -117,6 +119,8 @@ public partial class StartScreen
         if (_countdown is not null) _countdown.Text = $"{_settings.SecondsRemaining} 秒后恢复原设置";
         if (_displayConfirmation is { Visible: true } && !_settings.DisplayPending)
         {
+            JourneyTransition.For(this).Play(JourneyTransition.Effect.CloseBook,
+                bounds: new Rect2(_canvas.GetGlobalTransformWithCanvas() * new Vector2(360, 225), new Vector2(1200, 630) * _canvas.Scale));
             _displayConfirmation.Hide();
             foreach (var c in _modalControls) c.FocusMode = _displayConfirmation.IsAncestorOf(c) ? FocusModeEnum.None : FocusModeEnum.All;
             if (GodotObject.IsInstanceValid(_displayReturnFocus) && _displayReturnFocus!.IsVisibleInTree()) _displayReturnFocus.GrabFocus();

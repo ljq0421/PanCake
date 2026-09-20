@@ -38,6 +38,7 @@ public partial class InterfaceTeaching : CanvasLayer
 
     public override void _Ready()
     {
+        Callable.From(() => ButtonHoverFeedback.AttachTree(this)).CallDeferred();
         Hide();
         _previousFocus = GetViewport().GuiGetFocusOwner();
         _canvas = new Control { Name = "TeachingCanvas", Size = new(1920, 1080), MouseFilter = Control.MouseFilterEnum.Stop };
@@ -63,9 +64,12 @@ public partial class InterfaceTeaching : CanvasLayer
         if (!_owner.IsVisibleInTree()) { if (Visible) Close(false); return; }
         if (!Visible)
         {
+            if (JourneyTransition.InScope(_owner) && JourneyTransition.For(this).Active) return;
             if (_eligible?.Invoke() == false) return;
             if (_pause is not null) { _pause(true); _pauseHeld = true; }
             Show(); Refresh();
+            if (JourneyTransition.InScope(_owner)) JourneyTransition.For(this).Play(JourneyTransition.Effect.OpenBook,
+                bounds: new Rect2(_card.GetGlobalTransformWithCanvas().Origin, _card.Size * _canvas.Scale));
         }
         UpdateSpotlight();
     }
@@ -132,6 +136,9 @@ public partial class InterfaceTeaching : CanvasLayer
     internal void Close(bool acknowledge)
     {
         if (_closed) return;
+        if (Visible && _owner.IsVisibleInTree() && JourneyTransition.InScope(_owner))
+            JourneyTransition.For(this).Play(JourneyTransition.Effect.CloseBook,
+                bounds: new Rect2(_card.GetGlobalTransformWithCanvas().Origin, _card.Size * _canvas.Scale));
         _closed = true;
         if (acknowledge && !_replay) _settings?.MarkInterfaceLessonSeen(_key);
         ReleasePause(); Hide();

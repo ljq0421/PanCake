@@ -40,6 +40,7 @@ public partial class WuhanDayScreen
         AddChild(_sceneFeedback); _feedback.Hide();
         _hudPauseMenu = new Control { Name = "HudPauseMenu", ZIndex = 150, Visible = false };
         AddChild(_hudPauseMenu); _hudPauseMenu.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+        JourneyTransition.Watch(_hudPauseMenu, bounds: () => _hudPauseMenu.GetNode<Control>("HudPausePanel").GetGlobalRect());
         var dim = new ColorRect { Color = new Color(.06f, .15f, .12f, .42f) };
         _hudPauseMenu.AddChild(dim); dim.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         var panel = new PanelContainer { Name = "HudPausePanel" };

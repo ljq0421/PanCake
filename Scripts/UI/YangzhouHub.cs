@@ -16,6 +16,7 @@ public partial class YangzhouHub : Control
     private Button _open = null!;
     public override void _Ready()
     {
+        Callable.From(() => ButtonHoverFeedback.AttachTree(this)).CallDeferred();
         SceneNodeBinder.Bind(this);
         for (int index = 0; index < _days.Length; index++)
         {

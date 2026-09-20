@@ -80,6 +80,8 @@ public partial class GuangzhouDayScreen : Control
             _discards[i].Pressed += () => { if (CanInteract) { Session.Trays[index].Reset(); _trays[index].CancelGesture(); } };
         }
         _pause.Pressed += () => { _manuallyPaused = !_manuallyPaused; CancelGestures(); };
+        foreach (var button in new[] { _pause, _back, _retry, this.FindButton("返回经营") })
+            ButtonHoverFeedback.Attach(button);
         this.FindButton("返回经营").Pressed += RequestAbandon;
         _loadSiuMai.Pressed += () => LoadBasket(GuangzhouRules.SiuMai);
         _loadHarGow.Pressed += () => LoadBasket(GuangzhouRules.HarGow);

@@ -107,7 +107,7 @@ public partial class BusinessDetailsView
         _save.MouseFilter = MouseFilterEnum.Pass;
         _save.Position = new(ArtPageLeft, 732); _save.Size = new(ArtPageWidth, 52);
         SetButtonBounds(_retry, new(1020, 738, 180, 56));
-        SetButtonBounds(CloseButton, new(1220, 738, 230, 56));
+        SetButtonBounds(CloseButton, new(1215, 738, 230, 56));
         if (UsesTravelBook)
         {
             ApplyTravelLayout();
@@ -190,7 +190,7 @@ public partial class BusinessDetailsView
         var unlocked = _model.Stickers.Where(s => !s.Contains("评级") && !s.Contains("升级") && !s.StartsWith("早餐新记录：", StringComparison.Ordinal)).ToArray();
         var upgrades = _model.Stickers.Where(s => s.Contains("升级")).ToArray();
         AddSummarySticker(unlocked, "新解锁提示贴片", "UnlockSticker", new(ArtPageRight, 445, 268, 82), true);
-        AddSummarySticker(upgrades, "可升级提示贴片", "UpgradeSticker", new(1182, 445, 268, 82), false);
+        AddSummarySticker(upgrades, "可升级提示贴片", "UpgradeSticker", new(1176, 445, 268, 82), false);
     }
 
     private void AddSummarySticker(string[] items, string art, string name, Rect2 bounds, bool unlock)
@@ -217,7 +217,7 @@ public partial class BusinessDetailsView
         label.MaxLinesVisible = 1; label.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
         if (!unlock && CanUpgrade)
         {
-            _upgradeEntry = ButtonAt(sticker, "", new(0, 0, bounds.Size.X, bounds.Size.Y), OpenUpgrades);
+            _upgradeEntry = ButtonAt(sticker, "", new(0, 0, bounds.Size.X, bounds.Size.Y), OpenUpgrades, sticker);
             _upgradeEntry.Name = "OpenBookUpgrades";
             if (UsesTravelBook)
             {

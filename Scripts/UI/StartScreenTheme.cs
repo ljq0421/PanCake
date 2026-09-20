@@ -26,6 +26,7 @@ public static class StartScreenTheme
 
     public static void Apply(Button button, bool primary = false, bool destructive = false)
     {
+        ButtonHoverFeedback.Attach(button);
         Color fill = destructive ? Brick : primary ? Teal : Cream;
         Color text = primary || destructive ? Cream : Ink;
         button.AddThemeStyleboxOverride("normal", Box(fill, 3, true));

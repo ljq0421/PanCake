@@ -16,6 +16,9 @@ public enum PancakeSound
     CoinCollect,
     BookOpen,
     BookStamp,
+    SoftDrop,
+    CrispDrop,
+    PaperBag,
 }
 
 public partial class PancakeAudio : Node
@@ -30,6 +33,9 @@ public partial class PancakeAudio : Node
         _player.Bus = ProjectCake.Core.JourneySettings.EffectsBus;
         _sounds[PancakeSound.BookOpen] = MakeNoise(.18, .10);
         _sounds[PancakeSound.BookStamp] = MakeNoise(.07, .18);
+        _sounds[PancakeSound.SoftDrop] = MakeNoise(.045, .18);
+        _sounds[PancakeSound.CrispDrop] = MakeNoise(.065, .28);
+        _sounds[PancakeSound.PaperBag] = MakePaperRustle();
         _sounds[PancakeSound.PickUp] = MakeTone(720, 0.06, 0.28);
         _sounds[PancakeSound.Stroke] = MakeTone(320, 0.08, 0.18);
         _sounds[PancakeSound.Sizzle] = MakeNoise(0.12, 0.16);
@@ -69,6 +75,20 @@ public partial class PancakeAudio : Node
         }
         return value;
     });
+
+    private static AudioStreamWav MakePaperRustle()
+    {
+        var random = new Random(219);
+        double previous = 0;
+        return MakeWave(.16, sample =>
+        {
+            double noise = random.NextDouble() * 2 - 1;
+            double value = (noise - previous * .75) * .14
+                * (.4 + .6 * Math.Pow(Math.Sin(sample / 22050.0 * 65), 2));
+            previous = noise;
+            return value;
+        });
+    }
 
     private static AudioStreamWav MakeTone(double frequency, double seconds, double amplitude) =>
         MakeWave(seconds, sample => Math.Sin(Math.Tau * frequency * sample / 22050.0) * amplitude);

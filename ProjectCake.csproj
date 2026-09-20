@@ -7,5 +7,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>12.0</LangVersion>
   </PropertyGroup>
+  <ItemGroup>
+    <!-- Reference snippets are adapted into Scripts; they are not game nodes. -->
+    <Compile Remove="docs/**/*.cs" />
+  </ItemGroup>
 </Project>
-

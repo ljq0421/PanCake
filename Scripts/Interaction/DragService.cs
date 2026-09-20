@@ -26,6 +26,19 @@ public partial class DragService : Node
     public event Action<string>? DragStarted;
     public event Action<DragResult>? DragEnded;
 
+    // Opt-in: commit on release, independently of the presentation's lifetime.
+    public bool ImmediateAcceptance { get; set; }
+    private readonly List<(Control Art, Tween Tween)> _acceptedVisuals = new();
+    public void ClearAcceptedVisuals()
+    {
+        foreach (var item in _acceptedVisuals) { item.Tween.Kill(); item.Art.QueueFree(); }
+        _acceptedVisuals.Clear();
+    }
+    public override void _Process(double delta)
+    {
+        if (ReducedMotion) ClearAcceptedVisuals();
+    }
+    public override void _ExitTree() => ClearAcceptedVisuals();
     public bool IsDragging => _proxy is not null;
 
     public void Configure(Control overlay)
@@ -71,6 +84,15 @@ public partial class DragService : Node
             foreach (TextureRect preview in _proxy.GetChildren().OfType<TextureRect>())
                 ProjectCake.UI.FoodInk.Apply(preview);
             _overlay.AddChild(_proxy);
+            if (ImmediateAcceptance && !ReducedMotion)
+            {
+                PanelContainer image = _proxy;
+                image.Resized += () => image.PivotOffset = image.Size / 2;
+                image.PivotOffset = image.Size / 2;
+                image.Scale = Vector2.One * .98f;
+                _motionTween = CreateTween().SetTrans(Tween.TransitionType.Quad).SetEase(Tween.EaseType.Out);
+                _motionTween.TweenProperty(image, "scale", Vector2.One * 1.025f, .10);
+            }
             MoveProxy(source.GetGlobalMousePosition());
             SetProcessInput(true);
             UpdateHighlights(source.GetGlobalMousePosition());
@@ -257,6 +279,28 @@ public partial class DragService : Node
             }
             ClearDrag();
             if (IsInstanceValid(zone)) zone.PulseAccepted();
+            DragEnded?.Invoke(new DragResult(payload, DragCompletion.Accepted, zone));
+            return;
+        }
+
+        // Trash remains cancellable until its existing return/snap animation completes.
+        // Its commit can cancel the active drag while refreshing the food source.
+        if (ImmediateAcceptance && _dragButton != MouseButton.Right)
+        {
+            if (!zone.TryAccept(payload))
+            {
+                zone.PulseRejected(); AnimateReturn(payload, DragCompletion.Rejected, zone); return;
+            }
+            if (_proxy is null) return;
+            Control image = _proxy;
+            _proxy = null;
+            ClearDrag();
+            var flight = CreateTween().SetTrans(Tween.TransitionType.Quad).SetEase(Tween.EaseType.Out);
+            flight.TweenProperty(image, "global_position", target, .11);
+            flight.Parallel().TweenProperty(image, "modulate:a", 0f, .11);
+            _acceptedVisuals.Add((image, flight));
+            flight.Finished += () => { _acceptedVisuals.RemoveAll(v => v.Art == image); image.QueueFree(); };
+            if (_acceptedVisuals.Count > 6) { var old = _acceptedVisuals[0]; old.Tween.Kill(); old.Art.QueueFree(); _acceptedVisuals.RemoveAt(0); }
             DragEnded?.Invoke(new DragResult(payload, DragCompletion.Accepted, zone));
             return;
         }

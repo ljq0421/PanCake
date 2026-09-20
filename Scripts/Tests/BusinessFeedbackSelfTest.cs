@@ -191,6 +191,10 @@ public partial class BusinessFeedbackSelfTest : Node
     }
     private async Task TestScreens()
     {
+        // This test owns pause/resume; first-run HUD teaching must not add another pause reason.
+        var settings = GetNode<JourneySettings>("/root/JourneySettings");
+        settings.UsePathForTests($"res://.tmp/business-audio-tests/settings-{Guid.NewGuid():N}.cfg");
+        InterfaceLessons.MarkAllSeen(settings);
         var save = new SaveService(); save.UsePathForTests($"res://.tmp/business-audio-tests/screen-{Guid.NewGuid():N}.json"); AddChild(save);
         foreach (var id in new[] { StableIds.Cities.Tianjin, StableIds.Cities.Wuhan, StableIds.Cities.Xian, StableIds.Cities.Guangzhou, YangzhouCatalog.CityId })
             save.Data.GetCity(id).HighestUnlockedDay = 15;

@@ -228,6 +228,10 @@ public partial class GameController : Node
             string city = _cityHubs.First(pair => pair.Value == show).Key;
             ShowOnly(_startScreen); _startScreen.PresentCity(city); return;
         }
+        Control? previous = GetNode("UI").GetChildren().OfType<Control>().FirstOrDefault(page => page.Visible);
+        if (previous != show && previous is not null
+            && (show is TianjinDayScreen or WuhanDayScreen || previous is TianjinDayScreen or WuhanDayScreen))
+            JourneyTransition.For(this).Play(JourneyTransition.Effect.Curtain, day: GetNode<DayController>(DayControllerPath));
         foreach (Control page in GetNode("UI").GetChildren().OfType<Control>()) page.Visible = page == show;
         GetNode<Node2D>("ShopRoot").Visible = show != _startScreen;
     }

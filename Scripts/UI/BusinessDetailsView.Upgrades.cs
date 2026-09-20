@@ -28,6 +28,8 @@ public partial class BusinessDetailsView
     private void OpenUpgrades()
     {
         if (!CanUpgrade || _upgradeModal is not null) return;
+        if (_model.CityId is "tianjin" or "wuhan" or "city:tianjin" or "city:wuhan")
+            JourneyTransition.For(this).Play(JourneyTransition.Effect.Page);
         FinishAnimation(); _selectedUpgrade = null; RenderUpgradeModal("");
     }
     private void RenderUpgradeModal(string message)
@@ -67,6 +69,8 @@ public partial class BusinessDetailsView
     }
     private void CloseUpgrades()
     {
+        if (_model.CityId is "tianjin" or "wuhan" or "city:tianjin" or "city:wuhan")
+            JourneyTransition.For(this).Play(JourneyTransition.Effect.Page, reverse: true);
         RemoveUpgradeModal();
         if (IsInstanceValid(_upgradeEntry) && _upgradeEntry!.IsVisibleInTree()) _upgradeEntry.GrabFocus();
         else CloseButton.GrabFocus();

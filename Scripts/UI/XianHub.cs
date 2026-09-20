@@ -16,6 +16,7 @@ public partial class XianHub : Control
     private readonly Dictionary<string, (Label Label, Button Buy)> _equipment = new();
     public override void _Ready()
     {
+        Callable.From(() => ButtonHoverFeedback.AttachTree(this)).CallDeferred();
         SceneNodeBinder.Bind(this);
         this.FindButton("早餐地图").Pressed += () => MapRequested?.Invoke();
         for (int index = 0; index < _days.Count; index++)

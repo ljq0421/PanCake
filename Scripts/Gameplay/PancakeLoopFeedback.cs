@@ -25,7 +25,6 @@ public partial class PancakeWorkstation
         _loopMotion?.Reset();
         _drag.ClearAcceptedVisuals();
         _canvas.ResetIngredientMotion();
-        _canvas.EndSauceStroke();
     }
 
     private void ConfigureLoopMotion()
@@ -34,8 +33,6 @@ public partial class PancakeWorkstation
             Active = () => _initialized && IsVisibleInTree() && InteractionEnabled && !Paused };
         AddChild(_loopMotion);
         _canvas.EnableIngredientDetail(_art);
-        _stroke.SaucePainted = _canvas.PaintSauce;
-        _stroke.StrokeEnded = _canvas.EndSauceStroke;
         _stroke.GentleSauceTool = true;
         foreach (var (id, slot) in _ingredientSlots)
         {

@@ -65,13 +65,14 @@ public partial class BusinessDetailsView : Control
         _rows = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; _rows.AddThemeConstantOverride("separation", 12); _scroll.AddChild(_rows);
         _save = Text(_bookContent, "", new(80, 792, 1120, 65), 20, Muted, wrap: true);
         CloseButton = ButtonAt(_bookContent, "收好账本", new(1320, 798, 240, 72), RequestClose); CloseButton.Name = "CloseBusinessDetails";
-        _retry = ButtonAt(_bookContent, "重试保存", new(1100, 809, 190, 58), () => RetryRequested?.Invoke());
+        _retry = ButtonAt(_bookContent, "重试保存", new(1100, 809, 190, 58), () => { FinishAnimation(); RetryRequested?.Invoke(); });
         _audio = new PancakeAudio(); AddChild(_audio);
         BuildUpgradeTeaching();
         VisibilityChanged += () => { if (!Visible) { RemoveUpgradeModal(); FinishAnimation(); _audio.Stop(); } };
         Hide();
         JourneyTransition.Watch(this, () => _model.CityId is "tianjin" or "wuhan" or "city:tianjin" or "city:wuhan",
-            () => new Rect2(_book.GetGlobalTransformWithCanvas().Origin, _book.Size * _canvas.Scale));
+            () => new Rect2(_book.GetGlobalTransformWithCanvas().Origin, _book.Size * _canvas.Scale), book: () => true,
+            ledger: true);
     }
     internal void Open(DayResult result, IReadOnlyList<BusinessOrderRecord> records, DataCatalog catalog) =>
         Open(BusinessBookModel.From("tianjin", result, records, catalog));
@@ -93,6 +94,7 @@ public partial class BusinessDetailsView : Control
     }
     private void BuildSummary()
     {
+        ResetTravelMotion();
         Clear(_summary);
         _upgradeEntry = null;
         if (UsesBookArt) { BuildArtSummary(); return; }
@@ -223,8 +225,20 @@ public partial class BusinessDetailsView : Control
     {
         if (ProjectSettings.GetSetting("accessibility/reduce_motion", false).AsBool()) return;
         _audio.Play(PancakeSound.BookOpen);
-        _book.Modulate = new(1, 1, 1, .3f);
-        _entrance = CreateTween(); _entrance.TweenProperty(_book, "modulate", Colors.White, .2);
+        if (UsesTravelBook && _model.Closing) { StartTravelAnimation(); return; }
+        _entrance = CreateTween();
+        if (_model.CityId is "tianjin" or "wuhan" or "city:tianjin" or "city:wuhan")
+        {
+            // The shared paper turn reveals an opaque book. Start settlement
+            // details after it lands instead of fading the paper at the same time.
+            _book.Modulate = Colors.White;
+            _entrance.TweenInterval(.52);
+        }
+        else
+        {
+            _book.Modulate = new(1, 1, 1, .3f);
+            _entrance.TweenProperty(_book, "modulate", Colors.White, .2);
+        }
         if (!_model.Closing) return;
         _income.Text = "¥0"; _metrics.Modulate = new(1, 1, 1, 0); _stamp.Modulate = new(1, 1, 1, 0); _note.Modulate = new(1, 1, 1, 0);
         _entrance.TweenMethod(Callable.From<float>(n => _income.Text = $"¥{Mathf.RoundToInt(n)}"), 0f, (float)_model.Result.TotalRevenue, .6);
@@ -239,6 +253,7 @@ public partial class BusinessDetailsView : Control
     {
         FinishPageAnimation();
         _entrance?.Kill(); _entrance = null;
+        RestoreTravelMotion();
         if (_book is null) return;
         _book.Modulate = Colors.White;
         if (_income is not null) _income.Text = $"¥{_model.Result.TotalRevenue}";
@@ -246,7 +261,18 @@ public partial class BusinessDetailsView : Control
     }
     public override void _Input(InputEvent input)
     {
+        if (input is InputEventKey { Keycode: Key.Space } space && _skipSpaceRelease)
+        {
+            if (!space.Pressed) _skipSpaceRelease = false;
+            GetViewport().SetInputAsHandled(); return;
+        }
         if (!IsVisibleInTree()) return;
+        if (input is InputEventKey { Keycode: Key.Space, Pressed: true, Echo: false }
+            && _travelAnimating && _upgradeModal is null)
+        {
+            _skipSpaceRelease = true;
+            FinishAnimation(); GetViewport().SetInputAsHandled(); return;
+        }
         if (input is InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.Left }) FinishAnimation();
         if (input is not InputEventKey { Pressed: true, Echo: false } key) return;
         if (key.Keycode == Key.Escape) { if (_upgradeModal is not null) CloseUpgrades(); else RequestClose(); }

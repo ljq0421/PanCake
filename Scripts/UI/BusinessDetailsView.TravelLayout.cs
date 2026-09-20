@@ -68,37 +68,31 @@ public partial class BusinessDetailsView
     private void BuildTravelSummary()
     {
         var r = _model.Result;
-        TravelPanel(_summary, new(230, 24, 560, 303));
-        TravelHeading(_summary, "收入详情", new(250, 3, 233, 51));
-        Art(_summary, "总收入图标", new(258, 92, 125, 112));
-        Text(_summary, "收入", new(405, 67, 166, 38), 30);
-        TravelAside(_summary, "好味道，\n让每一天都值得", new(578, 57, 185, 48));
-        _income = TravelValue(_summary, $"¥{r.TotalRevenue}", new(405, 108, 355, 96), 82);
-        TravelPanel(_summary, new(247, 211, 526, 104), true);
-        Art(_summary, "小费图标-v1", new(273, 218, 51, 36));
-        Text(_summary, "菜品销售", new(345, 215, 220, 40), 26, Muted);
-        TravelValue(_summary, $"¥{r.SaleRevenue}", new(570, 215, 180, 40), 28, HorizontalAlignment.Right);
-        Line(_summary, new(273, 262, 477, 1), CityTheme.Secondary with { A = .65f });
-        Art(_summary, "单笔收入", new(273, 270, 51, 36));
-        Text(_summary, "顾客小费", new(345, 267, 220, 40), 26, Muted);
-        TravelValue(_summary, $"+¥{r.Tips}", new(570, 267, 180, 40), 28, HorizontalAlignment.Right);
-        BookDivider(_summary, new(230, 332, 560, 10));
-
-        TravelPanel(_summary, new(255, 378, 532, 122));
-        var badge = FittedArtBounds(Art(_summary, "今日热销徽章", new(255, 340, 272, 64)));
-        Text(_summary, "最受欢迎", new(badge.Position + new Vector2(badge.Size.X * .27f, 21), new(badge.Size.X * .65f, 34)), 25);
-        if (_model.BestSeller is { } best)
+        TravelPanel(_summary, new(890, 24, 560, 303));
+        TravelHeading(_summary, "收入详情", new(910, 3, 233, 51));
+        CaptureTravelMotion(TravelMotionGroup.Income, _summary, () =>
+            _incomeCoins = Art(_summary, "总收入图标", new(918, 92, 125, 112)));
+        TravelValue(_summary, _model.Closing ? "今日收入" : "收入", new(1065, 67, 166, 38), 30);
+        TravelAside(_summary, "好味道，\n让每一天都值得", new(1238, 57, 185, 48));
+        CaptureTravelMotion(TravelMotionGroup.Income, _summary, () =>
+            _income = TravelValue(_summary, $"¥{r.TotalRevenue}", new(1065, 108, 355, 96), 82));
+        TravelPanel(_summary, new(907, 211, 526, 104), true);
+        CaptureTravelMotion(TravelMotionGroup.Sales, _summary, () =>
         {
-            Place(_summary, new BookFoodIcon { Product = best }, new(308, 413, 70, 70));
-            var name = Text(_summary, best.Name, new(410, 409, 350, 64), 24, wrap: true);
-            name.Name = "BookBestSeller"; name.MaxLinesVisible = 2;
-            name.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
-            Explain(name, best.Name);
-            Text(_summary, $"已售 ×{best.Quantity}", new(410, 474, 350, 24), 22, Muted);
-        }
-        else Text(_summary, "还没有完成的客单", new(290, 411, 460, 55), 25, Muted);
+            Art(_summary, "小费图标-v1", new(933, 218, 51, 36));
+            Text(_summary, "菜品销售", new(1005, 215, 220, 40), 26, Muted);
+            TravelValue(_summary, $"¥{r.SaleRevenue}", new(1230, 215, 180, 40), 28, HorizontalAlignment.Right);
+        });
+        Line(_summary, new(933, 262, 477, 1), CityTheme.Secondary with { A = .65f });
+        CaptureTravelMotion(TravelMotionGroup.Tips, _summary, () =>
+        {
+            Art(_summary, "单笔收入", new(933, 270, 51, 36));
+            Text(_summary, "顾客小费", new(1005, 267, 220, 40), 26, Muted);
+            TravelValue(_summary, $"+¥{r.Tips}", new(1230, 267, 180, 40), 28, HorizontalAlignment.Right);
+        });
+        BookDivider(_summary, new(890, 332, 560, 10));
 
-        _note = new Control { Name = "DailyNote", Position = new(263, 505), Size = new(527, 127), MouseFilter = MouseFilterEnum.Ignore };
+        _note = new Control { Name = "DailyNote", Position = new(923, 378), Size = new(527, 127), MouseFilter = MouseFilterEnum.Ignore };
         _summary.AddChild(_note);
         // The existing note silhouette is wider than its content area; stretch the paper, never its lettering.
         var paper = Art(_note, "今日手记便签底板", new(0, 0, 527, 127));
@@ -106,17 +100,22 @@ public partial class BusinessDetailsView
         Text(_note, "营业手记", new(66, 19, 400, 34), 26);
         Text(_note, _model.DailyNote, new(38, 57, 452, 58), 23, wrap: true);
 
-        _metrics = new Control { MouseFilter = MouseFilterEnum.Ignore }; _summary.AddChild(_metrics);
+        // The left page starts below the book title; its content previously occupied the right page.
+        _metrics = new Control { Position = new(ArtPageLeft - ArtPageRight, 54), MouseFilter = MouseFilterEnum.Ignore };
+        _summary.AddChild(_metrics);
         BuildTravelReception();
         BookDivider(_metrics, new(890, 240, 560, 10));
         TravelPanel(_metrics, new(890, 270, 560, 120));
         var satisfaction = TravelHeading(_metrics, "顾客满意度", new(905, 253, 266, 47));
         satisfaction.Name = "BookSatisfaction";
         Explain(satisfaction, "只计算已完成订单的顾客，包含出餐错误的订单；流失顾客不计入平均值。没有完成订单时显示 —。" );
-        Art(_metrics, "满意度图标", new(915, 309, 66, 66));
-        Text(_metrics, Percent(_model.Satisfaction), new(1003, 306, 209, 72), 56);
+        CaptureTravelMotion(TravelMotionGroup.Evaluation, _metrics, () =>
+        {
+            Art(_metrics, "满意度图标", new(915, 309, 66, 66));
+            Text(_metrics, Percent(_model.Satisfaction), new(1003, 306, 209, 72), 56);
+        });
         Line(_metrics, new(1218, 300, 2, 72), CityTheme.Secondary with { A = .6f });
-        _stamp = new Control { Position = new(1236, 269), Size = new(195, 117), PivotOffset = new(97, 58), MouseFilter = MouseFilterEnum.Ignore };
+        _stamp = new Control { Position = _metrics.Position + new Vector2(1236, 269), Size = new(195, 117), PivotOffset = new(97, 58), MouseFilter = MouseFilterEnum.Ignore };
         _summary.AddChild(_stamp);
         if (r.PerfectOrders > 0)
         {
@@ -127,10 +126,13 @@ public partial class BusinessDetailsView
 
         BuildTravelHighlights();
 
-        var rating = _model.Stickers.Where(s => s.Contains("评级")).ToArray();
-        if (rating.Length > 0) Text(_summary, string.Join(" · ", rating), new(905, 518, 530, 26), 19);
-        var unlocked = _model.Stickers.Where(s => !s.Contains("评级") && !s.Contains("升级") && !s.StartsWith("早餐新记录：", StringComparison.Ordinal)).ToArray();
-        AddSummarySticker(unlocked, "新解锁提示贴片", "UnlockSticker", new(890, 626, 246, 64), true);
+        CaptureTravelMotion(TravelMotionGroup.Review, _summary, () =>
+        {
+            var rating = _model.Stickers.Where(s => s.Contains("评级")).ToArray();
+            if (rating.Length > 0) Text(_summary, string.Join(" · ", rating), new(245, 572, 530, 26), 19);
+            var unlocked = _model.Stickers.Where(s => !s.Contains("评级") && !s.Contains("升级") && !s.StartsWith("早餐新记录：", StringComparison.Ordinal)).ToArray();
+            AddSummarySticker(unlocked, "新解锁提示贴片", "UnlockSticker", new(890, 626, 246, 64), true);
+        });
         var upgrades = _model.Stickers.Where(s => s.Contains("升级")).ToArray();
         AddSummarySticker(upgrades, "可升级提示贴片", "UpgradeSticker", new(890, 540, 320, 80), false);
     }
@@ -147,28 +149,34 @@ public partial class BusinessDetailsView
         TravelPanel(_metrics, new(890, -30, 560, 259));
         var heading = TravelHeading(_metrics, "今日接待", new(905, -48, 233, 51));
         Explain(heading, "显示本次营业已结束的客单数：完成 + 流失。营业中尚在等待的顾客暂不计入。" );
-        TravelValue(_metrics, $"{_model.Resolved} {_model.Unit}", new(914, 9, 285, 78), 61);
-        if (_model.Resolved > 0) TravelAside(_metrics, "感谢每一位顾客", new(1208, 31, 215, 44));
+        CaptureTravelMotion(TravelMotionGroup.Reception, _metrics, () =>
+        {
+            TravelValue(_metrics, $"{_model.Resolved} {_model.Unit}", new(914, 9, 285, 78), 61);
+            if (_model.Resolved > 0) TravelAside(_metrics, "感谢每一位顾客", new(1208, 31, 215, 44));
+        });
         TravelPanel(_metrics, new(909, 95, 522, 82), true);
-        var stats = new[]
+        CaptureTravelMotion(TravelMotionGroup.Reception, _metrics, () =>
         {
-            ("完成", r.CompletedCustomers, "完成顾客图标", new Color("#456E49")),
-            ("错误", _model.Filter(BookFilter.Incorrect).Count(), "状态章-错误完成", new Color("#A05C2F")),
-            ("流失", r.LostCustomers, "流失顾客图标", new Color("#765648"))
-        };
-        for (int i = 0; i < stats.Length; i++)
-        {
-            var (caption, count, icon, color) = stats[i];
-            float x = 922 + i * 174;
-            Art(_metrics, icon, new(x, 109, 58, 58));
-            var label = TravelValue(_metrics, caption, new(x + 68, 100, 94, 32), 23, color: color);
-            TravelValue(_metrics, count.ToString(), new(x + 68, 137, 84, 33), 27, HorizontalAlignment.Center);
-            Explain(label, i == 0 ? "完成包含出餐正确与出餐错误的订单；错误为完成订单的子集。" : i == 1 ? "出餐错误的订单，同时计入完成。" : "等待超时离开的顾客。" );
-            if (i < 2) Line(_metrics, new(x + 164, 109, 1, 55), CityTheme.Secondary with { A = .8f });
-        }
-        var rate = TravelValue(_metrics, "完成率  " + Percent(_model.CompletionRate), new(914, 188, 215, 30), 25);
-        Explain(rate, "完成率 = 完成 ÷（完成 + 流失）。完成包含出餐错误的订单。" );
-        var progress = new ProgressBar
+            var stats = new[]
+            {
+                ("完成", r.CompletedCustomers, "完成顾客图标", new Color("#456E49")),
+                ("错误", _model.Filter(BookFilter.Incorrect).Count(), "状态章-错误完成", new Color("#A05C2F")),
+                ("流失", r.LostCustomers, "流失顾客图标", new Color("#765648"))
+            };
+            for (int i = 0; i < stats.Length; i++)
+            {
+                var (caption, count, icon, color) = stats[i];
+                float x = 922 + i * 174;
+                Art(_metrics, icon, new(x, 109, 58, 58));
+                var label = TravelValue(_metrics, caption, new(x + 68, 100, 94, 32), 23, color: color);
+                TravelValue(_metrics, count.ToString(), new(x + 68, 137, 84, 33), 27, HorizontalAlignment.Center);
+                Explain(label, i == 0 ? "完成包含出餐正确与出餐错误的订单；错误为完成订单的子集。" : i == 1 ? "出餐错误的订单，同时计入完成。" : "等待超时离开的顾客。" );
+                if (i < 2) Line(_metrics, new(x + 164, 109, 1, 55), CityTheme.Secondary with { A = .8f });
+            }
+            var rate = TravelValue(_metrics, "完成率  " + Percent(_model.CompletionRate), new(914, 188, 215, 30), 25);
+            Explain(rate, "完成率 = 完成 ÷（完成 + 流失）。完成包含出餐错误的订单。" );
+        });
+        var progress = _completionProgress = new ProgressBar
         {
             Name = "BookCompletionProgress", MinValue = 0, MaxValue = 100,
             Value = _model.CompletionRate ?? 0, ShowPercentage = false, MouseFilter = MouseFilterEnum.Ignore
@@ -220,34 +228,38 @@ public partial class BusinessDetailsView
         Place(_metrics, section, new(890, 405, 560, 111));
         TravelPanel(section, new(0, 10, 560, 101));
         TravelHeading(section, _model.Closing ? "今日亮点" : "本次亮点", new(15, -10, 245, 48), crown: true);
-        var highlights = _model.Highlights;
-        if (highlights.Count == 0)
+        CaptureTravelMotion(TravelMotionGroup.Review, section, () =>
         {
-            Text(section, "慢慢来，把下一份早餐做好。", new(24, 44, 512, 52), 23, Muted, wrap: true);
-            return;
-        }
-        float width = (532 - (highlights.Count - 1) * 10) / highlights.Count;
-        for (int i = 0; i < highlights.Count; i++)
-        {
-            var item = highlights[i];
-            var (icon, color) = item.Kind switch
+            var highlights = _model.Highlights;
+            if (highlights.Count == 0)
             {
-                BookHighlightKind.Perfect => ("Perfect 图标", new Color("#A04B32")),
-                BookHighlightKind.NoLoss => ("完成顾客图标", new Color("#487344")),
-                BookHighlightKind.Tips => ("单笔收入", new Color("#996522")),
-                _ => ("状态章-正确完成", new Color("#4B716D"))
-            };
-            var chip = new Panel { Name = "Highlight" + item.Kind, MouseFilter = MouseFilterEnum.Ignore };
-            var box = TianjinUi.Box(CitySettlementTheme.Paper.Lerp(color, .12f), 16, 2, false);
-            box.BorderColor = CitySettlementTheme.Paper.Lerp(color, .48f);
-            chip.AddThemeStyleboxOverride("panel", box);
-            Place(section, chip, new(14 + i * (width + 10), 45, width, 52));
-            Art(chip, icon, new(8, 10, 32, 32));
-            var label = Text(chip, item.Caption, new(46, 2, width - 52, 48), 20, color, wrap: true);
-            // Long amounts and localized captions may use two lines; never ellipsize a result.
-            for (int size = 20; size > 16 && label.GetLineCount() > 2;)
-                label.AddThemeFontSizeOverride("font_size", --size);
-        }
+                Text(section, "慢慢来，把下一份早餐做好。", new(24, 44, 512, 52), 23, Muted, wrap: true);
+                return;
+            }
+            float width = (532 - (highlights.Count - 1) * 10) / highlights.Count;
+            for (int i = 0; i < highlights.Count; i++)
+            {
+                var item = highlights[i];
+                var (icon, color) = item.Kind switch
+                {
+                    BookHighlightKind.Perfect => ("Perfect 图标", new Color("#A04B32")),
+                    BookHighlightKind.NoLoss => ("完成顾客图标", new Color("#487344")),
+                    BookHighlightKind.Tips => ("单笔收入", new Color("#996522")),
+                    _ => ("状态章-正确完成", new Color("#4B716D"))
+                };
+                var chip = new Panel { Name = "Highlight" + item.Kind, MouseFilter = MouseFilterEnum.Ignore };
+                var box = TianjinUi.Box(CitySettlementTheme.Paper.Lerp(color, .12f), 16, 2, false);
+                box.BorderColor = CitySettlementTheme.Paper.Lerp(color, .48f);
+                chip.AddThemeStyleboxOverride("panel", box);
+                Place(section, chip, new(14 + i * (width + 10), 45, width, 52));
+                Art(chip, icon, new(8, 10, 32, 32));
+                var label = Text(chip, _model.Closing && item.Kind == BookHighlightKind.Tips ? "收获小费" : item.Caption,
+                    new(46, 2, width - 52, 48), 20, color, wrap: true);
+                // Long amounts and localized captions may use two lines; never ellipsize a result.
+                for (int size = 20; size > 16 && label.GetLineCount() > 2;)
+                    label.AddThemeFontSizeOverride("font_size", --size);
+            }
+        });
     }
 
     private void BuildTravelOrderRow(BookOrder order)

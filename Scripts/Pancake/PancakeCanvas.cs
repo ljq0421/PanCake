@@ -14,16 +14,17 @@ public partial class PancakeCanvas : Control
     private int _stoveLevel = 1;
     private float _batterDropProgress = 1.0f;
     private bool _foodOnly;
-    private BrushRevealLayer? _sauceReveal;
+    private TextureRect? _sauceReveal;
     private PancakeToppingLayer? _toppingLayer;
     private long _visualGeneration = -1;
-    internal BrushRevealLayer? SauceReveal => _sauceReveal;
+    internal TextureRect? SauceReveal => _sauceReveal;
     internal void EnableIngredientDetail(TianjinArtCatalog art)
     {
         if (_sauceReveal is not null) return;
         _art = art;
-        _sauceReveal = new BrushRevealLayer { Name = "SauceTrail", ZIndex = 1 };
-        _sauceReveal.Configure(_art.PancakeSauce);
+        _sauceReveal = new TextureRect { Name = "SauceAmount", ZIndex = 1,
+            Texture = _art.PancakeSauce, ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+            StretchMode = TextureRect.StretchModeEnum.Scale, MouseFilter = MouseFilterEnum.Ignore };
         AddChild(_sauceReveal);
         _toppingLayer = new PancakeToppingLayer { Name = "Toppings", ZIndex = 2, MouseFilter = MouseFilterEnum.Ignore, DrawFood = DrawToppings };
         AddChild(_toppingLayer);
@@ -34,7 +35,6 @@ public partial class PancakeCanvas : Control
         if (_visualGeneration != _runtime.Generation)
         {
             _visualGeneration = _runtime.Generation;
-            _sauceReveal.ResetReveal();
             _ingredientMotion.Clear();
         }
         Rect2 surface = GetSurfaceRect();
@@ -44,8 +44,6 @@ public partial class PancakeCanvas : Control
             && _runtime.State is not (PancakeState.Empty or PancakeState.Folded or PancakeState.Bagged or PancakeState.Delivered);
         _sauceReveal.Modulate = new Color(1, 1, 1, Mathf.Clamp((float)(_runtime.SauceCoverage / SauceRules.MaximumAmount), 0, 1));
     }
-    internal void PaintSauce(Vector2 globalPoint) { SyncIngredientDetail(); _sauceReveal?.PaintAtGlobal(globalPoint); }
-    internal void EndSauceStroke() => _sauceReveal?.EndStroke();
     private double _lastSpread;
     private float _edgeRelaxation;
     internal float EdgeRelaxation => _edgeRelaxation;
@@ -285,7 +283,7 @@ public partial class PancakeCanvas : Control
         {
             food.EnableIngredientDetail(_art);
             food._visualGeneration = snapshot.Generation;
-            food._sauceReveal!.CopyReveal(_sauceReveal);
+            food.SyncIngredientDetail();
         }
         return preview;
     }

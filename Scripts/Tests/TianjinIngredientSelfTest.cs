@@ -84,16 +84,14 @@ public partial class TianjinIngredientSelfTest : Node
                 _station.Machine.Runtime.State = PancakeState.SideBReady; _station.RefreshForCapture(); Click("sauce");
                 var reveal = canvas.SauceReveal!;
                 Press(.20f, .5f); Move(.80f, .5f); Release();
-                Check(reveal.Sample(new(.5f, .5f)) > .9f, "fast stroke fills the path between input events");
-                Check(reveal.Sample(new(.5f, .25f)) == 0, "unbrushed sauce remains hidden");
-                Press(.5f, .2f); Release();
-                Check(reveal.Sample(new(.5f, .34f)) == 0, "lifting prevents a bridge to the next stroke");
+                await Wait();
+                Check(reveal.Material is null && reveal.Visible, "whole pancake sauce uses original art without a stroke mask");
                 double amount = _station.Machine.Runtime.SauceCoverage;
-                await Wait(); await Shot($"{width}-sauce-trail");
+                await Wait(); await Shot($"{width}-sauce-amount");
                 if (Capture)
                 {
                     using var painted = GetViewport().GetTexture().GetImage();
-                    Vector2 p = canvas.GetGlobalTransformWithCanvas() * canvas.GetSurfaceRect().GetCenter();
+                    Vector2 p = canvas.GetGlobalTransformWithCanvas() * (canvas.GetSurfaceRect().Position + canvas.GetSurfaceRect().Size * new Vector2(.5f, .25f));
                     p *= painted.GetSize() / GetViewport().GetVisibleRect().Size;
                     Color withSauce = painted.GetPixel((int)p.X, (int)p.Y);
                     reveal.SelfModulate = new Color(1, 1, 1, 0);
@@ -101,23 +99,22 @@ public partial class TianjinIngredientSelfTest : Node
                     RenderingServer.ForceDraw(false);
                     using var plain = GetViewport().GetTexture().GetImage();
                     Color withoutSauce = plain.GetPixel((int)p.X, (int)p.Y);
-                    Check(Mathf.Abs(withSauce.G - withoutSauce.G) > .025f, "painted sauce changes actual rendered food pixels");
+                    Check(Mathf.Abs(withSauce.G - withoutSauce.G) > .025f, "sauce changes rendered food outside the brush path");
                     reveal.SelfModulate = Colors.White;
                 }
                 Check(_station.Machine.Runtime.SauceCoverage == amount, "visual updates never add sauce quantity");
-                reveal.ResetReveal();
-                Press(.2f, .5f); Move(-.2f, .5f); Move(.8f, .5f); Release();
-                Check(reveal.Sample(new(.5f, .5f)) == 0, "leaving pancake breaks the visual path");
-                reveal.ResetReveal();
-                Press(.2f, .5f);
-                _station.Paused = true; _station.Tick(.01); _station.Paused = false;
-                Press(.8f, .5f); Release();
-                Check(reveal.Sample(new(.5f, .5f)) == 0, "pause and resume cannot join unrelated strokes");
-                reveal.ResetReveal();
-                Press(.2f, .5f); Move(.8f, .5f); Release();
+                float previousAlpha = -1;
+                foreach (double quantity in new[] { 0.0, .5, 1.0, 1.5 })
+                {
+                    _station.Machine.SetSauceCoverage(quantity);
+                    _station.RefreshForCapture(); await Wait();
+                    Check(Mathf.IsEqualApprox(reveal.Modulate.A, (float)(quantity / SauceRules.MaximumAmount)) && reveal.Modulate.A > previousAlpha,
+                        $"whole pancake darkens with sauce quantity {quantity}");
+                    previousAlpha = reveal.Modulate.A;
+                    await Shot($"{width}-sauce-{quantity * 100:0}");
+                }
                 _station.Machine.SetSauceCoverage(1);
                 Check(_station.TryInvokeProductionShortcut(Key.F), "existing finish-sauce action still accepts");
-                Check(reveal.Sample(new(.5f, .25f)) == 0, "finish does not auto-paint untouched food");
                 int scallions = _station.Inventory.GetQuantity("scallion");
                 Click("scallion"); Click("scallion");
                 Check(_station.Inventory.GetQuantity("scallion") == scallions - 1, "scallion clicks consume once before animation ends");
@@ -130,8 +127,8 @@ public partial class TianjinIngredientSelfTest : Node
                 {
                     AddChild(preview);
                     var previewFood = preview.GetChildren().OfType<PancakeCanvas>().Single();
-                    Check(previewFood.SauceReveal!.Sample(new(.5f, .5f)) > .9f, "trash preview carries actual painted sauce");
-                    Check(!ReferenceEquals(previewFood.SauceReveal.Material, reveal.Material), "preview has an independent mask material");
+                    Check(Mathf.IsEqualApprox(previewFood.SauceReveal!.Modulate.A, 1f / (float)SauceRules.MaximumAmount), "trash preview preserves sauce quantity shading");
+                    Check(previewFood.SauceReveal.Material is null, "preview also uses whole pancake shading");
                     preview.QueueFree();
                 }
                 Check(_station.TryInvokeProductionShortcut(Key.F), "fold accepts during landing tails");
@@ -140,7 +137,7 @@ public partial class TianjinIngredientSelfTest : Node
                 Check(_station.TryInvokeProductionShortcut(Key.F), "bag immediately follows fold");
                 Check(_station.CanDeliverProduct("finished_pancake"), "new material effects preserve delivery readiness");
                 _station.ResetForDay(); await Wait();
-                Check(reveal.Sample(new(.5f, .5f)) == 0, "new pancake clears old sauce");
+                Check(!reveal.Visible && reveal.Modulate.A == 0, "new pancake clears old sauce");
                 // A late egg flight must not survive discard and attach to a replacement pancake.
                 stove.TryAccept("batter"); _station.CancelInput();
                 _station.Machine.TryExecute(PancakeCommand.BeginSpread); _station.Machine.SetSpreadCoverage(1);

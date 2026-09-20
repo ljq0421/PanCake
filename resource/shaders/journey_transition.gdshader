@@ -42,6 +42,43 @@ void fragment() {
             cloth = mix(cloth, vec3(0.72, 0.52, 0.28), hem);
             result = vec4(cloth, 1.0);
         }
+    } else if (effect == 4 || effect == 5) {
+        // A bounded paper curl crosses the spread and its spine. Closing mirrors
+        // the turn, without folding the workbench or the full-screen dimmer.
+        vec2 local = (uv - area.xy) / max(area.zw, vec2(0.001));
+        bool inside = all(greaterThanEqual(local, vec2(0.0))) && all(lessThanEqual(local, vec2(1.0)));
+        result = vec4(old.rgb, 1.0 - p);
+        if (inside) {
+            float x = effect == 5 ? 1.0 - local.x : local.x;
+            float lift = sin(p * 3.14159265);
+            float curl = 0.19 * lift;
+            // A slight tilt and bowed fold keep the edge from reading as a wipe.
+            float edge = 1.0 - p * 1.22
+                + lift * (0.045 * (local.y - 0.5) + 0.025 * sin(local.y * 3.14159265));
+            float d = x - edge;
+            result = vec4(0.0);
+            if (d < 0.0) {
+                result = old;
+                result.rgb *= 1.0 - 0.20 * exp(d * 45.0) * lift;
+            } else if (d < curl) {
+                float roll = d / max(curl, 0.0001);
+                float bend = sin(roll * 3.14159265);
+                float inset = 0.032 * bend * lift;
+                if (local.y >= inset && local.y <= 1.0 - inset) {
+                    vec3 paper = mix(vec3(0.66, 0.48, 0.29), vec3(0.99, 0.94, 0.82), pow(bend, 0.55));
+                    // The departing book's ink shows faintly through its reverse.
+                    float source_x = clamp(edge - d, 0.0, 1.0);
+                    if (effect == 5) {
+                        vec3 ink = texture(TEXTURE, area.xy + vec2(1.0 - source_x, local.y) * area.zw).rgb;
+                        paper = mix(paper, ink, 0.07 * bend);
+                    }
+                    result = vec4(paper, smoothstep(0.0, 0.035, p));
+                }
+            } else {
+                float shadow = 0.26 * exp(-(d - curl) * 48.0) * lift;
+                result = vec4(0.18, 0.10, 0.04, shadow);
+            }
+        }
     } else {
         vec2 local = (uv - area.xy) / max(area.zw, vec2(0.001));
         bool inside = all(greaterThanEqual(local, vec2(0.0))) && all(lessThanEqual(local, vec2(1.0)));

@@ -27,6 +27,17 @@ public partial class BusinessBookSelfTest : Node
             InterfaceLessons.MarkAllSeen(settings);
             var catalog = GetNode<DataCatalog>("/root/DataCatalog"); Check(catalog.IsValid,"catalog valid");
             CheckHighlightModel();
+            string? previewCity = OS.GetCmdlineUserArgs().FirstOrDefault(a => a.StartsWith("--motion-preview=", StringComparison.Ordinal));
+            if (previewCity is not null)
+            {
+                await PreviewTravelMotion(previewCity.Split('=')[1]);
+                GetTree().Quit(); return;
+            }
+            if (OS.GetCmdlineUserArgs().Contains("--motion-only"))
+            {
+                await CheckTravelMotion(catalog);
+                GD.Print($"BUSINESS_BOOK_MOTION_TEST_RESULT passed={_checks} failed=0"); GetTree().Quit(); return;
+            }
             if (OS.GetCmdlineUserArgs().Contains("--summary-only"))
             {
                 await CheckReferencePresentation(catalog);
@@ -194,7 +205,7 @@ public partial class BusinessBookSelfTest : Node
             view.Open(model);view.FinishAnimation();await Frames();
             var text=view.Descendants<Label>().Where(l=>l.IsVisibleInTree()).Select(l=>l.Text).ToArray();
             Check((closing && city is "tianjin" or "wuhan" ? !text.Contains("已收摊") : text.Contains(closing?"已收摊":"营业中 · 已暂停"))&&text.Contains("营业小结"),city+" state and chapter");
-            Check(!text.Any(t=>(t.Contains("今日") && !(city is "tianjin" or "wuhan" && t is "今日接待" or "今日亮点"))||t.Contains("截至目前")||t=="营业账本"||t=="Esc 返回"),city+" concise summary copy");
+            Check(!text.Any(t=>(t.Contains("今日") && !(city is "tianjin" or "wuhan" && t is "今日接待" or "今日亮点" or "今日收入"))||t.Contains("截至目前")||t=="营业账本"||t=="Esc 返回"),city+" concise summary copy");
             Check(next.IsVisibleInTree()&&!previous.Visible&&next.TooltipText.Length==0&&next.Size.X>=64&&next.Size.Y>=64,city+" forward edge affordance without hover text");
             Check(view.CloseButton.TooltipText.Length==0&&view.CloseButton.HasFocus(),city+" default close focus without hover text");
             var rate=view.Descendants<Label>().Single(l=>l.Text.StartsWith("完成率"));
@@ -248,7 +259,7 @@ public partial class BusinessBookSelfTest : Node
         await ToSignal(GetTree().CreateTimer(.25),SceneTreeTimer.SignalName.Timeout);
         Check(view.DetailVisible&&pageEvents==events+3,"rapid navigation resolves to last target and emits once per change");
         ProjectSettings.SetSetting("accessibility/reduce_motion",true);view.SelectPage(false);
-        Check(!view.DetailVisible&&view.Descendants<Label>().Single(l=>l.Text=="收入").IsVisibleInTree(),"reduced motion updates instantly");
+        Check(!view.DetailVisible&&view.Descendants<Label>().Single(l=>l.Text=="今日收入").IsVisibleInTree(),"reduced motion updates instantly");
         // Keyboard uses the focused arrow, and close interrupts a running page animation.
         next.GrabFocus();
         foreach(bool pressed in new[]{true,false})GetViewport().PushInput(new InputEventKey{Keycode=Key.Enter,Pressed=pressed},true);

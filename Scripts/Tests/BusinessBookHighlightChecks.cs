@@ -29,6 +29,19 @@ public partial class BusinessBookSelfTest
     {
         var section = view.Descendants<Control>().Single(c => c.Name == "BookHighlights");
         var progress = view.Descendants<ProgressBar>().Single(c => c.Name == "BookCompletionProgress");
+        var book = view.Descendants<Control>().Single(c => c.Name == "SettlementBook");
+        var reception = view.Descendants<Label>().Single(l => l.Text == "今日接待");
+        var evaluation = view.Descendants<Label>().Single(l => l.Name == "BookSatisfaction");
+        var income = view.Descendants<Label>().Single(l => l.Text == "收入详情");
+        var note = view.Descendants<Control>().Single(c => c.Name == "DailyNote");
+        var title = view.Descendants<Label>().Single(l => l.Text == "营业小结");
+        Check(new Control[] { reception, evaluation, section }.All(c => InLocalSpace(book, c).End.X < book.Size.X / 2),
+            "reception, evaluation and highlights read on the left page");
+        Check(new Control[] { income, note }.All(c => InLocalSpace(book, c).Position.X > book.Size.X / 2),
+            "income and daily note read on the right page");
+        Check(!title.GetGlobalRect().Intersects(reception.GetGlobalRect()), "left-page reception clears the book title");
+        Check(!view.Descendants<Label>().Any(l => l.Text == "最受欢迎" || l.Name == "BookBestSeller"),
+            "travel summary removes the entire best-seller section");
         Check(Math.Abs(progress.Value - (view.Model.CompletionRate ?? 0)) < .001, "completion bar agrees with underlying ratio");
         var chips = section.GetChildren().OfType<Panel>().Where(c => c.Name.ToString().StartsWith("Highlight")).ToArray();
         Check(chips.Length == view.Model.Highlights.Count, "only earned highlights are rendered");
@@ -76,13 +89,6 @@ public partial class BusinessBookSelfTest
                     };
                 view.Open(model); view.FinishAnimation(); await Frames();
                 CheckTravelHighlightLayout(view); CheckArtPage(view, city, scenario.Name);
-                if (scenario.Name == "long-amounts")
-                {
-                    var best = view.Descendants<Label>().Single(l => l.Name == "BookBestSeller");
-                    Check(best.GetLineCount() == 2 && best.GetVisibleLineCount() == 2 && best.TooltipText == best.Text,
-                        $"long summary food uses two lines and retains its full name: lines={best.GetLineCount()} visible={best.GetVisibleLineCount()} tooltip={best.TooltipText}");
-                    Check(!best.GetGlobalRect().Intersects(view.Descendants<Label>().Single(l => l.Text == "最受欢迎").GetGlobalRect()), "long product name clears its heading");
-                }
                 if (Capture) await Shot($"highlights-{city}-{scenario.Name}");
             }
             TranslationServer.SetLocale("en");

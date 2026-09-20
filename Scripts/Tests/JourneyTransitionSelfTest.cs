@@ -39,6 +39,11 @@ public partial class JourneyTransitionSelfTest : Node
             await Frames();
             _home.PresentHome(); await Complete();
             Check(!_motion.Active, "automatic completion releases transition");
+            if (OS.GetCmdlineUserArgs().Contains("--settings-fold-preview"))
+            {
+                await SettingsFoldPreview();
+                GD.Print($"SETTINGS_FOLD_PREVIEW_PASS checks={_checks}"); GetTree().Quit(); return;
+            }
             await Capture("home");
             string before = File.ReadAllText(Path.Combine(fixture, "save.json"));
             _home.PresentMap();
@@ -48,11 +53,24 @@ public partial class JourneyTransitionSelfTest : Node
             _motion.Finish(); await Frames();
             _home.PresentHome(); await Sample("page-back", .6f); _motion.Finish(); await Frames();
             FindButton("Settings").EmitSignal(BaseButton.SignalName.Pressed);
+            CheckEffect(JourneyTransition.Effect.SpreadOpen, "home settings unfolds from spine");
+            await Sample("settings-opening-early", .2f);
+            await Sample("settings-opening-late", .8f);
             await Sample("settings-opening", .5f); _motion.Finish(); await Frames();
             Check(_home.ModalOpen, "settings open");
             GetViewport().PushInput(new InputEventKey { Keycode = Key.Escape, Pressed = true }, true);
+            CheckEffect(JourneyTransition.Effect.SpreadClose, "home settings folds towards spine");
             await Sample("settings-closing", .5f); _motion.Finish();
             Check(!_home.ModalOpen, "settings close restores navigation");
+            await Frames();
+            FindButton("Help").EmitSignal(BaseButton.SignalName.Pressed);
+            CheckEffect(JourneyTransition.Effect.SpreadOpen, "help uses soft spread");
+            await Sample("help-opening", .4f); _motion.Finish(); await Frames();
+            FindButton("MusicCredits").EmitSignal(BaseButton.SignalName.Pressed);
+            CheckEffect(JourneyTransition.Effect.SpreadOpen, "music credits uses soft spread");
+            await Complete(); Check(!_motion.Active, "paper turn finishes automatically");
+            GetViewport().PushInput(new InputEventKey { Keycode = Key.Escape, Pressed = true }, true);
+            await Complete(); Check(!_home.ModalOpen && !_motion.Active, "help closes and releases overlay");
             Check(before == File.ReadAllText(Path.Combine(fixture, "save.json")), "navigation does not write gameplay save");
             foreach (string city in new[] { StableIds.Cities.Tianjin, StableIds.Cities.Wuhan })
             {
@@ -78,11 +96,16 @@ public partial class JourneyTransitionSelfTest : Node
                 screen.Notification((int)NotificationApplicationFocusIn);
                 if (screen is TianjinDayScreen tianjin) tianjin.OpenBusinessDetails();
                 else ((WuhanDayScreen)screen).OpenBusinessDetails();
+                CheckEffect(JourneyTransition.Effect.SpreadOpen, city + " ledger uses soft spread");
+                Check(screen.FindChildren("SettlementBook", "Control", true, false).OfType<Control>()
+                    .Where(b => b.IsVisibleInTree()).All(b => b.Modulate.A == 1f), city + " paper stays opaque during turn");
                 await Sample(city + "-business-book", .5f); _motion.Finish(); await Frames();
                 if (screen is TianjinDayScreen td) td.CloseBusinessDetails();
                 else ((WuhanDayScreen)screen).CloseBusinessDetails();
+                CheckEffect(JourneyTransition.Effect.SpreadClose, city + " ledger folds towards spine");
                 await Sample(city + "-business-book-close", .5f); _motion.Finish(); await Frames();
                 screen.FindChildren("HudPause", "Button", true, false).OfType<Button>().Single().EmitSignal(BaseButton.SignalName.Pressed);
+                CheckEffect(JourneyTransition.Effect.OpenBook, city + " illustrated pause keeps existing effect");
                 await Sample(city + "-pause", .6f); _motion.Finish(); await Frames();
                 Check(day.IsPaused, "manual pause survives transition completion");
                 var abandon = screen.GetChildren().OfType<ConfirmationDialog>().Single();
@@ -102,6 +125,47 @@ public partial class JourneyTransitionSelfTest : Node
         catch (Exception exception) { GD.PushError(exception.ToString()); GetTree().Quit(1); }
     }
     private Button FindButton(string name) => _home.FindChildren(name, "Button", true, false).OfType<Button>().First(b => b.IsVisibleInTree());
+    private async Task SettingsFoldPreview()
+    {
+        if (DisplayServer.GetName() == "headless") throw new InvalidOperationException("Preview requires a rendered viewport.");
+        _directory = ProjectSettings.GlobalizePath("res://.tmp/settings-fold-preview");
+        Directory.CreateDirectory(_directory);
+        FindButton("Settings").EmitSignal(BaseButton.SignalName.Pressed);
+        CheckEffect(JourneyTransition.Effect.SpreadOpen, "only home settings uses new spread");
+        _motion.HoldForCapture(0f);
+        GetViewport().PushInput(new InputEventKey { Keycode = Key.Escape, Pressed = true }, true);
+        Check(_home.ModalOpen, "opening blocks accidental close");
+        for (int i = 0; i <= 26; i++)
+        {
+            float time = i / 26f;
+            _motion.HoldForCapture((1f - Mathf.Cos(time * Mathf.Pi)) * .5f);
+            await Capture($"open-{i:00}");
+        }
+        _motion.Finish(); await Frames();
+        GetViewport().PushInput(new InputEventKey { Keycode = Key.Escape, Pressed = true }, true);
+        CheckEffect(JourneyTransition.Effect.SpreadClose, "settings closes towards spine");
+        for (int i = 0; i <= 26; i++)
+        {
+            float time = i / 26f;
+            _motion.HoldForCapture((1f - Mathf.Cos(time * Mathf.Pi)) * .5f);
+            await Capture($"close-{i:00}");
+        }
+        _motion.Finish(); await Frames();
+        Check(!_home.ModalOpen && !_motion.Active, "close restores home input");
+        FindButton("Settings").EmitSignal(BaseButton.SignalName.Pressed);
+        await Complete(); Check(_home.ModalOpen && !_motion.Active, "spread completes naturally");
+        GetViewport().PushInput(new InputEventKey { Keycode = Key.Escape, Pressed = true }, true);
+        await Complete(); Check(!_home.ModalOpen && !_motion.Active, "fold completes naturally");
+        FindButton("Help").EmitSignal(BaseButton.SignalName.Pressed);
+        CheckEffect(JourneyTransition.Effect.SpreadOpen, "help shares approved spread");
+        _motion.Finish();
+    }
+    private void CheckEffect(JourneyTransition.Effect expected, string message)
+    {
+        if (DisplayServer.GetName() == "headless") return;
+        var material = (ShaderMaterial)_motion.GetNode<TextureRect>("TransitionFrame").Material;
+        Check(_motion.Active && material.GetShaderParameter("effect").AsInt32() == (int)expected, message);
+    }
     private void Check(bool condition, string message) { if (!condition) throw new InvalidOperationException(message); _checks++; GD.Print("PASS " + message); }
     private async Task Frames() { for (int i = 0; i < 3; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame); }
     private async Task Complete() { await ToSignal(GetTree().CreateTimer(.8), SceneTreeTimer.SignalName.Timeout); await Frames(); }
@@ -114,7 +178,10 @@ public partial class JourneyTransitionSelfTest : Node
     private async Task Capture(string name)
     {
         if (DisplayServer.GetName() == "headless") return;
-        await Frames(); await ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
+        await Frames();
+        var drawn = ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
+        RenderingServer.ForceDraw();
+        await drawn;
         using var image = GetViewport().GetTexture().GetImage();
         Check(image.SavePng(Path.Combine(_directory, name.Replace(':', '-') + ".png")) == Error.Ok, "capture " + name);
     }

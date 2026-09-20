@@ -129,6 +129,7 @@ public partial class YangzhouDayScreen : Control
         _catalog = catalog; _save = save;
         var city = save.Data.Yangzhou;
         Session = new(catalog, day, city.EquipmentLevels.GetValueOrDefault(YangzhouCatalog.BoardId, 1), city.EquipmentLevels.GetValueOrDefault(YangzhouCatalog.SteamerId, 1));
+        save.BindRun(Session);
         BusinessFeedbackAudio.Attach(this, Session.Feedback, CanWork);
         _book.Reset(); _committed = _focusLost = false; _resultPanel.Hide(); _leave.Hide(); _return.Text = "收好收入 · 返回经营首页";
         _feedback.Text = ""; Render(); return true;

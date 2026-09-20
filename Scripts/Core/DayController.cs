@@ -104,6 +104,7 @@ public partial class DayController : Node
                 Customers = new[] { new PlannedCustomer { CustomerId = example.CustomerId,
                     CustomerTypeId = example.CustomerTypeId, ArrivalTime = 0, Order = example.Order } },
             };
+        if (IsInsideTree()) GetNodeOrNull<SaveService>("/root/SaveService")?.BindRun(CurrentPlan);
         CustomerQueue = new CustomerQueue(CurrentPlan, catalog.CustomersById, config.PatienceMultiplier, config.MaxWaitingCustomers,
             config.Constraints.PressureDelaySeconds, config.Constraints.MaxPressureDelaySeconds, config.CityId == StableIds.Cities.Xian ? config.Constraints : null);
         GuangzhouStockCount = null;

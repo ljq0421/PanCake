@@ -153,18 +153,21 @@ public partial class SaveService : Node
     }
     public override void _Ready()
     {
+        if (_explicitTestPath) return;
         if (ExperienceProfile.IsDemo)
         {
             IsDemo = true;
             _savePath = ExperienceProfile.ProgressPath(IsDemo); _legacyPath = null;
         }
+        _slotRoot = ProjectSettings.GlobalizePath(IsDemo ? "user://demo/journeys" : "user://journeys");
         Load();
     }
-    public void UsePathForTests(string path) { _savePath = path; _legacyPath = null; Load(); }
-    public void UsePathsForTests(string currentPath, string legacyPath) { _savePath = currentPath; _legacyPath = legacyPath; Load(); }
+    public void UsePathForTests(string path) { _explicitTestPath = true; _slotRoot = null; ActiveSlotId = null; _savePath = path; _legacyPath = null; Load(); }
+    public void UsePathsForTests(string currentPath, string legacyPath) { _explicitTestPath = true; _slotRoot = null; ActiveSlotId = null; _savePath = currentPath; _legacyPath = legacyPath; Load(); }
 
     public void Load()
     {
+        if (UsesSlots) { LoadSlots(); return; }
         DemoMigrationNotice = ""; DemoMigrationRetryAvailable = false;
         PendingJourneyCompletion = null;
         ClearLoadError(); MigratedLegacySave = false; HasSavedGame = false;
@@ -219,6 +222,7 @@ public partial class SaveService : Node
 
     public DayCommitResult CommitDay(DayResult result, DayPlan plan, DayConfig config)
     {
+        CheckRunOwner(plan);
         if (IsDemo && !CanEnter(config.CityId, result.Day)) throw new IOException("当前城市或营业日尚未开放。");
         if (_settledRuns.TryGetValue(plan, out _)) return new(0, false);
         SaveData snapshot = Clone(Data); CityProgressData city = Data.GetCity(config.CityId);
@@ -310,6 +314,7 @@ public partial class SaveService : Node
 
     public bool TrySave(out string error)
     {
+        if (UsesSlots) return SaveActiveSlot(out error);
         if (HasLoadError) { error = "损坏存档尚未确认重置，禁止覆盖。"; return false; }
         try
         {
@@ -371,7 +376,7 @@ public partial class SaveService : Node
             if (legacy.TianjinCompleted || legacy.UnlockedCityIds.Contains(StableIds.Cities.Wuhan, StringComparer.Ordinal)) { Data.UnlockedCityIds.Add(StableIds.Cities.Wuhan); Data.Cities[StableIds.Cities.Wuhan] = NewWuhanProgress(); }
             if (!TrySave(out string error)) throw new IOException(error); MigratedLegacySave = true;
         }
-        catch (Exception exception) { HasLoadError = true; LoadErrorMessage = $"旧存档迁移失败：{exception.Message}"; Data = new SaveData(); GD.PushError(LoadErrorMessage); }
+        catch (Exception exception) { _loadIoFailure = exception is IOException or UnauthorizedAccessException && exception is not InvalidDataException; HasLoadError = true; LoadErrorMessage = $"旧存档迁移失败：{exception.Message}"; Data = new SaveData(); GD.PushError(LoadErrorMessage); }
     }
     private static LegacySaveDataV2 ConvertV1(LegacySaveDataV1 legacy)
     {
@@ -414,9 +419,10 @@ public partial class SaveService : Node
     }
     private void SetCorruptError(string absolute, Exception exception)
     {
+        _loadIoFailure = exception is IOException or UnauthorizedAccessException && exception is not InvalidDataException;
         HasLoadError = true; LoadErrorMessage = $"存档无法读取：{exception.Message}"; CorruptBackupPath = absolute + $".corrupt-{DateTime.Now:yyyyMMdd-HHmmssfff}.bak";
         try { File.Copy(absolute, CorruptBackupPath, true); } catch { CorruptBackupPath = string.Empty; }
         GD.PushError(LoadErrorMessage);
     }
-    private void ClearLoadError() { HasLoadError = false; LoadErrorMessage = string.Empty; CorruptBackupPath = string.Empty; }
+    private void ClearLoadError() { _loadIoFailure = false; HasLoadError = false; LoadErrorMessage = string.Empty; CorruptBackupPath = string.Empty; }
 }

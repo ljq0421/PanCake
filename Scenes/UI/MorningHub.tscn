@@ -4204,30 +4204,3 @@ theme_override_styles/disabled = SubResource("StyleBoxFlat_ceadd")
 theme_override_styles/focus = SubResource("StyleBoxFlat_fkunf")
 text = "合上手账"
 metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.TianjinLedger|_focusOrder|list|16")
-
-[node name="ResetLedgerProgress" type="Button" parent="TianjinLedger" unique_id=266685377]
-custom_minimum_size = Vector2(152, 50)
-layout_mode = 0
-offset_left = 270.0
-offset_top = 1010.0
-offset_right = 422.0
-offset_bottom = 1060.0
-theme_override_colors/font_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
-theme_override_colors/font_focus_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
-theme_override_colors/font_pressed_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
-theme_override_colors/font_hover_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
-theme_override_colors/font_disabled_color = Color(0.50980395, 0.43529412, 0.3647059, 1)
-theme_override_font_sizes/font_size = 18
-theme_override_styles/normal = SubResource("StyleBoxFlat_kt1ek")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_7yelr")
-theme_override_styles/hover = SubResource("StyleBoxFlat_cl6mb")
-theme_override_styles/disabled = SubResource("StyleBoxFlat_4pcck")
-theme_override_styles/focus = SubResource("StyleBoxFlat_81gei")
-text = "重置进度"
-metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.TianjinLedger|_focusOrder|list|17")
-
-[node name="@ConfirmationDialog@104" type="ConfirmationDialog" parent="." unique_id=847927340]
-title = "重置进度"
-ok_button_text = "确认重置"
-dialog_text = "将清除金币、升级与每日最佳记录。此操作不可撤销。"
-metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.MorningHub|_resetDialog")

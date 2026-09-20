@@ -39,7 +39,7 @@ public partial class SaveService
         && day <= Data.GetCity(cityId).HighestUnlockedDay;
 
     public void UseDemoPathForTests(string path)
-    { IsDemo = true; _savePath = path; _legacyPath = null; Load(); }
+    { _explicitTestPath = true; _slotRoot = null; ActiveSlotId = null; IsDemo = true; _savePath = path; _legacyPath = null; Load(); }
 
     // Validate old data before touching it. Unknown formats must never reset.
     private bool TryResetLegacyDemo(string absolute, string json)

@@ -23,6 +23,12 @@ public partial class StageFourSelfTest : Node
         try
         {
             DataCatalog catalog = GetNode<DataCatalog>("/root/DataCatalog");
+            if (OS.GetCmdlineUserArgs().Contains("--save-only"))
+            {
+                TestAllDaysCompletable(catalog); TestFullChapterController(catalog); TestStarsAndSave(catalog);
+                GD.Print($"TIANJIN_SAVE_RESULT passed={_passed} failed={_failed}");
+                GetTree().Quit(_failed == 0 ? 0 : 1); return;
+            }
             if (OS.GetCmdlineUserArgs().Contains("--customer-slots-only"))
             {
                 await TestDirectDelivery(catalog);

@@ -28,7 +28,6 @@ public partial class MorningHub : Control
     private Button _openButton = null!;
     private HBoxContainer _equipment = null!;
     private TianjinLedger _ledger = null!;
-    private ConfirmationDialog _resetDialog = null!;
 
     public override void _Ready()
     {
@@ -39,11 +38,6 @@ public partial class MorningHub : Control
         this.FindButton("经营手账").Pressed += ShowLedger;
         this.FindButton("城市地图").Pressed += () => MapRequested?.Invoke();
         _ledger.DayRequested += day => DayRequested?.Invoke(day);
-        _ledger.ResetRequested += () => { _ledger.ConfirmationOpen = true; _resetDialog.PopupCentered(); };
-        _resetDialog.Confirmed += ResetProgress;
-        _resetDialog.CloseRequested += RestoreLedgerFocus;
-        _resetDialog.Canceled += RestoreLedgerFocus;
-        _resetDialog.Confirmed += RestoreLedgerFocus;
         GetNode<Button>("%StoveUpgrade").Pressed += () => Purchase(NextStoveUpgrade()?.Id ?? string.Empty);
         GetNode<Button>("%FryerUpgrade").Pressed += () => Purchase(NextFryerUpgrade()?.Id ?? string.Empty);
         GetNode<Button>("%StationUpgrade").Pressed += () => Purchase(NextStationUpgrade()?.Id ?? string.Empty);
@@ -61,21 +55,6 @@ public partial class MorningHub : Control
     {
         if (_save is not null) _save.Changed -= Render;
     }
-    private void RestoreLedgerFocus()
-    {
-        _ledger.ConfirmationOpen = false;
-        _ledger.FocusSelectedDay();
-    }
-
-    private void ResetProgress()
-    {
-        bool reset = _save.ResetProgress(out string error);
-        _message.Text = string.IsNullOrEmpty(error) ? "进度已重置，今天重新开张。" : error;
-        _message.Modulate = string.IsNullOrEmpty(error) ? TianjinUi.Green : TianjinUi.Red;
-        if (reset) _ledger.Open(_save);
-        _ledger.ShowNotice(_message.Text, !reset);
-    }
-
     public void ShowLedger() => _ledger.Open(_save);
 
     private void Render()
@@ -95,7 +74,7 @@ public partial class MorningHub : Control
         RenderLedger();
         if (_save.HasLoadError)
         {
-            _message.Text = "！ 存档无法读取。请打开经营手账并重置进度后再营业。";
+            _message.Text = "！ 存档无法读取。请返回首页，在存档管理中选择旅程。";
             _message.Modulate = TianjinUi.Red;
         }
     }

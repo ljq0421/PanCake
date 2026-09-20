@@ -111,7 +111,7 @@ public partial class WuhanLedger : Control
         _revenue.Text = hasRecord ? $"¥{best!.TotalRevenue}" : "";
         _satisfaction.Text = hasRecord ? $"满意度 {best!.Satisfaction:0}%" : "";
         _perfect.Text = hasRecord ? $"Perfect {best!.PerfectOrders} 单" : "";
-        _empty.Text = save.HasLoadError ? "存档无法读取\n请返回天津经营手账重置进度。"
+        _empty.Text = save.HasLoadError ? "存档无法读取\n请返回首页管理存档。"
             : locked ? $"尚未解锁\n完成 Day {SelectedDay - 1} 后再来翻看。"
             : "等待开店\n今天的故事，还等你写下。";
         _note.Text = save.HasLoadError ? "重置会清除所有城市进度，并需要确认。"

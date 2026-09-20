@@ -198,7 +198,7 @@ public partial class StartScreen
         }
         bool hasRecord = p.DayBestRecords.TryGetValue(SelectedDay, out var best) && SelectedDay <= p.HighestUnlockedDay && !_save!.HasLoadError;
         Text(_body, "RecordTitle", _save.HasLoadError ? "存档无法读取" : hasRecord ? "历史最佳收入" : SelectedDay > p.HighestUnlockedDay ? "营业日尚未解锁" : "等待开店", new(1100, 589, 270, 36), 25);
-        var revenue = Text(_body, "BestRevenue", _save.HasLoadError ? "请通过重置进度恢复" : hasRecord ? $"{best!.TotalRevenue} 金币" : SelectedDay > p.HighestUnlockedDay ? $"完成第 {SelectedDay - 1} 天后开放" : "这一天还没有营业记录", new(1100, 630, 250, 48), hasRecord ? 38 : 23);
+        var revenue = Text(_body, "BestRevenue", _save.HasLoadError ? "请返回首页管理存档" : hasRecord ? $"{best!.TotalRevenue} 金币" : SelectedDay > p.HighestUnlockedDay ? $"完成第 {SelectedDay - 1} 天后开放" : "这一天还没有营业记录", new(1100, 630, 250, 48), hasRecord ? 38 : 23);
         FitTextWidth(revenue, hasRecord ? 38 : 23, 19);
         var satisfaction = Text(_body, "BestMetrics", hasRecord ? $"满意度 {best!.Satisfaction:0}%" : "满意度 —", new(1100, 710, 235, 38), 28);
         FitTextWidth(satisfaction, 28, 19);
@@ -207,11 +207,10 @@ public partial class StartScreen
         var perfect = Text(_body, "BestPerfect", hasRecord ? $"Perfect {best!.PerfectOrders} 单" : "", new(1335, 687, 108, 60), 18, true);
         FitTextWidth(perfect, 18, 12);
         if (_save.HasLoadError)
-            Text(_body, "ReplayNote", "重置会清除全部旅程，操作前会再次确认。", new(1010, 803, 505, 38), 21, true);
+            Text(_body, "ReplayNote", "可返回首页，在存档管理中选择其他旅程。", new(1010, 803, 505, 38), 21, true);
         var start = Button(_body, "StartSelectedDay", $"{(hasRecord ? "再次营业" : "开张")} · 第 {SelectedDay} 天", new(1030, 873, 510, 76), () => RequestBusiness(SelectedDay), true);
         CityPageArtSkin.ApplyPrimaryButton(start, _city);
         start.Disabled = !CanOpenDay(SelectedDay);
-        Button(_body, "ResetLedgerProgress", "重置进度", new(340, 952, 170, 48), RequestLedgerReset);
         Focus("Date" + SelectedDay);
         InterfaceTeaching.Offer(_body, InterfaceLessons.CalendarKey, InterfaceLessons.Calendar,
             () => !ModalOpen && Page == JourneyPage.Ledger);
@@ -223,15 +222,6 @@ public partial class StartScreen
         var font = label.GetThemeFont("font");
         while (size > minimum && label.Tr(label.Text).ToString().Split('\n').Any(line => font.GetStringSize(line, HorizontalAlignment.Left, -1, size).X > label.Size.X)) size--;
         label.AddThemeFontSizeOverride("font_size", size);
-    }
-    private void RequestLedgerReset()
-    {
-        OpenModal("reset-ledger");
-        ConfirmationTitle(_modal, "Title", "重新开始全部旅程？");
-        ConfirmationMessage(_modal, "Warning", "所有城市的营业记录、金币和升级将被清空。\n此操作无法撤销。");
-        ConfirmationAction(_modal, "Cancel", "保留进度", CloseModal);
-        ConfirmationAction(_modal, "Confirm", "确认重置", () => { CloseModal(); _busy = true; NewGameRequested?.Invoke(); }, true);
-        _modalControls[0].GrabFocus();
     }
     private string? _selectedEquipment;
     private string? _equipmentCity;

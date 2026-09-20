@@ -53,6 +53,7 @@ public partial class SaveService
         .Select(id => id == YangzhouCatalog.BoardId ? "干丝台" : "蒸笼").ToArray();
     public DayCommitResult CommitYangzhou(YangzhouSession session)
     {
+        CheckRunOwner(session);
         if (session.Phase != YangzhouPhase.Results) throw new InvalidOperationException("营业尚未结算。");
         if (_settledRuns.TryGetValue(session, out _)) return new(0, false);
         var result = session.Result(); var snapshot = Clone(Data); var city = Data.Yangzhou;

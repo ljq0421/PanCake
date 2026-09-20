@@ -3,12 +3,12 @@ using ProjectCake.Core;
 
 namespace ProjectCake.UI;
 
-public enum JourneyPage { Splash, Home, Opening, NewJourney, Continue, Map, City, Completion, Ledger, Upgrades, Collection }
+public enum JourneyPage { Splash, Home, Opening, NewJourney, Continue, Map, City, Completion, Ledger, Upgrades, Collection, Saves }
 
 /// <summary>Travel navigation uses a single fitted canvas, independent of gameplay views.</summary>
 public partial class StartScreen : Control
 {
-    public event Action? NewGameRequested;
+    public event Action<int>? NewGameRequested;
     public event Action? ContinueRequested;
     public event Action? QuitRequested;
     public JourneyPage Page { get; private set; }
@@ -60,7 +60,7 @@ public partial class StartScreen : Control
         if (_save is not null) _save.Changed -= SaveChanged;
         _save = save; _save.Changed += SaveChanged;
     }
-    private void SaveChanged() { if (!IsVisibleInTree() || _busy) return; if (Page == JourneyPage.Home) RenderHome(); else if (Page is JourneyPage.City or JourneyPage.Ledger or JourneyPage.Upgrades) RefreshCityPage(); }
+    private void SaveChanged() { if (!IsVisibleInTree() || _busy) return; if (Page == JourneyPage.Home) RenderHome(); else if (Page == JourneyPage.Saves) RenderSaves(_selectEmptySlot); else if (Page is JourneyPage.City or JourneyPage.Ledger or JourneyPage.Upgrades) RefreshCityPage(); }
     public void Present() { Show(); if (!_started) { _started = true; RenderSplash(); } else RenderHome(); }
     public void PresentHome() { Show(); RenderHome(); }
     public void PresentMap(Action? returnToSource = null) { Show(); _mapReturn = returnToSource ?? RenderHome; _city = _save?.ContinueCityId ?? JourneyModel.Cities[0].Id; RenderMap(); }
@@ -78,7 +78,7 @@ public partial class StartScreen : Control
     private void SetStatus()
     {
         if (_status is not null) _status.Text = _error.Length > 0 ? _error : _save?.DemoMigrationRetryAvailable == true ? "旧试玩存档升级失败，请检查写入权限后重试。原存档已保留。"
-            : _save?.HasLoadError == true ? "存档无法读取。可在新的旅程中确认重新开局。" : _save?.DemoMigrationNotice ?? "";
+            : !string.IsNullOrEmpty(_save?.SlotError) ? _save.SlotError : _save?.HasLoadError == true ? "存档无法读取。请返回首页管理存档。" : _save?.DemoMigrationNotice ?? "";
     }
     private void Begin(JourneyPage page)
     {
@@ -185,7 +185,7 @@ public partial class StartScreen : Control
             int offset = key.Keycode == Key.Up ? -3 : key.Keycode == Key.Down ? 3 : key.Keycode == Key.Left ? -1 : 1;
             Focus("Date" + Math.Clamp(date + offset, 1, _save!.ChapterLength(_city))); GetViewport().SetInputAsHandled(); return;
         }
-        if (GetViewport().GuiGetFocusOwner() is HSlider && key.Keycode is Key.Left or Key.Right) return;
+        if (GetViewport().GuiGetFocusOwner() is HSlider or LineEdit && key.Keycode is Key.Left or Key.Right) return;
         Control[] candidates = ModalOpen ? _modalControls.Where(c => c.IsVisibleInTree() && (c is not BaseButton b || !b.Disabled)).ToArray()
             : _body.Descendants<Button>().Where(b => !b.Disabled && b.IsVisibleInTree()).Cast<Control>().ToArray();
         if (_settings.DisplayPending && _displayConfirmation is not null) candidates = candidates.Where(c => _displayConfirmation.IsAncestorOf(c)).ToArray();

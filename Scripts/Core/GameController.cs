@@ -91,9 +91,9 @@ public partial class GameController : Node
             _startScreen.RefreshCityPage();
             _startScreen.ShowError(ok ? "设备已升级，下次营业生效。" : error);
         };
-        _startScreen.NewGameRequested += () =>
+        _startScreen.NewGameRequested += slotId =>
         {
-            if (!save.ResetProgress(out string error)) { _startScreen.ShowError(error); return; }
+            if (!save.TryCreateSlot(slotId, out string error)) { _startScreen.ShowError(error); return; }
             ShowOnly(hub);
         };
         _startScreen.ContinueRequested += () =>

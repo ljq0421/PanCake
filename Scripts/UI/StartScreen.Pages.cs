@@ -55,9 +55,10 @@ public partial class StartScreen
             }, bare: true);
         var card = HomeAction("Continue", "继续旅程", "小火车", new(400, 835, 500, 150), RenderContinue);
         card.Disabled = !canContinue; card.Modulate = new Color(1, 1, 1, canContinue ? 1 : .68f);
-        HomeAction("NewGame", "新的旅程", "闭合旅行手账封面｜新旅程入口", new(940, 835, 500, 150), RenderOpening);
+        HomeAction("NewGame", "新的旅程", "闭合旅行手账封面｜新旅程入口", new(940, 835, 500, 150), () => RenderSaves(true));
         HomeAction("BreakfastRecords", "旅途收藏", "已有旅程手账封面", new(1475, 855, 170, 145), PresentBreakfastCollection, small: true);
         HomeAction("WorldMap", "世界地图", "世界地图入口图标", new(1655, 855, 170, 145), () => PresentMap(), small: true);
+        Button(_body, "ManageSaves", "存档管理", new(1610, 725, 225, 60), () => RenderSaves());
         Utilities(); Focus(canContinue ? "Continue" : "NewGame");
         // The wall remains an additional map entrance, after the main actions in keyboard order.
         Button(_body, "WallMap", "", new(490, 205, 990, 470), () => PresentMap(), bare: true, hoverVisual: wall);
@@ -85,16 +86,9 @@ public partial class StartScreen
     }
     private void RequestNewGame()
     {
-        if (_save is null) return;
-        if (!_save.RequiresNewGameConfirmation) { DispatchNewGame(); return; }
-        OpenModal("confirm");
-        ConfirmationTitle(_modal, "ConfirmationTitle", "重新翻开一本旅行手账？");
-        ConfirmationMessage(_modal, "ConfirmationText", (_save.HasLoadError ? "现有存档无法读取。\n" : "") + "新的旅程将清空所有城市的营业进度、\n金币和设备升级。是否重新开始？");
-        ConfirmationAction(_modal, "Cancel", "保留原旅程", CloseModal);
-        ConfirmationAction(_modal, "Confirm", "确认重新开始", DispatchNewGame, true);
-        _modalControls[0].GrabFocus();
+        if (_save is null || _pendingNewSlot is not int slot) return;
+        CloseModal(); _busy = true; NewGameRequested?.Invoke(slot);
     }
-    private void DispatchNewGame() { CloseModal(); _busy = true; NewGameRequested?.Invoke(); }
     private void RenderContinue()
     {
         if (_save?.CanContinue != true) return;

@@ -10,8 +10,8 @@ public partial class StartScreen
         CloseModal(); _previousFocus = GetViewport().GuiGetFocusOwner(); _modalKind = kind;
         Clear(_modal); _modalControls.Clear(); _modal.Show();
         _modal.AddChild(new ColorRect { Size = new(1920, 1080), Color = new Color(.15f, .1f, .06f, .65f) });
-        if (kind is "confirm" or "reset-ledger")
-            AddConfirmationPanel(_modal, kind == "confirm" ? "Confirmation" : "ResetLedger");
+        if (kind == "confirm")
+            AddConfirmationPanel(_modal, "Confirmation");
         else if (kind == "developer")
         {
             var panel = new Panel { Position = new(495, 275), Size = new(930, 535), MouseFilter = MouseFilterEnum.Ignore };

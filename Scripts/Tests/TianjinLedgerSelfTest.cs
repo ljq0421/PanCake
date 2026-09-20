@@ -118,18 +118,10 @@ public partial class TianjinLedgerSelfTest : Node
             Check(Find<Label>("BestRevenue").GetCombinedMinimumSize().X <= 490, "largest saved revenue fits its allotted width");
             await Capture("large-record");
 
-            await Click(Find<Button>("ResetLedgerProgress")); await Frames();
-            var confirmation = _hub.GetChildren().OfType<ConfirmationDialog>().Single();
-            Check(confirmation.Visible && _ledger.ConfirmationOpen && _save.Data.HighestUnlockedDay == 15, "reset requires confirmation before changing progress");
-            confirmation.GetCancelButton().EmitSignal(Button.SignalName.Pressed); await Frames();
-            Check(!_ledger.ConfirmationOpen && _save.Data.HighestUnlockedDay == 15, "cancel reset preserves progress and restores focus");
-            await Click(Find<Button>("ResetLedgerProgress")); await Frames();
-            confirmation.GetOkButton().EmitSignal(Button.SignalName.Pressed); await Frames();
-            Check(_save.Data.HighestUnlockedDay == 1 && _save.Data.DayBestRecords.Count == 0 && _ledger.SelectedDay == 1, "confirmed reset refreshes selection and record state");
-            Check(!Find<Control>("BestRecord").Visible && !Find<Button>("StartLedgerDay").Disabled, "reset exposes fresh Day 1");
-            Check(!Find<Button>("Date8").GetNode<TextureRect>("RevenueIcon").Visible,
-                "reset removes previously visible metric icons");
-            await Capture("reset");
+            Check(!_hub.FindChildren("ResetLedgerProgress", "Button", true, false).Any(), "legacy hub has no reset entry");
+            _save.ResetProgress(out _); _hub.ShowLedger(); await Frames();
+            Check(!Find<Control>("BestRecord").Visible && !Find<Button>("StartLedgerDay").Disabled, "fresh fixture shows Day 1");
+            Check(!Find<Button>("Date8").GetNode<TextureRect>("RevenueIcon").Visible, "refresh removes prior metric icons");
 
             File.WriteAllText(_savePath, "{invalid-json"); _save.Load(); await Frames();
             Check(_save.HasLoadError && Find<Button>("StartLedgerDay").Disabled && Find<Label>("EmptyRecord").Text.Contains("存档无法读取"), "corrupt save blocks opening and explains recovery");
@@ -137,9 +129,8 @@ public partial class TianjinLedgerSelfTest : Node
             Find<Button>("StartLedgerDay").EmitSignal(Button.SignalName.Pressed);
             Check(requests.Count == 2, "corrupt-save activation cannot dispatch a day");
             await Capture("load-error");
-            await Click(Find<Button>("ResetLedgerProgress")); await Frames();
-            confirmation.GetOkButton().EmitSignal(Button.SignalName.Pressed); await Frames();
-            Check(!_save.HasLoadError && !Find<Button>("StartLedgerDay").Disabled, "confirmed recovery re-enables opening");
+            Check(Find<Label>("EmptyRecord").Text.Contains("首页"), "corrupt save directs player to home management");
+            _save.ResetProgress(out _); _hub.ShowLedger(); await Frames();
 
             _ledger.SelectDay(15);
             // A save reload must update an already-open ledger without starting or closing it.

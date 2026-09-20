@@ -47,15 +47,7 @@ public partial class StartScreenSelfTest : Node
                 await PanelPreview();
                 _save.ResetProgress(out _);
                 _screen.PresentCity(StableIds.Cities.Tianjin); _screen.PresentLedger(); await Frames();
-                string beforeReset = File.ReadAllText(_path);
-                await Click(Find<Button>("ResetLedgerProgress"));
-                Check(Find<Button>("Cancel").HasFocus(), "reset defaults to preserving progress");
-                await Capture("reset-confirmation");
-                await Click(Find<Button>("Cancel"));
-                Check(File.ReadAllText(_path) == beforeReset, "reset cancellation preserves save");
-                await Click(Find<Button>("ResetLedgerProgress"));
-                await Click(Find<Button>("Confirm"));
-                Check(!_screen.ModalOpen && _screen.Page == JourneyPage.City, "confirmed reset returns to city");
+                Check(!_screen.FindChildren("ResetLedgerProgress", "Button", true, false).Any(), "ledger has no reset entry");
                 await Click(Find<Button>("Settings"));
                 var settings = GetNode<JourneySettings>("/root/JourneySettings");
                 Vector2I originalSize = GetWindow().Size;
@@ -82,115 +74,7 @@ public partial class StartScreenSelfTest : Node
             if (args.Contains("--focus-gallery")) { await FocusGallery(); GD.Print("BUTTON_FOCUS_GALLERY_OK"); GetTree().Quit(); return; }
             if (args.Contains("--home-gallery")) { await HomeGallery(); GD.Print("HOME_GALLERY_OK"); GetTree().Quit(); return; }
             if (args.Contains("--gallery")) { await Gallery(); GD.Print("JOURNEY_GALLERY_OK"); GetTree().Quit(); return; }
-            Check(!_save.CanContinue && !_save.RequiresNewGameConfirmation, "missing save is distinct from an empty valid save");
-            Check(Find<Button>("Continue").Disabled && Find<Button>("Continue").TooltipText.Length == 0, "continue stays visible and disabled without a save or hover popup");
-            Check(_main.GetNode("UI").GetChildren().OfType<Control>().Count(c => c.Visible) == 1 && _screen.Visible, "only the title page is visible at startup");
-            Check(Find<Button>("NewGame").HasFocus(), "first run focuses new game");
-            KeyPress(Key.Down);
-            Check(Find<Button>("BreakfastRecords").HasFocus(), "keyboard reaches global collection");
-            KeyPress(Key.Down);
-            Check(Find<Button>("WorldMap").HasFocus(), "keyboard reaches the new tabletop map entrance");
-            KeyPress(Key.Down);
-            Check(Find<Button>("Settings").HasFocus(), "keyboard skips unavailable continue");
-            KeyPress(Key.Up);
-            Check(Find<Button>("WorldMap").HasFocus(), "keyboard returns through map entrance");
-            KeyPress(Key.Up);
-            Check(Find<Button>("BreakfastRecords").HasFocus(), "keyboard returns through collection");
-            KeyPress(Key.Up);
-            Check(Find<Button>("NewGame").HasFocus(), "keyboard navigates back to new journey");
-            await Capture("first-run");
-            await NewJourney();
-            Check(_save.CanContinue && _save.Data.Coins == 0 && _save.Data.LastVisitedCityId == StableIds.Cities.Tianjin, "new game creates an empty valid save");
-            Check(_screen.Visible && _screen.Page == JourneyPage.City && _screen.SelectedCityId == StableIds.Cities.Tianjin, "new game enters shared Tianjin hub");
-
-            string[] cities = { StableIds.Cities.Tianjin, StableIds.Cities.Wuhan, StableIds.Cities.Xian, StableIds.Cities.Guangzhou, StableIds.Cities.Yangzhou };
-            string[] hubs = { "MorningHub", "WuhanHub", "XianHub", "GuangzhouHub", "YangzhouHub" };
-            _save.Data.UnlockedCityIds = cities.ToList();
-            foreach (string city in cities) _save.Data.GetCity(city);
-            _save.Data.Coins = 321;
-            Check(_save.TrySave(out _), "save fixture persists");
-            for (int i = 0; i < cities.Length; i++)
-            {
-                Check(_main.OpenCity(cities[i]), $"enter {cities[i]}");
-                Check(_main.StartCityBusiness(cities[i], 1), "start city to update resume");
-                _save.Load();
-                await Launch();
-                Check(_save.ContinueCityId == cities[i] && Find<Button>("Continue").HasFocus(), $"restart retains {cities[i]} and focuses continue");
-                await Click(Find<Button>("Continue"));
-                Check(_screen.Page == JourneyPage.City && _screen.SelectedCityId == cities[i], "continue directly opens shared hub");
-                await Capture("journal-" + i);
-                Check(!_main.GetNode<Control>("UI/" + hubs[i]).Visible && _save.Data.Coins == 321, "legacy hub remains hidden");
-            }
-
-            await Launch();
-            await Capture("continue");
-            string before = File.ReadAllText(_path);
-            await NewJourney();
-            Check(_screen.ConfirmationOpen && Find<Button>("Cancel").HasFocus(), "existing save requires confirmation with cancel focused");
-            await Capture("confirmation");
-            await NewJourney();
-            Check(File.ReadAllText(_path) == before && _screen.ConfirmationOpen, "confirmation blocks clicks on background controls");
-            KeyPress(Key.Tab);
-            Check(Find<Button>("Confirm").HasFocus(), "Tab remains within confirmation");
-            KeyPress(Key.Tab);
-            Check(Find<Button>("Cancel").HasFocus(), "confirmation focus wraps");
-            KeyPress(Key.Escape);
-            Check(!_screen.ConfirmationOpen && Find<Button>("Depart").HasFocus() && File.ReadAllText(_path) == before, "Escape cancels without touching progress and restores focus");
-
-            // An empty directory at the atomic-save temporary path makes writes fail deterministically.
-            Directory.CreateDirectory(_path + ".tmp");
-            await NewJourney();
-            await Click(Find<Button>("Confirm"));
-            Check(_screen.Visible && _save.CanContinue && _save.Data.Coins == 321 && File.ReadAllText(_path) == before, "failed overwrite retains disk and memory progress on title page");
-            Check(Find<Label>("Status").Text.Contains("保存失败"), "failed overwrite gives a visible error");
-            await Capture("save-error");
-            string previousCity = _save.Data.LastVisitedCityId;
-            Check(!_save.TryRecordCityVisit(StableIds.Cities.Wuhan, out _) && _save.Data.LastVisitedCityId == previousCity, "failed location save restores prior city");
-            Directory.Delete(_path + ".tmp");
-
-            await NewJourney();
-            await Click(Find<Button>("Confirm"));
-            Check(_save.Data.Coins == 0 && _save.Data.UnlockedCityIds.SequenceEqual(new[] { StableIds.Cities.Tianjin })
-                && _save.Data.Cities.Values.All(city => city.HighestUnlockedDay == 1 && city.BestStars == 0 && !city.Completed
-                    && city.DayBestRecords.Count == 0 && city.EquipmentLevels.Values.All(level => level <= 1)), "confirmed new game clears every city and returns to Tianjin");
-            Check(_main.OpenCity(StableIds.Cities.Wuhan, true) && _save.ContinueCityId == StableIds.Cities.Tianjin, "developer preview of locked city does not alter resume city");
-            Check(!_main.OpenCity(StableIds.Cities.Wuhan), "normal navigation rejects locked city");
-
-            JsonObject old = JsonNode.Parse(File.ReadAllText(_path))!.AsObject();
-            old.Remove("LastVisitedCityId"); File.WriteAllText(_path, old.ToJsonString());
-            _save.Load();
-            Check(_save.CanContinue && _save.ContinueCityId == StableIds.Cities.Tianjin, "old v3 save without city field loads without data loss");
-            foreach (string invalid in new[] { "city:future", StableIds.Cities.Wuhan })
-            {
-                old["LastVisitedCityId"] = invalid; File.WriteAllText(_path, old.ToJsonString()); _save.Load();
-                Check(_save.CanContinue && _save.ContinueCityId == StableIds.Cities.Tianjin, "invalid or locked city falls back to Tianjin");
-            }
-
-            File.WriteAllText(_path, "broken save"); _save.Load();
-            await Launch();
-            Check(!_save.CanContinue && Find<Button>("Continue").Disabled && Find<Label>("Status").Text.Contains("无法读取"), "corrupt save cannot be continued");
-            Check(File.Exists(_save.CorruptBackupPath), "corrupt save backup is preserved");
-            await Capture("corrupt");
-            Directory.CreateDirectory(_path + ".tmp");
-            await NewJourney(); await Click(Find<Button>("Confirm"));
-            Check(_save.HasLoadError && !_save.CanContinue && File.ReadAllText(_path) == "broken save", "failed corrupt reset preserves error state and original file");
-            Directory.Delete(_path + ".tmp");
-            await NewJourney();
-            KeyPress(Key.Escape);
-            Check(_save.HasLoadError, "cancelled corrupt reset keeps the protection");
-            await NewJourney(); await Click(Find<Button>("Confirm"));
-            Check(_save.CanContinue && !_save.HasLoadError, "confirmed corrupt reset creates a valid new game");
-
-            await Launch();
-            await Click(Find<Button>("Continue"));
-            int requests = 0;
-            _screen.BusinessRequested += (_, _) => requests++;
-            var resumeButton = Find<Button>("OpenBusiness");
-            resumeButton.EmitSignal(BaseButton.SignalName.Pressed);
-            resumeButton.EmitSignal(BaseButton.SignalName.Pressed);
-            Check(requests == 1, "repeated activation dispatches only one transition");
-            _main.OpenCity(StableIds.Cities.Tianjin);
-            await TravelChecks();
+            await SaveSlotChecks.Run(this, _screen, _main, _save, directory, Capture);
             SettlementChecks();
             GD.Print($"START_SCREEN_TEST_RESULT passed={_passed} failed=0");
             GetTree().Quit();
@@ -205,41 +89,31 @@ public partial class StartScreenSelfTest : Node
 
     private async Task PanelPreview()
     {
-        Check(_save.ResetProgress(out _), "panel preview uses an isolated existing save");
+        string root = Path.Combine(Path.GetDirectoryName(_path)!, "panel-slots");
+        _save.UseSlotsForTests(root);
+        if (!_save.GetSlots()[0].Exists) Check(_save.TryCreateSlot(1, out _), "panel fixture creates isolated slot");
+        _path = Path.Combine(root, "slot-1.json");
         string before = File.ReadAllText(_path);
-        await NewJourney();
-        Check(_screen.ConfirmationOpen && Find<Button>("Cancel").HasFocus(), "painted confirmation defaults to cancel");
+        _screen.PresentHome(); await Click(Find<Button>("ManageSaves")); await Click(Find<Button>("DeleteSlot1"));
+        Check(_screen.ConfirmationOpen && Find<Button>("Cancel").HasFocus(), "deletion defaults to cancel");
         var panel = Find<Panel>("ConfirmationPanel");
-        Check(panel.GetThemeStylebox("panel") is StyleBoxTexture frame
-            && frame.Texture.ResourcePath == "res://resource/art/TianJin/DialogUI/dialog-panel-v1.png",
-            "confirmation uses the supplied illustrated dialog");
+        Check(panel.GetThemeStylebox("panel") is StyleBoxTexture, "deletion uses illustrated confirmation");
+        foreach (string name in new[] { "DeleteTitle", "DeleteMessage", "Cancel", "Confirm" })
+            Check(panel.GetGlobalRect().Encloses(Find<Control>(name).GetGlobalRect()), name + " stays inside panel");
         await Capture("panel-after");
-        foreach (string name in new[] { "ConfirmationTitle", "ConfirmationText", "Cancel", "Confirm" })
-        {
-            var control = Find<Control>(name);
-            Check(panel.GetGlobalRect().Encloses(control.GetGlobalRect()), name + " stays inside the panel");
-        }
-        KeyPress(Key.Tab);
-        Check(Find<Button>("Confirm").HasFocus(), "Tab reaches confirmation action");
-        KeyPress(Key.Tab);
-        Check(Find<Button>("Cancel").HasFocus(), "Tab wraps inside the modal");
-        KeyPress(Key.Escape);
-        Check(!_screen.ConfirmationOpen && Find<Button>("Depart").HasFocus() && File.ReadAllText(_path) == before,
-            "Escape restores focus without modifying progress");
-        await NewJourney();
-        await Click(Find<Button>("Cancel"));
-        Check(!_screen.ConfirmationOpen && File.ReadAllText(_path) == before, "cancel button remains clickable and preserves progress");
-        File.WriteAllText(_path, "broken save"); _save.Load();
-        await NewJourney();
-        Check(Find<Label>("ConfirmationText").Text.Contains("无法读取"), "long corrupt-save message is included");
-        await Capture("panel-long-message");
-        KeyPress(Key.Escape);
-
+        KeyPress(Key.Tab); Check(Find<Button>("Confirm").HasFocus(), "Tab reaches confirmation");
+        KeyPress(Key.Tab); Check(Find<Button>("Cancel").HasFocus(), "Tab wraps in modal");
+        KeyPress(Key.Escape); await Frames();
+        Check(!_screen.ConfirmationOpen && Find<Button>("DeleteSlot1").HasFocus() && File.ReadAllText(_path) == before, "cancel preserves slot and restores focus");
+        await Click(Find<Button>("DeleteSlot1")); await Click(Find<Button>("Cancel"));
+        Check(File.ReadAllText(_path) == before, "mouse cancellation preserves slot");
+        _screen.PresentHome();
     }
 
     private async Task JourneyPreview()
     {
-        await Click(Find<Button>("NewGame"));
+        _save.UseSlotsForTests(Path.Combine(Path.GetDirectoryName(_path)!, "journey-preview"));
+        await SelectNewSlot();
         await Click(Find<Button>("Skip"));
         await Capture("new-journey");
         Check(!_screen.Descendants<Button>().Any(b => b.Name == "JournalMap"), "new journey has no map bookmark");
@@ -258,19 +132,18 @@ public partial class StartScreenSelfTest : Node
         }
         await Capture("continue-bookmarks-english");
         settings.SetLanguage("zh_CN"); await Frames();
-        await NewJourney();
-        Check(_screen.ConfirmationOpen, "departure still protects existing progress");
+        int? active = _save.ActiveSlotId;
+        await SelectNewSlot(); await Click(Find<Button>("Skip"));
         KeyPress(Key.Escape);
-        Check(!_screen.ConfirmationOpen && Find<Button>("Depart").HasFocus(), "cancel restores departure focus");
+        Check(_save.ActiveSlotId == active && _save.GetSlots().Count(s => s.Exists) == 1, "cancelled second journey preserves first slot");
     }
 
-    private async Task NewJourney()
+    private async Task SelectNewSlot()
     {
-        if (_screen.ConfirmationOpen) { Find<Button>("Depart").EmitSignal(BaseButton.SignalName.Pressed); return; }
-        if (_screen.Page != JourneyPage.NewJourney) { _screen.PresentHome(); await Frames(); await Click(Find<Button>("NewGame")); }
-        if (_screen.Page == JourneyPage.Opening) { await Capture("opening"); await Click(Find<Button>("Skip")); }
-        await Capture("new-journey");
-        await Click(Find<Button>("Depart"));
+        if (_screen.Page != JourneyPage.Home) _screen.PresentHome();
+        await Frames(); await Click(Find<Button>("NewGame"));
+        int id = _save.GetSlots().First(s => !s.Exists).Id;
+        await Click(Find<Button>("CreateSlot" + id));
     }
     private async Task TravelChecks()
     {
@@ -365,7 +238,7 @@ public partial class StartScreenSelfTest : Node
         _save.ResetProgress(out _);
         Check(settings.Master == 63 && settings.Effects == 41, "new journey retains preferences");
         _screen.PresentHome(); await Frames();
-        await Click(Find<Button>("NewGame")); await Click(Find<Button>("Skip"));
+        await SelectNewSlot(); await Click(Find<Button>("Skip"));
         Check(_screen.Page == JourneyPage.NewJourney && !_screen.Descendants<Button>().Any(b => b.Name == "JournalMap") && _save.Data.Coins == 0, "new journal has no map bookmark and preserves progress");
         _screen.PresentHome(); await Frames();
         string bad = Path.Combine(Path.GetDirectoryName(_path)!, "blocked-settings"); Directory.CreateDirectory(bad);
@@ -381,7 +254,7 @@ public partial class StartScreenSelfTest : Node
         var catalog = GetNode<DataCatalog>("/root/DataCatalog");
         string path = Path.Combine(Path.GetDirectoryName(_path)!, "settlement.json");
         var save = new SaveService(); save.UsePathForTests(path);
-        foreach (var city in JourneyModel.Cities.Take(4))
+        foreach (var city in JourneyModel.Cities.Take(ExperienceProfile.IsDemo ? 2 : 4))
         {
             save.ResetProgress(out _);
             var config = catalog.GetDays(city.Id)[city.Days];
@@ -443,7 +316,7 @@ public partial class StartScreenSelfTest : Node
         Find<Button>("Node0").GrabFocus(); await Capture("focus-map-node");
         AuditButtonFocus();
         await Click(Find<Button>("Back"));
-        await Click(Find<Button>("NewGame")); await Click(Find<Button>("Skip"));
+        await SelectNewSlot(); await Click(Find<Button>("Skip"));
         Find<Button>("Depart").GrabFocus(); await Capture("focus-journey-patch");
         _save.ResetProgress(out _);
         foreach (var city in JourneyModel.Cities)
@@ -496,7 +369,7 @@ public partial class StartScreenSelfTest : Node
     private async Task Gallery()
     {
         await Capture("first-run");
-        await Click(Find<Button>("NewGame")); await Capture("opening"); await Click(Find<Button>("Skip")); await Capture("new-journey");
+        await SelectNewSlot(); await Capture("opening"); await Click(Find<Button>("Skip")); await Capture("new-journey");
         _save.ResetProgress(out _);
         foreach (var city in JourneyModel.Cities)
         {
@@ -526,7 +399,7 @@ public partial class StartScreenSelfTest : Node
         await Click(Find<Button>("Skip")); await Capture("five-cities");
         _screen.PresentHome(); await Click(Find<Button>("Settings")); await Capture("settings");
         KeyPress(Key.Escape); await Click(Find<Button>("Help")); await Capture("help"); KeyPress(Key.Escape);
-        await Click(Find<Button>("NewGame")); await Click(Find<Button>("Skip")); await Click(Find<Button>("Depart")); await Capture("confirmation");
+        await PanelPreview();
     }
 
     private async Task CollectionNavigation()
@@ -588,7 +461,7 @@ public partial class StartScreenSelfTest : Node
         if (!condition) throw new InvalidOperationException(message);
         _passed++; GD.Print("PASS " + message);
     }
-    private async Task Frames(int count = 2) { for (int i = 0; i < count; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame); }
+    private async Task Frames(int count = 2) { for (int i = 0; i < count; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame); while (JourneyTransition.For(this).Active) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame); }
     private async Task Click(Control control)
     {
         // Include the canvas scale when dispatching actual viewport input.

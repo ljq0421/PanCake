@@ -126,7 +126,7 @@ public partial class SaveService
     private void LoadSlots()
     {
         ClearActiveSlot(); SlotError = ""; MigratedLegacySave = false;
-        DemoMigrationNotice = ""; DemoMigrationRetryAvailable = false; _slotIndex = new();
+        DemoMigrationRetryAvailable = false; _slotIndex = new();
         try
         {
             Directory.CreateDirectory(_slotRoot!);
@@ -177,7 +177,7 @@ public partial class SaveService
             var file = new SlotFile { Name = "旅程 1", Data = importer.Data,
                 SavedAt = new DateTimeOffset(File.GetLastWriteTimeUtc(source)) };
             WriteAtomic(SlotPath(1), file); WriteIndex(1);
-            MigratedLegacySave = true; DemoMigrationNotice = importer.DemoMigrationNotice;
+            MigratedLegacySave = true;
         }
         finally { importer.Free(); }
     }

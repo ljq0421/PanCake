@@ -168,7 +168,7 @@ public partial class SaveService : Node
     public void Load()
     {
         if (UsesSlots) { LoadSlots(); return; }
-        DemoMigrationNotice = ""; DemoMigrationRetryAvailable = false;
+        DemoMigrationRetryAvailable = false;
         PendingJourneyCompletion = null;
         ClearLoadError(); MigratedLegacySave = false; HasSavedGame = false;
         string absolute = ProjectSettings.GlobalizePath(_savePath);

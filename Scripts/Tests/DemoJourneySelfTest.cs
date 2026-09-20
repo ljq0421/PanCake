@@ -115,7 +115,7 @@ public partial class DemoJourneySelfTest : Node
             var main = GD.Load<PackedScene>("res://Scenes/Main/Main.tscn").Instantiate<GameController>(); AddChild(main); await Frames();
             var screen = main.GetNode<StartScreen>("UI/StartScreen");
             screen.PresentHome(); await Capture("home", screen);
-            Check(screen.Descendants<Label>().Single(l => l.Name == "DemoScope").Text.Contains("武汉 12"), "home describes both cities");
+            Check(!screen.Descendants<Label>().Any(l => l.Name == "DemoScope"), "home omits the demo scope notice");
             screen.Descendants<Button>().Single(b => b.Name == "Help").EmitSignal(Button.SignalName.Pressed); await Capture("help", screen);
             screen.Descendants<Button>().Single(b => b.Name == "MusicCredits").EmitSignal(Button.SignalName.Pressed); await Capture("music-credits", screen);
             screen.Descendants<Button>().Single(b => b.Name == "Close" && b.IsVisibleInTree()).EmitSignal(Button.SignalName.Pressed);

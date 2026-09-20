@@ -44,14 +44,11 @@ public partial class StartScreen
             }
         }
         HomeArt(_body, "LOGO", new(60, 60, 560, 258));
-        if (ExperienceProfile.IsDemo)
-            Text(_body, "DemoScope", "本次试玩包含天津 15 天、武汉 12 天，以及五份早餐收藏。", new(390, 747, 1140, 58), 27, true);
         if (_save?.DemoMigrationRetryAvailable == true)
             Button(_body, "RetryDemoMigration", "重试读取存档", new(810, 790, 300, 42), () =>
             {
                 _save.Load(); RenderHome();
                 if (_save.HasLoadError) ShowError("旧试玩存档升级失败，请检查写入权限后重试。原存档已保留。");
-                else if (_save.DemoMigrationNotice.Length > 0) ShowError(_save.DemoMigrationNotice);
             }, bare: true);
         var card = HomeAction("Continue", "继续旅程", "小火车", new(400, 835, 500, 150), RenderContinue);
         card.Disabled = !canContinue; card.Modulate = new Color(1, 1, 1, canContinue ? 1 : .68f);

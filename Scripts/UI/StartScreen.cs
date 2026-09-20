@@ -78,7 +78,7 @@ public partial class StartScreen : Control
     private void SetStatus()
     {
         if (_status is not null) _status.Text = _error.Length > 0 ? _error : _save?.DemoMigrationRetryAvailable == true ? "旧试玩存档升级失败，请检查写入权限后重试。原存档已保留。"
-            : !string.IsNullOrEmpty(_save?.SlotError) ? _save.SlotError : _save?.HasLoadError == true ? "存档无法读取。请返回首页管理存档。" : _save?.DemoMigrationNotice ?? "";
+            : !string.IsNullOrEmpty(_save?.SlotError) ? _save.SlotError : _save?.HasLoadError == true ? "存档无法读取。请返回首页管理存档。" : "";
     }
     private void Begin(JourneyPage page)
     {

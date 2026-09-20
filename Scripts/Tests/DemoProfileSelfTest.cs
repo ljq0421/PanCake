@@ -58,7 +58,7 @@ public partial class DemoProfileSelfTest : Node
                 string existingBackup = path + ".before-shared-cities.bak";
                 if (schema == 2) File.WriteAllText(existingBackup, "existing backup must survive");
                 save.Load();
-                Check(!save.HasLoadError && save.MigratedLegacySave && save.DemoMigrationNotice.Length > 0, "recognized old schema reset " + schema);
+                Check(!save.HasLoadError && save.MigratedLegacySave, "recognized old schema reset " + schema);
                 Check(save.Data.Coins == 0 && save.Data.Tianjin.HighestUnlockedDay == 1 && save.Data.BreakfastRecords.Count == 0
                     && save.Data.Tianjin.DayBestRecords.Count == 0 && save.Data.Tianjin.LearnedWorkbenchActions.Count == 0, "old rewards and progress do not leak");
                 Check(Directory.GetFiles(dir, "*.bak").Any(p => File.ReadAllText(p) == original), "exact original bytes backed up");
@@ -85,7 +85,7 @@ public partial class DemoProfileSelfTest : Node
             Check(retry.IsVisibleInTree(), "backup failure exposes a retry on the home screen");
             Directory.Delete(blocked + ".before-shared-cities.bak");
             retry.EmitSignal(Button.SignalName.Pressed);
-            Check(!save.HasLoadError && screen.Descendants<Label>().Any(l => l.Text == save.DemoMigrationNotice), "home retry restores new route and explains backup");
+            Check(!save.HasLoadError && !screen.Descendants<Label>().Any(l => l.Name == "DemoScope"), "home retry restores new route without migration notice");
             main.QueueFree();
             save.UseDemoPathForTests(path);
             foreach (string invalid in new[] { "{broken", oldJson.Replace("\"schemaVersion\": 2", "\"schemaVersion\": 99"),

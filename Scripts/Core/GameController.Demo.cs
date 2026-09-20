@@ -55,7 +55,6 @@ public partial class GameController
         InitializeMusic();
         ShowOnly(_startScreen); _startScreen.Present();
         if (_save.DemoMigrationRetryAvailable) _startScreen.ShowError("旧试玩存档升级失败，请检查写入权限后重试。原存档已保留。");
-        if (_save.DemoMigrationNotice.Length > 0) _startScreen.ShowError(_save.DemoMigrationNotice);
         if (!catalog.IsValid) _startScreen.ShowError("试玩配置无法读取，请重新安装后重试。");
     }
 }

@@ -30,7 +30,6 @@ public partial class SaveService
 {
     public bool IsDemo { get; private set; }
     public bool DemoMigrationRetryAvailable { get; private set; }
-    public string DemoMigrationNotice { get; private set; } = "";
     public int ContinueDay => Data.GetCity(ContinueCityId).HighestUnlockedDay;
     public bool IsCityAvailable(string cityId) => ExperienceProfile.IsCityAvailable(cityId, IsDemo);
     public int ChapterLength(string cityId) => IsCityAvailable(cityId) ? ChapterDays(cityId) : 0;
@@ -70,7 +69,6 @@ public partial class SaveService
         File.Move(temporary, absolute, true);
         DemoMigrationRetryAvailable = false;
         Data = fresh; HasSavedGame = true; MigratedLegacySave = true;
-        DemoMigrationNotice = "旧试玩存档已备份，新路线从天津第 1 天开始。";
         return true;
     }
 

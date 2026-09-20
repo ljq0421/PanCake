@@ -67,6 +67,11 @@ public partial class BusinessDetailsView
             if (offer is null) { RenderUpgradeModal("设备状态已变化，请查看最新升级信息。"); return; }
             BuyUpgrade(offer);
         }, CloseUpgrades, message);
+        if (CanContinueBusiness)
+        {
+            var next = ButtonAt(modal, $"开始第 {source.NextDay} 天", new(1220, 950, 320, 64), RequestPrimary);
+            next.Name = "ContinueAfterUpgrade"; next.AddThemeFontSizeOverride("font_size", 25);
+        }
     }
     private void BuyUpgrade(BookUpgradeOffer offer)
     {
@@ -76,7 +81,9 @@ public partial class BusinessDetailsView
         {
             bool ok = _model.Upgrades!.Purchase(offer, out string error);
             RefreshUpgradeCaptions(); BuildSummary(); RefreshRows();
-            RenderUpgradeModal(ok ? "升级成功，下次营业生效。" : error);
+            RenderUpgradeModal(ok && _model.Upgrades!.SupportsContinue
+                ? $"升级成功：{offer.Name} Lv{offer.TargetLevel} · {BookUpgradeSource.Benefit(offer)}"
+                : ok ? "升级成功，下次营业生效。" : error);
         }
         finally { _buying = false; }
     }

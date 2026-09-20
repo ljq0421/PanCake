@@ -80,10 +80,16 @@ public partial class EquipmentUpgradeView : Control
         }
         var e = _items.Single(i => i.Id == id);
         LabelAt(_detail, "SelectedEquipmentName", e.Name, new(0, 0, 560, 60), 42);
+        bool hasBenefit = _cityId is "city:tianjin" or "city:wuhan" && e.TargetLevel.HasValue && e.Level > 0;
+        if (hasBenefit)
+        {
+            var benefit = LabelAt(_detail, "UpgradeBenefit", BookUpgradeSource.Benefit(new(_cityId, e.PurchaseId, e.Id, e.Name, e.Level, e.TargetLevel!.Value, e.Price)), new(0, 108, 255, 80), 18, Muted);
+            benefit.ZIndex = 1; benefit.ClipText = true;
+        }
         LabelAt(_detail, "LevelTransition", e.TargetLevel is int next ? $"Lv{e.Level}  →  Lv{next}" : e.Level == 0 ? "设备尚未开放" : $"Lv{e.Level} · {(e.Level >= 3 || e.Notice == "已升至最高等级" ? "已满级" : "固定设备")}", new(0, 62, 560, 44), 27, Muted);
         var doodle = Sprite(_detail, "EquipmentDoodle", ArtRoot + "设备涂鸦背景-v1.png", new(0, 138, 274, 292));
         CityPageArtSkin.Apply(doodle, _cityId, true);
-        if (e.Art is not null) Picture(_detail, e.Art, new(0, 140, 270, 280));
+        if (e.Art is not null) Picture(_detail, e.Art, new(0, hasBenefit ? 198 : 140, 270, hasBenefit ? 222 : 280));
         else LabelAt(_detail, "EquipmentWordmark", e.Name, new(0, 170, 266, 260), 40, Muted, true);
         // The comparison viewport shares the equipment image's vertical centre (y = 280).
         // Short comparisons centre as a group; longer ones retain scrolling above the price.

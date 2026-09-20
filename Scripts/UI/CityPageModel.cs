@@ -16,6 +16,9 @@ public sealed record CityEquipmentView(string Id, string Name, int Level, string
 /// <summary>Read-only presentation adapter; purchases still use the city's save service.</summary>
 public sealed partial class CityPageModel(DataCatalog? catalog, SaveService save, YangzhouCatalog? yangzhou)
 {
+    public bool Reconcile(out string error)
+    { error = ""; return catalog is null || save.ReconcileEngagementUnlocks(catalog, out error); }
+    public DailyChallenge? Challenge(string city, int day) => catalog is not null && catalog.TryGetDay(city, day, out var config) ? DailyChallenge.Create(config) : null;
     private DataCatalog Catalog => catalog ?? throw new InvalidOperationException("该城市缺少设备配置。");
     private YangzhouCatalog Yangzhou => yangzhou ?? throw new InvalidOperationException("扬州缺少设备配置。");
     public string[] LedgerArt(string city, int day)
@@ -23,14 +26,13 @@ public sealed partial class CityPageModel(DataCatalog? catalog, SaveService save
         if (city == StableIds.Cities.Tianjin)
         {
             string[] names = day switch {
-                2 => new[] { "装袋后的通用煎饼果子", "薄脆" },
-                3 => new[] { "装袋后的通用煎饼果子", "香葱碎" },
-                5 => new[] { "熟油条" },
-                6 or 7 => new[] { "装袋后的通用煎饼果子", "熟油条" },
-                8 => new[] { "装袋后的通用煎饼果子", "火腿片" },
-                9 => new[] { "装袋后的通用煎饼果子", "成品豆浆杯" },
-                11 => new[] { "普通男上班族", "装袋后的通用煎饼果子" },
-                >= 10 => new[] { "装袋后的通用煎饼果子", "熟油条", "成品豆浆杯" },
+                2 => new[] { "薄脆", "香葱碎" },
+                3 => new[] { "熟油条" },
+                4 => new[] { "装袋后的通用煎饼果子", "熟油条" },
+                7 => new[] { "装袋后的通用煎饼果子", "火腿片" },
+                5 => new[] { "装袋后的通用煎饼果子", "成品豆浆杯" },
+                9 => new[] { "普通男上班族", "装袋后的通用煎饼果子" },
+                >= 6 => new[] { "装袋后的通用煎饼果子", "熟油条", "成品豆浆杯" },
                 _ => new[] { "装袋后的通用煎饼果子" },
             };
             return names.Select(n => "res://resource/art/TianJin/" + n + ".png").ToArray();
@@ -42,7 +44,7 @@ public sealed partial class CityPageModel(DataCatalog? catalog, SaveService save
                 2 => new[] { "热干面完整成品", "葱花覆盖层", "辣油壶_v2" },
                 3 => new[] { "热干面完整成品", "卤牛肉片" },
                 4 or 5 => new[] { "热干面完整成品", "DoupiPieces_v1/piece-01" },
-                6 => new[] { "热干面完整成品", "成品蛋酒杯_v2" },
+                6 => new[] { "热干面完整成品", "DoupiPieces_v1/piece-01" },
                 7 => new[] { "热干面完整成品", "卤牛肉片" },
                 10 => new[] { "DoupiPieces_v1/piece-01", "三鲜豆皮锅 Lv3 自动翻面快热版锅体_v2" },
                 >= 8 => new[] { "热干面完整成品", "DoupiPieces_v1/piece-01", "成品蛋酒杯_v2" },
@@ -126,6 +128,8 @@ public sealed partial class CityPageModel(DataCatalog? catalog, SaveService save
         int current = Math.Max(1, level);
         var effects = fixedStation ? new[] { new EquipmentEffect("生面供应", "无限供应", "无限供应") }
             : BookUpgradeEffects.Compare(new(city, purchase, id, name, current, level == 0 ? current : target, price), catalog, yangzhou);
+        if (city is StableIds.Cities.Tianjin or StableIds.Cities.Wuhan && level > 0 && level < maximum && !fixedStation)
+            detail = BookUpgradeSource.Benefit(new(city, purchase, id, name, level, target, price)) + "\n" + detail;
         return new(id, name, level, art, detail, price, purchase, available, notice)
         { TargetLevel = fixedStation || level == 0 || level >= maximum ? null : target, Effects = effects };
     }

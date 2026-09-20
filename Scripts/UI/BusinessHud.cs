@@ -19,6 +19,7 @@ public partial class BusinessHud : Control
     public Button PauseButton { get; } = new() { Name = "HudPause" };
     public Control IncomeTarget => _income;
     private Tween? _incomeTween;
+    private readonly Label _challenge = TianjinUi.Label("", 21, alignment: HorizontalAlignment.Center);
 
     public void EmphasizeIncome()
     {
@@ -70,6 +71,12 @@ public partial class BusinessHud : Control
         else PauseButton.Hide(); // Guangzhou and Yangzhou keep their existing pause/resume controls.
         PauseButton.Position = new(1840, 28); PauseButton.Size = new(56, 56);
         AddChild(PauseButton);
+        _challenge.Name = "DailyChallengeProgress";
+        _challenge.MouseFilter = MouseFilterEnum.Ignore;
+        _challenge.AddThemeColorOverride("font_color", new Color("#513A28"));
+        _challenge.AddThemeColorOverride("font_outline_color", new Color("#FFF3D9"));
+        _challenge.AddThemeConstantOverride("outline_size", 5);
+        AddChild(_challenge); _challenge.Hide();
         Resized += LayoutSigns;
         LayoutSigns();
     }
@@ -78,6 +85,7 @@ public partial class BusinessHud : Control
     {
         _sign.Position = new((Size.X - _sign.Size.X) / 2, 6);
         PauseButton.Position = new(Size.X - 80, 28);
+        _challenge.Position = new((Size.X - 540) / 2, 109); _challenge.Size = new(540, 32);
     }
 
     public void Render(DayController controller, bool allowPause)
@@ -90,6 +98,12 @@ public partial class BusinessHud : Control
             _ => controller.DayRemainingSeconds };
         RenderValues(config.Day, seconds, controller.Ledger?.Build().TotalRevenue ?? 0, controller.State == DayState.Closing);
         PauseButton.Disabled = !allowPause;
+        _challenge.Visible = !controller.TutorialActive && controller.CurrentPlan?.Challenge is not null;
+        if (_challenge.Visible && controller.CurrentPlan?.Challenge is { } challenge && controller.Ledger is { } ledger)
+        {
+            bool claimed = GetNodeOrNull<SaveService>("/root/SaveService")?.Data.GetCity(config.CityId).ClaimedChallenges.ContainsKey(config.Day) == true;
+            _challenge.Text = challenge.Live(ledger.Build(), claimed);
+        }
         if (_city is "天津" or "武汉" or "西安") OfferInterfaceTeaching(controller, allowPause);
     }
 

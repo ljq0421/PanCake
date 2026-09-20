@@ -66,11 +66,25 @@ public partial class StartScreen : Control
     public void Present() { Show(); RenderHome(); }
     public void PresentHome() { Show(); RenderHome(); }
     public void PresentMap(Action? returnToSource = null) { Show(); _mapReturn = returnToSource ?? RenderHome; _city = _save?.ContinueCityId ?? JourneyModel.Cities[0].Id; RenderMap(); }
-    public void PresentCompletion(string cityId, Action returnToSource, bool overCityWorkbench = false)
+    private Action? _completionContinueBusiness;
+    public void PresentCompletion(string cityId, Action returnToSource, bool overCityWorkbench = false, Action? continueBusiness = null)
     {
+        _completionContinueBusiness = continueBusiness;
         Show(); _mapReturn = returnToSource; _completedCity = cityId;
         _completionOverWorkbench = overCityWorkbench;
         RenderCompletion();
+    }
+    private void ContinueCompletedCity()
+    {
+        var next = _completionContinueBusiness;
+        _completionContinueBusiness = null; _completedCity = null;
+        next?.Invoke();
+    }
+    private void AddCompletionContinueButton(Rect2 bounds)
+    {
+        if (_completionContinueBusiness is null || _completedCity is null) return;
+        int day = _save!.Data.GetCity(_completedCity).HighestUnlockedDay;
+        Button(_body, "ContinueCompletedCity", $"开始第 {day} 天", bounds, ContinueCompletedCity);
     }
     public void ShowError(string message)
     {

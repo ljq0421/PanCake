@@ -19,6 +19,8 @@ public partial class GameController
         var wuhan = GetNode<WuhanDayScreen>(WuhanDayPath);
         _cityHubs[StableIds.Cities.Wuhan] = GetNode<WuhanHub>(WuhanHubPath);
         wuhan.ConnectController(controller);
+        ConnectBusinessContinuation(screen.BusinessDetails, StableIds.Cities.Tianjin);
+        ConnectBusinessContinuation(wuhan.BusinessDetails, StableIds.Cities.Wuhan);
         void ReturnFromBusiness(string city)
         {
             if (_save.TakeJourneyCompletion() is { } completed) PresentCompletionOverHub(_cityHubs[city], completed);

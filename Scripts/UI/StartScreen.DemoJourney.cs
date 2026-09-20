@@ -56,5 +56,6 @@ public partial class StartScreen
         Button(_body, "ReplayWuhan", "回访武汉", new(615, 882, 245, 65), () => PresentCity(StableIds.Cities.Wuhan));
         Button(_body, "EndingJournal", "翻开旅行手账", new(1040, 882, 470, 65), PresentBreakfastCollection, true);
         Focus("EndingJournal");
+        AddCompletionContinueButton(new(1040, 963, 470, 65));
     }
 }

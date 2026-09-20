@@ -105,6 +105,7 @@ public partial class StartScreen
     }
     private void RenderCity()
     {
+        bool reconciled = _cityModel is null || _cityModel.Reconcile(out _);
         var city = JourneyModel.City(_city); var p = JourneyModel.Progress(_save!, _city);
         int day = Math.Max(1, p.HighestUnlockedDay);
         var overview = _cityModel?.Overview(_city, day);
@@ -148,7 +149,13 @@ public partial class StartScreen
         open.AddThemeFontSizeOverride("font_size", 46);
         open.AddThemeColorOverride("font_outline_color", StartScreenTheme.Cream);
         open.AddThemeConstantOverride("outline_size", 5);
-        open.Disabled = !CanOpenDay(day);
+        if (_cityModel?.Challenge(_city, day) is { } challenge)
+        {
+            var challengeText = Text(goals, "DailyChallengePreview", challenge.Preview(p.ClaimedChallenges.ContainsKey(day)), new(0, 0, 425, 90), 21, true);
+            FitContinueLines(challengeText, 21, 16, 3);
+        }
+        open.Disabled = !CanOpenDay(day) || !reconciled;
+        if (!reconciled) ShowError("解锁进度保存失败，请重试进入城市。原有进度已保留。");
         if (open.Disabled) plate.Modulate = new Color(1, 1, 1, .55f);
         Focus("OpenBusiness");
     }

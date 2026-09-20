@@ -47,7 +47,7 @@ public sealed partial class OrderGenerator
                     if (profile == CustomerOrderProfile.BigOrder && bigOrderCount >= config.Constraints.MaxBigOrderCustomers) continue;
 
                     GeneratedOrder candidate = GenerateForProfile(profile, customerTypeId, config, recipes, products, random);
-                    if (ConflictsWithPendingTutorial(candidate, config.Day, index, tutorials)) continue;
+                    if (ConflictsWithPendingTutorial(candidate, config, index, tutorials)) continue;
                     if (candidate.IsYoutiaoRelated
                         && consecutiveYoutiao + 1 + upcomingTutorialYoutiao > config.Constraints.MaxConsecutiveYoutiaoOrders) continue;
                     if (candidate.PancakeQuantity > config.Constraints.MaxPancakesPerCustomer) continue;
@@ -90,7 +90,7 @@ public sealed partial class OrderGenerator
             });
         }
 
-        return new DayPlan { Day = config.Day, RandomSeed = config.RandomSeed, Customers = planned };
+        return new DayPlan { Day = config.Day, RandomSeed = config.RandomSeed, Customers = planned, Challenge = ProjectCake.Core.DailyChallenge.Create(config) };
     }
 
     private DayPlan GenerateWuhan(
@@ -174,7 +174,7 @@ public sealed partial class OrderGenerator
                 },
             });
         }
-        return new DayPlan { Day = config.Day, RandomSeed = config.RandomSeed, Customers = planned };
+        return new DayPlan { Day = config.Day, RandomSeed = config.RandomSeed, Customers = planned, Challenge = ProjectCake.Core.DailyChallenge.Create(config) };
     }
 
     private static List<string> BuildQuotaBag(IReadOnlyDictionary<string, double> weights, int total, DeterministicRandom random)
@@ -267,8 +267,9 @@ public sealed partial class OrderGenerator
         for (int segmentIndex = 0; segmentIndex < config.ArrivalSegments.Count; segmentIndex++)
         {
             ArrivalSegmentConfig segment = config.ArrivalSegments[segmentIndex];
-            double start = segment.Start * config.DurationSeconds;
-            double end = segment.End * config.DurationSeconds;
+            double arrivalWindow = config.DurationSeconds - config.ArrivalEndBufferSeconds;
+            double start = segment.Start * arrivalWindow;
+            double end = segment.End * arrivalWindow;
             int count = segmentCounts[segmentIndex];
             if (count == 0) continue;
             double first = Math.Min(start + 1.0, end - 0.05);
@@ -300,11 +301,11 @@ public sealed partial class OrderGenerator
 
     private static IReadOnlyDictionary<int, TutorialOrder> BuildTutorialAssignments(DayConfig config, DeterministicRandom random)
     {
-        TutorialOrder[] sequence = config.Day switch
+        TutorialOrder[] sequence = config.StartUnlocks switch
         {
-            5 => new[] { TutorialOrder.YoutiaoOne, TutorialOrder.YoutiaoTwo },
-            7 => new[] { TutorialOrder.PancakeYoutiao, TutorialOrder.PancakeScallionYoutiao },
-            9 => new[] { TutorialOrder.SoyMilk, TutorialOrder.BasicPancakeSoyMilk },
+            var ids when ids.Contains("product:youtiao") => new[] { TutorialOrder.YoutiaoOne, TutorialOrder.YoutiaoTwo },
+            var ids when ids.Contains("recipe:pancake_youtiao") => new[] { TutorialOrder.PancakeYoutiao, TutorialOrder.PancakeScallionYoutiao },
+            var ids when ids.Contains("product:soy_milk") => new[] { TutorialOrder.SoyMilk, TutorialOrder.BasicPancakeSoyMilk },
             _ => Array.Empty<TutorialOrder>(),
         };
         if (sequence.Length == 0) return new Dictionary<int, TutorialOrder>();
@@ -337,17 +338,17 @@ public sealed partial class OrderGenerator
 
     private static bool ConflictsWithPendingTutorial(
         GeneratedOrder candidate,
-        int day,
+        DayConfig config,
         int currentIndex,
         IReadOnlyDictionary<int, TutorialOrder> tutorials)
     {
         if (!tutorials.Keys.Any(position => position > currentIndex)) return false;
-        return day switch
+        return config.StartUnlocks switch
         {
-            5 => candidate.Lines.Any(line => line.ProductKind == ProductKind.Youtiao),
-            7 => candidate.Lines.Any(line => line.ProductKind == ProductKind.Pancake
+            var ids when ids.Contains("product:youtiao") => candidate.Lines.Any(line => line.ProductKind == ProductKind.Youtiao),
+            var ids when ids.Contains("recipe:pancake_youtiao") => candidate.Lines.Any(line => line.ProductKind == ProductKind.Pancake
                 && line.DefinitionId is StableIds.Recipes.Youtiao or StableIds.Recipes.ScallionYoutiao),
-            9 => candidate.Lines.Any(line => line.ProductKind == ProductKind.SoyMilk),
+            var ids when ids.Contains("product:soy_milk") => candidate.Lines.Any(line => line.ProductKind == ProductKind.SoyMilk),
             _ => false,
         };
     }

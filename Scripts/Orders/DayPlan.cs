@@ -2,6 +2,7 @@ namespace ProjectCake.Orders;
 
 public sealed class DayPlan
 {
+    public ProjectCake.Core.DailyChallenge? Challenge { get; init; }
     [System.Text.Json.Serialization.JsonIgnore]
     public Dictionary<string, ProjectCake.Core.BreakfastStatistics> PendingBreakfastStats { get; } = new(StringComparer.Ordinal);
     [System.Text.Json.Serialization.JsonIgnore]

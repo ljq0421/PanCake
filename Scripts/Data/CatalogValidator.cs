@@ -362,7 +362,7 @@ public static class CatalogValidator
             ValidateWeights(day.CustomerWeights, source, "customerWeights", StableIds.CustomerTypeIds, issues);
             ValidateWeights(day.OrderTypeWeights, source, "orderTypeWeights", StableIds.OrderTypeIds, issues);
             ValidateWeights(day.RecipeWeights, source, "recipeWeights", knownRecipes.Keys, issues);
-            ValidateArrivalSegments(day.ArrivalSegments, source, issues);
+            ValidateArrivalTiming(day, source, issues);
 
             var availableRecipes = new HashSet<string>(StringComparer.Ordinal);
             foreach (string recipeId in day.AvailableRecipeIds)
@@ -425,7 +425,7 @@ public static class CatalogValidator
             if (day.Constraints.MaxBigOrderCustomers > day.CustomerCount)
                 Add(issues, source, "constraints.maxBigOrderCustomers", "大订单顾客上限不能超过当日顾客数。" );
 
-            if (day.Day is 5 or 7 or 9 && day.Constraints.SimpleNewProductOrders < 2)
+            if (day.StartUnlocks.Any(id => id is "product:youtiao" or "recipe:pancake_youtiao" or "product:soy_milk") && day.Constraints.SimpleNewProductOrders < 2)
                 Add(issues, source, "constraints.simpleNewProductOrders", "教学日必须为前两份固定教学订单保留名额。" );
 
             ValidateConstraints(day.Constraints, source, issues);
@@ -544,6 +544,13 @@ public static class CatalogValidator
         }
     }
 
+    internal static void ValidateArrivalTiming(DayConfig day, string source, List<ValidationIssue> issues)
+    {
+        if (!double.IsFinite(day.ArrivalEndBufferSeconds) || day.ArrivalEndBufferSeconds < 0 || day.ArrivalEndBufferSeconds >= day.DurationSeconds)
+            Add(issues, source, "arrivalEndBufferSeconds", "到客缓冲必须非负且小于营业时长。");
+        ValidateArrivalSegments(day.ArrivalSegments, source, issues);
+    }
+
     private static void ValidateArrivalSegments(
         IReadOnlyList<ArrivalSegmentConfig> segments,
         string source,
@@ -562,7 +569,7 @@ public static class CatalogValidator
             ArrivalSegmentConfig segment = segments[index];
             string field = $"arrivalSegments[{index}]";
 
-            if (segment.Start < 0 || segment.End > 1 || segment.Start >= segment.End)
+            if (!double.IsFinite(segment.Start) || !double.IsFinite(segment.End) || segment.Start < 0 || segment.End > 1 || segment.Start >= segment.End)
             {
                 Add(issues, source, field, "时段必须满足 0 ≤ start < end ≤ 1。");
             }
@@ -572,9 +579,9 @@ public static class CatalogValidator
                 Add(issues, source, field, $"时段必须连续覆盖；预期从 {previousEnd:0.####} 开始。" );
             }
 
-            if (segment.CustomerRatio <= 0)
+            if (!double.IsFinite(segment.CustomerRatio) || segment.CustomerRatio < 0)
             {
-                Add(issues, source, $"{field}.customerRatio", "顾客比例必须大于 0。");
+                Add(issues, source, $"{field}.customerRatio", "顾客比例必须非负。");
             }
 
             previousEnd = segment.End;

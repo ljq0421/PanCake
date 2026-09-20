@@ -15,22 +15,53 @@
     "pancake": 1.0
   },
   "recipeWeights": {
-    "pancake_basic": 0.60,
-    "pancake_crispy": 0.40
+    "pancake_basic": 0.3,
+    "pancake_crispy": 0.3,
+    "pancake_scallion": 0.2,
+    "pancake_scallion_crispy": 0.2
   },
   "arrivalSegments": [
-    { "start": 0.0, "end": 0.20, "customerRatio": 0.20 },
-    { "start": 0.20, "end": 0.75, "customerRatio": 0.60 },
-    { "start": 0.75, "end": 1.0, "customerRatio": 0.20 }
+    {
+      "start": 0,
+      "end": 0.2,
+      "customerRatio": 0.3
+    },
+    {
+      "start": 0.2,
+      "end": 0.4,
+      "customerRatio": 0.2
+    },
+    {
+      "start": 0.4,
+      "end": 0.55,
+      "customerRatio": 0.1
+    },
+    {
+      "start": 0.55,
+      "end": 0.85,
+      "customerRatio": 0.3
+    },
+    {
+      "start": 0.85,
+      "end": 1,
+      "customerRatio": 0.1
+    }
   ],
   "startUnlocks": [
     "ingredient:crispy",
-    "recipe:pancake_crispy"
+    "recipe:pancake_crispy",
+    "ingredient:scallion",
+    "recipe:pancake_scallion",
+    "recipe:pancake_scallion_crispy"
   ],
-  "completionUnlocks": [],
+  "completionUnlocks": [
+    "equipment:pancake_stove_lv2"
+  ],
   "availableRecipeIds": [
     "pancake_basic",
-    "pancake_crispy"
+    "pancake_crispy",
+    "pancake_scallion",
+    "pancake_scallion_crispy"
   ],
   "availableProductKinds": [
     "pancake"
@@ -40,5 +71,6 @@
     "simpleNewProductOrders": 2,
     "maxConsecutiveYoutiaoOrders": 2,
     "maxPancakesPerCustomer": 1
-  }
+  },
+  "arrivalEndBufferSeconds": 25
 }

@@ -48,6 +48,8 @@ public sealed class DayConfig
     [JsonRequired]
     public double DurationSeconds { get; set; }
 
+    public double ArrivalEndBufferSeconds { get; set; }
+
     [JsonRequired]
     public int CustomerCount { get; set; }
 

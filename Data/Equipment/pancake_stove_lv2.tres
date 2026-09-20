@@ -11,4 +11,4 @@ SideAOverdoneSeconds = 0.0
 SideBReadySeconds = 1.1
 SideABurnSeconds = 0.0
 SideBBurnSeconds = 0.0
-UpgradePrice = 120
+UpgradePrice = 80

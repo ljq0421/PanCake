@@ -66,6 +66,8 @@ public partial class GameController : Node
         mapScreen.Initialize(save);
         wuhanHub.Initialize(catalog, save);
         wuhanDay.ConnectController(dayController);
+        ConnectBusinessContinuation(dayScreen.BusinessDetails, Data.StableIds.Cities.Tianjin);
+        ConnectBusinessContinuation(wuhanDay.BusinessDetails, Data.StableIds.Cities.Wuhan);
         _cityHubs[Data.StableIds.Cities.Tianjin] = hub;
         _cityHubs[Data.StableIds.Cities.Wuhan] = wuhanHub;
         _cityHubs[Data.StableIds.Cities.Xian] = _xianHub;
@@ -183,6 +185,8 @@ public partial class GameController : Node
 
     public bool StartCityBusiness(string cityId, int day, bool firstJourneyDeparture = false)
     {
+        if (!_save.ReconcileEngagementUnlocks(GetNode<DataCatalog>("/root/DataCatalog"), out string reconcileError))
+        { _startScreen.ShowError(reconcileError); return false; }
         if (_save.IsDemo && !_save.CanEnter(cityId, day))
         { _startScreen.ShowError("本次试玩尚未开放该营业日。"); return false; }
         var catalog = GetNode<DataCatalog>("/root/DataCatalog");

@@ -1,7 +1,79 @@
 {
-  "cityId":"city:wuhan","satisfactionAverageMode":"completedCustomers","day":3,"durationSeconds":90,"customerCount":10,"expectedRevenue":121,"patienceMultiplier":1.0,"maxWaitingCustomers":5,"randomSeed":2003,
-  "customerWeights":{"wuhan_normal":1.0},"orderTypeWeights":{"hot_dry_noodles":1.0},"recipeWeights":{"hot_dry_noodles_classic":0.1,"hot_dry_noodles_scallion":0.15,"hot_dry_noodles_chili":0.15,"hot_dry_noodles_scallion_chili":0.2,"hot_dry_noodles_beef":0.25,"hot_dry_noodles_beef_chili":0.15},
-  "arrivalSegments":[{"start":0.0,"end":0.2,"customerRatio":0.15},{"start":0.2,"end":0.75,"customerRatio":0.70},{"start":0.75,"end":1.0,"customerRatio":0.15}],
-  "startUnlocks":["recipe:hot_dry_noodles_beef","recipe:hot_dry_noodles_beef_chili"],"completionUnlocks":["equipment:noodle_cooker_lv2"],"availableRecipeIds":["hot_dry_noodles_classic","hot_dry_noodles_scallion","hot_dry_noodles_chili","hot_dry_noodles_scallion_chili","hot_dry_noodles_beef","hot_dry_noodles_beef_chili"],"availableProductKinds":["hotDryNoodles"],
-  "constraints":{"maxBigOrderCustomers":0,"simpleNewProductOrders":0,"maxConsecutiveYoutiaoOrders":2,"maxPancakesPerCustomer":2,"maxConsecutiveComplexOrders":2,"pressureDelaySeconds":2,"maxPressureDelaySeconds":4},"starGoals":[]
+  "cityId": "city:wuhan",
+  "satisfactionAverageMode": "completedCustomers",
+  "day": 3,
+  "durationSeconds": 90,
+  "customerCount": 10,
+  "expectedRevenue": 121,
+  "patienceMultiplier": 1.0,
+  "maxWaitingCustomers": 5,
+  "randomSeed": 2003,
+  "customerWeights": {
+    "wuhan_normal": 1.0
+  },
+  "orderTypeWeights": {
+    "hot_dry_noodles": 1.0
+  },
+  "recipeWeights": {
+    "hot_dry_noodles_classic": 0.1,
+    "hot_dry_noodles_scallion": 0.15,
+    "hot_dry_noodles_chili": 0.15,
+    "hot_dry_noodles_scallion_chili": 0.2,
+    "hot_dry_noodles_beef": 0.25,
+    "hot_dry_noodles_beef_chili": 0.15
+  },
+  "arrivalSegments": [
+    {
+      "start": 0,
+      "end": 0.2,
+      "customerRatio": 0.3
+    },
+    {
+      "start": 0.2,
+      "end": 0.4,
+      "customerRatio": 0.2
+    },
+    {
+      "start": 0.4,
+      "end": 0.55,
+      "customerRatio": 0.1
+    },
+    {
+      "start": 0.55,
+      "end": 0.85,
+      "customerRatio": 0.3
+    },
+    {
+      "start": 0.85,
+      "end": 1,
+      "customerRatio": 0.1
+    }
+  ],
+  "startUnlocks": [
+    "recipe:hot_dry_noodles_beef",
+    "recipe:hot_dry_noodles_beef_chili"
+  ],
+  "completionUnlocks": [],
+  "availableRecipeIds": [
+    "hot_dry_noodles_classic",
+    "hot_dry_noodles_scallion",
+    "hot_dry_noodles_chili",
+    "hot_dry_noodles_scallion_chili",
+    "hot_dry_noodles_beef",
+    "hot_dry_noodles_beef_chili"
+  ],
+  "availableProductKinds": [
+    "hotDryNoodles"
+  ],
+  "constraints": {
+    "maxBigOrderCustomers": 0,
+    "simpleNewProductOrders": 0,
+    "maxConsecutiveYoutiaoOrders": 2,
+    "maxPancakesPerCustomer": 2,
+    "maxConsecutiveComplexOrders": 2,
+    "pressureDelaySeconds": 2,
+    "maxPressureDelaySeconds": 4
+  },
+  "starGoals": [],
+  "arrivalEndBufferSeconds": 25
 }

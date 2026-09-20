@@ -55,6 +55,8 @@ public partial class TutorialFocusLayer : Control
     public TutorialFocusCardSkin CardSkin { get; init; } = TutorialFocusCardSkin.Tianjin;
     public bool PlaceNearTargets { get; init; }
     public bool AllowDismiss { get; init; } = true;
+    internal bool DismissAtScreenEdge { get; init; }
+    internal Func<bool> ShowDismiss { get; init; } = () => true;
     public Func<Control?> PresentationCard { get; set; } = () => null;
     public bool Dismissed { get; private set; }
     public string? CurrentAction { get; private set; }
@@ -99,17 +101,19 @@ public partial class TutorialFocusLayer : Control
             VerticalAlignment = VerticalAlignment.Center, MouseFilter = MouseFilterEnum.Ignore };
         _hint.AddThemeFontSizeOverride("font_size", 24);
         _hint.AddThemeColorOverride("font_color", wuhan ? WuhanUi.Text : TianjinUi.BrownText); _card.AddChild(_hint);
-        _close = new Button { Text = "本次关闭", FocusMode = FocusModeEnum.All };
+        _close = new Button { Name = "SkipGuidance", Text = DismissAtScreenEdge ? "跳过教学" : "本次关闭", FocusMode = FocusModeEnum.All };
         _close.Pressed += Dismiss;
-        _card.AddChild(wuhan ? WuhanTeachingUi.ActionFrame(_close, Vector2.Zero, new(150, 54))
-            : TianjinTeachingUi.ActionFrame(_close, Vector2.Zero, new(150, 54)));
+        Vector2 position = DismissAtScreenEdge ? new(1620, 28) : Vector2.Zero;
+        Vector2 size = DismissAtScreenEdge ? new(196, 56) : new(150, 54);
+        (DismissAtScreenEdge ? (Control)this : _card).AddChild(wuhan ? WuhanTeachingUi.ActionFrame(_close, position, size)
+            : TianjinTeachingUi.ActionFrame(_close, position, size));
     }
 
     private void LayoutCard()
     {
-        if (!AllowDismiss)
+        if (!AllowDismiss || DismissAtScreenEdge)
         {
-            _close.GetParent<Control>().Hide();
+            if (!AllowDismiss) _close.GetParent<Control>().Hide();
             float width = Mathf.Clamp(TeachingCardLayout.NaturalWidth(_hint), 300, 540);
             float height = TeachingCardLayout.Place(_hint, 64, 36, width);
             _card.Size = new(64 + width + 36, 36 + height + 22);
@@ -158,6 +162,7 @@ public partial class TutorialFocusLayer : Control
         string translated = _hint.Tr(_hint.Text);
         if (_layoutText != translated) { _layoutText = translated; LayoutCard(); }
         Control? presentation = PresentationCard();
+        _close.GetParent<Control>().Visible = AllowDismiss && ShowDismiss() && presentation is null;
         _card.Visible = presentation is null;
         if (PlaceNearTargets) PositionBesideTargets(presentation ?? _card);
         if (_ink.SetImages(images) | _ink.SetPolygons(polygons)) _mask.RenderTargetUpdateMode = SubViewport.UpdateMode.Once;

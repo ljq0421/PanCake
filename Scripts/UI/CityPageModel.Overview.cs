@@ -19,7 +19,14 @@ public sealed partial class CityPageModel
         var best = records.OrderByDescending(r => r.Value.TotalRevenue).ThenBy(r => r.Key).FirstOrDefault();
         return new(day, total > 0 ? DayTitle(city, day) : "", save.Data.Coins,
             records.Length, total, records.Length == 0 ? null : best.Value.TotalRevenue,
-            records.Length == 0 ? null : best.Key, JourneyModel.Goal(save, JourneyModel.City(city)), LatestUnlocks(city, highest));
+            records.Length == 0 ? null : best.Key, PreparationGoal(city), LatestUnlocks(city, highest));
+    }
+    private string PreparationGoal(string city)
+    {
+        if (catalog is null || city is not (StableIds.Cities.Tianjin or StableIds.Cities.Wuhan))
+            return JourneyModel.Goal(save, JourneyModel.City(city));
+        string goal = new BookUpgradeSource(save, catalog, city).NextGoal;
+        return goal.StartsWith("升级目标：", StringComparison.Ordinal) ? goal : goal.Split('·')[0].Trim();
     }
 
     private IReadOnlyList<CityUnlockView> LatestUnlocks(string city, int highest)

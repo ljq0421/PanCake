@@ -131,7 +131,7 @@ public partial class WuhanWorkbenchSelfTest : Node
                 Check(save.Data.Wuhan.DayBestRecords[day].CompletedCustomers == controller.CurrentPlan!.Customers.Count,
                     $"Day {day}: every generated customer's order can be completed");
                 Check(save.Data.Wuhan.DayBestRecords[day].IncorrectOrders == 0, $"Day {day}: every recipe matches");
-                Check(save.Data.Wuhan.HighestUnlockedDay == Math.Min(12, day + 1), $"Day {day}: original progression");
+                Check(save.Data.Wuhan.HighestUnlockedDay == day + 1, $"Day {day}: unlimited progression");
                 await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
             }
 

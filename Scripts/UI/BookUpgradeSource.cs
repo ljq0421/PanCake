@@ -4,7 +4,7 @@ using ProjectCake.Yangzhou;
 namespace ProjectCake.UI;
 
 /// <summary>Queries and purchases upgrades without recommitting the day's immutable result.</summary>
-public sealed class BookUpgradeSource
+public sealed partial class BookUpgradeSource
 {
     private readonly SaveService _save;
     private readonly DataCatalog? _catalog;
@@ -31,7 +31,9 @@ public sealed class BookUpgradeSource
     {
         // Compare target as well as ID: Yangzhou purchases otherwise mean "buy the next level".
         if (!Offers.Contains(offer)) { error = "该升级已购买或当前金币不足，请查看最新升级列表。"; return false; }
-        return _yangzhou is not null ? _save.PurchaseYangzhou(offer.PurchaseId, _yangzhou, out error)
+        bool ok = _yangzhou is not null ? _save.PurchaseYangzhou(offer.PurchaseId, _yangzhou, out error)
             : _save.TryPurchase(_city, offer.PurchaseId, _catalog!, out error);
+        if (ok) LastPurchased = offer;
+        return ok;
     }
 }

@@ -22,6 +22,7 @@ public sealed class DayBestRecord
 
 public sealed class CityProgressData
 {
+    public Dictionary<int, DailyChallenge> ClaimedChallenges { get; set; } = new();
     public int HighestUnlockedDay { get; set; } = 1;
     public int BestStars { get; set; }
     public bool Completed { get; set; }
@@ -99,7 +100,7 @@ internal sealed class LegacySaveDataV1
     public DayPlan? LastDayPlan { get; set; }
 }
 
-public readonly record struct DayCommitResult(int PermanentCoinGain, bool NewBest, int EarnedStars = 0, bool NewChapterCompletion = false);
+public readonly record struct DayCommitResult(int PermanentCoinGain, bool NewBest, int EarnedStars = 0, bool NewChapterCompletion = false, int ChallengeCoinGain = 0);
 
 public partial class SaveService : Node
 {
@@ -230,6 +231,14 @@ public partial class SaveService : Node
         int previousBest = hadBest ? best!.TotalRevenue : 0;
         int gain = Math.Max(0, result.TotalRevenue);
         bool newBest = !hadBest || result.TotalRevenue > previousBest;
+        int challengeGain = 0;
+        if (plan.Challenge is { } challenge && challenge.CityId == config.CityId && challenge.Day == config.Day
+            && challenge.Achieved(result) && !city.ClaimedChallenges.ContainsKey(result.Day))
+        {
+            challengeGain = challenge.Reward;
+            city.ClaimedChallenges.Add(result.Day, challenge);
+            Data.Coins += challengeGain;
+        }
         Data.Coins += gain; if (newBest) city.DayBestRecords[result.Day] = ToRecord(result);
         int chapterDays = ChapterDays(config.CityId);
         city.HighestUnlockedDay = Math.Max(city.HighestUnlockedDay, checked(result.Day + 1));
@@ -255,7 +264,7 @@ public partial class SaveService : Node
         BreakfastStatistics.Merge(Data.BreakfastStats, plan.PendingBreakfastStats, config.CityId);
         if (!TrySave(out string error)) { Data = snapshot; throw new IOException(error); }
         _settledRuns.Add(plan, new object());
-        Changed?.Invoke(); return new DayCommitResult(gain, newBest, stars, newlyCompleted);
+        Changed?.Invoke(); return new DayCommitResult(gain, newBest, stars, newlyCompleted, challengeGain);
     }
 
     public bool TryPurchase(string upgradeId, DataCatalog catalog, out string error) => TryPurchase(StableIds.Cities.Tianjin, upgradeId, catalog, out error);
@@ -414,6 +423,10 @@ public partial class SaveService : Node
         foreach ((string id, CityProgressData city) in data.Cities)
         {
             city.LearnedWorkbenchActions ??= new(StringComparer.Ordinal);
+            city.ClaimedChallenges ??= new();
+            if (city.ClaimedChallenges.Any(p => p.Value is null || p.Key < 2 || p.Value.Day != p.Key
+                || p.Value.CityId != id || p.Value.Target < 1 || p.Value.Reward is not (20 or 30 or 40)
+                || !Enum.IsDefined(p.Value.Kind))) throw new InvalidDataException("每日挑战记录无效。");
             int max = ChapterDays(id);
             if (city.HighestUnlockedDay is < 1 || city.BestStars is < 0 or > 3 || city.Completed && city.BestStars < 1) throw new InvalidDataException($"{id} 存档进度无效。");
             // Old saves capped the next day at the chapter milestone, even after settlement.

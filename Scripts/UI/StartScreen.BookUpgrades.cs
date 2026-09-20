@@ -18,7 +18,13 @@ public partial class StartScreen
         _equipmentCity = _city; _selectedEquipment = selected;
         _bookUpgradeSelection = selection; _bookUpgradePurchase = purchase; _returnToBook = back;
         RenderUpgradePage();
-        var feedback = Text(_body, "UpgradeFeedback", message, new(340, 872, 1220, 62), 23, true);
+        if (source.SupportsContinue && message.Length > 0)
+        {
+            var plate = new Panel { Name = "UpgradeFeedbackPaper", Position = new(340, 866), Size = new(1220, 75), MouseFilter = MouseFilterEnum.Ignore };
+            var paper = new StyleBoxFlat { BgColor = new("#FFF4D8"), BorderColor = new("#A98559"), CornerRadiusTopLeft = 10, CornerRadiusTopRight = 10, CornerRadiusBottomLeft = 10, CornerRadiusBottomRight = 10 };
+            paper.SetBorderWidthAll(1); plate.AddThemeStyleboxOverride("panel", paper); _body.AddChild(plate);
+        }
+        var feedback = Text(_body, "UpgradeFeedback", message, new(356, 872, 1188, 62), 23, true);
         feedback.AutowrapMode = TextServer.AutowrapMode.WordSmart;
         feedback.MaxLinesVisible = 2;
         feedback.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;

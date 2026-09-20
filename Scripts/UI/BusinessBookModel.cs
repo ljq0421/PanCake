@@ -32,6 +32,13 @@ public sealed class BusinessBookModel
     public string SaveMessage { get; set; } = "";
     public string[] Stickers { get; set; } = Array.Empty<string>();
     public BookUpgradeSource? Upgrades { get; set; }
+    public DailyChallenge? Challenge { get; set; }
+    public int ChallengeReward { get; set; }
+    public bool ChallengeClaimed { get; set; }
+    public string ChallengeCaption => Challenge is null ? "" :
+        !Challenge.Achieved(Result) ? $"挑战未达成：{Challenge.Requirement}"
+        : ChallengeReward > 0 ? $"挑战达成 · 额外奖金 +{ChallengeReward} 金币"
+        : ChallengeClaimed ? "挑战达成 · 奖励已领取" : "挑战达成 · 等待保存";
     public string[] ExtraNotes { get; set; } = Array.Empty<string>();
     public int Resolved => Result.CompletedCustomers + Result.LostCustomers;
     public double? CompletionRate => Resolved == 0 ? null : 100d * Result.CompletedCustomers / Resolved;

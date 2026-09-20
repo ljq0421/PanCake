@@ -97,8 +97,10 @@ public partial class BusinessDetailsView
         // The existing note silhouette is wider than its content area; stretch the paper, never its lettering.
         var paper = Art(_note, "今日手记便签底板", new(0, 0, 527, 127));
         paper.StretchMode = TextureRect.StretchModeEnum.Scale;
-        Text(_note, "营业手记", new(66, 19, 400, 34), 26);
-        Text(_note, _model.DailyNote, new(38, 57, 452, 58), 23, wrap: true);
+        Text(_note, _model.Upgrades is null ? "营业手记" : "下一步期待", new(66, 19, 400, 34), 26);
+        Text(_note, _model.Upgrades?.NextGoal ?? _model.DailyNote, new(38, 57, 452, 65), 20, wrap: true);
+        if (_model.Challenge is not null)
+            Text(_summary, _model.ChallengeCaption, new(890, 345, 560, 30), 21, wrap: false).Name = "ChallengeSettlement";
 
         // The left page starts below the book title; its content previously occupied the right page.
         _metrics = new Control { Position = new(ArtPageLeft - ArtPageRight, 54), MouseFilter = MouseFilterEnum.Ignore };

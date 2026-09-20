@@ -144,13 +144,13 @@ public partial class MorningHub : Control
     }
 
     private UpgradeOffer? NextStoveUpgrade() => FirstAvailable(
-        ("equipment:pancake_stove_lv2", "恒温不焦", 120, _save.Data.PurchasedStoveLevel >= 2),
+        ("equipment:pancake_stove_lv2", "恒温不焦", 80, _save.Data.PurchasedStoveLevel >= 2),
         ("equipment:pancake_stove_lv3", "恒温快热", 300, _save.Data.PurchasedStoveLevel >= 3));
     private UpgradeOffer? NextFryerUpgrade() => FirstAvailable(
         ("equipment:fryer_lv2", "扩容加速", 160, _save.Data.PurchasedFryerLevel >= 2),
         ("equipment:fryer_lv3", "自动抬篮", 320, _save.Data.PurchasedFryerLevel >= 3));
     private UpgradeOffer? NextStationUpgrade() => FirstAvailable(
-        ("equipment:ingredient_station_lv2", "四种小料各8份", 60, _save.Data.PurchasedIngredientStationLevel >= 2),
+        ("equipment:ingredient_station_lv2", "四种小料各8份", 40, _save.Data.PurchasedIngredientStationLevel >= 2),
         ("equipment:ingredient_station_lv3", "四种小料各10份", 180, _save.Data.PurchasedIngredientStationLevel >= 3));
 
     private UpgradeOffer? FirstAvailable(params (string Id, string Effect, int Price, bool Owned)[] choices)
@@ -162,19 +162,19 @@ public partial class MorningHub : Control
 
     internal static string DaySubtitle(int day) => day switch
     {
-        1 => "第一张煎饼", 2 => "薄脆上桌", 3 => "香葱飘香", 4 => "第一次早高峰",
-        5 => "油条开锅", 6 => "双线忙起来", 7 => "油条卷进煎饼", 8 => "火腿新品",
-        9 => "豆浆套餐", 10 => "完整早餐铺", 11 => "赶时间的客人", 12 => "大订单来了",
+        1 => "第一张煎饼", 2 => "薄脆与葱香", 3 => "油条开锅", 4 => "油条卷进煎饼",
+        5 => "豆浆套餐", 6 => "熟客的早餐", 7 => "火腿新品", 8 => "双线忙起来",
+        9 => "赶时间的客人", 10 => "完整早餐铺", 11 => "大订单来了", 12 => "自动提篮新体验",
         13 => "完整早高峰", 14 => "熟练挑战", _ => "最终高峰",
     };
 
     private static string DayPlanText(int day) => day switch
     {
         1 => "今天只做基础煎饼，熟悉摊、翻、抹、折。",
-        5 => "油条锅开始工作，记得趁空提前备货。",
-        9 => "豆浆加入套餐，出餐前看清每件商品。",
-        11 => "上班族和熟客出现，先服务快等不及的人。",
-        12 => "大订单开始出现，逐件补齐后再结算。",
+        3 => "油条锅开始工作，记得趁空提前备货。",
+        5 => "豆浆加入套餐，出餐前看清每件商品。",
+        9 => "上班族和熟客出现，先服务快等不及的人。",
+        11 => "大订单开始出现，逐件补齐后再结算。",
         15 => "最后一场天津早高峰，一星即可点亮城市。",
         _ => "新的商品和客流会逐步加入，设备升级能减轻操作压力。",
     };

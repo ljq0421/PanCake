@@ -104,7 +104,7 @@ public partial class DemoUiSelfTest : Node
             await Click("UpgradeTab"); await Capture("upgrades", _screen);
             Check(_screen.Descendants<Button>().Count(b => b.Name.ToString().StartsWith("Select_")) == (save.ChapterLength(StableIds.Cities.Tianjin) > 3 ? 3 : 2), "only configured Demo upgrades appear");
             await Click("UpgradeEquipment");
-            Check(save.Data.PurchasedStoveLevel == 2 && save.Data.Coins == 39, "viewport purchase applies correct upgrade and cost");
+            Check(save.Data.PurchasedStoveLevel == 2 && save.Data.Coins == 79, "viewport purchase applies new 80-coin upgrade cost");
             await Capture("purchased", _screen);
             await Click("LedgerTab"); await Click("Date3"); await Click("StartSelectedDay");
             var controller = main.GetNode<DayController>("DayController"); var dayScreen = main.GetNode<TianjinDayScreen>("UI/TianjinDayScreen");

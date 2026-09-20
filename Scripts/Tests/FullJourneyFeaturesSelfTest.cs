@@ -189,6 +189,7 @@ public partial class FullJourneyFeaturesSelfTest : Node
                 if (city == StableIds.Cities.Tianjin) main.GetNode<TianjinDayScreen>("UI/TianjinDayScreen").RefreshForCapture(true);
                 await Capture("full-lesson-" + city.Replace(':', '-'));
                 var skip = lesson.Descendants<Button>().Single(b => b.Name == "SkipLesson");
+                Check(lesson.Descendants<Button>().Count(b => b.IsVisibleInTree() && b.Text == "跳过教学") == 1, "replayed lesson has only one skip button");
                 var pause = lesson.Descendants<Button>().Single(b => b.Name == "HudPause");
                 Check(skip.GetGlobalRect().Position.X > 1500 && !skip.GetGlobalRect().Intersects(pause.GetGlobalRect()) && !skip.HasFocus(), "skip fixed clear of pause without default focus");
                 WrongDelivery(); TickLesson(); await Frames();

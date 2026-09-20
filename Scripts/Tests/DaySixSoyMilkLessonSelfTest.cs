@@ -3,7 +3,7 @@ using ProjectCake.Core;
 using ProjectCake.Data;
 using ProjectCake.Gameplay;
 namespace ProjectCake.Tests;
-// Guard removal of the old pilot Day 6 lesson: both days now follow formal content.
+// Guard the shared Day 5 unlock and removal of the old isolated pilot Day 6 lesson.
 public partial class DaySixSoyMilkLessonSelfTest : Node
 {
     public override async void _Ready()
@@ -17,11 +17,11 @@ public partial class DaySixSoyMilkLessonSelfTest : Node
             var main = GD.Load<PackedScene>("res://Scenes/Main/Main.tscn").Instantiate<GameController>(); AddChild(main);
             await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
             var controller = main.GetNode<DayController>("DayController");
-            foreach (int day in new[] { 6, 9 })
+            foreach (int day in new[] { 4, 5, 6, 9 })
             {
                 if (!main.StartCityBusiness(StableIds.Cities.Tianjin, day) || controller.TutorialActive
-                    || controller.CurrentConfig!.AvailableProductKinds.Contains(ProductKind.SoyMilk) != (day == 9))
-                    throw new Exception("Demo must use formal soy milk timing without the old Day 6 isolated lesson.");
+                    || controller.CurrentConfig!.AvailableProductKinds.Contains(ProductKind.SoyMilk) != (day >= 5))
+                    throw new Exception("Both profiles unlock soy milk on Day 5 without a separate Day 6 lesson.");
                 controller.AbandonDay();
             }
             GD.Print("DAY_SIX_SOY_MILK_LESSON_SELF_TEST_OK"); GetTree().Quit();

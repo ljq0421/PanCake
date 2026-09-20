@@ -8,24 +8,99 @@
   "patienceMultiplier": 1.0,
   "maxWaitingCustomers": 5,
   "randomSeed": 1015,
-  "customerWeights": { "normal": 0.40, "office_worker": 0.20, "regular": 0.20, "big_order": 0.20 },
-  "orderTypeWeights": { "pancake": 0.15, "youtiao": 0.05, "pancake_youtiao": 0.10, "soy_milk": 0.05, "pancake_soy_milk": 0.30, "full_combo": 0.35 },
+  "customerWeights": {
+    "normal": 0.4,
+    "office_worker": 0.2,
+    "regular": 0.2,
+    "big_order": 0.2
+  },
+  "orderTypeWeights": {
+    "pancake": 0.15,
+    "youtiao": 0.05,
+    "pancake_youtiao": 0.1,
+    "soy_milk": 0.05,
+    "pancake_soy_milk": 0.3,
+    "full_combo": 0.35
+  },
   "recipeWeights": {
-    "pancake_basic": 0.02, "pancake_crispy": 0.03, "pancake_scallion": 0.03, "pancake_scallion_crispy": 0.07,
-    "pancake_ham": 0.10, "pancake_ham_crispy": 0.13, "pancake_youtiao": 0.31, "pancake_scallion_youtiao": 0.31
+    "pancake_basic": 0.02,
+    "pancake_crispy": 0.03,
+    "pancake_scallion": 0.03,
+    "pancake_scallion_crispy": 0.07,
+    "pancake_ham": 0.1,
+    "pancake_ham_crispy": 0.13,
+    "pancake_youtiao": 0.31,
+    "pancake_scallion_youtiao": 0.31
   },
   "arrivalSegments": [
-    { "start": 0.0, "end": 0.20, "customerRatio": 0.15 },
-    { "start": 0.20, "end": 0.75, "customerRatio": 0.70 },
-    { "start": 0.75, "end": 1.0, "customerRatio": 0.15 }
+    {
+      "start": 0,
+      "end": 0.2,
+      "customerRatio": 0.2
+    },
+    {
+      "start": 0.2,
+      "end": 0.4,
+      "customerRatio": 0.3
+    },
+    {
+      "start": 0.4,
+      "end": 0.55,
+      "customerRatio": 0
+    },
+    {
+      "start": 0.55,
+      "end": 0.85,
+      "customerRatio": 0.4
+    },
+    {
+      "start": 0.85,
+      "end": 1,
+      "customerRatio": 0.1
+    }
   ],
-  "startUnlocks": [], "completionUnlocks": [],
-  "availableRecipeIds": ["pancake_basic", "pancake_crispy", "pancake_scallion", "pancake_scallion_crispy", "pancake_ham", "pancake_ham_crispy", "pancake_youtiao", "pancake_scallion_youtiao"],
-  "availableProductKinds": ["pancake", "youtiao", "soyMilk"],
-  "constraints": { "maxBigOrderCustomers": 4, "simpleNewProductOrders": 0, "maxConsecutiveYoutiaoOrders": 2, "maxPancakesPerCustomer": 2 },
+  "startUnlocks": [],
+  "completionUnlocks": [],
+  "availableRecipeIds": [
+    "pancake_basic",
+    "pancake_crispy",
+    "pancake_scallion",
+    "pancake_scallion_crispy",
+    "pancake_ham",
+    "pancake_ham_crispy",
+    "pancake_youtiao",
+    "pancake_scallion_youtiao"
+  ],
+  "availableProductKinds": [
+    "pancake",
+    "youtiao",
+    "soyMilk"
+  ],
+  "constraints": {
+    "maxBigOrderCustomers": 4,
+    "simpleNewProductOrders": 0,
+    "maxConsecutiveYoutiaoOrders": 2,
+    "maxPancakesPerCustomer": 2
+  },
   "starGoals": [
-    { "stars": 1, "minimumCompletedCustomers": 18, "minimumSatisfaction": 70, "minimumPerfectOrders": 0 },
-    { "stars": 2, "minimumCompletedCustomers": 22, "minimumSatisfaction": 82, "minimumPerfectOrders": 0 },
-    { "stars": 3, "minimumCompletedCustomers": 24, "minimumSatisfaction": 90, "minimumPerfectOrders": 15 }
-  ]
+    {
+      "stars": 1,
+      "minimumCompletedCustomers": 18,
+      "minimumSatisfaction": 70,
+      "minimumPerfectOrders": 0
+    },
+    {
+      "stars": 2,
+      "minimumCompletedCustomers": 22,
+      "minimumSatisfaction": 82,
+      "minimumPerfectOrders": 0
+    },
+    {
+      "stars": 3,
+      "minimumCompletedCustomers": 24,
+      "minimumSatisfaction": 90,
+      "minimumPerfectOrders": 15
+    }
+  ],
+  "arrivalEndBufferSeconds": 25
 }

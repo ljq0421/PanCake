@@ -14,6 +14,7 @@ public partial class TianjinDayScreen
         _workstation.BindFocusDrag();
         TeachingFocus = new TutorialFocusLayer { CardSkin = TutorialFocusCardSkin.Tianjin, Resolve = ResolveTeachingFocus,
             KeepClear = TeachingClearAreas, PlaceNearTargets = true,
+            DismissAtScreenEdge = true, ShowDismiss = () => !_controller.TutorialActive,
             PresentationCard = () => _demoLesson?.IsVisibleInTree() == true ? _demoLesson : null };
         AddChild(TeachingFocus);
     }

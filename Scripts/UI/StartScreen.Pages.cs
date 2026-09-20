@@ -198,11 +198,15 @@ public partial class StartScreen
         Begin(JourneyPage.Completion); DrawMap(true); UnlockDecoration();
         Text(_body, "NextTitle", JourneyModel.Next(_completedCity!) is { } next ? "下一站 · " + next.Name : "五城早餐旅程，已点亮", new(320, 54, 1300, 90), 49, true).AddThemeColorOverride("font_color", StartScreenTheme.Cream);
         foreach (var b in _buttons) b.Disabled = true;
-        Button(_body, "Skip", "继续旅程", new(1440, 920, 300, 65), FinishCompletion); Schedule(2, FinishCompletion); Focus("Skip");
+        Button(_body, "Skip", "继续旅程", new(1440, 920, 300, 65), FinishCompletion);
+        AddCompletionContinueButton(new(1020, 920, 380, 65));
+        if (_completionContinueBusiness is null) Schedule(2, FinishCompletion);
+        Focus(_completionContinueBusiness is null ? "Skip" : "ContinueCompletedCity");
     }
     private void FinishCompletion()
     {
         if (_completedCity is null) return;
+        _completionContinueBusiness = null;
         if (_save?.IsDemo == true && _completedCity == StableIds.Cities.Tianjin)
         { _completedCity = null; PresentDemoWuhanOpening(); return; }
         var next = JourneyModel.Next(_completedCity); _completedCity = null;

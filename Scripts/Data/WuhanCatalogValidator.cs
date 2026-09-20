@@ -22,6 +22,7 @@ public static class WuhanCatalogValidator
         foreach (DayConfig day in days)
         {
             string source = string.IsNullOrWhiteSpace(day.SourcePath) ? $"<Wuhan Day {day.Day}>" : day.SourcePath;
+            CatalogValidator.ValidateArrivalTiming(day, source, issues);
             ValidateWeights(day.CustomerWeights, knownCustomers, source, "customerWeights", issues);
             ValidateWeights(day.OrderTypeWeights, new[] { "hot_dry_noodles", "doupi", "noodles_doupi" }, source, "orderTypeWeights", issues);
             ValidateWeights(day.RecipeWeights, knownRecipes, source, "recipeWeights", issues);

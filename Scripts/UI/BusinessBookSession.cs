@@ -50,11 +50,14 @@ public static class BusinessBookSettlement
     public static BusinessBookModel Commit(BusinessBookModel model, SaveService save, DayPlan plan, DayConfig config, DataCatalog catalog, bool allowFailedReturn = false)
     {
         model.Closing = true; model.Stickers = Array.Empty<string>(); model.Upgrades = null; model.CanClose = true; model.CanRetry = false;
+        model.Challenge = plan.Challenge; model.ChallengeReward = 0; model.ChallengeClaimed = false;
         var before = save.Data.GetCity(config.CityId).UnlockedContentIds.ToHashSet(StringComparer.Ordinal);
         var collected = save.CollectedBreakfastIds.ToHashSet();
         try
         {
             var commit = save.CommitDay(model.Result, plan, config);
+            model.ChallengeReward = commit.ChallengeCoinGain;
+            model.ChallengeClaimed = save.Data.GetCity(config.CityId).ClaimedChallenges.ContainsKey(config.Day);
             model.SaveMessage = $"已入账 ¥{commit.PermanentCoinGain}" + (commit.NewBest ? " · 新纪录" : "");
             var stickers = new List<string>();
             if (commit.EarnedStars > 0) stickers.Add($"本次评级 {new string('★', commit.EarnedStars)}");

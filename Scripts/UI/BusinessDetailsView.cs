@@ -11,6 +11,10 @@ public partial class BusinessDetailsView : Control
     public event Action? CloseRequested;
     public event Action? PageChanged;
     public event Action? RetryRequested;
+    public event Action? ContinueRequested;
+    private Button _returnButton = null!;
+    private bool _continuing;
+    private bool CanContinueBusiness => ContinueRequested is not null && _model.Closing && _model.CanClose && !_model.CanRetry && _model.Upgrades?.SupportsContinue == true;
     private Control _canvas = null!, _book = null!, _bookContent = null!, _summary = null!, _details = null!, _metrics = null!, _note = null!, _stamp = null!;
     private Label _city = null!, _title = null!, _income = null!, _save = null!, _status = null!;
     private VBoxContainer _rows = null!;
@@ -64,7 +68,10 @@ public partial class BusinessDetailsView : Control
         _scroll = new ScrollContainer { Position = new(78, 66), Size = new(1524, 568), HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled, Name = "OrderScroll" }; _details.AddChild(_scroll);
         _rows = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; _rows.AddThemeConstantOverride("separation", 12); _scroll.AddChild(_rows);
         _save = Text(_bookContent, "", new(80, 792, 1120, 65), 20, Muted, wrap: true);
-        CloseButton = ButtonAt(_bookContent, "收好账本", new(1320, 798, 240, 72), RequestClose); CloseButton.Name = "CloseBusinessDetails";
+        CloseButton = ButtonAt(_bookContent, "收好账本", new(1320, 798, 240, 72), RequestPrimary); CloseButton.Name = "CloseBusinessDetails";
+        _returnButton = ButtonAt(_bookContent, "返回店铺", new(1225, 786, 220, 42), RequestClose);
+        _returnButton.AddThemeFontSizeOverride("font_size", 20);
+        _returnButton.Name = "ReturnFromSettlement"; _returnButton.Hide();
         _retry = ButtonAt(_bookContent, "重试保存", new(1100, 809, 190, 58), () => { FinishAnimation(); RetryRequested?.Invoke(); });
         _audio = new PancakeAudio(); AddChild(_audio);
         BuildUpgradeTeaching();
@@ -79,6 +86,7 @@ public partial class BusinessDetailsView : Control
     public void Open(BusinessBookModel model)
     {
         RemoveUpgradeModal(); FinishAnimation(); _model = model; _filter = BookFilter.All;
+        _continuing = false;
         RefreshUpgradeCaptions();
         ApplyBookSkin();
         _city.Text = $"{model.CityName} · DAY {model.Result.Day:00}";
@@ -87,6 +95,8 @@ public partial class BusinessDetailsView : Control
         _save.Text = model.SaveMessage;
         _save.Visible = _save.Text.Length > 0 && !(UsesTravelBook && _save.Text.Contains("已入账", StringComparison.Ordinal));
         _retry.Visible = model.CanRetry; CloseButton.Disabled = !model.CanClose;
+        CloseButton.Text = CanContinueBusiness ? $"开始第 {_model.Upgrades!.NextDay} 天" : "收好账本";
+        _returnButton.Visible = CanContinueBusiness;
         BuildSummary(); RefreshRows(); SelectPage(false, false); Show();
         (model.CanClose ? CloseButton : _retry).GrabFocus(); StartAnimation();
         InterfaceTeaching.Offer(this, InterfaceLessons.BookKey, InterfaceLessons.Book,
@@ -158,6 +168,8 @@ public partial class BusinessDetailsView : Control
         {
             SetButtonBounds(CloseButton, details ? new(1145, 776, 280, 70) : new(1225, 703, 220, 64));
             CloseButton.AddThemeFontSizeOverride("font_size", details ? 30 : TravelActionFontSize);
+            _returnButton.Visible = CanContinueBusiness && !details;
+            if (CanContinueBusiness) CloseButton.AddThemeFontSizeOverride("font_size", 23);
         }
         if (!changed) return;
         (details ? _previousPage : _nextPage).GrabFocus();
@@ -209,6 +221,15 @@ public partial class BusinessDetailsView : Control
         _scroll.ScrollVertical = 0;
     }
     private void RequestClose() { FinishAnimation(); if (_upgradeModal is null && _model.CanClose) CloseRequested?.Invoke(); }
+    private void RequestPrimary()
+    {
+        if (!CanContinueBusiness) { RequestClose(); return; }
+        if (_continuing) return;
+        if (_entrance?.IsRunning() == true) { FinishAnimation(); return; }
+        _continuing = true; CloseButton.Disabled = true;
+        RemoveUpgradeModal(); ContinueRequested?.Invoke();
+    }
+    public void RestoreContinueAfterFailure() { _continuing = false; CloseButton.Disabled = !_model.CanClose; }
     private void StartAnimation()
     {
         if (ProjectSettings.GetSetting("accessibility/reduce_motion", false).AsBool()) return;
@@ -252,6 +273,8 @@ public partial class BusinessDetailsView : Control
             _skipSpaceRelease = true;
             FinishAnimation(); GetViewport().SetInputAsHandled(); return;
         }
+        if (input is InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.Left } && _model.Closing && _entrance?.IsRunning() == true)
+        { FinishAnimation(); GetViewport().SetInputAsHandled(); return; }
         if (input is InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.Left }) FinishAnimation();
         if (input is not InputEventKey { Pressed: true, Echo: false } key) return;
         if (key.Keycode == Key.Escape) { if (_upgradeModal is not null) CloseUpgrades(); else RequestClose(); }

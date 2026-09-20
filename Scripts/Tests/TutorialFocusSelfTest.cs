@@ -40,6 +40,15 @@ public partial class TutorialFocusSelfTest : Node
     private void Drag(Control owner, Vector2 from, Vector2 to)
     { Move(owner, from); Button(owner, from, true); Move(owner, to, true); Button(owner, to, false); }
     private void Click(Control owner, Vector2 at) => Drag(owner, at, at);
+    private void CheckSkipGuidance(Control screen, TutorialFocusLayer focus)
+    {
+        var skip = focus.Descendants<Godot.Button>().Single(b => b.Name == "SkipGuidance");
+        var pause = screen.Descendants<Godot.Button>().Single(b => b.Name == "HudPause");
+        Check(skip.IsVisibleInTree() && skip.Text == "跳过教学" && !skip.HasFocus(), "normal business exposes skip without default focus");
+        Check(skip.GetGlobalRect().Position == new Vector2(1620, 28)
+            && !skip.GetGlobalRect().Intersects(pause.GetGlobalRect())
+            && !skip.GetGlobalRect().Intersects(focus.CardBounds), "skip stays at right edge clear of pause and teaching card");
+    }
     private void OneOrder(DayController controller, string city, params OrderLineData[] lines)
     {
         controller.CustomerQueue!.ResolveBeforeArrival = (p, _) => new OrderData { OrderId = p.Order.OrderId, CityId = city,
@@ -103,7 +112,10 @@ public partial class TutorialFocusSelfTest : Node
         station.Descendants<Button>().Single(b => b.Name == "IngredientInput_egg").EmitSignal(Godot.Button.SignalName.Pressed);
         Check(save.Data.Tianjin.LearnedWorkbenchActions.Contains("take:egg"), "successful egg operation is learned");
         station.Tick(.1); focus.Refresh(); Check(focus.CurrentAction == "flip", "heat wait targets current stove");
-        focus.Dismiss(); focus.Refresh(); Check(!focus.Visible && focus.Dismissed, "close suppresses this shift");
+        CheckSkipGuidance(screen, focus);
+        var skip = focus.Descendants<Godot.Button>().Single(b => b.Name == "SkipGuidance");
+        Click(skip, skip.Size / 2); focus.Refresh(); Check(!focus.Visible && focus.Dismissed, "right-edge skip suppresses this shift");
+        Check(controller.State == DayState.Running && !controller.TutorialActive, "skip preserves normal business");
         station.LearnWorkbenchAction("spread"); focus.Refresh(); Check(!focus.Visible, "success does not reopen dismissed guidance");
         controller.AbandonDay(); Check(screen.Initialize(catalog, save, controller, 1), "next Tianjin shift initializes");
         screen.BeginDay(); OneOrder(controller, StableIds.Cities.Tianjin, new OrderLineData(ProductKind.Pancake, recipe, 1)); controller.Tick(3.1); controller.Tick(.5); for (int i = 0; i < 30 && TutorialOrders.Pending(controller, catalog).Count == 0; i++) controller.Tick(1); screen.RefreshForCapture(true); focus.Refresh();
@@ -187,6 +199,11 @@ public partial class TutorialFocusSelfTest : Node
         void Step(double dt) { screen._Notification((int)NotificationApplicationFocusIn); screen._Process(dt); }
         Step(3.1); Step(.5); for (int i = 0; i < 30 && TutorialOrders.Pending(controller, catalog).Count == 0; i++) Step(1); await Frames();
         var view = screen.Workstation; var focus = screen.TeachingFocus; focus.Refresh();
+        CheckSkipGuidance(screen, focus);
+        var skip = focus.Descendants<Godot.Button>().Single(b => b.Name == "SkipGuidance");
+        Click(skip, skip.Size / 2); focus.Refresh();
+        Check(focus.Dismissed && !focus.Visible && controller.State == DayState.Running, "Wuhan right-edge skip preserves normal business");
+        focus.ResetSession(); focus.Refresh();
         Check(focus.CurrentAction == "take:noodles", "Wuhan first action highlights raw tray"); await Shot("wuhan-raw");
         Check(InteractionHighlightPresentation.ColorFor(InteractionHighlightState.Hover, focus) == new Color("20B8AA"), "Wuhan tutorial inherits hover color");
         Move(view, view.RawCenter); Button(view, view.RawCenter, true); Move(view, view.BasketRect(0).GetCenter(), true); focus.Refresh();

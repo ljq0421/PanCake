@@ -93,11 +93,14 @@ public partial class StartScreen : Control
     { foreach (Node child in parent.GetChildren()) { parent.RemoveChild(child); child.QueueFree(); } }
     private void Focus(string name)
     { (_body.Descendants<Button>().FirstOrDefault(b => b.Name == name && !b.Disabled) ?? _buttons.FirstOrDefault(b => !b.Disabled))?.GrabFocus(); }
-    private void Chrome(Action back, string? title = null)
+    private void Chrome(Action back, string? title = null, bool showBack = true)
     {
-        var previous = Button(_body, "Back", "", new(72, 48, 140, 62), back, bare: true);
-        Art(previous, "账本翻页箭头｜左", new(0, 7, 55, 48));
-        Text(previous, "Caption", "返回", new(62, 0, 78, 62), 25);
+        if (showBack)
+        {
+            var previous = Button(_body, "Back", "", new(72, 48, 140, 62), back, bare: true);
+            Art(previous, "账本翻页箭头｜左", new(0, 7, 55, 48));
+            Text(previous, "Caption", "返回", new(62, 0, 78, 62), 25);
+        }
         if (!string.IsNullOrEmpty(title))
         {
             var heading = Text(_body, "PageTitle", title, new(520, 38, 880, 76), 42, true);

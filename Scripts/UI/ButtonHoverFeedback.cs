@@ -10,22 +10,28 @@ public partial class ButtonHoverFeedback : Node
         if (root is BaseButton button) Attach(button);
         foreach (Node child in root.GetChildren()) AttachTree(child);
     }
-    private BaseButton _button = null!;
+    private Control _source = null!;
+    private Func<bool>? _canInteract;
     private Control? _visual;
     private Vector2 _restScale;
     private Tween? _tween;
     private bool _held;
+    private bool _focusAlsoScales;
     private float _target = 1;
 
-    public static void Attach(BaseButton button, Control? visual = null)
+    public static void Attach(Control source, Control? visual = null, Func<bool>? canInteract = null)
     {
-        if (button.GetNodeOrNull<ButtonHoverFeedback>("ButtonHoverFeedback") is not null) return;
-        button.AddChild(new ButtonHoverFeedback { Name = "ButtonHoverFeedback", _visual = visual });
+        if (source.GetNodeOrNull<ButtonHoverFeedback>("ButtonHoverFeedback") is { } existing)
+        {
+            if (visual is not null && existing._restScale == Vector2.Zero) existing._visual = visual;
+            return;
+        }
+        source.AddChild(new ButtonHoverFeedback { Name = "ButtonHoverFeedback", _visual = visual, _canInteract = canInteract });
     }
 
     public override void _Ready()
     {
-        _button = GetParent<BaseButton>();
+        _source = GetParent<Control>();
         ProcessMode = ProcessModeEnum.Always;
         // Containers finish laying out their children after Ready.
         CallDeferred(nameof(Configure));
@@ -33,16 +39,21 @@ public partial class ButtonHoverFeedback : Node
 
     private void Configure()
     {
-        if (!IsInsideTree() || _button.IsQueuedForDeletion()) return;
-        _visual ??= _button;
+        if (!IsInsideTree() || _source.IsQueuedForDeletion()) return;
+        _visual ??= _source;
         _restScale = _visual.Scale;
-        _button.MouseEntered += Refresh;
-        _button.MouseExited += Refresh;
-        _button.FocusEntered += Refresh;
-        _button.FocusExited += Refresh;
-        _button.ButtonDown += Down;
-        _button.ButtonUp += Up;
-        _button.VisibilityChanged += Refresh;
+        // This follow-up explicitly excludes Xi'an city screens. Preserve their prior feedback.
+        for (Node? owner = _source; owner is not null; owner = owner.GetParent())
+            if (owner is ProjectCake.Gameplay.XianDayScreen or XianHub) _focusAlsoScales = true;
+        _source.MouseEntered += Refresh;
+        _source.MouseExited += Refresh;
+        if (_focusAlsoScales) { _source.FocusEntered += Refresh; _source.FocusExited += Refresh; }
+        if (_source is BaseButton button)
+        {
+            button.ButtonDown += Down;
+            button.ButtonUp += Up;
+        }
+        _source.VisibilityChanged += Refresh;
         _visual.Resized += Center;
         Center();
         Refresh();
@@ -57,15 +68,15 @@ public partial class ButtonHoverFeedback : Node
         // Disabled has no change signal; also catch focus loss during a press.
         if (_restScale != Vector2.Zero)
         {
-            if (_held && !_button.IsPressed()) _held = false;
+            if (_held && _source is BaseButton { } button && !button.IsPressed()) _held = false;
             Refresh();
         }
     }
 
     private void Refresh()
     {
-        bool available = _button.IsVisibleInTree() && !_button.Disabled
-            && _button.MouseFilter != Control.MouseFilterEnum.Ignore;
+        bool available = _source.IsVisibleInTree() && _source is not BaseButton { Disabled: true }
+            && _source.MouseFilter != Control.MouseFilterEnum.Ignore && (_canInteract?.Invoke() ?? true);
         if (!available)
         {
             _held = false; _target = 1;
@@ -73,8 +84,12 @@ public partial class ButtonHoverFeedback : Node
             if (!_visual!.Scale.IsEqualApprox(_restScale)) _visual.Scale = _restScale;
             return;
         }
-        float target = _held ? .98f
-            : _button.IsHovered() || _button.HasFocus() ? 1.04f : 1;
+        Control? hovered = _source.GetViewport().GuiGetHoveredControl();
+        bool over = _source is BaseButton b ? b.IsHovered()
+            : hovered == _source || (hovered is not null && _source.IsAncestorOf(hovered));
+        // Default focus and post-click focus must never consume the hover transition.
+        // Keyboard focus keeps the authored outline; only pointer hover enlarges the art.
+        float target = _held ? .98f : over || (_focusAlsoScales && _source.HasFocus()) ? 1.04f : 1;
         if (Mathf.IsEqualApprox(target, _target)) return;
         _target = target;
         _tween?.Kill();

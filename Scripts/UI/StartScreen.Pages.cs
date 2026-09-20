@@ -53,7 +53,7 @@ public partial class StartScreen
         HomeAction("WorldMap", "世界地图", "世界地图入口图标", new(1655, 855, 170, 145), () => PresentMap(), small: true);
         Utilities(); Focus(canContinue ? "Continue" : "NewGame");
         // The wall remains an additional map entrance, after the main actions in keyboard order.
-        Button(_body, "WallMap", "", new(490, 205, 990, 470), () => PresentMap(), bare: true);
+        Button(_body, "WallMap", "", new(490, 205, 990, 470), () => PresentMap(), bare: true, hoverVisual: wall);
         _status.MoveToFront();
     }
     private void RenderOpening()

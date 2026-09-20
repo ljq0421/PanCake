@@ -77,7 +77,7 @@ public partial class WuhanDayScreen
         if (result.Grade is DeliveryGrade.Correct or DeliveryGrade.Perfect)
         {
             _demoLessonComplete = true;
-            _demoLessonTitle!.Text = "第一份早餐，做好了！"; _demoLessonAction!.Text = "开始营业";
+            _demoLessonTitle!.Text = "教学完成，准备营业！"; _demoLessonAction!.Text = "开始营业";
             LayoutWuhanDemoLesson();
             Workstation.CancelInput();
         }

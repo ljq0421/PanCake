@@ -31,6 +31,7 @@ public partial class WuhanLedger : Control
 
     public override void _Ready()
     {
+        Callable.From(() => ButtonHoverFeedback.AttachTree(this)).CallDeferred();
         SceneNodeBinder.Bind(this);
         _audio = new WuhanActionAudio(this);
         _art = new WuhanArtCatalog();

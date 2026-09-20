@@ -35,6 +35,11 @@ public partial class CityPagesSelfTest : Node
                 await ReviewBusinessNote();
                 GD.Print($"CITY_NOTE_TEST_RESULT passed={_passed} failed=0"); GetTree().Quit(); return;
             }
+            if (args.Contains("--ledger-review"))
+            {
+                await ReviewWuhanLedger();
+                GD.Print($"CITY_LEDGER_TEST_RESULT passed={_passed} failed=0"); GetTree().Quit(); return;
+            }
             if (args.Contains("--map-only"))
             {
                 GetNode<JourneySettings>("/root/JourneySettings").SetLanguage(args.Contains("--english") ? "en" : "zh_CN");
@@ -94,7 +99,9 @@ public partial class CityPagesSelfTest : Node
                 Click("LedgerTab"); await Frames();
                 Check(Find<TextureRect>("SharedBook").GetGlobalRect() == rect, "ledger book geometry matches " + city.Name);
                 CheckBookTheme(city.Id);
-                Check(Find<TextureRect>("SharedBook").Material is null, "ledger preserves supplied art colors " + city.Name);
+                Check(city.Id == StableIds.Cities.Wuhan
+                    ? Find<TextureRect>("SharedBook").Material is ShaderMaterial
+                    : Find<TextureRect>("SharedBook").Material is null, "ledger palette scope " + city.Name);
                 Check(_screen.SelectedDay == city.Days, "ledger selects latest " + city.Name);
                 Check(Find<Label>("BestRevenue").Text == "140 金币", "ledger record " + city.Name);
                 Check(Find<TextureRect>("FinalDayCrown") is not null && Find<TextureRect>("PerfectStamp") is not null, "final day and perfect badges " + city.Name);
@@ -233,6 +240,15 @@ public partial class CityPagesSelfTest : Node
                     && _screen.FindChildren("Food0", "Label", true, false).Count == 0, "old heading and food list removed");
                 Check(Find<Label>("PostcardCity").Text == city.Name, "postcard identifies city");
                 Check(Find<Label>("DayTitle").Text == $"第{progress.HighestUnlockedDay}天 {model.DayTitle(city.Id, progress.HighestUnlockedDay)}", "day ribbon matches business destination");
+                if (city.Id == StableIds.Cities.Wuhan)
+                {
+                    Check(IsWuhanPalette(Find<TextureRect>("DayRibbon")), "Wuhan day ribbon uses city palette");
+                    Check(Find<Button>("OpenBusiness").GetChildren().OfType<TextureRect>().Any(IsWuhanPalette), "Wuhan business button uses city palette");
+                    Check(note.FindChildren("*Icon", "TextureRect", true, false).OfType<TextureRect>().Count() == 5
+                        && note.FindChildren("*Icon", "TextureRect", true, false).OfType<TextureRect>().All(IsWuhanPalette), "Wuhan five note icons use city palette");
+                    Check(_screen.FindChildren("LedgerTab", "Button", true, false).Single().GetChildren().OfType<TextureRect>().Any(IsWuhanPalette)
+                        && _screen.FindChildren("UpgradeTab", "Button", true, false).Single().GetChildren().OfType<TextureRect>().Any(IsWuhanPalette), "Wuhan page tabs use city palette");
+                }
                 foreach (var node in note.FindChildren("*", "Label", true, false))
                 {
                     var label = (Label)node;
@@ -270,6 +286,23 @@ public partial class CityPagesSelfTest : Node
             _main.OpenCity(city.Id);
         }
     }
+    private async Task ReviewWuhanLedger()
+    {
+        var progress = _save.Data.GetCity(StableIds.Cities.Wuhan);
+        if (!_save.Data.UnlockedCityIds.Contains(StableIds.Cities.Wuhan)) _save.Data.UnlockedCityIds.Add(StableIds.Cities.Wuhan);
+        progress.HighestUnlockedDay = 1;
+        progress.DayBestRecords.Clear();
+        _main.OpenCity(StableIds.Cities.Wuhan); await Frames();
+        _screen.PresentLedger(); await Frames();
+        Check(_screen.Page == JourneyPage.Ledger && _screen.SelectedCityId == StableIds.Cities.Wuhan, "Wuhan ledger opens from its city page");
+        CheckBookTheme(StableIds.Cities.Wuhan);
+        var selectedDate = Find<Button>("Date1").GetChildren().OfType<Panel>().Single().GetThemeStylebox("panel") as StyleBoxFlat;
+        Check(selectedDate is not null && selectedDate.BgColor == CitySettlementTheme.Paper.Lerp(CitySettlementTheme.For("wuhan").Primary, .32f), "Wuhan ledger date card uses city palette");
+        var start = Find<Button>("StartSelectedDay");
+        var startStyle = start.GetThemeStylebox("normal") as StyleBoxFlat;
+        Check(startStyle is not null && startStyle.BgColor == CitySettlementTheme.For("wuhan").Primary, "Wuhan ledger action uses city palette");
+        await Capture("武汉-ledger-review");
+    }
     private void CheckOverviewModel(CityPageModel model)
     {
         var city = _save.Data.GetCity(StableIds.Cities.Tianjin);
@@ -303,7 +336,14 @@ public partial class CityPagesSelfTest : Node
         if (_screen.Page == JourneyPage.Ledger)
         {
             var ledger = Find<TextureRect>("SharedBook");
-            Check(ledger.Material is null && ((AtlasTexture)ledger.Texture).Atlas.ResourcePath.EndsWith("旅行手账双页母版-经营手账.png"), "ledger uses supplied master without old mask " + city);
+            Check(((AtlasTexture)ledger.Texture).Atlas.ResourcePath.EndsWith("旅行手账双页母版-经营手账.png"), "ledger uses supplied master " + city);
+            if (city == StableIds.Cities.Wuhan)
+            {
+                var ledgerMaterial = ledger.Material as ShaderMaterial;
+                Check(ledgerMaterial is not null && ledgerMaterial.GetShaderParameter("primary").AsColor() == CitySettlementTheme.For("wuhan").Primary
+                    && ledgerMaterial.GetShaderParameter("secondary").AsColor() == CitySettlementTheme.For("wuhan").Secondary, "Wuhan ledger uses city palette");
+            }
+            else Check(ledger.Material is null, "other ledgers retain supplied colors " + city);
             return;
         }
         Check(_screen.FindChildren("DeveloperMenu", "Button", true, false).Count == 0, "developer menu removed " + city);
@@ -322,12 +362,18 @@ public partial class CityPagesSelfTest : Node
         });
         Check(material!.GetShaderParameter("cover_color").AsColor() == theme.Primary
             && material.GetShaderParameter("ornament_color").AsColor() == theme.Secondary, "book palette matches city " + city);
+        if (city == StableIds.Cities.Wuhan && _screen.Page == JourneyPage.City)
+            Check(material.GetShaderParameter("note_enabled").AsSingle() == 1f
+                && material.GetShaderParameter("note_color").AsColor() == CitySettlementTheme.Paper.Lerp(theme.Secondary, .48f), "Wuhan information slip uses city palette");
         var mask = material.GetShaderParameter("region_mask").AsGodotObject() as Texture2D;
         Check(mask!.ResourcePath.EndsWith(_screen.Page == JourneyPage.City ? "旅行手账双页分区遮罩-带便签.png" : "旅行手账双页分区遮罩.png"), "mask matches page artwork");
         var source = ((AtlasTexture)book.Texture).Atlas;
         Check(mask is not null && mask.GetSize() == source.GetSize(), "mask uses original atlas coordinates " + city);
     }
     private T Find<T>(string name) where T : Node => (T)_screen.FindChildren(name, typeof(T).Name, true, false).First(n => n is not Control c || c.IsVisibleInTree());
+    private static bool IsWuhanPalette(CanvasItem item) => item.Material is ShaderMaterial material
+        && material.GetShaderParameter("primary").AsColor() == CitySettlementTheme.For("wuhan").Primary
+        && material.GetShaderParameter("secondary").AsColor() == CitySettlementTheme.For("wuhan").Secondary;
     private void Click(string name) => Find<Button>(name).EmitSignal(BaseButton.SignalName.Pressed);
     private void Check(bool ok, string message) { if (!ok) throw new InvalidOperationException(message); _passed++; GD.Print("PASS " + message); }
     private async Task Frames() { for (int i = 0; i < 3; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame); }

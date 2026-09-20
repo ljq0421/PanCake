@@ -11,7 +11,7 @@ internal sealed class WuhanWorkbenchLayout
     public static Rect2 Rect(float x, float y, float width, float height) => new(Point(x, y), Point(width, height));
     public static readonly Rect2 EmbeddedTrash = Rect(1008, 870, 150, 71);
     public static readonly Rect2 EggUi = new(520, 18, 250, 60);
-    public static readonly Rect2 CashPendant = Rect(1508, 184, 134, 211);
+    public static readonly Rect2 CashPendant = Rect(1528, 120, 136, 275);
     public static readonly Vector2 CashSlot = Point(1574, 240);
     public static readonly WuhanWorkbenchLayout Noodles = new(false);
     public static readonly WuhanWorkbenchLayout Doupi = new(true);

@@ -49,6 +49,8 @@ public partial class StartScreen
             material.SetShaderParameter("region_mask", GD.Load<Texture2D>(JourneyModel.ArtRoot + (withNote ? "旅行手账双页分区遮罩-带便签.png" : "旅行手账双页分区遮罩.png")));
             material.SetShaderParameter("cover_color", theme.Primary);
             material.SetShaderParameter("ornament_color", theme.Secondary);
+            material.SetShaderParameter("note_color", CitySettlementTheme.Paper.Lerp(theme.Secondary, .48f));
+            material.SetShaderParameter("note_enabled", withNote && CityPageArtSkin.UsesWuhanPalette(cityId) ? 1f : 0f);
             book.Material = material;
         }
     }
@@ -63,7 +65,9 @@ public partial class StartScreen
         else Chrome(RenderCity, title);
         if (page == JourneyPage.Ledger)
         {
-            HomeArt(_body, "旅行手账双页母版-经营手账", BookBounds).Name = "SharedBook";
+            var ledger = HomeArt(_body, "旅行手账双页母版-经营手账", BookBounds);
+            ledger.Name = "SharedBook";
+            CityPageArtSkin.Apply(ledger, _city);
             var heading = _body.GetNode<Label>("PageTitle");
             var sign = HomeArt(_body, "城市名称牌底板", new(615, 12, 690, 146));
             _body.MoveChild(sign, heading.GetIndex());
@@ -78,7 +82,8 @@ public partial class StartScreen
             var bookmark = tabs[i];
             bool selected = page == JourneyPage.Ledger && i == 0 || page == JourneyPage.Upgrades && i == 1;
             var button = Button(_body, bookmark.Name, "", new(selected ? 1617 : 1607, 290 + i * 170, 140, 155), bookmark.Action, bare: true);
-            HomeArt(button, "书页标签-" + bookmark.Caption + "-v2", new(0, 0, 140, 155), stretch: true);
+            var tabArt = HomeArt(button, "书页标签-" + bookmark.Caption + "-v2", new(0, 0, 140, 155), stretch: true);
+            CityPageArtSkin.Apply(tabArt, _city);
             var caption = Text(button, "Caption", bookmark.Caption.Insert(2, "\n"), new(25, 85, 94, 57), 25, true);
             FitContinueLines(caption, 25, 16, 2);
             // The straight edge tucks under the book cover, like a paper index tab.
@@ -105,7 +110,9 @@ public partial class StartScreen
         day = overview?.Day ?? day;
         CityFrame(JourneyPage.City, city.Name + "早餐铺");
         DrawContinuePostcard(city);
-        HomeArt(_body, "Dayx背景", new(320, 695, 595, 145)).Name = "DayRibbon";
+        var dayRibbon = HomeArt(_body, "Dayx背景", new(320, 695, 595, 145));
+        dayRibbon.Name = "DayRibbon";
+        CityPageArtSkin.Apply(dayRibbon, _city);
         var dayCaption = Text(_body, "DayTitle", $"第{day}天 {overview?.Title ?? ""}", new(383, 722, 443, 74), 32, true);
         FitTextWidth(dayCaption, 32, 22);
         if (_save!.IsDemo && _save.Data.Wuhan.Completed)
@@ -135,6 +142,7 @@ public partial class StartScreen
         }
         var open = Button(_body, "OpenBusiness", "继续营业", new(680, 863, 520, 112), () => RequestBusiness(day), bare: true);
         var plate = HomeArt(open, "首页地图按钮底板", new(0, 0, 520, 112), stretch: true);
+        CityPageArtSkin.Apply(plate, _city);
         plate.ShowBehindParent = true;
         open.AddThemeFontSizeOverride("font_size", 46);
         open.AddThemeColorOverride("font_outline_color", StartScreenTheme.Cream);
@@ -159,8 +167,12 @@ public partial class StartScreen
             var at = new Vector2(320 + ((d - 1) % 3) * 190, 406 + ((d - 1) / 3) * 84);
             var b = Button(_body, "Date" + d, "", new(at, new(179, 82)), () => { SelectedDay = date; RenderLedgerPage(); Focus("Date" + date); }, bare: true);
             var panel = new Panel { Size = b.Size, MouseFilter = MouseFilterEnum.Ignore };
-            var style = StartScreenTheme.Box(d == SelectedDay ? new Color("#FFE29C") : unlocked ? new Color("#FFF7E6") : new Color("#E9D8B8"), d == SelectedDay ? 3 : 1);
-            style.BorderColor = d == SelectedDay ? new Color("#E5A334") : new Color("#AD8056");
+            bool wuhan = CityPageArtSkin.UsesWuhanPalette(_city);
+            var palette = CitySettlementTheme.For(wuhan ? "wuhan" : "tianjin");
+            var style = StartScreenTheme.Box(wuhan
+                ? (d == SelectedDay ? CitySettlementTheme.Paper.Lerp(palette.Primary, .32f) : unlocked ? CitySettlementTheme.Paper.Lerp(palette.Secondary, .24f) : CitySettlementTheme.Paper.Lerp(palette.Secondary, .52f))
+                : (d == SelectedDay ? new Color("#FFE29C") : unlocked ? new Color("#FFF7E6") : new Color("#E9D8B8")), d == SelectedDay ? 3 : 1);
+            style.BorderColor = wuhan ? (d == SelectedDay ? palette.Primary.Darkened(.18f) : palette.Secondary.Darkened(.35f)) : d == SelectedDay ? new Color("#E5A334") : new Color("#AD8056");
             panel.AddThemeStyleboxOverride("panel", style); b.AddChild(panel);
             Text(b, "Day", $"第 {d} 天", new(13, 4, 135, 32), 23);
             if (recorded) HomeArt(b, "../HUDUI/小费飞行金币", new(12, 45, 23, 23));
@@ -199,7 +211,9 @@ public partial class StartScreen
         FitTextWidth(perfect, 18, 12);
         if (_save.HasLoadError)
             Text(_body, "ReplayNote", "重置会清除全部旅程，操作前会再次确认。", new(1010, 803, 505, 38), 21, true);
-        Button(_body, "StartSelectedDay", $"{(hasRecord ? "再次营业" : "开张")} · 第 {SelectedDay} 天", new(1030, 873, 510, 76), () => RequestBusiness(SelectedDay), true).Disabled = !CanOpenDay(SelectedDay);
+        var start = Button(_body, "StartSelectedDay", $"{(hasRecord ? "再次营业" : "开张")} · 第 {SelectedDay} 天", new(1030, 873, 510, 76), () => RequestBusiness(SelectedDay), true);
+        CityPageArtSkin.ApplyPrimaryButton(start, _city);
+        start.Disabled = !CanOpenDay(SelectedDay);
         Button(_body, "ResetLedgerProgress", "重置进度", new(340, 952, 170, 48), RequestLedgerReset);
         Focus("Date" + SelectedDay);
         InterfaceTeaching.Offer(_body, InterfaceLessons.CalendarKey, InterfaceLessons.Calendar,
@@ -233,7 +247,7 @@ public partial class StartScreen
         if (_equipmentCity != _city) { _selectedEquipment = null; _equipmentCity = _city; }
         var view = new EquipmentUpgradeView { Name = "UpgradeView", Position = new(320, 230) };
         _body.AddChild(view);
-        view.Configure(_bookUpgradeSource?.Equipment ?? _cityModel?.Equipment(_city) ?? Array.Empty<CityEquipmentView>(), _selectedEquipment,
+        view.Configure(_bookUpgradeSource?.Equipment ?? _cityModel?.Equipment(_city) ?? Array.Empty<CityEquipmentView>(), _selectedEquipment, _city,
             id => { _selectedEquipment = id; _bookUpgradeSelection?.Invoke(id); }, e =>
             {
                 if (HostedByBook) { _bookUpgradePurchase?.Invoke(e); return; }

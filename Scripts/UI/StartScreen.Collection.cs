@@ -6,6 +6,8 @@ namespace ProjectCake.UI;
 public partial class StartScreen
 {
     private string _selectedBreakfast = "pancake", _collectionCity = "";
+    private Control _collectionContent = null!;
+    private const float CollectionContentScale = 1400f / 1860f;
 
     private CollectionDecoration CollectionPaper(Control parent, Rect2 rect, string kind = "paper", bool selected = false)
     {
@@ -19,14 +21,23 @@ public partial class StartScreen
     {
         if (_save is null) return;
         Begin(JourneyPage.Collection);
-        var book = HomeArt(_body, "旅行手账双页母版", new(30, 4, 1860, 994)); book.Name = "CollectionBook";
-        var back = Button(_body, "Back", "", new(80, 105, 44, 55), ReturnFromBreakfastCollection, bare: true);
+        var book = HomeArt(_body, "旅行手账双页母版", BookBounds); book.Name = "CollectionBook";
+        _collectionContent = new Control
+        {
+            Name = "CollectionContent",
+            Size = new(1920, 1080),
+            Position = BookBounds.Position - new Vector2(30, 4) * CollectionContentScale,
+            Scale = Vector2.One * CollectionContentScale,
+            MouseFilter = MouseFilterEnum.Stop,
+        };
+        _body.AddChild(_collectionContent);
+        var back = Button(_collectionContent, "Back", "", new(80, 105, 44, 55), ReturnFromBreakfastCollection, bare: true);
         Art(back, "账本翻页箭头｜左", new(0, 6, 40, 42));
-        Text(_body, "CollectionTitle", "旅途收藏", new(143, 104, 390, 86), 62);
-        Text(_body, "CollectionMotto", "收集各地的美味，\n也收集一段段旅途的回忆。", new(151, 190, 510, 62), 23);
-        CollectionPaper(_body, new(705, 116, 165, 126));
-        Text(_body, "CollectedCaption", "已收集", new(713, 132, 149, 36), 25, true);
-        Text(_body, "CollectedCount", $"{_save.CollectedBreakfastIds.Count()} / 5", new(713, 173, 149, 51), 37, true);
+        Text(_collectionContent, "CollectionTitle", "旅途收藏", new(143, 104, 390, 86), 62);
+        Text(_collectionContent, "CollectionMotto", "收集各地的美味，\n也收集一段段旅途的回忆。", new(151, 190, 510, 62), 23);
+        CollectionPaper(_collectionContent, new(705, 116, 165, 126));
+        Text(_collectionContent, "CollectedCaption", "已收集", new(713, 132, 149, 36), 25, true);
+        Text(_collectionContent, "CollectedCount", $"{_save.CollectedBreakfastIds.Count()} / 5", new(713, 173, 149, 51), 37, true);
 
         bool wuhan = _save.Data.UnlockedCityIds.Contains(StableIds.Cities.Wuhan);
         if (_collectionCity == StableIds.Cities.Wuhan && !wuhan) _collectionCity = "";
@@ -39,7 +50,7 @@ public partial class StartScreen
         for (int i = 0; i < tabs.Length; i++)
         {
             var (id, caption) = tabs[i]; bool locked = i >= 3 || i == 2 && !wuhan;
-            var tab = Button(_body, "CollectionCity" + i, "", new(130 + i * 126, 272, 116, 52),
+            var tab = Button(_collectionContent, "CollectionCity" + i, "", new(130 + i * 126, 272, 116, 52),
                 () => { _collectionCity = id; PresentBreakfastCollection(); Focus("CollectionCity" + Array.FindIndex(tabs, t => t.Item1 == id)); }, bare: true);
             var paper = CollectionPaper(tab, new(0, 0, 116, 52), selected: id == _collectionCity);
             paper.Fill = id == _collectionCity ? new("#FFE0A0") : new("#EBDEC7");
@@ -53,7 +64,7 @@ public partial class StartScreen
         {
             var rect = new Rect2(130 + index % 4 * 190, 347 + index / 4 * 236, 174, 218); index++;
             bool owned = _save.BreakfastRecordDay(card.Id).HasValue;
-            var button = Button(_body, "Breakfast_" + card.Id, "", rect,
+            var button = Button(_collectionContent, "Breakfast_" + card.Id, "", rect,
                 () => { _selectedBreakfast = card.Id; PresentBreakfastCollection(); }, bare: true);
             button.TooltipText = card.Name + " · " + (owned ? "已入册" : "待记录");
             CollectionPaper(button, new(Vector2.Zero, rect.Size), "postage", card.Id == selected.Id);
@@ -68,17 +79,17 @@ public partial class StartScreen
             foreach (var city in JourneyModel.Cities.Where(c => c.Id != StableIds.Cities.Tianjin && (c.Id != StableIds.Cities.Wuhan || !wuhan)))
             {
                 var rect = new Rect2(130 + index % 4 * 190, 347 + index / 4 * 236, 174, 218); index++;
-                var paper = CollectionPaper(_body, rect, "postage"); paper.Fill = new("#EDE5D8");
+                var paper = CollectionPaper(_collectionContent, rect, "postage"); paper.Fill = new("#EDE5D8");
                 CollectionPaper(paper, new(52, 43, 70, 65), "lock").Ink = new("#998875");
                 Text(paper, "LockedCity", city.Name, new(12, 138, 150, 37), 27, true);
                 Text(paper, "LockedCaption", "待解锁", new(12, 179, 150, 27), 21, true);
             }
         }
-        Text(_body, "NextCityHint", wuhan ? "美食无国界\n下一站，会遇见怎样的美味呢？" : "下一站武汉，还有新的早餐等你记录。",
+        Text(_collectionContent, "NextCityHint", wuhan ? "美食无国界\n下一站，会遇见怎样的美味呢？" : "下一站武汉，还有新的早餐等你记录。",
             new(267, 839, 600, 76), 25);
-        Art(_body, "闭合旅行手账封面｜新旅程入口", new(133, 824, 115, 100));
+        Art(_collectionContent, "闭合旅行手账封面｜新旅程入口", new(133, 824, 115, 100));
         RenderCollectionDetail(selected);
-        Button(_body, "CollectionHome", "返回首页", new(1130, 997, 430, 65), ReturnFromBreakfastCollection, true);
+        Button(_collectionContent, "CollectionHome", "返回首页", new(1130, 997, 430, 65), ReturnFromBreakfastCollection, true);
         Focus("Breakfast_" + selected.Id);
     }
 
@@ -87,39 +98,39 @@ public partial class StartScreen
         var city = JourneyModel.City(card.CityId);
         int? day = _save!.BreakfastRecordDay(card.Id);
         var stats = _save.BreakfastStatsFor(card.Id);
-        CollectionPaper(_body, new(1023, 110, 470, 86));
-        Text(_body, "BreakfastName", card.Name, new(1045, 117, 428, 67), 49);
-        Text(_body, "BreakfastCity", city.Name, new(1516, 128, 130, 50), 32, true);
-        Art(_body, JourneyModel.Stamp(city), new(1650, 112, 118, 118));
-        var photo = CollectionPaper(_body, new(1028, 245, 322, 312), "photo"); photo.RotationDegrees = -3;
+        CollectionPaper(_collectionContent, new(1023, 110, 470, 86));
+        Text(_collectionContent, "BreakfastName", card.Name, new(1045, 117, 428, 67), 49);
+        Text(_collectionContent, "BreakfastCity", city.Name, new(1516, 128, 130, 50), 32, true);
+        Art(_collectionContent, JourneyModel.Stamp(city), new(1650, 112, 118, 118));
+        var photo = CollectionPaper(_collectionContent, new(1028, 245, 322, 312), "photo"); photo.RotationDegrees = -3;
         CollectionFood(photo, card, new(23, 23, 276, 225));
         Text(photo, "PhotoCaption", city.Name + " · 早餐记忆", new(15, 258, 290, 35), 25, true);
-        var note = CollectionPaper(_body, new(1380, 244, 376, 311)); note.RotationDegrees = 1;
+        var note = CollectionPaper(_collectionContent, new(1380, 244, 376, 311)); note.RotationDegrees = 1;
         Text(note, "NoteTitle", "旅途手记", new(23, 18, 325, 48), 31);
         Text(note, "BreakfastDescription", card.Description, new(23, 87, 325, 100), 26);
         Text(note, "NoteFooter", day.HasValue ? "这份清晨的味道，\n已经留在旅行手账里。" : "把清晨的第一份美味，\n留给下一段旅程。", new(23, 198, 325, 82), 23);
 
-        CollectionPaper(_body, new(1017, 581, 747, 165));
-        Text(_body, "StepsHeading", "制作流程", new(1041, 584, 690, 38), 28);
+        CollectionPaper(_collectionContent, new(1017, 581, 747, 165));
+        Text(_collectionContent, "StepsHeading", "制作流程", new(1041, 584, 690, 38), 28);
         string[] steps = card.Steps.Split(" → ");
         float stepWidth = 711f / steps.Length;
         for (int i = 0; i < steps.Length; i++)
         {
             float x = 1035 + stepWidth * i;
             var art = CollectionStepArt(card.Id, i);
-            if (art is null) CollectionFood(_body, card, new(x + 27, 625, stepWidth - 60, 60));
-            else Art(_body, "res://resource/art/" + art + ".png", new(x + 23, 625, stepWidth - 52, 60));
-            Text(_body, "Step" + i, steps[i], new(x + 5, 689, stepWidth - 18, 45), 21, true);
-            if (i + 1 < steps.Length) Text(_body, "StepArrow" + i, "→", new(x + stepWidth - 18, 654, 28, 40), 25, true);
+            if (art is null) CollectionFood(_collectionContent, card, new(x + 27, 625, stepWidth - 60, 60));
+            else Art(_collectionContent, "res://resource/art/" + art + ".png", new(x + 23, 625, stepWidth - 52, 60));
+            Text(_collectionContent, "Step" + i, steps[i], new(x + 5, 689, stepWidth - 18, 45), 21, true);
+            if (i + 1 < steps.Length) Text(_collectionContent, "StepArrow" + i, "→", new(x + stepWidth - 18, 654, 28, 40), 25, true);
         }
-        CollectionPaper(_body, new(1017, 773, 347, 174));
-        Text(_body, "RecordTitle", "我的记录", new(1038, 782, 303, 39), 29);
-        Text(_body, "BreakfastOrigin", day.HasValue ? $"首次记录 · {city.Name} · 第 {day.Value} 天"
+        CollectionPaper(_collectionContent, new(1017, 773, 347, 174));
+        Text(_collectionContent, "RecordTitle", "我的记录", new(1038, 782, 303, 39), 29);
+        Text(_collectionContent, "BreakfastOrigin", day.HasValue ? $"首次记录 · {city.Name} · 第 {day.Value} 天"
             : "正确送出合格早餐，收摊保存后入册。", new(1038, 828, 303, 42), 21);
-        Text(_body, "BreakfastDelivered", $"{Tr("制作次数")}：{stats.Delivered}", new(1038, 875, 303, 27), 23);
-        if (card.Id != "soy_milk") Text(_body, "BreakfastPerfect", $"{Tr("Perfect 次数")}：{stats.Perfect}", new(1038, 910, 303, 27), 23);
-        CollectionPaper(_body, new(1384, 773, 380, 174));
-        Text(_body, "StampsTitle", "收集印章", new(1404, 782, 340, 39), 29);
+        Text(_collectionContent, "BreakfastDelivered", $"{Tr("制作次数")}：{stats.Delivered}", new(1038, 875, 303, 27), 23);
+        if (card.Id != "soy_milk") Text(_collectionContent, "BreakfastPerfect", $"{Tr("Perfect 次数")}：{stats.Perfect}", new(1038, 910, 303, 27), 23);
+        CollectionPaper(_collectionContent, new(1384, 773, 380, 174));
+        Text(_collectionContent, "StampsTitle", "收集印章", new(1404, 782, 340, 39), 29);
         CollectionStamp("FirstStamp", "初遇", day.HasValue ? $"第 {day.Value} 天" : "首次入册", new(1398, 824), day.HasValue, new("#D6533C"));
         CollectionStamp("SkilledStamp", "熟练", "累计20份", new(1516, 824), stats.Skilled, new("#B57716"));
         if (card.Id != "soy_milk") CollectionStamp("PerfectStamp", "Perfect", "完美10份", new(1634, 824), stats.PerfectStamp, new("#8C6743"));
@@ -136,7 +147,7 @@ public partial class StartScreen
 
     private void CollectionStamp(string name, string title, string subtitle, Vector2 position, bool earned, Color color)
     {
-        var stamp = CollectionPaper(_body, new(position, new(112, 112)), "stamp");
+        var stamp = CollectionPaper(_collectionContent, new(position, new(112, 112)), "stamp");
         stamp.Name = name; stamp.Ink = earned ? color : new("#A99B87"); stamp.RotationDegrees = earned ? -7 : 0;
         Text(stamp, "Title", title, new(10, 27, 92, 40), title == "Perfect" ? 22 : 29, true).AddThemeColorOverride("font_color", stamp.Ink);
         Text(stamp, "Threshold", subtitle, new(7, 69, 98, 24), 17, true).AddThemeColorOverride("font_color", stamp.Ink);

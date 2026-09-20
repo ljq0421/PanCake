@@ -177,7 +177,7 @@ public partial class TianjinDayScreen
         TeachingCardLayout.Lesson(_demoLesson!, _demoLessonTitle, _demoLessonHint, _demoLessonAction, 475);
     }
 
-    private void DemoLessonDelivery(DeliveryEvaluation evaluation, string customerId)
+    private void DemoLessonDelivery(DeliveryEvaluation evaluation, string customerId, ProductKind? deliveredKind)
     {
         if (!_controller.TutorialActive && _save.IsDemo && evaluation.Grade is DeliveryGrade.Correct or DeliveryGrade.Perfect)
         {
@@ -189,8 +189,10 @@ public partial class TianjinDayScreen
                 else ShowFeedback("教学记录未保存，请重试。\n" + error, true);
             }
         }
-        if (!_controller.TutorialActive || !evaluation.CompletesOrder) return;
-        if (evaluation.Grade is DeliveryGrade.Correct or DeliveryGrade.Perfect)
+        bool soyLessonCompleted = _demoTeachingDay == 6 && deliveredKind == ProductKind.SoyMilk && evaluation.ItemAccepted;
+        bool completedObjective = evaluation.CompletesOrder || soyLessonCompleted;
+        if (!_controller.TutorialActive || !completedObjective) return;
+        if (evaluation.Grade is DeliveryGrade.Correct or DeliveryGrade.Perfect || soyLessonCompleted)
         {
             _demoLessonComplete = true; _workstation.InteractionEnabled = false;
             UpdateDemoLesson();

@@ -2,7 +2,7 @@
   "BreakfastStats": {},
   "BreakfastRecords": {},
   "Version": 3,
-  "LastVisitedCityId": "city:yangzhou",
+  "LastVisitedCityId": "city:tianjin",
   "Coins": 10000,
   "Cities": {
     "city:tianjin": {
@@ -14,9 +14,7 @@
         "ingredient_station": 1,
         "fryer": 0
       },
-      "UnlockedContentIds": [
-        "recipe:pancake_basic"
-      ],
+      "UnlockedContentIds": [],
       "UnlockedCollectibleIds": [],
       "DayBestRecords": {},
       "LastDayPlan": null,
@@ -32,9 +30,7 @@
         "doupi_griddle": 0,
         "egg_rice_wine_station": 0
       },
-      "UnlockedContentIds": [
-        "recipe:hot_dry_noodles_classic"
-      ],
+      "UnlockedContentIds": [],
       "UnlockedCollectibleIds": [],
       "DayBestRecords": {},
       "LastDayPlan": null,
@@ -46,13 +42,10 @@
       "Completed": false,
       "EquipmentLevels": {
         "xian_board": 1,
-        "xian_oven": 1,
+        "xian_oven": 0,
         "xian_soup": 0
       },
-      "UnlockedContentIds": [
-        "equipment:xian_oven_lv1",
-        "recipe:roujiamo_standard"
-      ],
+      "UnlockedContentIds": [],
       "UnlockedCollectibleIds": [],
       "DayBestRecords": {},
       "LastDayPlan": null,
@@ -67,9 +60,7 @@
         "guangzhou_station": 1,
         "guangzhou_cabinet": 0
       },
-      "UnlockedContentIds": [
-        "recipe:gz_plain"
-      ],
+      "UnlockedContentIds": [],
       "UnlockedCollectibleIds": [],
       "DayBestRecords": {},
       "LastDayPlan": null,

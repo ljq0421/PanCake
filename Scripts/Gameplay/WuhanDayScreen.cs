@@ -99,6 +99,7 @@ public partial class WuhanDayScreen : Control
         Workstation.GestureRejected += message => Feedback(message, true);
         GetNode<Button>("@PanelContainer@312/@HBoxContainer@313/@Button@319").Pressed += () => { Workstation.CancelInput(); _abandon.PopupCentered(); };
         this.FindButton("收好收入 · 返回武汉经营首页").Pressed += () => HubRequested?.Invoke();
+        ButtonHoverFeedback.Attach(this.FindButton("收好收入 · 返回武汉经营首页"));
         _abandon.Confirmed += () => { Workstation.CancelAnimations(); _controller.AbandonDay(); HubRequested?.Invoke(); };
         VisibilityChanged += () =>
         {

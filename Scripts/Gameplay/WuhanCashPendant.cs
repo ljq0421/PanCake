@@ -8,6 +8,7 @@ namespace ProjectCake.Gameplay;
 public partial class WuhanDayScreen
 {
     internal Button CashPendant { get; private set; } = null!;
+    internal TextureRect CashPendantArtwork { get; private set; } = null!;
     internal BusinessDetailsView BusinessDetails { get; private set; } = null!;
     private readonly CashPendantFeedback _paymentFeedback = new();
     internal IReadOnlyCollection<Control> PaymentCoins => _paymentFeedback.Coins;
@@ -24,12 +25,15 @@ public partial class WuhanDayScreen
         foreach (string state in new[] { "normal", "hover", "pressed", "disabled", "focus" })
             CashPendant.AddThemeStyleboxOverride(state, new StyleBoxEmpty());
         AddChild(CashPendant);
-        // Include the hanging loop, bow, pouch and tassel, excluding its shadow.
-        PathContourHighlight.AttachArtwork(CashPendant, _art.WorkbenchBackground(_doupi is not null),
-            new Rect2(-bounds.Position, WuhanWorkbenchLayout.DesignSize),
-            WuhanArtworkContours.CashPendant.Select(point => WuhanWorkbenchLayout.Point(point.X, point.Y) - bounds.Position).ToArray(),
+        CashPendantArtwork = new TextureRect { Name = "CashPendantArtwork", Position = bounds.Position,
+            Size = bounds.Size, Texture = _art.Texture("cash_pendant"), MouseFilter = MouseFilterEnum.Ignore,
+            ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.Scale,
+            ZIndex = 80 };
+        AddChild(CashPendantArtwork);
+        ArtContourHighlight.Attach(CashPendantArtwork,
             () => CashPendant.Disabled ? InteractionHighlightState.None
                 : CashPendant.IsHovered() || CashPendant.HasFocus() ? InteractionHighlightState.Hover : InteractionHighlightState.None);
+        ButtonHoverFeedback.Attach(CashPendant, CashPendantArtwork, () => CanInteract);
         CashPendant.Pressed += OpenBusinessDetails;
         BusinessDetails = new BusinessDetailsView { Name = "BusinessDetails" };
         AddChild(BusinessDetails);

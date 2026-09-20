@@ -1,5 +1,6 @@
 using Godot;
 using ProjectCake.Core;
+using ProjectCake.Data;
 using ProjectCake.UI;
 using ProjectCake.Yangzhou;
 
@@ -32,6 +33,12 @@ public partial class CityPagesSelfTest
             Check(_save.Data.Coins == 10000, city.Name + " selection does not purchase");
             var upgrade = _screen.Descendants<EquipmentUpgradeView>().Single();
             Check(upgrade.Position == new Vector2(320, 230), city.Name + " shared interior placement");
+            if (city.Id == StableIds.Cities.Wuhan)
+            {
+                Check(upgrade.FindChildren("Backing", "NinePatchRect", true, false).OfType<NinePatchRect>().Any(IsWuhanPalette), "Wuhan equipment backgrounds use city palette");
+                Check(upgrade.FindChildren("UpgradeButtonArt", "NinePatchRect", true, false).OfType<NinePatchRect>().Single() is { } purchaseArt
+                    && IsWuhanPalette(purchaseArt), "Wuhan upgrade button uses city palette");
+            }
             using (var locked = new FileStream(_path + ".tmp", FileMode.Create, System.IO.FileAccess.Write, FileShare.None))
             {
                 Click("UpgradeEquipment"); await Frames();

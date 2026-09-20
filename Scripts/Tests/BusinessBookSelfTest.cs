@@ -280,7 +280,7 @@ public partial class BusinessBookSelfTest : Node
         else Check(board.Material is null, city+" preserves existing board material");
         Check(board.StretchMode==TextureRect.StretchModeEnum.KeepAspectCentered,city+" "+page+" preserves artwork aspect ratio");
         var book=board.GetParent().GetParent<Control>();
-        Check(book.Size==new Vector2(1680,900)&&book.Scale==Vector2.One * (city is "tianjin" or "wuhan" ? 1.12f : 1f),city+" book retains proportional design container");
+        Check(book.GetRect()==StartScreen.BookBounds&&book.Scale==Vector2.One,city+" book matches the shared 1400×800 page frame");
         var semanticNames=new[]{"总收入图标.png","小费图标.png","完成顾客图标.png","流失顾客图标.png","满意度图标.png","Perfect 图标.png","Perfect 印章.png","状态章-正确完成.png","状态章-错误完成.png","状态章-顾客流失.png"};
         var semantic=view.Descendants<TextureRect>().Where(t=>t.IsVisibleInTree()&&t.Texture is AtlasTexture a&&semanticNames.Any(n=>a.Atlas.ResourcePath.EndsWith(n,StringComparison.Ordinal))).ToArray();
         Check(semantic.Length>0&&semantic.All(t=>t.Material is null&&t.Modulate==Colors.White&&t.SelfModulate==Colors.White),city+" "+page+" preserves semantic icon colors");
@@ -360,11 +360,11 @@ public partial class BusinessBookSelfTest : Node
     }
     private static bool IsPageArrow(Control c) => c.Name == "NextBookPage" || c.Name == "PreviousBookPage";
     private static bool InArrowRegion(Rect2 r, string city) => city is "tianjin" or "wuhan"
-        ? r.Size.X>=71.9f && r.Size.Y>=71.9f && ((r.Position.X>=79.9f && r.End.X<=152.1f && Math.Abs(r.Position.Y-431)<.1f)||(r.Position.X>=1539.9f && r.End.X<=1612.1f && Math.Abs(r.Position.Y-502)<.1f))
-        : r.Size.X>=64 && r.Size.Y>=64 && r.Position.Y==508 && r.End.Y<=580
-        && ((r.Position.X>=140 && r.End.X<=210)||(r.Position.X>=1470 && r.End.X<=1540));
+        ? r.Size.X>=59f && r.Size.Y>=59f && ((r.Position.X>=60&&r.End.X<=140&&r.Position.Y>=350&&r.End.Y<=455)||(r.Position.X>=1250&&r.End.X<=1370&&r.Position.Y>=410&&r.End.Y<=525))
+        : r.Size.X>=53f && r.Size.Y>=53f && r.Position.Y>=420&&r.End.Y<=510
+        && ((r.Position.X>=110&&r.End.X<=190)||(r.Position.X>=1200&&r.End.X<=1300));
     private static bool InPaperColumn(Rect2 bounds) =>
-        (bounds.Position.X>=229&&bounds.End.X<=791)||(bounds.Position.X>=889&&bounds.End.X<=1451);
+        (bounds.Position.X>=190&&bounds.End.X<=660)||(bounds.Position.X>=740&&bounds.End.X<=1210);
     private static string WidgetText(Control widget)=>widget is Label label?label.Text:widget is Button button?button.Text:widget.Name.ToString();
     private async Task Shot(string name)
     {

@@ -260,7 +260,7 @@ public partial class WuhanGestureSelfTest : Node
                 GetViewport().GetTexture().GetImage().SavePng($"{root}/day-{day}-{name}.png");
             }
             bool unlocked = day == 4;
-            string expected = unlocked ? "武汉-热干面-豆皮-蛋液-v2.png" : "武汉-热干面-v1.png";
+            string expected = unlocked ? "武汉-热干面-豆皮-蛋液-v2-无挂件.png" : "武汉-热干面-v1-无挂件.png";
             Check(_screen.GetNode<TextureRect>("WorkbenchBackground").Texture.ResourcePath.EndsWith(expected), $"Day {day} selects its pendant sheet");
             // Independent points on the supplied PNGs, rather than deriving all input from layout constants.
             Vector2 P(float x, float y) => new Vector2(x * 1920 / 1672, y * 1080 / 941);

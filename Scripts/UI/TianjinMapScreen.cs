@@ -32,6 +32,9 @@ public partial class TianjinMapScreen : Control
         Callable.From(() => ButtonHoverFeedback.AttachTree(this)).CallDeferred();
         SceneNodeBinder.Bind(this);
         _art = new TianjinArtCatalog();
+        ButtonHoverFeedback.Attach(_tianjinCard);
+        ButtonHoverFeedback.Attach(_wuhanCard, canInteract: () => _save is not null && CanEnterCity(_save.Data.UnlockedCityIds.Contains(StableIds.Cities.Wuhan), DeveloperToolsVisible));
+        ButtonHoverFeedback.Attach(_xianCard, canInteract: () => _save is not null && CanEnterCity(_save.Data.UnlockedCityIds.Contains(StableIds.Cities.Xian), DeveloperToolsVisible));
         this.FindButton("测试直达武汉").Pressed += () => WuhanPreviewRequested?.Invoke();
         this.FindButton("返回经营首页").Pressed += () => HubRequested?.Invoke();
         Button xianTest = this.FindButton("测试直达西安");
@@ -76,11 +79,13 @@ public partial class TianjinMapScreen : Control
     {
         if (_lightUpPlayed || _save is null || !_save.Data.TianjinCompleted || !IsVisibleInTree()) return;
         _lightUpPlayed = true;
-        _tianjinCard.PivotOffset = _tianjinCard.Size * .5f;
-        _tianjinCard.Scale = new Vector2(.92f, .92f);
+        // Keep chapter-reveal motion below the card's independent hover transform.
+        var contents = _tianjinCard.GetChild<Control>(0);
+        contents.PivotOffset = contents.Size * .5f;
+        contents.Scale = new Vector2(.92f, .92f);
         _tianjinCard.Modulate = new Color(1.35f, 1.15f, .75f, .25f);
         Tween tween = CreateTween().SetParallel(true).SetTrans(Tween.TransitionType.Cubic).SetEase(Tween.EaseType.Out);
-        tween.TweenProperty(_tianjinCard, "scale", Vector2.One, .65);
+        tween.TweenProperty(contents, "scale", Vector2.One, .65);
         tween.TweenProperty(_tianjinCard, "modulate", Colors.White, .8);
     }
     private void Render()

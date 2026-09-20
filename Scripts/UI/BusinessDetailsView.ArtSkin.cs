@@ -29,8 +29,9 @@ public partial class BusinessDetailsView
     {
         foreach (string state in new[] { "normal", "hover", "pressed", "disabled", "focus" })
             CloseButton.RemoveThemeStyleboxOverride(state);
-        _book.Scale = Vector2.One * (UsesTravelBook ? 1.12f : 1f);
-        _book.Position = UsesTravelBook ? new(19.2f, 36) : new(120, 90);
+        _book.Scale = Vector2.One;
+        _book.Position = StartScreen.BookBounds.Position;
+        _book.Size = StartScreen.BookBounds.Size;
         Theme = TianjinUi.CreateTheme();
         if (UsesBookArt)
         {
@@ -117,15 +118,15 @@ public partial class BusinessDetailsView
     private void PaintBookPaper()
     {
         Clear(_illustratedPaper);
-        float width = UsesTravelBook ? 1680 : 900f * 1448f / 929f;
-        var board = Picture(_illustratedPaper, BookArtCatalog.GetBoard(_model.CityId), new((1680 - width) / 2, 0, width, 900));
+        float width = UsesTravelBook ? StartScreen.BookBounds.Size.X : StartScreen.BookBounds.Size.Y * 1448f / 929f;
+        var board = Picture(_illustratedPaper, BookArtCatalog.GetBoard(_model.CityId), new((StartScreen.BookBounds.Size.X - width) / 2, 0, width, StartScreen.BookBounds.Size.Y));
         board.Name = "BookBoard";
         board.Material = BookArtCatalog.BoardMaterial(_model.CityId);
         if (UsesTravelBook)
         {
-            var underline = new Control { Position = new(405, 147), MouseFilter = MouseFilterEnum.Ignore };
+            var underline = new Control { Position = new(338, 131), MouseFilter = MouseFilterEnum.Ignore };
             _illustratedPaper.AddChild(underline);
-            underline.Draw += () => underline.DrawPolyline(new Vector2[] { new(0, 5), new(58, 1), new(132, -1), new(197, 0) }, CityTheme.Secondary, 6, true);
+            underline.Draw += () => underline.DrawPolyline(new Vector2[] { new(0, 4), new(48, 1), new(110, -1), new(164, 0) }, CityTheme.Secondary, 5, true);
         }
     }
 
@@ -202,7 +203,7 @@ public partial class BusinessDetailsView
         var paper = FittedArtBounds(artwork);
         bool travelUpgrade = UsesTravelBook && !unlock;
         float textWidth = unlock ? 158 : 181;
-        string shortCaption = unlock ? "新解锁 · 回店查看" : CanUpgrade ? "可升级 · 查看效果" : "可升级 · 回店查看";
+        string shortCaption = unlock ? "" : CanUpgrade ? "可升级 · 查看效果" : "可升级 · 回店查看";
         string caption = items.Length == 1 ? items[0] : shortCaption;
         if (GetThemeFont("font", "Label").GetStringSize(caption, fontSize: 17).X > textWidth) caption = shortCaption;
         var label = Text(sticker, caption, new(unlock ? 72 : 18, paper.Position.Y + (paper.Size.Y - 28) / 2, textWidth, 28), 17);

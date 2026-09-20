@@ -52,6 +52,7 @@ internal static class JournalSettingsTheme
 
     internal static void Apply(HSlider slider)
     {
+        ButtonHoverFeedback.Attach(slider, canInteract: () => slider.Editable);
         var track = Box(new Color("#B7987F"), 7, 2);
         track.ContentMarginTop = track.ContentMarginBottom = 6;
         track.ContentMarginLeft = track.ContentMarginRight = 0;

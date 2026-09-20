@@ -13,29 +13,41 @@ public partial class CoinCollectionSelfTest
     private async Task TestWuhanCashPendant(WuhanDayScreen screen, DayController controller, SaveService save,
         DataCatalog catalog, int width, bool reduced)
     {
-        void Click(Control control)
+        void ClickNow(Control control)
         {
             Vector2 p = control.GetGlobalTransformWithCanvas() * (control.Size * .5f);
             GetViewport().PushInput(new InputEventMouseMotion { Position = p, GlobalPosition = p }, true);
             foreach (bool pressed in new[] { true, false })
                 GetViewport().PushInput(new InputEventMouseButton { Position = p, GlobalPosition = p, ButtonIndex = MouseButton.Left, Pressed = pressed }, true);
         }
-        void KeyPress(Key key) => GetViewport().PushInput(new InputEventKey { Keycode = key, Pressed = true }, true);
-        void Init(int day)
+        async Task Click(Control control)
         {
+            // The production book transition temporarily owns input; let it finish.
+            await ToSignal(GetTree().CreateTimer(.65), SceneTreeTimer.SignalName.Timeout);
+            ClickNow(control);
+            await ToSignal(GetTree().CreateTimer(.65), SceneTreeTimer.SignalName.Timeout);
+            screen.RefreshForCapture(); // Production normally refreshes this on every frame.
+        }
+        void KeyPress(Key key) => GetViewport().PushInput(new InputEventKey { Keycode = key, Pressed = true }, true);
+        async Task Init(int day)
+        {
+            await ToSignal(GetTree().CreateTimer(.65), SceneTreeTimer.SignalName.Timeout);
             if (day < 4) save.Data.Wuhan.EquipmentLevels.Remove("doupi_griddle");
             else save.Data.Wuhan.EquipmentLevels["doupi_griddle"] = 3;
             screen.Initialize(catalog, save, controller, day);
+            screen.TeachingFocus.Dismiss();
             screen.BeginDay(); controller.Tick(3.1);
             screen._Notification((int)NotificationApplicationFocusIn);
+            await ToSignal(GetTree().CreateTimer(.65), SceneTreeTimer.SignalName.Timeout);
         }
         foreach (int day in new[] { 1, 8 })
         {
-            Init(day);
+            await Init(day);
             controller.CustomerQueue!.Tick(1000, .4, true);
             screen.RefreshForCapture(); await Frames();
+            await TestWuhanPendantHover(screen, controller, width, day, reduced);
             Check(controller.CustomerQueue.Slots.Count == 5, "Wuhan retains five occupied customer slots");
-            Check(screen.GetNode<TextureRect>("WorkbenchBackground").Texture.ResourcePath.EndsWith(day == 1 ? "武汉-热干面-v1.png" : "武汉-热干面-豆皮-蛋液-v2.png"), "Wuhan new background matches unlock stage");
+            Check(screen.GetNode<TextureRect>("WorkbenchBackground").Texture.ResourcePath.EndsWith(day == 1 ? "武汉-热干面-v1-无挂件.png" : "武汉-热干面-豆皮-蛋液-v2-无挂件.png"), "Wuhan clean background matches unlock stage");
             Check(!screen.CoinTray.IsVisibleInTree() && !screen.CoinTray.TryCollect(), "Wuhan old collection control is hidden and inert");
             var bubbles = screen.FindChildren("*", "", true, false).OfType<OrderBubbleView>().Where(b => b.IsVisibleInTree()).ToArray();
             Check(bubbles.Length == 5 && bubbles.All(b => !b.GetGlobalRect().Intersects(screen.CashPendant.GetGlobalRect())), "Wuhan five bubbles leave pendant unobscured");
@@ -44,7 +56,7 @@ public partial class CoinCollectionSelfTest
             screen.Cooker.TryStart(0); screen._Process(.15);
             double cooked = screen.Cooker.Baskets[0].CookSeconds;
             float motion = screen.Workstation.MotionProgress("basket0");
-            Click(screen.CashPendant); await Frames();
+            await Click(screen.CashPendant); await Frames();
             Check(screen.BusinessDetails.Visible && controller.IsPaused, "Wuhan real pendant click opens and pauses business");
             if (Capture && !reduced && day == 1) await Shot($"wuhan-pendant-{width}-empty");
             double time = controller.DayElapsedSeconds;
@@ -53,16 +65,16 @@ public partial class CoinCollectionSelfTest
             Check(screen.Cooker.Baskets[0].CookSeconds == cooked && screen.Workstation.MotionProgress("basket0") == motion,
                 "Wuhan modal freezes cooking and production animation");
             Check(controller.DayElapsedSeconds == time && controller.CustomerQueue.Slots.Select((c, i) => c.WaitSeconds == patience[i]).All(v => v), "Wuhan modal freezes clock and patience");
-            Click(screen.CashPendant);
+            await Click(screen.CashPendant);
             Check(screen.BusinessDetails.Visible, "Wuhan modal absorbs background clicks");
             for (int i = 0; i < 5; i++)
             {
                 KeyPress(Key.Tab);
                 Check(screen.BusinessDetails.IsAncestorOf(GetViewport().GuiGetFocusOwner()), "Wuhan modal contains keyboard focus");
             }
-            KeyPress(Key.Escape); await Frames();
-            Check(!screen.BusinessDetails.Visible && !controller.IsPaused, "Wuhan Esc resumes business");
-            Click(screen.CashPendant); screen._Notification((int)NotificationApplicationFocusOut);
+            KeyPress(Key.Escape); await ToSignal(GetTree().CreateTimer(.65), SceneTreeTimer.SignalName.Timeout); await Frames();
+            Check(!screen.BusinessDetails.Visible && !controller.IsPaused, $"Wuhan Esc resumes business (visible={screen.BusinessDetails.Visible}, paused={controller.IsPaused}, canClose={screen.BusinessDetails.Model.CanClose})");
+            await Click(screen.CashPendant); screen._Notification((int)NotificationApplicationFocusOut);
             screen.CloseBusinessDetails();
             Check(controller.IsPaused, "Wuhan closing details preserves focus pause");
             screen._Notification((int)NotificationApplicationFocusIn);
@@ -70,9 +82,9 @@ public partial class CoinCollectionSelfTest
             Check(controller.IsPaused, "Wuhan closing details preserves independent pause");
             controller.IsPaused = false;
         }
-        Init(8);
+        await Init(8);
         screen.DeliveryDrag.BeginDrag(screen.Workstation, "wuhan:HotDryNoodles", "热干面", Colors.White);
-        screen._Process(.00001); Click(screen.CashPendant); screen.OpenBusinessDetails();
+        screen._Process(.00001); ClickNow(screen.CashPendant); screen.OpenBusinessDetails();
         Check(!screen.BusinessDetails.Visible, "Wuhan dragging cannot open details");
         screen.Workstation.CancelInput();
         foreach (var planned in controller.CurrentPlan!.Customers)
@@ -109,6 +121,8 @@ public partial class CoinCollectionSelfTest
         await ToSignal(GetTree().CreateTimer(.15), SceneTreeTimer.SignalName.Timeout);
         Check(positions.All(p => p.Key.Position == p.Value), "Wuhan details freeze in-flight payments");
         screen.CloseBusinessDetails();
+        await ToSignal(GetTree().CreateTimer(.65), SceneTreeTimer.SignalName.Timeout);
+        screen.RefreshForCapture();
         await ToSignal(GetTree().CreateTimer(.5), SceneTreeTimer.SignalName.Timeout);
         if (Capture && !reduced) await Shot($"wuhan-pendant-{width}-payment");
         await ToSignal(GetTree().CreateTimer(.5), SceneTreeTimer.SignalName.Timeout);
@@ -120,7 +134,7 @@ public partial class CoinCollectionSelfTest
         }
         Check(controller.BusinessRecords.Count(r => r.Lost) == controller.Ledger.LostCustomers && controller.Ledger.LostCustomers > 0, "Wuhan lost customers have individual records");
         Check(controller.Ledger.Build().Satisfaction == controller.BusinessRecords.Where(r => !r.Lost).Average(r => r.Evaluation!.SatisfactionScore), "Wuhan lost customers excluded from satisfaction");
-        screen.RefreshForCapture(); Click(screen.CashPendant); await Frames();
+        screen.RefreshForCapture(); await Click(screen.CashPendant); await Frames();
         Check(screen.BusinessDetails.Visible && controller.Ledger.Build().TotalRevenue == income && save.Data.Coins == 0, "Wuhan details never settle money twice");
         screen.BusinessDetails.SelectPage(true); await Frames();
         var scroll = screen.BusinessDetails.FindChildren("*", "ScrollContainer", true, false).OfType<ScrollContainer>().Single();
@@ -128,13 +142,47 @@ public partial class CoinCollectionSelfTest
         if (Capture && !reduced) await Shot($"wuhan-pendant-{width}-records");
         scroll.ScrollVertical = 10000; await Frames();
         if (Capture && !reduced) await Shot($"wuhan-pendant-{width}-records-bottom");
-        Click(screen.BusinessDetails.CloseButton); await Frames();
+        await Click(screen.BusinessDetails.CloseButton); await Frames();
         Check(!controller.IsPaused && !screen.BusinessDetails.Visible, "Wuhan close button resumes business");
         screen.OpenBusinessDetails(); screen.Hide();
         Check(!screen.BusinessDetails.Visible && screen.PaymentCoins.Count == 0, "Wuhan hiding clears modal and coins");
-        screen.Show(); Init(8);
+        screen.Show(); await Init(8);
         Check(controller.BusinessRecords.Count == 0 && controller.Ledger!.Build().TotalRevenue == 0, "Wuhan restart clears session");
         controller.AbandonDay();
         Check(controller.BusinessRecords.Count == 0, "Wuhan abandonment clears records");
+    }
+    private async Task TestWuhanPendantHover(WuhanDayScreen screen, DayController controller, int width, int day, bool reduced)
+    {
+        var button = screen.CashPendant;
+        var art = screen.CashPendantArtwork;
+        Vector2 away = new(20, 20);
+        void Move(Vector2 p) => GetViewport().PushInput(new InputEventMouseMotion { Position = p, GlobalPosition = p }, true);
+        async Task Settle() { await ToSignal(GetTree().CreateTimer(.22), SceneTreeTimer.SignalName.Timeout); await Frames(); }
+        Vector2 center = art.GetGlobalTransformWithCanvas() * (art.Size * .5f);
+        Move(away); button.GrabFocus(); await Settle();
+        Check(art.Scale.IsEqualApprox(Vector2.One), "Wuhan initial keyboard focus does not enlarge artwork");
+        button.ReleaseFocus(); await Settle();
+        if (Capture && !reduced) await Shot($"wuhan-pendant-{width}-day{day}-rest");
+        Move(center); await Settle();
+        Check(button.IsHovered() && art.Scale.IsEqualApprox(Vector2.One * 1.04f), "Wuhan native hover enlarges actual artwork by 4 percent");
+        Check((art.GetGlobalTransformWithCanvas() * (art.Size * .5f)).DistanceTo(center) < .05f, "Wuhan artwork center is fixed");
+        Check(button.Scale.IsEqualApprox(Vector2.One), "Wuhan input bounds stay stable");
+        if (Capture && !reduced) await Shot($"wuhan-pendant-{width}-day{day}-hover");
+        for (int i=0;i<5;i++) { Move(away); await Frames(); Move(center); await Frames(); }
+        Move(away); await Settle();
+        Check(art.Scale.IsEqualApprox(Vector2.One), "Wuhan rapid hover exit restores artwork");
+        if (Capture && !reduced) await Shot($"wuhan-pendant-{width}-day{day}-exit");
+        Move(center); await Settle(); button.Disabled = true; await Frames();
+        Check(art.Scale.IsEqualApprox(Vector2.One), "Wuhan disabled artwork resets");
+        button.Disabled = false; await Settle();
+        controller.IsPaused = true; screen._Process(.00001); await Settle();
+        Check(art.Scale.IsEqualApprox(Vector2.One), "Wuhan pause resets artwork");
+        Move(away); controller.IsPaused = false; screen._Process(.00001); await Settle();
+        Check(art.Scale.IsEqualApprox(Vector2.One), "Wuhan resume away keeps rest scale");
+        Move(center); await Settle();
+        Check(art.Scale.IsEqualApprox(Vector2.One * 1.04f), "Wuhan resume permits hover again");
+        screen._Notification((int)NotificationApplicationFocusOut); await Settle();
+        Check(art.Scale.IsEqualApprox(Vector2.One), "Wuhan focus loss resets artwork");
+        Move(away); screen._Notification((int)NotificationApplicationFocusIn); await Settle();
     }
 }

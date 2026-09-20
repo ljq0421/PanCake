@@ -11,11 +11,26 @@ public partial class StartScreen
     }
     private void PresentDemoWuhanOpening()
     {
-        Begin(JourneyPage.Opening); Chrome(() => PresentCity(StableIds.Cities.Wuhan), "下一站 · 武汉"); BookFrame(StableIds.Cities.Wuhan);
+        Begin(JourneyPage.Opening); Chrome(() => PresentCity(StableIds.Cities.Wuhan), showBack: false); BookFrame(StableIds.Cities.Wuhan);
         CityPicture(_body, JourneyModel.City(StableIds.Cities.Wuhan), new(335, 340, 550, 360));
         Text(_body, "WuhanOpeningTitle", "江城过早", new(1030, 300, 470, 80), 46, true);
         Text(_body, "WuhanOpeningText", "热干面拌开芝麻酱的香气，三鲜豆皮在锅里慢慢定型。\n\n先从一碗热干面开始，再添一份豆皮。\n天津的早餐铺随时等你回访。", new(1030, 420, 470, 300), 28);
-        Button(_body, "WuhanOpeningContinue", "开始武汉之旅", new(1050, 817, 460, 74), () => PresentCity(StableIds.Cities.Wuhan), true);
+        var depart = Button(_body, "WuhanOpeningContinue", "开始武汉之旅", new(1050, 817, 460, 74), () => PresentCity(StableIds.Cities.Wuhan), bare: true);
+        var plate = Texture("res://resource/art/Wuhan/武汉解锁按钮底板-v1.png");
+        float plateScale = depart.Size.Y / plate.GetHeight();
+        depart.AddChild(new NinePatchRect
+        {
+            Name = "WuhanOpeningButtonPlate", Texture = plate, Size = depart.Size / plateScale, Scale = Vector2.One * plateScale,
+            PatchMarginLeft = plate.GetHeight() / 2, PatchMarginRight = plate.GetHeight() / 2,
+            MouseFilter = MouseFilterEnum.Ignore, ShowBehindParent = true
+        });
+        depart.AddThemeFontSizeOverride("font_size", 32);
+        depart.AddThemeColorOverride("font_color", WuhanUi.Ink);
+        depart.AddThemeColorOverride("font_hover_color", WuhanUi.Ink);
+        depart.AddThemeColorOverride("font_pressed_color", WuhanUi.Ink);
+        depart.AddThemeColorOverride("font_focus_color", WuhanUi.Ink);
+        depart.AddThemeColorOverride("font_outline_color", WuhanUi.Paper);
+        depart.AddThemeConstantOverride("outline_size", 4);
         Focus("WuhanOpeningContinue");
     }
     private void RenderDemoEnding()

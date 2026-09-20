@@ -61,6 +61,9 @@ public partial class CollectionSelfTest : Node
             File.WriteAllText(path, earned); save.Load();
             var screen = GD.Load<PackedScene>("res://Scenes/UI/StartScreen.tscn").Instantiate<StartScreen>();
             AddChild(screen); screen.Initialize(save); screen.PresentBreakfastCollection(); await Frames();
+            Check(screen.Descendants<TextureRect>().Single(t => t.Name == "CollectionBook").GetRect() == StartScreen.BookBounds
+                && screen.Descendants<Control>().Single(c => c.Name == "CollectionContent").Scale == Vector2.One * (1400f / 1860f),
+                "collection uses the shared 1400×800 book frame");
             Check(screen.Descendants<Button>().Count(b => b.Name.ToString().StartsWith("Breakfast_")) == 3, "Wuhan remains gated before city unlock");
             await Capture("locked-cities");
             save.Data.UnlockedCityIds.Add(StableIds.Cities.Wuhan);

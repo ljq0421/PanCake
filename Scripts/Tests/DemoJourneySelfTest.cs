@@ -130,7 +130,13 @@ public partial class DemoJourneySelfTest : Node
             screen.PresentCompletion(StableIds.Cities.Wuhan, screen.PresentHome);
             Check(save.Data.Coins==before,"repeated ending grants no reward");
             screen.PresentCompletion(StableIds.Cities.Tianjin, screen.PresentHome);
-            screen.Descendants<Button>().Single(b=>b.Name=="Skip").EmitSignal(Button.SignalName.Pressed); await Capture("wuhan-opening",screen);
+            screen.Descendants<Button>().Single(b=>b.Name=="Skip").EmitSignal(Button.SignalName.Pressed);
+            await ToSignal(GetTree().CreateTimer(.8), SceneTreeTimer.SignalName.Timeout); await Capture("wuhan-opening",screen);
+            var wuhanOpening = screen.Descendants<Button>().Single(b => b.Name == "WuhanOpeningContinue");
+            Check(!screen.Descendants<Button>().Any(b => b.Name == "Back"), "Wuhan opening omits the return button");
+            Check(!screen.Descendants<Label>().Any(l => l.Text.Contains("下一站 · 武汉")), "Wuhan opening omits the next-stop title");
+            Check(wuhanOpening.GetNode<NinePatchRect>("WuhanOpeningButtonPlate").Texture is AtlasTexture { Atlas.ResourcePath: "res://resource/art/Wuhan/武汉解锁按钮底板-v1.png" },
+                "Wuhan opening uses the teal city journey button plate");
             foreach (var (city, day) in new[] { (StableIds.Cities.Tianjin, 1), (StableIds.Cities.Tianjin, 4), (StableIds.Cities.Tianjin, 6), (StableIds.Cities.Wuhan, 1), (StableIds.Cities.Wuhan, 4) })
             {
                 Check(main.StartCityBusiness(city, day), city + " lesson entry " + day);

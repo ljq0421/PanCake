@@ -56,11 +56,11 @@ public partial class EquipmentUpgradeView
         return plate;
     }
 
-    private static Control MoneyPlate(Control parent, string name, string labelName, string caption, Rect2 rect, bool showCoin)
+    private static Control MoneyPlate(Control parent, string name, string labelName, string caption, Rect2 rect, bool showCoin, string cityId)
     {
         var plate = new Control { Name = name, Position = rect.Position, Size = rect.Size, MouseFilter = MouseFilterEnum.Ignore };
         parent.AddChild(plate);
-        PaintedBackground(plate, "升级费用底板-v1.png", 48, 48);
+        PaintedBackground(plate, "升级费用底板-v1.png", 48, 48, cityId, true);
         float iconSize = 36, gap = 12, available = rect.Size.X - 40 - (showCoin ? iconSize + gap : 0);
         var label = LabelAt(plate, labelName, caption, new(20, 8, available, rect.Size.Y - 16), 27, Ink, true);
         label.AutowrapMode = TextServer.AutowrapMode.Off;
@@ -78,7 +78,7 @@ public partial class EquipmentUpgradeView
         return plate;
     }
 
-    private static void SkinPurchaseButton(Button button)
+    private static void SkinPurchaseButton(Button button, string cityId)
     {
         var texture = TrimmedArt("res://resource/art/Global/StartPage/首页地图按钮底板.png");
         foreach (string state in new[] { "normal", "hover", "pressed", "disabled" })
@@ -90,6 +90,7 @@ public partial class EquipmentUpgradeView
             PatchMarginLeft = texture.GetHeight() / 2, PatchMarginRight = texture.GetHeight() / 2,
             MouseFilter = MouseFilterEnum.Ignore, ShowBehindParent = true };
         button.AddChild(background);
+        CityPageArtSkin.Apply(background, cityId);
         void Refresh() => background.SelfModulate = button.Disabled ? new(.72f, .69f, .63f, .7f)
             : button.IsPressed() ? new(.9f, .85f, .75f)
             : button.IsHovered() || button.HasFocus() ? new(1.06f, 1.04f, 1f) : Colors.White;

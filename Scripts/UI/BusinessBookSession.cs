@@ -25,6 +25,7 @@ public sealed class BusinessBookSession
         _owner = owner; _canOpen = canOpen; _snapshot = snapshot; _pause = pause; _return = returnHome;
         Entry = TianjinUi.Button("营业账本", minimumSize: new(150, 48)); Entry.Name = "OpenBusinessBook";
         Entry.Position = position; canvas.AddChild(Entry); Entry.Pressed += OpenLive;
+        ButtonHoverFeedback.Attach(Entry);
         View = new BusinessDetailsView { Name = "BusinessDetails" }; owner.AddChild(View);
         View.CloseRequested += Close; View.RetryRequested += retry;
         owner.VisibilityChanged += () => { if (!owner.IsVisibleInTree()) Reset(); };

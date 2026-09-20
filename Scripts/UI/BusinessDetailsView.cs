@@ -11,7 +11,7 @@ public partial class BusinessDetailsView : Control
     public event Action? CloseRequested;
     public event Action? PageChanged;
     public event Action? RetryRequested;
-    private Control _canvas = null!, _book = null!, _summary = null!, _details = null!, _metrics = null!, _note = null!, _stamp = null!;
+    private Control _canvas = null!, _book = null!, _bookContent = null!, _summary = null!, _details = null!, _metrics = null!, _note = null!, _stamp = null!;
     private Label _city = null!, _title = null!, _income = null!, _save = null!, _status = null!;
     private VBoxContainer _rows = null!;
     private ScrollContainer _scroll = null!;
@@ -39,29 +39,33 @@ public partial class BusinessDetailsView : Control
         _canvas = new Control { Size = new(1920, 1080), MouseFilter = MouseFilterEnum.Ignore }; AddChild(_canvas);
         void Fit() { float s = Math.Min(Size.X / 1920, Size.Y / 1080); _canvas.Scale = Vector2.One * s; _canvas.Position = (Size - new Vector2(1920, 1080) * s) / 2; }
         Resized += Fit; Fit();
-        _book = new Control { Position = new(120, 90), Size = new(1680, 900), MouseFilter = MouseFilterEnum.Stop }; _canvas.AddChild(_book);
+        // Settlement pages share the upgrade dialog's physical book frame. The inner
+        // 1680×900 layout remains uniformly scaled, keeping every illustration and
+        // control proportion intact while the page art itself fills the shared frame.
+        _book = new Control { Name = "SettlementBook", Position = StartScreen.BookBounds.Position, Size = StartScreen.BookBounds.Size, MouseFilter = MouseFilterEnum.Stop }; _canvas.AddChild(_book);
         _plainPaper = new Control { MouseFilter = MouseFilterEnum.Ignore }; _book.AddChild(_plainPaper);
-        Panel(_plainPaper, new(0, 0, 1680, 900), new("#B88045"), 24, 3);
-        Panel(_plainPaper, new(10, 7, 1660, 878), new("#FFF8E8"), 20, 1);
-        Line(_plainPaper, new(840, 24, 2, 826), new Color(.47f, .32f, .20f, .18f));
-        Line(_plainPaper, new(828, 24, 1, 826), new Color(.47f, .32f, .20f, .08f));
+        Panel(_plainPaper, new(0, 0, StartScreen.BookBounds.Size.X, StartScreen.BookBounds.Size.Y), new("#B88045"), 24, 3);
+        Panel(_plainPaper, new(10, 7, StartScreen.BookBounds.Size.X - 20, StartScreen.BookBounds.Size.Y - 22), new("#FFF8E8"), 20, 1);
+        Line(_plainPaper, new(700, 24, 2, 726), new Color(.47f, .32f, .20f, .18f));
+        Line(_plainPaper, new(688, 24, 1, 726), new Color(.47f, .32f, .20f, .08f));
         _illustratedPaper = new Control { MouseFilter = MouseFilterEnum.Ignore }; _book.AddChild(_illustratedPaper);
-        _city = Text(_book, "", new(80, 32, 600, 38), 26, Muted);
-        _title = Text(_book, "", new(80, 78, 1000, 62), 46);
-        _previousPage = ButtonAt(_book, "＜", new(0, 508, 64, 64), () => SelectPage(false));
-        _nextPage = ButtonAt(_book, "＞", new(1616, 508, 64, 64), () => SelectPage(true));
+        _bookContent = new Control { Position = new(0, 25), Size = new(1680, 900), Scale = Vector2.One * (5f / 6f), MouseFilter = MouseFilterEnum.Stop }; _book.AddChild(_bookContent);
+        _city = Text(_bookContent, "", new(80, 32, 600, 38), 26, Muted);
+        _title = Text(_bookContent, "", new(80, 78, 1000, 62), 46);
+        _previousPage = ButtonAt(_bookContent, "＜", new(0, 508, 64, 64), () => SelectPage(false));
+        _nextPage = ButtonAt(_bookContent, "＞", new(1616, 508, 64, 64), () => SelectPage(true));
         _previousPage.Name = "PreviousBookPage";
         _nextPage.Name = "NextBookPage";
-        _status = Text(_book, "", new(900, 32, 650, 38), 22, Muted, HorizontalAlignment.Right);
-        _summary = new Control { Position = new(0, 155), Size = new(1680, 620), MouseFilter = MouseFilterEnum.Ignore }; _book.AddChild(_summary);
-        _details = new Control { Position = new(0, 155), Size = new(1680, 620), MouseFilter = MouseFilterEnum.Ignore }; _book.AddChild(_details);
+        _status = Text(_bookContent, "", new(900, 32, 650, 38), 22, Muted, HorizontalAlignment.Right);
+        _summary = new Control { Position = new(0, 155), Size = new(1680, 620), MouseFilter = MouseFilterEnum.Ignore }; _bookContent.AddChild(_summary);
+        _details = new Control { Position = new(0, 155), Size = new(1680, 620), MouseFilter = MouseFilterEnum.Ignore }; _bookContent.AddChild(_details);
         string[] names = { "全部", "完成", "错误", "流失" };
         for (int i = 0; i < names.Length; i++) { int index = i; _filters.Add(ButtonAt(_details, names[i], new(900 + i * 160, 0, 148, 48), () => SelectFilter((BookFilter)index))); }
         _scroll = new ScrollContainer { Position = new(78, 66), Size = new(1524, 568), HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled, Name = "OrderScroll" }; _details.AddChild(_scroll);
         _rows = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; _rows.AddThemeConstantOverride("separation", 12); _scroll.AddChild(_rows);
-        _save = Text(_book, "", new(80, 792, 1120, 65), 20, Muted, wrap: true);
-        CloseButton = ButtonAt(_book, "收好账本", new(1320, 798, 240, 72), RequestClose); CloseButton.Name = "CloseBusinessDetails";
-        _retry = ButtonAt(_book, "重试保存", new(1100, 809, 190, 58), () => RetryRequested?.Invoke());
+        _save = Text(_bookContent, "", new(80, 792, 1120, 65), 20, Muted, wrap: true);
+        CloseButton = ButtonAt(_bookContent, "收好账本", new(1320, 798, 240, 72), RequestClose); CloseButton.Name = "CloseBusinessDetails";
+        _retry = ButtonAt(_bookContent, "重试保存", new(1100, 809, 190, 58), () => RetryRequested?.Invoke());
         _audio = new PancakeAudio(); AddChild(_audio);
         VisibilityChanged += () => { if (!Visible) { RemoveUpgradeModal(); FinishAnimation(); _audio.Stop(); } };
         Hide();

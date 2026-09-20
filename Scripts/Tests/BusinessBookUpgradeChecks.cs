@@ -73,6 +73,9 @@ public partial class BusinessBookSelfTest
                 Check(page.Page == JourneyPage.Upgrades && page.SelectedCityId == cityId, city + " reuses home upgrade page for source city");
                 Check(!page.GetNode<Control>("Canvas/Background").Visible && !page.GetNode<Control>("Letterbox").Visible
                     && page.FindChild("SharedBook", true, false) is TextureRect { Visible: true }, city + " reuses only book and preserves gameplay backdrop");
+                Check(view.Descendants<Control>().Single(n => n.Name == "SettlementBook").GetGlobalRect()
+                    == page.Descendants<TextureRect>().Single(n => n.Name == "SharedBook").GetGlobalRect(),
+                    city + " settlement and upgrade books share the same on-screen frame");
                 Check(!view.CloseButton.IsVisibleInTree(), city + " original ledger is hidden beneath upgrade book");
                 Check(!page.Descendants<Button>().Any(b => b.Name == "Home" || b.Name == "MapTab" || b.Name == "LedgerTab"), city + " settlement navigation only returns to book");
                 view.CloseButton.EmitSignal(BaseButton.SignalName.Pressed); Check(!closed, city + " modal blocks book close");

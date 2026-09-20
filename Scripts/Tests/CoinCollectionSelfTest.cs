@@ -24,13 +24,16 @@ public partial class CoinCollectionSelfTest : Node
         try
         {
             var catalog = GetNode<DataCatalog>("/root/DataCatalog");
-            foreach (bool wuhan in new[] { true, false })
+            var settings = GetNode<JourneySettings>("/root/JourneySettings");
+            settings.UsePathForTests(ProjectSettings.GlobalizePath("res://artifacts/wuhan-pendant/settings.cfg"));
+            InterfaceLessons.MarkAllSeen(settings);
+            foreach (bool wuhan in OS.GetCmdlineUserArgs().Contains("--wuhan-only") ? new[] { true } : new[] { true, false })
             foreach (bool reduced in new[] { false, true })
             foreach (int width in new[] { 1920, 1280 })
             {
                 GetWindow().Size = new Vector2I(width, width * 9 / 16);
                 ProjectSettings.SetSetting("accessibility/reduce_motion", reduced);
-                var save = new SaveService(); save.UsePathForTests($"res://.tmp/coin-test-{Guid.NewGuid():N}.json"); AddChild(save);
+                var save = new SaveService(); save.UsePathForTests($"res://artifacts/wuhan-pendant/coin-test-{Guid.NewGuid():N}.json"); AddChild(save);
                 save.Data.Wuhan.HighestUnlockedDay = 12;
                 save.Data.Wuhan.EquipmentLevels["noodle_cooker"] = 3;
                 save.Data.Wuhan.EquipmentLevels["doupi_griddle"] = 3;
@@ -65,7 +68,8 @@ public partial class CoinCollectionSelfTest : Node
     private async Task Shot(string name)
     {
         await Frames(); await ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
-        string directory = ProjectSettings.GlobalizePath("res://.tmp/coin-collection"); Directory.CreateDirectory(directory);
-        GetViewport().GetTexture().GetImage().SavePng(Path.Combine(directory, name + ".png"));
+        string directory = ProjectSettings.GlobalizePath("res://artifacts/wuhan-pendant"); Directory.CreateDirectory(directory);
+        using var image = GetViewport().GetTexture().GetImage();
+        Check(image.SavePng(Path.Combine(directory, name + ".png")) == Error.Ok, "capture " + name);
     }
 }

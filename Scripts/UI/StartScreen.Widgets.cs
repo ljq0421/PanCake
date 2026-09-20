@@ -40,10 +40,11 @@ public partial class StartScreen
             AutowrapMode = TextServer.AutowrapMode.WordSmart, MouseFilter = MouseFilterEnum.Ignore };
         label.AddThemeFontSizeOverride("font_size", fontSize); parent.AddChild(label); label.Size = rect.Size; return label;
     }
-    private Button Button(Control parent, string name, string caption, Rect2 rect, Action action, bool primary = false, bool bare = false, bool highlightFocus = true)
+    private Button Button(Control parent, string name, string caption, Rect2 rect, Action action, bool primary = false, bool bare = false, bool highlightFocus = true, Control? hoverVisual = null)
     {
         var button = new Button { Name = name, Text = caption, Position = rect.Position, Size = rect.Size, MouseDefaultCursorShape = CursorShape.PointingHand };
         parent.AddChild(button); StartScreenTheme.Apply(button, primary);
+        if (hoverVisual is not null) ButtonHoverFeedback.Attach(button, hoverVisual);
         if (bare)
         {
             foreach (string state in new[] { "normal", "hover", "pressed", "disabled" }) button.AddThemeStyleboxOverride(state, new StyleBoxEmpty());

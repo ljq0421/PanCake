@@ -29,8 +29,12 @@ public partial class StartScreen
     {
         var row = new Control { Name = name + "Row", Position = new(0, y), Size = new(460, 70), MouseFilter = MouseFilterEnum.Ignore };
         parent.AddChild(row);
-        HomeArt(row, caption, new(0, 17, 34, 36)).Name = name + "Icon";
+        var icon = HomeArt(row, caption, new(0, 17, 34, 36));
+        icon.Name = name + "Icon";
+        CityPageArtSkin.Apply(icon, _city);
         var label = Text(row, name + "Label", caption, new(44, 8, 99, 54), 23);
+        if (CityPageArtSkin.UsesWuhanPalette(_city))
+            label.AddThemeColorOverride("font_color", CitySettlementTheme.For("wuhan").Primary.Darkened(.42f));
         FitTextWidth(label, 23, 17);
         if (name == "LatestUnlock") return row;
         // Keep the first value clear of the luggage tag painted into the note's upper right.

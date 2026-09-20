@@ -130,6 +130,7 @@ public partial class TianjinDayScreen : Control
         this.FindButton("继续营业").Pressed += () => SetManualPaused(false);
         this.FindButton("放弃本日").Pressed += RequestAbandon;
         this.FindButton("收好收入 · 返回经营首页").Pressed += () => HubRequested?.Invoke();
+        ButtonHoverFeedback.Attach(this.FindButton("收好收入 · 返回经营首页"));
         _abandonDialog.Confirmed += () =>
         {
             _controller.AbandonDay();
@@ -337,7 +338,7 @@ public partial class TianjinDayScreen : Control
         if (!(evaluation.CompletesOrder && evaluation.Grade is DeliveryGrade.Correct or DeliveryGrade.Perfect))
             _sceneFeedback.Delivery(evaluation, _orderCards[slot]);
         PlayDeliveryEffects(evaluation, slot);
-        DemoLessonDelivery(evaluation, customerId);
+        DemoLessonDelivery(evaluation, customerId, kind);
         return evaluation.ItemAccepted || evaluation.CompletesOrder;
     }
 

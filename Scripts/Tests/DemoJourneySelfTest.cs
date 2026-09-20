@@ -15,19 +15,23 @@ public partial class DemoJourneySelfTest : Node
     private int _checks;
     private string _dir = "";
     private bool _capture;
+    private readonly HashSet<string> _missingTranslations = new();
     private void Check(bool ok, string message) { if (!ok) throw new Exception(message); GD.Print("PASS " + message); _checks++; }
     private async Task Frames(int count = 5) { for (int i = 0; i < count; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame); }
     private async Task Capture(string name, Node root)
     {
         await Frames(12);
+        for (int i = 0; i < 180 && JourneyTransition.For(this).Active; i++) await Frames(1);
+        Check(!JourneyTransition.For(this).Active, "capture waits for page transition " + name);
         var labels = root.Descendants<Control>().Where(c => c.IsVisibleInTree()).Select(c =>
         {
             string raw = c switch { Label l => l.Text, Button b => b.Text, _ => "" };
             return new { path = c.GetPath().ToString(), raw, translated = c.Tr(raw).ToString(), bounds = c.GetGlobalRect().ToString() };
         }).Where(r => r.raw.Length > 0).ToArray();
         File.WriteAllText(Path.Combine(_dir, name + ".json"), System.Text.Json.JsonSerializer.Serialize(labels));
-        if (TranslationServer.GetLocale().StartsWith("en") && labels.FirstOrDefault(r => System.Text.RegularExpressions.Regex.IsMatch(r.translated, "[\\u4e00-\\u9fff]")) is { } missing)
-            throw new Exception("Untranslated visible text in " + name + ": " + missing.raw);
+        if (TranslationServer.GetLocale().StartsWith("en"))
+            foreach (var missing in labels.Where(r => System.Text.RegularExpressions.Regex.IsMatch(r.translated, "[\\u4e00-\\u9fff]")))
+                _missingTranslations.Add(missing.raw);
         if (!_capture) return;
         await ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
         using var image = GetViewport().GetTexture().GetImage(); image.SavePng(Path.Combine(_dir, name + ".png"));
@@ -43,11 +47,11 @@ public partial class DemoJourneySelfTest : Node
             _dir = ProjectSettings.GlobalizePath("user://demo-qa-artifacts/journey-" + locale + "-" + size.X);
             Directory.CreateDirectory(_dir);
             var c = GetNode<DataCatalog>("/root/DataCatalog"); var save = GetNode<SaveService>("/root/SaveService");
-            string path = Path.Combine(_dir, "journey.json"); save.UseDemoPathForTests(path, c.Demo!); Check(save.ResetProgress(out _), "new isolated two-city journey");
-            var settings = GetNode<JourneySettings>("/root/JourneySettings"); settings.UsePathForTests(Path.Combine(_dir, "settings.cfg")); settings.SetLanguage(locale);
+            string path = Path.Combine(_dir, "journey.json"); save.UseDemoPathForTests(path); Check(save.ResetProgress(out _), "new isolated two-city journey");
+            var settings = GetNode<JourneySettings>("/root/JourneySettings"); settings.UsePathForTests(Path.Combine(_dir, "settings.cfg")); settings.SetLanguage(locale); InterfaceLessons.MarkAllSeen(settings);
             var controller = new DayController(); AddChild(controller); controller.SetProcess(false);
             int receiptCount = 0; controller.ItemDelivered += _ => receiptCount++;
-            foreach (var stage in c.Demo!.Stages)
+            foreach (var stage in new[] { StableIds.Cities.Tianjin, StableIds.Cities.Wuhan }.SelectMany(city => Enumerable.Range(1, SaveService.ChapterDays(city)).Select(day => (CityId: city, Day: day, Id: city + ":" + day))))
             {
                 Check(controller.TryPrepareDay(stage.CityId, stage.Day, c, out _), stage.Id + " prepare");
                 save.ApplyStartUnlocks(controller.CurrentConfig!, out _); controller.TryStartDay(out _); controller.Tick(3);
@@ -72,13 +76,13 @@ public partial class DemoJourneySelfTest : Node
                         }
                 }
                 var dayResult = controller.Ledger!.Build(); var plan = controller.CurrentPlan!;
-                Check(controller.State == DayState.Results && dayResult.CompletedCustomers == stage.ExplicitOrders.Length && dayResult.LostCustomers == 0, stage.Id + " all real orders resolve");
-                int owned = save.DemoProgress.BreakfastRecords.Count;
+                Check(controller.State == DayState.Results && dayResult.CompletedCustomers == controller.CurrentConfig!.CustomerCount && dayResult.LostCustomers == 0, stage.Id + " all real orders resolve");
+                int owned = save.Data.BreakfastRecords.Count;
                 if (stage.Day == 1)
                 {
                     Directory.CreateDirectory(path + ".tmp");
                     bool failed = false; try { save.CommitDay(dayResult, plan, controller.CurrentConfig!); } catch (IOException) { failed = true; }
-                    Check(failed && save.DemoProgress.BreakfastRecords.Count == owned && !save.DemoProgress.AcceptedRuns.Contains(plan.RunId), stage.Id + " failed save rolls back collection and run");
+                    Check(failed && save.Data.BreakfastRecords.Count == owned && save.Data.GetCity(stage.CityId).HighestUnlockedDay == stage.Day, stage.Id + " failed save rolls back collection and run");
                     Directory.Delete(path + ".tmp");
                 }
                 save.CommitDay(dayResult, plan, controller.CurrentConfig!);
@@ -86,9 +90,10 @@ public partial class DemoJourneySelfTest : Node
                 Check(coins == save.Data.Coins, stage.Id + " duplicate settlement pays nothing");
                 save.Load(); Check(save.CanContinue && !save.HasLoadError, stage.Id + " exit and reload");
             }
-            Check(save.DemoProgress.BreakfastRecords.Count == 5 && receiptCount > 100, "five cards earned by real item receipts");
-            var first = c.Demo.Stages[0]; int before = save.Data.Coins;
-            save.CommitDay(new() { Day = 1, CompletedCustomers = 1 }, first.Plan(c), first.Config(c.RecipesById, c.ProductsById));
+            Check(save.Data.BreakfastRecords.Count == 5 && receiptCount > 100, "five cards earned by real item receipts");
+            c.TryGetDay(StableIds.Cities.Tianjin, 1, out var first); int before = save.Data.Coins;
+            DayPlan Plan(ProjectCake.Data.DayConfig config) => new OrderGenerator().Generate(config, c.RecipesById, c.ProductsById, c.CustomersById);
+            save.CommitDay(new() { Day = 1, CompletedCustomers = 1 }, Plan(first), first);
             Check(save.Data.Tianjin.Completed && save.Data.Wuhan.Completed && save.Data.Coins == before, "earlier replay preserves both chapter completions");
             Check(DemoBreakfastCollection.Qualifies(new(ProductKind.Pancake, "pancake_youtiao", PancakeQuality.Perfect, InternalYoutiaoQuality:YoutiaoQuality.Light)) is null, "light internal youtiao excluded");
             Check(DemoBreakfastCollection.Qualifies(new(ProductKind.Pancake, "pancake_basic", PancakeQuality.Overdone)) is null, "overdone pancake excluded");
@@ -96,21 +101,21 @@ public partial class DemoJourneySelfTest : Node
             Check(DemoBreakfastCollection.Qualifies(new(ProductKind.HotDryNoodles, "hot_dry_noodles_classic", WuhanQuality: WuhanFoodQuality.MixedComplete | WuhanFoodQuality.NoodlesSoft)) is null, "soft noodles excluded");
             Check(DemoBreakfastCollection.Qualifies(new(ProductKind.HotDryNoodles, "hot_dry_noodles_classic", WuhanQuality: WuhanFoodQuality.None)) is null, "unmixed noodles excluded");
             Check(DemoBreakfastCollection.Qualifies(new(ProductKind.Doupi, "doupi", WuhanQuality: WuhanFoodQuality.DoupiOverbrowned)) is null, "overbrowned doupi excluded");
-            var pending = first.Plan(c); var receipt = new DeliveryReceipt(pending.RunId,pending.StageId,new(ProductKind.SoyMilk,"soy_milk"),true,true,false);
+            var pending = Plan(first); var receipt = new DeliveryReceipt(pending.RunId,pending.StageId,new(ProductKind.SoyMilk,"soy_milk"),true,true,false);
             foreach (var invalid in new[] { receipt with { Matched=false }, receipt with { Accepted=false }, receipt with { Tutorial=true }, receipt with { RunId="old-run" }, receipt with { StageId="other" } }) DemoBreakfastCollection.Observe(invalid,pending);
             Check(pending.PendingBreakfastRecords.Count == 0, "mismatch, rejected, tutorial and stale events ignored");
             DemoBreakfastCollection.Observe(receipt,pending); Check(pending.PendingBreakfastRecords.Count == 1,"eligible partial receipt staged only");
             // No commit models an abandoned run; collection remains unchanged.
-            var replay = c.Demo.Stage(StableIds.Cities.Tianjin,6)!;
-            save.DemoProgress.BreakfastRecords.Remove("soy_milk"); save.TrySave(out _);
-            var replayPlan = replay.Plan(c); DemoBreakfastCollection.Observe(receipt with { RunId=replayPlan.RunId, StageId=replayPlan.StageId }, replayPlan);
-            save.CommitDay(new() {Day=6}, replayPlan, replay.Config(c.RecipesById,c.ProductsById));
-            Check(save.Data.Coins == before && save.DemoProgress.BreakfastRecords.ContainsKey("soy_milk"), "new partial collection saves without new income or completed order");
+            c.TryGetDay(StableIds.Cities.Tianjin, 9, out var replay);
+            save.Data.BreakfastRecords.Remove("soy_milk"); save.TrySave(out _);
+            var replayPlan = Plan(replay); DemoBreakfastCollection.Observe(receipt with { RunId=replayPlan.RunId, StageId=replayPlan.StageId }, replayPlan);
+            save.CommitDay(new() {Day=9}, replayPlan, replay);
+            Check(save.Data.Coins == before && save.Data.BreakfastRecords.ContainsKey("soy_milk"), "new partial collection saves without new income or completed order");
             controller.QueueFree();
             var main = GD.Load<PackedScene>("res://Scenes/Main/Main.tscn").Instantiate<GameController>(); AddChild(main); await Frames();
             var screen = main.GetNode<StartScreen>("UI/StartScreen");
             screen.PresentHome(); await Capture("home", screen);
-            Check(screen.Descendants<Label>().Single(l => l.Name == "DemoScope").Text.Contains("武汉 6"), "home describes both cities");
+            Check(screen.Descendants<Label>().Single(l => l.Name == "DemoScope").Text.Contains("武汉 12"), "home describes both cities");
             screen.Descendants<Button>().Single(b => b.Name == "Help").EmitSignal(Button.SignalName.Pressed); await Capture("help", screen);
             screen.Descendants<Button>().Single(b => b.Name == "MusicCredits").EmitSignal(Button.SignalName.Pressed); await Capture("music-credits", screen);
             screen.Descendants<Button>().Single(b => b.Name == "Close" && b.IsVisibleInTree()).EmitSignal(Button.SignalName.Pressed);
@@ -119,6 +124,11 @@ public partial class DemoJourneySelfTest : Node
             Check(GetWindow().Mode == Window.ModeEnum.Fullscreen, "native fullscreen preview");
             settings.RevertDisplay(); await Frames();
             Check(GetWindow().Mode == Window.ModeEnum.Windowed && GetWindow().Size == originalSize, "display rollback restores exact window");
+            screen.PresentCity(StableIds.Cities.Tianjin); await Capture("tianjin-ready", screen);
+            screen.PresentLedger(); await Capture("tianjin-calendar", screen);
+            screen.PresentUpgrades(); await Capture("tianjin-upgrades", screen);
+            screen.PresentMap(); await Capture("xian-preview", screen);
+            Check(!main.OpenCity(StableIds.Cities.Xian, true) && !main.StartCityBusiness(StableIds.Cities.Xian, 1), "developer and direct entry cannot enter Xian");
             screen.PresentCity(StableIds.Cities.Wuhan); await Capture("wuhan-ready", screen);
             screen.PresentLedger(); await Capture("wuhan-calendar", screen);
             screen.PresentUpgrades(); await Capture("wuhan-upgrades", screen);
@@ -139,7 +149,8 @@ public partial class DemoJourneySelfTest : Node
                 "Wuhan opening uses the teal city journey button plate");
             foreach (var (city, day) in new[] { (StableIds.Cities.Tianjin, 1), (StableIds.Cities.Tianjin, 4), (StableIds.Cities.Tianjin, 6), (StableIds.Cities.Wuhan, 1), (StableIds.Cities.Wuhan, 4) })
             {
-                Check(main.StartCityBusiness(city, day), city + " lesson entry " + day);
+                Check(main.StartCityBusiness(city, day), city + " ordinary shift " + day);
+                Check(!main.GetNode<DayController>("DayController").TutorialActive, "no Demo-specific automatic lesson");
                 var active = city == StableIds.Cities.Tianjin ? (Control)main.GetNode<TianjinDayScreen>("UI/TianjinDayScreen") : main.GetNode<WuhanDayScreen>("UI/WuhanDayScreen");
                 active._Notification((int)NotificationApplicationFocusIn);
                 main.GetNode<DayController>("DayController").Tick(.6); active._Process(0);
@@ -167,6 +178,7 @@ public partial class DemoJourneySelfTest : Node
             music._Notification((int)NotificationApplicationFocusOut); Check(music.FocusPaused && music.GetChildren().OfType<AudioStreamPlayer>().All(p=>!p.Playing || p.StreamPaused),"focus loss pauses both voices");
             music._Notification((int)NotificationApplicationFocusIn); music.SetContext("home",false,2); Check(!music.FocusPaused && music.DuckGain==1,"music resumes without catchup");
             settings.SetVolume("music",0); Check(AudioServer.IsBusMute(AudioServer.GetBusIndex(JourneySettings.MusicBus)),"music volume mutes actual bus");
+            Check(_missingTranslations.Count == 0, "Untranslated visible strings: " + string.Join(" | ", _missingTranslations));
             GD.Print("DEMO_JOURNEY_SELF_TEST_OK "+_checks+" artifacts="+_dir); GetTree().Quit();
         }
         catch(Exception e) { GD.PushError(e.ToString()); GetTree().Quit(1); }

@@ -45,7 +45,14 @@ public partial class StartScreen
         }
         HomeArt(_body, "LOGO", new(60, 60, 560, 258));
         if (ExperienceProfile.IsDemo)
-            Text(_body, "DemoScope", "本次试玩包含天津 7 局、武汉 6 局，以及五份早餐收藏。", new(390, 747, 1140, 58), 27, true);
+            Text(_body, "DemoScope", "本次试玩包含天津 15 天、武汉 12 天，以及五份早餐收藏。", new(390, 747, 1140, 58), 27, true);
+        if (_save?.DemoMigrationRetryAvailable == true)
+            Button(_body, "RetryDemoMigration", "重试读取存档", new(810, 790, 300, 42), () =>
+            {
+                _save.Load(); RenderHome();
+                if (_save.HasLoadError) ShowError("旧试玩存档升级失败，请检查写入权限后重试。原存档已保留。");
+                else if (_save.DemoMigrationNotice.Length > 0) ShowError(_save.DemoMigrationNotice);
+            }, bare: true);
         var card = HomeAction("Continue", "继续旅程", "小火车", new(400, 835, 500, 150), RenderContinue);
         card.Disabled = !canContinue; card.Modulate = new Color(1, 1, 1, canContinue ? 1 : .68f);
         HomeAction("NewGame", "新的旅程", "闭合旅行手账封面｜新旅程入口", new(940, 835, 500, 150), RenderOpening);
@@ -104,7 +111,7 @@ public partial class StartScreen
     }
     private void Foods(Control parent, JourneyCity city, Vector2 position, float step, float scale = 1)
     {
-        int count = _save!.IsDemo ? city.Id == StableIds.Cities.Wuhan ? 2 : city.Id == StableIds.Cities.Tianjin && _save.ChapterLength(city.Id) == 3 ? 1 : city.Foods.Length : city.Foods.Length;
+        int count = city.Foods.Length;
         for (int i = 0; i < count; i++)
         {
             var food = city.Foods[i]; var at = position + new Vector2(step * i, 0);
@@ -229,7 +236,7 @@ public partial class StartScreen
     }
     private void RenderCompletion()
     {
-        if (_save?.IsDemo == true && _completedCity == StableIds.Cities.Wuhan) { RenderDemoEnding(); return; }
+        if (ExperienceProfile.HasTwoCityEnding(_save?.IsDemo == true) && _completedCity == StableIds.Cities.Wuhan) { RenderDemoEnding(); return; }
         Begin(JourneyPage.Completion); var city = JourneyModel.City(_completedCity!);
         BookFrame(); CityPicture(_body, city, new(330, 390, 540, 320));
         Text(_body, "CompleteTitle", city.Name + "章节完成", new(380, 260, 1120, 90), 54, true);

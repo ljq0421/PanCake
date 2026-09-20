@@ -38,7 +38,7 @@ public partial class AllDaysClosingSelfTest : Node
             Require(lesson.TutorialActive && lesson.State == DayState.Running && lesson.DayElapsedSeconds == 0,
                 "isolated teaching remains protected even with an empty queue");
             lesson.Free();
-            if (catalog.Demo is null)
+            if (!ExperienceProfile.IsDemo)
             {
                 var yangzhou = YangzhouCatalog.Load();
                 foreach (var day in yangzhou.Days)
@@ -53,7 +53,7 @@ public partial class AllDaysClosingSelfTest : Node
                     GD.Print($"PASS Yangzhou Day {day.Day} whole-tray early closing");
                 }
             }
-            GD.Print($"ALL_DAYS_CLOSING_SELF_TEST_OK days={days} demo={catalog.Demo is not null}");
+            GD.Print($"ALL_DAYS_CLOSING_SELF_TEST_OK days={days} demo={ExperienceProfile.IsDemo}");
             GetTree().Quit();
         }
         catch (Exception e) { GD.PushError(e.ToString()); GetTree().Quit(1); }

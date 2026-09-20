@@ -30,15 +30,10 @@ public partial class TianjinDayScreen
     private bool BeginDemoLesson(bool retry = false)
     {
         bool replay = retry ? _demoLessonReplay : ForceDemoTutorial;
-        if (!_save.IsDemo && !replay) return false;
+        if (!replay) return false;
         _demoBusinessDay = _controller.CurrentConfig!.Day;
-        var stage = _save.IsDemo ? _save.DemoContent!.Stage(_demoBusinessDay) : null;
-        _demoTeachingDay = !_save.IsDemo || replay && stage!.Tutorial.Length == 0 ? 1 : _demoBusinessDay;
-        var lesson = _save.IsDemo ? _save.DemoContent!.Stage(_demoTeachingDay) : null;
-        bool requested = retry || replay || lesson is { Tutorial.Length: > 0 }
-            && !_save.DemoProgress.CompletedTutorials.Contains(lesson.Id) && !_save.DemoProgress.SkippedTutorials.Contains(lesson.Id);
+        _demoTeachingDay = 1;
         ForceDemoTutorial = false;
-        if (!requested) return false;
         _demoLessonReplay = replay;
         if (!_controller.TryPrepareTutorial(StableIds.Cities.Tianjin, _demoTeachingDay, _catalog, out string error)) { ShowFeedback(error, true); return true; }
         _workstation.Initialize(_catalog, 1, 1, _demoTeachingDay >= 4 ? 1 : 0, _controller.CurrentConfig!, _art);
@@ -88,7 +83,7 @@ public partial class TianjinDayScreen
             example.WaitSeconds = example.LeaveAtSeconds * .4; example.Tick(0); _demoPartialSeeded = true;
         }
         _demoLessonAction!.Disabled = _manualPaused || _focusPaused || _detailsPaused;
-        _demoLessonTitle!.Text = _demoLessonComplete ? "第一份早餐，做好了！" : _save.IsDemo ? _save.DemoContent!.Stage(_demoTeachingDay)!.TitleZh : "第一张煎饼";
+        _demoLessonTitle!.Text = _demoLessonComplete ? "第一份早餐，做好了！" : "第一张煎饼";
         _demoLessonAction.Text = _demoLessonSaveError.Length > 0 ? "重试保存" : _demoLessonComplete ? "开始营业" : "跳过教学";
         _demoLessonHint!.Text = _demoLessonSaveError.Length > 0 ? _demoLessonSaveError
             : _demoLessonComplete ? "接下来自己试试。营业时留意火候，并按订单添加配料。"
@@ -105,9 +100,7 @@ public partial class TianjinDayScreen
         if (!_controller.TutorialActive || _manualPaused || _focusPaused || _detailsPaused) return;
         var oldActions = _save.Data.Tianjin.LearnedWorkbenchActions.ToHashSet();
         if (_demoLessonComplete) _save.Data.Tianjin.LearnedWorkbenchActions.UnionWith(_demoLearned);
-        bool saved = _save.IsDemo
-            ? _save.SaveDemoTutorial(_save.DemoContent!.Stage(_demoTeachingDay)!.Id, !_demoLessonComplete, out _)
-            : _save.TrySave(out _);
+        bool saved = _save.TrySave(out _);
         if (!saved)
         {
             _save.Data.Tianjin.LearnedWorkbenchActions = oldActions;
@@ -122,23 +115,6 @@ public partial class TianjinDayScreen
         if (!Initialize(_catalog, _save, _controller, _demoBusinessDay)) return;
         if (remainingLessonEggs is int eggs) _workstation.ConfigureFirstPancakeEggLesson(eggs);
         BeginDay();
-    }
-
-    private void ShowDemoContextHint()
-    {
-        if (!_save.IsDemo) return;
-        EnsureDemoLesson();
-        if (_controller.CurrentConfig!.Day is 1 or 4 or 6) return;
-        var stage = _save.DemoContent!.Stage(_controller.CurrentConfig.Day)!;
-        if (_save.DemoProgress.CompletedTutorials.Contains(stage.Id)) return;
-        EnsureDemoLesson(); _demoLesson!.Show(); _demoLessonAction!.Disabled = false;
-        _demoLessonTitle!.Text = stage.TitleZh; _demoLessonAction.Text = "收起提示";
-        _demoLessonHint!.Visible = true;
-        _demoLessonHint!.Text = stage.Day >= 4 ? stage.Day == 5 ? "订单里的油条：夹进煎饼与单独交付是两回事。组合商品可分别送出。" : "利用加热空档补货；先送出需要的商品，可以恢复顾客耐心。" : stage.Day == 2
-            ? "看清订单里的薄脆图标。刷完酱后，将薄脆拖进煎饼，再折叠装袋。"
-            : "订单需要葱时，刷完酱再点击香葱。料盒不足时可长按补货，留意空档。";
-        LayoutDemoLesson();
-        RestDemoLesson();
     }
 
     private void RestDemoLesson()
@@ -157,16 +133,6 @@ public partial class TianjinDayScreen
 
     private void DemoLessonDelivery(DeliveryEvaluation evaluation, string customerId, ProductKind? deliveredKind)
     {
-        if (!_controller.TutorialActive && _save.IsDemo && evaluation.Grade is DeliveryGrade.Correct or DeliveryGrade.Perfect)
-        {
-            var stage = _save.DemoContent!.Stage(_controller.CurrentConfig!.Day)!;
-            string recipe = _controller.CustomerQueue!.Slots.FirstOrDefault(c => c.Id == customerId)?.Order.PancakeRecipeId ?? "";
-            if (stage.Day == 2 && recipe.Contains("crispy") || stage.Day == 3 && recipe.Contains("scallion"))
-            {
-                if (_save.SaveDemoTutorial(stage.Id, false, out string error)) _demoLesson?.Hide();
-                else ShowFeedback("教学记录未保存，请重试。\n" + error, true);
-            }
-        }
         bool soyLessonCompleted = _demoTeachingDay == 6 && deliveredKind == ProductKind.SoyMilk && evaluation.ItemAccepted;
         bool completedObjective = evaluation.CompletesOrder || soyLessonCompleted;
         if (!_controller.TutorialActive || !completedObjective) return;
@@ -188,12 +154,10 @@ public partial class TianjinDayScreen
 
     private void RetryDemoSettlement()
     {
-        if (_demoPendingResult is null || !_save.IsDemo) return;
+        if (_demoPendingResult is null) return;
         BusinessBookSettlement.Commit(_demoPendingResult, _save, _controller.CurrentPlan!, _controller.CurrentConfig!, _catalog);
         _committed = !_demoPendingResult.CanRetry;
         if (!_committed) _demoPendingResult.SaveMessage = "保存失败：请检查写入权限和可用空间。原有进度已保留。";
-        if (_committed && _demoPendingResult.Result.CompletedCustomers == 0)
-            _demoPendingResult.SaveMessage += " · 本次未完成订单，可免费重试";
         BusinessDetails.Open(_demoPendingResult);
     }
 }

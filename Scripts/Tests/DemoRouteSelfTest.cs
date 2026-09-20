@@ -3,136 +3,80 @@ using Godot;
 using ProjectCake.Core;
 using ProjectCake.Data;
 using ProjectCake.Gameplay;
+using ProjectCake.Orders;
 namespace ProjectCake.Tests;
+
 public partial class DemoRouteSelfTest : Node
 {
     private int _checks;
-    private void Check(bool ok, string text) { if (!ok) throw new Exception(text); GD.Print("PASS " + text); _checks++; }
-    private async Task CaptureLesson(string name)
-    {
-        if (!OS.GetCmdlineUserArgs().Contains("--capture")) return;
-        await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
-        await ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
-        string directory = ProjectSettings.GlobalizePath("res://artifacts/teaching-layout-20260917/route");
-        Directory.CreateDirectory(directory);
-        using var image = GetViewport().GetTexture().GetImage();
-        Check(image.SavePng(Path.Combine(directory, name + ".png")) == Error.Ok, "capture " + name);
-    }
-    public override async void _Ready()
+    private void Check(bool ok, string message)
+    { if (!ok) throw new Exception(message); _checks++; GD.Print("PASS " + message); }
+    public override void _Ready()
     {
         try
         {
-            var c = GetNode<DataCatalog>("/root/DataCatalog"); var route = c.Demo!;
-            Check(c.IsValid && route is not null, "valid Demo manifest");
-            string dir = ProjectSettings.GlobalizePath("res://.tmp/demo-route-" + Guid.NewGuid().ToString("N")); Directory.CreateDirectory(dir);
-            var save = new SaveService(); save.UseDemoPathForTests(Path.Combine(dir, "route.json"), route!);
-            Check(save.ResetProgress(out _), "fresh route");
-            int[] expected = {28,46,65,48,84,106,123,53,76,105,80,133,165}; int total = 0;
-            foreach (var pair in route!.Stages.Select((stage, index) => (stage, index)))
+            var catalog = GetNode<DataCatalog>("/root/DataCatalog");
+            Check(ExperienceProfile.IsDemo && catalog.IsValid, "shared content without pilot runtime catalog");
+            string dir = ProjectSettings.GlobalizePath("user://demo-qa-artifacts/route-" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(dir); string path = Path.Combine(dir, "demo.json");
+            var save = GetNode<SaveService>("/root/SaveService"); save.UseDemoPathForTests(path);
+            Check(save.ResetProgress(out _), "new route");
+            var formal = new SaveService(); formal.UsePathForTests(Path.Combine(dir, "formal.json")); formal.ResetProgress(out _);
+            var controller = new DayController();
+            string CityState(CityProgressData city)
             {
-                var s = pair.stage; var config = s.Config(c.RecipesById, c.ProductsById); var plan = s.Plan(c);
-                Check(save.CanEnter(s.CityId, s.Day), s.Id + " unlocked in order");
-                Check(config.ExpectedRevenue == expected[pair.index] && plan.Customers.Sum(p => p.Order.BasePrice) == expected[pair.index], s.Id + " exact price baseline");
-                Check(config.MaxWaitingCustomers == 5 && plan.Customers.Count == s.Arrivals.Length, s.Id + " customer capacity and schedule");
-                Check(save.ApplyStartUnlocks(config, out _), s.Id + " free equipment and recipes");
-                var result = new DayResult { Day = s.Day, CompletedCustomers = 1, SaleRevenue = expected[pair.index] };
-                save.CommitDay(result, plan, config); total += expected[pair.index];
-                Check(save.CommitDay(result, plan, config).PermanentCoinGain == 0 && save.Data.Coins == total, s.Id + " idempotent settlement");
-                save.Load();
-                Check(!save.HasLoadError && save.Data.Coins == total && save.DemoProgress.CompletedStages.Contains(s.Id), s.Id + " reload");
+                var json = System.Text.Json.Nodes.JsonNode.Parse(JsonSerializer.Serialize(city))!;
+                json.AsObject().Remove("LastDayPlan"); return json.ToJsonString();
             }
-            Check(!save.CanEnter(StableIds.Cities.Xian, 1) && !save.CanEnter(StableIds.Cities.Tianjin, 8)
-                && !save.CanEnter(StableIds.Cities.Wuhan, 7), "unshipped content inaccessible");
-            Check(save.TryPurchase("equipment:fryer_lv2", c, out _) && save.Data.PurchasedFryerLevel == 2, "fryer upgrade uses actual saved balance");
-
-            var controller = new DayController(); AddChild(controller);
-            var screen = GD.Load<PackedScene>("res://Scenes/Gameplay/TianjinDayScreen.tscn").Instantiate<TianjinDayScreen>(); AddChild(screen);
-            screen.ConnectController(controller); screen.SetProcess(false); controller.SetProcess(false);
-            foreach (int day in new[] {2,4,6})
+            int days = 0;
+            foreach (var (city, folder) in new[] { (StableIds.Cities.Tianjin, "Tianjin"), (StableIds.Cities.Wuhan, "Wuhan") })
+            for (int day = 1; day <= SaveService.ChapterDays(city); day++)
             {
-                Check(screen.Initialize(c, save, controller, day), "prepare new Tianjin lesson " + day);
-                screen.BeginDay();
-                Check(controller.TutorialActive && controller.CurrentPlan!.Customers.Count == 1, "isolated example " + day);
-                var station = screen.GetNode<PancakeWorkstation>("PancakeWorkstation");
-                screen._Notification((int)NotificationApplicationFocusIn); screen.RefreshForCapture(true);
-                await CaptureLesson("tianjin-" + day);
-                screen._Notification((int)NotificationApplicationFocusIn); screen.RefreshForCapture(true);
-                if (day == 4)
+                Check(save.CanEnter(city, day), $"{city}/{day} unlocked by shared progression");
+                Check(controller.TryPrepareDay(city, day, catalog, out _), "prepare shared day");
+                var config = controller.CurrentConfig!;
+                var source = new DayConfigLoader().LoadFile($"res://Data/Days/{folder}/day_{day:00}.json").Config!;
+                Check(JsonSerializer.Serialize(config) == JsonSerializer.Serialize(source), "exact formal day config");
+                var expected = new OrderGenerator().Generate(source, catalog.RecipesById, catalog.ProductsById, catalog.CustomersById);
+                Check(JsonSerializer.Serialize(controller.CurrentPlan!.Customers) == JsonSerializer.Serialize(expected.Customers), "same seeded arrivals, customers, patience and order lines");
+                Check(save.ApplyStartUnlocks(config, out _) && formal.ApplyStartUnlocks(config, out _), "same start unlocks");
+                if (day == SaveService.ChapterDays(city))
                 {
-                    station.FryerMachine!.TryExecute(ProjectCake.Fryer.FryerCommand.LoadOne);
-                    station.FryerMachine.TryExecute(ProjectCake.Fryer.FryerCommand.LowerBasket);
-                    station.Tick(1000);
-                    Check(station.FryerMachine.Runtime.Quality == ProjectCake.Fryer.YoutiaoQuality.Golden, "oil tutorial waits safely at golden heat");
+                    var empty = new DayResult { Day = day };
+                    var failed = save.CommitDay(empty, new DayPlan { Day = day }, config);
+                    Check(failed.EarnedStars == 0 && !save.Data.GetCity(city).Completed, "zero-star last day does not finish chapter");
                 }
-                if (day == 6)
+                var result = new DayResult { Day = day, CompletedCustomers = config.CustomerCount, PerfectOrders = config.CustomerCount, Satisfaction = 100, SaleRevenue = 100 };
+                var actual = save.CommitDay(result, controller.CurrentPlan!, config);
+                var reference = formal.CommitDay(result, expected, source);
+                Check(actual.EarnedStars == reference.EarnedStars && actual.NewChapterCompletion == reference.NewChapterCompletion
+                    && CityState(save.Data.GetCity(city)) == CityState(formal.Data.GetCity(city)),
+                    "shared settlement and complete city state match formal");
+                foreach (var upgrade in save.Data.GetCity(city).UnlockedContentIds.Where(id => id.StartsWith("equipment:") && (id.EndsWith("_lv2") || id.EndsWith("_lv3"))).OrderBy(id => id).ToArray())
                 {
-                    controller.Tick(.6); screen.RefreshForCapture(true);
-                    var customer = controller.CustomerQueue!.Slots[0]; double beforePatience = customer.WaitSeconds;
-                    var delivery = controller.TryDeliverSoyMilkTo(customer.Id, station.SoyMilkTray!);
-                    Check(beforePatience > 0 && delivery.ItemAccepted && !delivery.CompletesOrder
-                        && Math.Abs(customer.WaitSeconds - (beforePatience - customer.LeaveAtSeconds * .15)) < .001
-                        && controller.CurrentPlan!.PendingBreakfastRecords.Count == 0, "teaching soy delivery visibly restores 15 percent without collection");
+                    save.Data.Coins = formal.Data.Coins = 10000;
+                    bool bought = save.TryPurchase(city, upgrade, catalog, out _);
+                    bool other = formal.TryPurchase(city, upgrade, catalog, out _);
+                    Check(bought == other && save.Data.Coins == formal.Data.Coins, "same upgrade eligibility and price " + upgrade);
                 }
-                screen.FinishDemoLesson();
-                Check(!controller.TutorialActive && controller.CurrentConfig!.Day == day
-                    && station.PancakeTray.Count == 0 && (station.FryerMachine?.Inventory.Count ?? 0) == 0, "skip clears example and restores main resources");
+                Check(save.TrySave(out _), "persist day"); save.Load();
+                Check(!save.HasLoadError && save.Data.GetCity(city).DayBestRecords.ContainsKey(day), "day history survives restart");
+                days++;
             }
-            screen.QueueFree(); controller.QueueFree();
-            if (route.CityStages(StableIds.Cities.Wuhan).Length > 0)
-            {
-                var wc = new DayController(); AddChild(wc); wc.SetProcess(false);
-                var ws = GD.Load<PackedScene>("res://Scenes/Gameplay/WuhanDayScreen.tscn").Instantiate<WuhanDayScreen>(); AddChild(ws); ws.SetProcess(false); ws.ConnectController(wc);
-                foreach (int day in new[] {1,4})
-                {
-                    Check(ws.Initialize(c, save, wc, day), "Wuhan lesson prepared " + day);
-                    ws._Notification((int)NotificationApplicationFocusIn); ws.BeginDay(); wc.Tick(.6);
-                    Check(wc.TutorialActive && wc.DayElapsedSeconds == 0, "Wuhan example clock isolated");
-                    ws.RefreshForCapture(); await CaptureLesson("wuhan-" + day);
-                    ws._Notification((int)NotificationApplicationFocusIn);
-                    if (day == 1)
-                    {
-                        ws.Cooker.TryStart(0); ws.Cooker.Tick(1000);
-                        Check(ws.Cooker.Baskets[0].Quality == ProjectCake.Wuhan.NoodleQuality.Optimal, "teaching noodles never overcook");
-                        ws.Cooker.TryRaise(0); ws.Cooker.Tick(1000); ws.Cooker.TryTransferTo(0, ws.Bowl);
-                        ws.Bowl.TryAddBaseSeasoning(); ws.Bowl.AddMixDistance(1000);
-                    }
-                    else
-                    {
-                        ws.Doupi!.TryPourBatter(); ws.Doupi.Tick(1000);
-                        Check(ws.Doupi.State == ProjectCake.Wuhan.DoupiState.Batter, "teaching waits for egg");
-                        ws.Doupi.TryAddEgg(); ws.Doupi.Tick(1000);
-                        Check(ws.Doupi.State == ProjectCake.Wuhan.DoupiState.ReadyToFlip, "teaching waits for flip");
-                        ws.Doupi.TryFlip(); ws.Doupi.Tick(1000); ws.Doupi.TryAddFilling(); ws.Doupi.Tick(1000);
-                        Check(ws.Doupi.State == ProjectCake.Wuhan.DoupiState.ReadyToCut, "teaching waits for cutting");
-                        ws.Doupi.TryCut(ProjectCake.Wuhan.DoupiCutLine.Horizontal); ws.Doupi.TryCut(ProjectCake.Wuhan.DoupiCutLine.Center);
-                        ws.Doupi.TransferAvailable(ws.DoupiStock);
-                    }
-                    int coins = save.Data.Coins;
-                    Check(ws.DeliverToCustomer(wc.CustomerQueue!.Slots[0].Id, day == 1 ? ProductKind.HotDryNoodles : ProductKind.Doupi), "real Wuhan lesson delivery");
-                    Check(wc.Ledger!.Build().TotalRevenue == 0 && save.Data.Coins == coins, "Wuhan lesson no revenue");
-                    ws.RefreshForCapture(); await CaptureLesson("wuhan-complete-" + day);
-                    ws._Notification((int)NotificationApplicationFocusIn);
-                    ws.FinishWuhanDemoLesson();
-                    Check(!wc.TutorialActive && ws.Bowl.State == ProjectCake.Wuhan.NoodleBowlState.Empty
-                        && ws.DoupiStock.Count == 0 && !ws.Cooker.ProtectTeachingHeat, "Wuhan example clears before normal shift");
-                }
-                ws.QueueFree(); wc.QueueFree();
-                Check(save.TryPurchase(StableIds.Cities.Wuhan, "equipment:noodle_cooker_lv2", c, out _), "Wuhan upgrade purchase");
-                Check(save.TryRecordDemoStart(StableIds.Cities.Wuhan, 3, out _), "record Wuhan replay");
-                save.Load(); Check(save.ContinueCityId == StableIds.Cities.Wuhan && save.ContinueDay == 3, "continue preserves Wuhan stage");
-            }
-            var legacy = new DemoSaveFile { SchemaVersion = 1, ContentRevision = 1, Coins = 19,
-                LastStartedStageId = "demo_tj_03", CompletedStages = new() { "demo_tj_01", "demo_tj_02", "demo_tj_03" } };
-            legacy.Equipment["pancake_stove"] = 2; legacy.LearnedActions.Add("spread");
-            legacy.BestRecords["demo_tj_03"] = new() { TotalRevenue = 65, CompletedCustomers = 8 };
-            string old = Path.Combine(dir, "legacy.json"); string original = JsonSerializer.Serialize(legacy, DemoCatalog.JsonOptions); File.WriteAllText(old, original);
-            var migrated = new SaveService(); migrated.UseDemoPathForTests(old, route);
-            Check(!migrated.HasLoadError && migrated.ContinueDay == 4 && migrated.Data.Coins == 19
-                && migrated.Data.PurchasedStoveLevel == 2 && migrated.Data.Tianjin.LearnedWorkbenchActions.Contains("spread"), "pilot migration preserves assets and opens T4");
-            Check(File.ReadAllText(old + ".before-v2-r" + route.ContentRevision + ".bak") == original, "migration preserves original bytes");
-            migrated.Load(); Check(migrated.Data.Coins == 19, "migration never reissues income");
-            GD.Print("DEMO_ROUTE_SELF_TEST_OK " + _checks); GetTree().Quit();
+            Check(days == 27 && save.Data.Tianjin.Completed && save.Data.Wuhan.Completed, "both full chapters completed");
+            Check(save.Data.Tianjin.EquipmentLevels["pancake_stove"] == 3 && save.Data.Wuhan.EquipmentLevels["noodle_cooker"] == 3
+                && save.Data.Wuhan.EquipmentLevels["egg_rice_wine_station"] == formal.Data.Wuhan.EquipmentLevels["egg_rice_wine_station"], "full equipment and current formal product availability match");
+            foreach (var city in new[] { StableIds.Cities.Xian, StableIds.Cities.Guangzhou, StableIds.Cities.Yangzhou })
+                Check(!save.CanEnter(city, 1) && !save.Data.UnlockedCityIds.Contains(city) && !controller.TryPrepareDay(city, 1, catalog, out _), "future city blocked " + city);
+            catalog.TryGetDay(1, out var first);
+            int coins = save.Data.Coins;
+            var replay = new DayPlan { Day = 1 };
+            save.CommitDay(new() { Day = 1, SaleRevenue = 7 }, replay, first);
+            save.CommitDay(new() { Day = 1, SaleRevenue = 7 }, replay, first);
+            Check(save.Data.Coins == coins + 7 && save.Data.Tianjin.Completed, "replay credits full revenue once and preserves chapter");
+            formal.Free(); controller.Free();
+            GD.Print($"DEMO_ROUTE_SELF_TEST_OK {_checks}"); GetTree().Quit();
         }
-        catch (Exception e) { GD.PushError(e.ToString()); GetTree().Quit(1); }
+        catch (Exception ex) { GD.PushError(ex.ToString()); GetTree().Quit(1); }
     }
 }

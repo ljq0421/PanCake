@@ -1,59 +1,53 @@
-# 早餐铺子 · 两城 Demo RC1
+# 早餐铺子 · 完整两城 Demo
 
-Windows x64 · 2026-09-16 · 内容版本 3 / 存档结构 2
+当前源码采用与正式版相同的天津 15 天、武汉 12 天，共 27 天。西安仅提供预告，广州和扬州不可进入。完成武汉章节后保留两城旅行纪念页，可继续回访营业。
 
-解压整个文件夹，运行 **BreakfastDemo.exe**。保留旁边的 .pck 文件和 data_ProjectCake_windows_x86_64 文件夹；无需安装 Godot 或 .NET。
+## 开始与推进
 
-包含天津 7 局、武汉 6 局：煎饼果子、油条、豆浆、热干面、三鲜豆皮；独立制作教学、可选设备升级、五张早餐收藏卡和两城纪念结尾。西安只有预告，本版未接入商店或反馈入口。
+- 关卡、顾客订单与到达计划、耐心、食物解锁、设备升级和教学方式直接使用正式版配置。相关可升级设备最高 Lv3。
+- 普通营业日按正式规则结算并推进；天津第 15 天、武汉第 12 天需要达到各自至少一星的章节目标并保存成功，才算完成章节。天津完成后开放武汉。
+- 每次营业收入全额入账，重玩也一样；相同场次的结算重试不会重复入账。
+- 当前武汉食物开放以正式日配置为准，没有额外开放蛋酒。
+- 教学提示及“帮助 → 重看首份教学”与正式版相同。独立练习不产生收入、章节进度或收藏。
+- 当日计划顾客全部离场、门外队列清空后立即结算，不空等倒计时。
 
-## 开始与继续
+## 操作与收藏
 
-1. 首页“设置”切换简体中文 / English、窗口、音乐和音效音量。
-2. “新的旅程”从天津开始；教学可跳过，准备页可重看。确认新建会覆盖现有 Demo 进度。
-3. 至少完成 1 单，正常收摊并保存成功后开放下一局。零完成可免费重试，升级不是推进条件。
-4. T7 完成并保存后开放武汉；经营手账可选择已开放营业日重玩。
-5. 每次营业收入均全额入账，重玩也一样。收藏可以在未刷新收入时获得。
-6. “继续旅程”回到上次选择或新开放的准备页，未结算营业重新开始。
+天津与武汉沿用正式制作流程。两城自动入账，点击收银挂件查看本次营业明细并暂停。Esc 暂停，失焦暂停营业与配乐。右键长按 0.45 秒，将已投入制作的食物拖入垃圾桶丢弃。
 
-## 制作与交付
+当前旅途收藏共五张早餐卡，两版共用；合格交付记录随成功结算保存。放弃营业不保存本局记录，保存失败可重试。
 
-- 天津：拖面糊入炉；按住左键划动摊饼，点击鸡蛋。点酱碗拿刷子后划动刷酱。F 翻面、收刷、折叠或装袋。
-- 油条：长按装入，G 下锅／提篮；金黄时提篮后沥油。订单里的夹入油条和单卖油条不同。
-- 豆浆是供应商品。组合订单可分次交付；每件正确商品恢复耐心总量的 15%，最多回满。
-- 武汉：生面入篮、提篮沥水、倒入面碗、调味并划动拌匀。豆皮倒浆加蛋、翻面放馅、成熟切块后入盘；按工作台提示操作。
-- 两城均自动入账。点击收银挂件查看本次营业明细并暂停。
-- 右键长按 0.45 秒，将已投入制作的食物拖入垃圾桶丢弃。左键不丢弃。
-- Esc 暂停；切出窗口暂停营业与配乐。恢复不补播经营提示音。
+设置提供简体中文 / English、窗口及音乐和音效音量。配乐署名见 MUSIC-CREDITS.md，游戏内“帮助 → 配乐与署名”也可查看。
 
-## 收藏与声音
+## 存档与旧版升级
 
-五张卡从合格且匹配的交付记录获得，收摊保存成功后入册。豆浆卡是供应记录。放弃与保存失败不会提前入册，失败后可在结算页重试保存。
-
-曲目经试听确认：Wholesome / Carefree / Local Forecast - Elevator。署名与许可见 MUSIC-CREDITS.md，游戏内“帮助 → 配乐与署名”也有说明。
-
-## 存档
-
-Demo 与正式版分开，默认位置：
+Demo 仍使用独立路径：
 %APPDATA%/Godot/app_userdata/早餐铺子/demo/project_cake_demo_pilot_v1.json
 
-文件名保留兼容，内部结构已升级为版本 2。迁移前保留 .before-v2-r3.bak 原档。天津前三局旧档保留金币、设备、教学、最佳成绩；已完成 T3 可继续 T4，不重复发奖。请勿手工合并正式版存档。
+文件名保留，内部改为与正式版相同的 v3 完整城市进度结构；正式版存档不读取、不覆盖，也不提供导入功能。
 
-这是 Release 候选包。此前首批真人试玩已按用户确认完成；**新增两城全路线的时长、疲劳与手感仍需真人试玩**。自动验证和源码状态机检查不能替代这些结论。详细实现、自动验证、人工待验与校验值见 RELEASE-NOTES.md 和 SHA256SUMS.txt。
+识别到旧版三局或 13 局 Demo 存档时，先保存原文件备份，再从天津第 1 天重新开始。旧金币、设备、成绩、教学和收藏均不转入新路线。备份名包含 .before-shared-cities，已有备份不会被覆盖。
+
+备份或写入失败时原档保留，可在首页选择“重试读取存档”。损坏或未知格式不会自动重置。请勿手工合并正式版存档。
+
+本次为源码调整及本地验证，不代表既有发行包已经更新。内部导出仅用于启动检查，不作为新版本发布。
 
 ---
 
-# Breakfast Shops · Two-city Demo RC1
+# Breakfast Shops · Full two-city demo
 
-Extract everything and run **BreakfastDemo.exe**. Keep the .pck and data folder together. No Godot or .NET installation is required.
+The current source shares the full game's 15 Tianjin days and 12 Wuhan days. Xi'an is a preview; Guangzhou and Yangzhou remain unavailable. Finish Wuhan to view the two-city keepsake, then revisit either city.
 
-- 7 Tianjin shifts and 6 Wuhan shifts, five food records, optional upgrades and a two-city ending.
-- Complete at least one order, close normally and save to unlock the next shift. Upgrades are optional; zero-order retries are free.
-- Complete Tianjin to open Wuhan. Replay from the journal; only income above the previous best is credited.
-- Follow the workstation lessons. F handles pancake actions; G lowers/lifts the fryer. Drag food to matching customers.
-- Combo items can be served separately. Each correct item restores 15% of maximum patience.
-- Hold right mouse for 0.45 seconds, then drag prepared or cooking food to the bin.
-- Payments are automatic. The cash pendant opens shift details. Esc and focus loss pause play.
-- Food records commit with a successful shift save, even without new best earnings. Abandoning a shift discards its pending records.
-- Settings offer English, display and separate music/effects volume. See MUSIC-CREDITS.md for music attribution.
-- Old three-shift Demo progress migrates with a backup; full-game saves are separate.
-- The complete route still needs human duration, fatigue and feel evaluation. See RELEASE-NOTES.md for verified scope.
+- Days, seeded orders and arrivals, patience, food unlocks, upgrades up to Lv3, progression and tutorials use the full-game rules.
+- Ordinary days advance on settlement. Complete Tianjin Day 15 or Wuhan Day 12 with at least one star and save successfully to finish that chapter. Finishing Tianjin opens Wuhan.
+- Every shift credits its full earnings, including replays. Retrying the same settlement never pays twice.
+- Food availability follows the current full-game configuration; egg rice wine is not additionally enabled.
+- Replay the first lesson from Help. Isolated practice grants no income, chapter progress or food records.
+- Both cities collect payments automatically. The cash pendant opens shift details and pauses play. Esc and focus loss pause business.
+- Hold the right mouse button for 0.45 seconds, then drag food already in preparation to the bin.
+- Five shared food cards commit with successful settlement saves. Abandoned runs do not commit records.
+- Settings provide Simplified Chinese / English, display controls and separate music/effects volume. Credits are available in Help and MUSIC-CREDITS.md.
+
+Demo saves remain in the separate path shown above, now using the shared v3 city-progress structure. Recognized old three-shift or 13-shift saves are backed up before the new route starts from Tianjin Day 1. Old money, equipment, scores, lessons and collections are not transferred. Existing backups are never overwritten. If backup or writing fails, the original remains intact and the home screen offers Retry loading save. Unknown or corrupt formats never reset automatically.
+
+Full-game saves are untouched; importing Demo progress is not included. This source update and local export verification do not update previously distributed packages.

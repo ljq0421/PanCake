@@ -445,8 +445,7 @@ public partial class WuhanDayScreen : Control
         if (_committed || _controller.TutorialActive || _controller.CurrentConfig?.CityId != StableIds.Cities.Wuhan) return;
         _committed = true; CloseBusinessDetails(); _paymentFeedback.Clear(); Workstation.CancelAnimations();
         var model = BusinessBookModel.From(StableIds.Cities.Wuhan, result, _controller.BusinessRecords, _catalog);
-        if (_save.IsDemo) { _demoPendingResult = model; RetryWuhanDemoSettlement(); return; }
-        BusinessBookSettlement.Commit(model, _save, _controller.CurrentPlan!, _controller.CurrentConfig!, _catalog, allowFailedReturn: true);
-        _blocker.Hide(); _results.Hide(); BusinessDetails.Open(model);
+        _blocker.Hide(); _results.Hide();
+        _demoPendingResult = model; RetryWuhanDemoSettlement();
     }
 }

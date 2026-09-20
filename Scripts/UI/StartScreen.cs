@@ -77,7 +77,8 @@ public partial class StartScreen : Control
     }
     private void SetStatus()
     {
-        if (_status is not null) _status.Text = _error.Length > 0 ? _error : _save?.HasLoadError == true ? "存档无法读取。可在新的旅程中确认重新开局。" : "";
+        if (_status is not null) _status.Text = _error.Length > 0 ? _error : _save?.DemoMigrationRetryAvailable == true ? "旧试玩存档升级失败，请检查写入权限后重试。原存档已保留。"
+            : _save?.HasLoadError == true ? "存档无法读取。可在新的旅程中确认重新开局。" : _save?.DemoMigrationNotice ?? "";
     }
     private void Begin(JourneyPage page)
     {

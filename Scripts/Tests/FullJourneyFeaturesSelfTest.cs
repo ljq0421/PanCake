@@ -46,7 +46,7 @@ public partial class FullJourneyFeaturesSelfTest : Node
             GetWindow().Size = new(1920, 1080);
             var catalog = GetNode<DataCatalog>("/root/DataCatalog");
             var save = GetNode<SaveService>("/root/SaveService");
-            Check(!save.IsDemo && catalog.Demo is null && catalog.IsValid, "full profile uses full content");
+            Check(catalog.IsValid, "full profile uses full content");
             string path = Path.Combine(_dir, "save.json"); save.UsePathForTests(path); Check(save.ResetProgress(out _), "isolated save");
             var old = JsonNode.Parse(File.ReadAllText(path))!; old.AsObject().Remove("BreakfastRecords");
             File.WriteAllText(path, old.ToJsonString()); save.Load();

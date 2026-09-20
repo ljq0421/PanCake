@@ -76,6 +76,8 @@ public partial class DayController : Node
 
     private bool PrepareDay(string cityId, int dayNumber, DataCatalog catalog, TutorialProtection? tutorial, out string error)
     {
+        if (!ExperienceProfile.IsCityAvailable(cityId, ExperienceProfile.IsDemo))
+        { error = "本次试玩尚未开放该城市。"; return false; }
         if (!catalog.IsValid)
         {
             error = "DataCatalog 存在配置错误，不能准备营业日。";
@@ -93,12 +95,8 @@ public partial class DayController : Node
         Tutorial = tutorial ?? config.Tutorial;
         Feedback.Reset();
         CurrentConfig = config;
-        CurrentPlan = catalog.Demo is { } demo
-            ? demo.Stage(cityId, dayNumber)!.Plan(catalog)
-            : new OrderGenerator().Generate(config, catalog.RecipesById, catalog.ProductsById, catalog.CustomersById);
-        if (Tutorial.FreezeBusinessClocks && (catalog.Demo?.Stage(cityId, dayNumber)?.Tutorial == "toppings"
-            ? CurrentPlan.Customers.FirstOrDefault(c => c.Order.PancakeRecipeId.Contains("crispy"))
-            : CurrentPlan.Customers.FirstOrDefault()) is { } example)
+        CurrentPlan = new OrderGenerator().Generate(config, catalog.RecipesById, catalog.ProductsById, catalog.CustomersById);
+        if (Tutorial.FreezeBusinessClocks && CurrentPlan.Customers.FirstOrDefault() is { } example)
             CurrentPlan = new DayPlan
             {
                 Day = CurrentPlan.Day, RandomSeed = CurrentPlan.RandomSeed,

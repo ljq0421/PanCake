@@ -75,8 +75,8 @@ public partial class CityPagesSelfTest
         Check(_screen.Page == JourneyPage.City && _screen.SelectedCityId == StableIds.Cities.Wuhan, "unlocked Wuhan node opens its city page");
         if (demo)
         {
-            Check(_save.DemoProgress.LastStartedStageId == _save.DemoContent!.Stage(StableIds.Cities.Wuhan, _screen.SelectedDay)!.Id,
-                "entering demo Wuhan preserves existing stage recording");
+            Check(_screen.SelectedDay == _save.Data.Wuhan.HighestUnlockedDay,
+                "entering Demo Wuhan uses shared city progress");
             persisted = File.ReadAllText(_path);
         }
         _screen._Input(new InputEventKey { Keycode = Key.Escape, Pressed = true }); await Frames();

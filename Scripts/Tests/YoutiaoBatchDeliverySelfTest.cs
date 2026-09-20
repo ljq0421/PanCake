@@ -102,7 +102,7 @@ public partial class YoutiaoBatchDeliverySelfTest : Node
     {
         var controller = new DayController();
         AddChild(controller);
-        Check(controller.TryPrepareDay(ExperienceProfile.IsDemo ? 4 : 5, catalog, out _), "prepare current profile");
+        Check(controller.TryPrepareDay(5, catalog, out _), "prepare current profile");
         controller.CustomerQueue!.ResolveBeforeArrival = (planned, _) => new OrderData
         {
             OrderId = planned.Order.OrderId, CustomerTypeId = planned.CustomerTypeId, BasePrice = 10,

@@ -203,7 +203,6 @@ public partial class TianjinDayScreen : Control
             SetManualPaused(false);
             _countdown.Visible = true;
             ShowFeedback("铺门打开，准备迎接第一位客人。", false);
-            ShowDemoContextHint();
         }
         else ShowFeedback(error, true);
     }
@@ -309,9 +308,8 @@ public partial class TianjinDayScreen : Control
         CloseBusinessDetails(); _collectionFeedback.Clear(); ClearCoinFlights();
         _committed = true; _workstation.InteractionEnabled = false; _workstation.CancelInput();
         var model = BusinessBookModel.From(StableIds.Cities.Tianjin, result, _controller.BusinessRecords, _catalog);
-        if (_save.IsDemo) { _demoPendingResult = model; RetryDemoSettlement(); return; }
-        BusinessBookSettlement.Commit(model, _save, _controller.CurrentPlan!, _controller.CurrentConfig!, _catalog, allowFailedReturn: true);
-        _resultBlocker.Hide(); _results.Hide(); BusinessDetails.Open(model);
+        _resultBlocker.Hide(); _results.Hide();
+        _demoPendingResult = model; RetryDemoSettlement();
     }
 
     private bool SubmitToCustomer(string customerId, int slot, string payload)

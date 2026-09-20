@@ -35,10 +35,7 @@ public partial class StartScreen
 
     private void JourneyBreakfastCards(JourneyCity city)
     {
-        int count = _save!.IsDemo
-            ? city.Id == StableIds.Cities.Wuhan ? 2
-                : city.Id == StableIds.Cities.Tianjin && _save.ChapterLength(city.Id) == 3 ? 1 : city.Foods.Length
-            : city.Foods.Length;
+        int count = city.Foods.Length;
         const float width = 164, gap = 15;
         float left = 1265 - (count * width + (count - 1) * gap) / 2;
         for (int i = 0; i < count; i++)

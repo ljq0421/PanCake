@@ -21,11 +21,8 @@ public partial class StartScreen
     {
         if (_save?.IsDemo == true && (_save.ChapterLength(cityId) == 0 || !_save.Data.UnlockedCityIds.Contains(cityId))) return;
         _city = cityId; _cityReturn = returnToSource ?? RenderHome;
-        SelectedDay = Math.Clamp(_save!.IsDemo && cityId == _save.ContinueCityId ? _save.ContinueDay : JourneyModel.Progress(_save!, cityId).HighestUnlockedDay, 1, _save.ChapterLength(cityId));
-        string saveError = "";
-        if (_save.IsDemo) _save.TryRecordDemoStart(cityId, SelectedDay, out saveError);
+        SelectedDay = Math.Clamp(JourneyModel.Progress(_save!, cityId).HighestUnlockedDay, 1, _save!.ChapterLength(cityId));
         Show(); RenderCity();
-        if (saveError.Length > 0) ShowError(saveError);
     }
     public void PresentLedger() { SelectedDay = Math.Clamp(JourneyModel.Progress(_save!, _city).HighestUnlockedDay, 1, _save!.ChapterLength(_city)); RenderLedgerPage(); }
     public void PresentUpgrades() => RenderUpgradePage();
@@ -105,7 +102,7 @@ public partial class StartScreen
     private void RenderCity()
     {
         var city = JourneyModel.City(_city); var p = JourneyModel.Progress(_save!, _city);
-        int day = Math.Clamp(_save!.IsDemo ? SelectedDay : p.HighestUnlockedDay, 1, _save!.ChapterLength(_city));
+        int day = Math.Clamp(p.HighestUnlockedDay, 1, _save!.ChapterLength(_city));
         var overview = _cityModel?.Overview(_city, day);
         day = overview?.Day ?? day;
         CityFrame(JourneyPage.City, city.Name + "早餐铺");
@@ -158,7 +155,7 @@ public partial class StartScreen
         var calendarTitle = Text(_body, "CalendarTitle", "营业日历", new(604, 248, 270, 65), 43, true);
         FitTextWidth(calendarTitle, 43, 20);
         calendarTitle.RotationDegrees = -4;
-        var progress = Text(_body, "CalendarProgress", _save!.IsDemo ? $"已开放 {p.HighestUnlockedDay} / {_save.ChapterLength(_city)} 局" : $"已开放 {p.HighestUnlockedDay} / {_save.ChapterLength(_city)} 天 · 章节 {p.BestStars} 星", new(596, 348, 286, 32), 19, true);
+        var progress = Text(_body, "CalendarProgress", $"已开放 {p.HighestUnlockedDay} / {_save!.ChapterLength(_city)} 天 · 章节 {p.BestStars} 星", new(596, 348, 286, 32), 19, true);
         FitTextWidth(progress, 19, 14);
         for (int d = 1; d <= _save!.ChapterLength(_city); d++)
         {

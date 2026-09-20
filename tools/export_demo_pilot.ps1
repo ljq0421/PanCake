@@ -42,7 +42,7 @@ try {
     if (-not $Qa) {
         Copy-Item -LiteralPath 'docs/Demo-Pilot试玩说明.md' -Destination (Join-Path $output 'README.md')
         Copy-Item -LiteralPath 'docs/Demo-Music-Credits.md' -Destination (Join-Path $output 'MUSIC-CREDITS.md')
-        Copy-Item -LiteralPath 'docs/Demo-TwoCities-ReleaseNotes.md' -Destination (Join-Path $output 'RELEASE-NOTES.md')
+        Copy-Item -LiteralPath 'docs/Demo-SharedCities-20260920.md' -Destination (Join-Path $output 'RELEASE-NOTES.md')
     }
     Write-Output ('Exported: ' + (Join-Path $output ($name + '.exe')))
 } finally {

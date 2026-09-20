@@ -44,7 +44,6 @@ public partial class EquipmentUpgradeView : Control
             else if (item.Art is not null) Picture(card, item.Art, new(18, 15, 263, 135));
             else LabelAt(card, "EquipmentWordmark", item.Name, new(24, 25, 240, 130), 34, Muted, true);
             var equipmentName = LabelAt(card, "EquipmentName", item.Name, new(306, 17, 240, 48), 32);
-            if (ProjectCake.Core.ExperienceProfile.IsDemo)
             {
                 int size = 32;
                 while (size > 24 && equipmentName.GetThemeFont("font").GetStringSize(equipmentName.Tr(item.Name), fontSize: size).X > 240) size--;

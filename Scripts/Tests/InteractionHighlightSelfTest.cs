@@ -50,8 +50,8 @@ public partial class InteractionHighlightSelfTest : Node
             _viewport.AddChild(screen); screen.SetProcess(false); screen.ConnectController(controller);
             if (OS.GetCmdlineUserArgs().Contains("--sauce-only"))
             {
-                bool demo = catalog.Demo is not null;
-                if (demo) save.UseDemoPathForTests(savePath + ".demo", catalog.Demo!);
+                bool demo = ExperienceProfile.IsDemo;
+                if (demo) save.UseDemoPathForTests(savePath + ".demo");
                 foreach (int day in demo ? new[] { 1 } : new[] { 1, 6, 15 })
                 {
                     Check(screen.Initialize(catalog, save, controller, day), $"prepare sauce capture day {day}");

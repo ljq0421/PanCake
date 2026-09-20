@@ -29,73 +29,59 @@ public sealed class DemoSaveFile
 public partial class SaveService
 {
     public bool IsDemo { get; private set; }
-    public DemoCatalog? DemoContent { get; private set; }
-    public DemoSaveFile DemoProgress { get; private set; } = new();
-    public int ContinueDay => IsDemo && DemoContent?.Stage(DemoProgress.LastStartedStageId) is { } stage ? stage.Day
-        : Data.GetCity(ContinueCityId).HighestUnlockedDay;
-    public int ChapterLength(string cityId) => IsDemo
-        ? DemoContent?.CityStages(cityId).Length ?? 0
-        : ChapterDays(cityId);
-    public bool CanEnter(string cityId, int day) => CanContinue && (!IsDemo || ChapterLength(cityId) > 0)
+    public bool DemoMigrationRetryAvailable { get; private set; }
+    public string DemoMigrationNotice { get; private set; } = "";
+    public int ContinueDay => Data.GetCity(ContinueCityId).HighestUnlockedDay;
+    public bool IsCityAvailable(string cityId) => ExperienceProfile.IsCityAvailable(cityId, IsDemo);
+    public int ChapterLength(string cityId) => IsCityAvailable(cityId) ? ChapterDays(cityId) : 0;
+    public bool CanEnter(string cityId, int day) => CanContinue && IsCityAvailable(cityId)
         && Data.UnlockedCityIds.Contains(cityId) && day >= 1 && day <= ChapterLength(cityId)
         && day <= Data.GetCity(cityId).HighestUnlockedDay;
 
-    public void UseDemoPathForTests(string path, DemoCatalog catalog)
+    public void UseDemoPathForTests(string path)
+    { IsDemo = true; _savePath = path; _legacyPath = null; Load(); }
+
+    // Validate old data before touching it. Unknown formats must never reset.
+    private bool TryResetLegacyDemo(string absolute, string json)
     {
-        IsDemo = true; DemoContent = catalog; _savePath = path; _legacyPath = null; Load();
+        using var document = JsonDocument.Parse(json);
+        if (!document.RootElement.TryGetProperty("profileId", out _)) return false;
+        foreach (string field in new[] { "profileId", "schemaVersion", "contentRevision", "coins", "lastStartedStageId",
+            "equipment", "bestRecords", "completedStages", "learnedActions", "completedTutorials", "skippedTutorials", "acceptedRuns" })
+            if (!document.RootElement.TryGetProperty(field, out _)) throw new InvalidDataException("Incomplete legacy Demo save.");
+        var file = JsonSerializer.Deserialize<DemoSaveFile>(json, DemoCatalog.JsonOptions)
+            ?? throw new InvalidDataException("Demo save is empty.");
+        if (file.SchemaVersion is not (1 or 2) || file.ContentRevision is < 1 or > 3)
+            throw new InvalidDataException("Unsupported Demo save version.");
+        if (file.SchemaVersion == 1 && (file.ContentRevision != 1 || file.CompletedStages is null
+            || file.CompletedStages.Any(id => id is not ("demo_tj_01" or "demo_tj_02" or "demo_tj_03"))))
+            throw new InvalidDataException("Invalid pilot save.");
+        var content = JsonSerializer.Deserialize<DemoCatalog>(Godot.FileAccess.GetFileAsString(ExperienceProfile.ManifestPath), DemoCatalog.JsonOptions)
+            ?? throw new InvalidDataException("Legacy Demo manifest is missing.");
+        file.SchemaVersion = 2; file.ContentRevision = content.ContentRevision;
+        ValidateDemoSave(file, content);
+        DemoMigrationRetryAvailable = true;
+        string backup = absolute + ".before-shared-cities.bak";
+        if (File.Exists(backup)) backup = absolute + ".before-shared-cities-" + Guid.NewGuid().ToString("N") + ".bak";
+        File.Copy(absolute, backup, false);
+        var fresh = new SaveData();
+        string temporary = absolute + ".migration.tmp";
+        File.WriteAllText(temporary, JsonSerializer.Serialize(fresh, JsonOptions));
+        File.Move(temporary, absolute, true);
+        DemoMigrationRetryAvailable = false;
+        Data = fresh; HasSavedGame = true; MigratedLegacySave = true;
+        DemoMigrationNotice = "旧试玩存档已备份，新路线从天津第 1 天开始。";
+        return true;
     }
 
-    private void LoadDemo()
+    private void ValidateProfile(SaveData data)
     {
-        PendingJourneyCompletion = null; ClearLoadError(); HasSavedGame = false; MigratedLegacySave = false;
-        Data = new SaveData(); DemoProgress = NewDemoProgress();
-        string absolute = Godot.ProjectSettings.GlobalizePath(_savePath);
-        try
-        {
-            if (DemoContent is null) throw new InvalidDataException("Demo content is unavailable.");
-            if (File.Exists(absolute))
-            {
-                var file = JsonSerializer.Deserialize<DemoSaveFile>(File.ReadAllText(absolute), DemoCatalog.JsonOptions)
-                    ?? throw new InvalidDataException("Demo save is empty.");
-                bool migrate = file.SchemaVersion == 1 || file.ContentRevision < DemoContent.ContentRevision;
-                if (migrate)
-                {
-                    if (file.SchemaVersion is not (1 or 2) || file.ContentRevision < 1)
-                        throw new InvalidDataException("Unsupported Demo save version.");
-                    if (file.SchemaVersion == 1 && (file.ContentRevision != 1
-                        || file.CompletedStages.Any(id => id is not ("demo_tj_01" or "demo_tj_02" or "demo_tj_03"))))
-                        throw new InvalidDataException("Invalid pilot save.");
-                    file.SchemaVersion = 2; file.ContentRevision = DemoContent.ContentRevision;
-                    if (file.CompletedStages.Contains(file.LastStartedStageId)
-                        && DemoContent.Stage(file.LastStartedStageId) is { } last
-                        && DemoContent.Next(last) is { } next && !file.CompletedStages.Contains(next.Id))
-                        file.LastStartedStageId = next.Id;
-                }
-                ValidateDemoSave(file, DemoContent);
-                if (migrate)
-                {
-                    string backup = absolute + ".before-v2-r" + DemoContent.ContentRevision + ".bak";
-                    if (!File.Exists(backup)) File.Copy(absolute, backup);
-                    string temp = absolute + ".migration.tmp";
-                    File.WriteAllText(temp, JsonSerializer.Serialize(file, DemoCatalog.JsonOptions));
-                    File.Move(temp, absolute, true);
-                }
-                DemoProgress = file; Data = RestoreDemoData(file); HasSavedGame = true;
-            }
-        }
-        catch (Exception e)
-        {
-            if (File.Exists(absolute)) SetCorruptError(absolute, e);
-            else { HasLoadError = true; LoadErrorMessage = e.Message; }
-        }
-        Changed?.Invoke();
+        if (!IsDemo) return;
+        if (!IsCityAvailable(data.LastVisitedCityId) || data.UnlockedCityIds.Any(id => !IsCityAvailable(id))
+            || data.Cities.Any(pair => !IsCityAvailable(pair.Key) && (pair.Value.Completed
+                || pair.Value.HighestUnlockedDay > 1 || pair.Value.DayBestRecords.Count > 0)))
+            throw new InvalidDataException("Demo save contains progress outside the available cities.");
     }
-
-    private DemoSaveFile NewDemoProgress() => new()
-    {
-        ContentRevision = DemoContent?.ContentRevision ?? 1,
-        LastStartedStageId = DemoContent?.Stages[0].Id ?? "demo_tj_01",
-    };
 
     private static void ValidateDemoSave(DemoSaveFile file, DemoCatalog content)
     {
@@ -125,121 +111,4 @@ public partial class SaveService
         }
     }
 
-    private SaveData RestoreDemoData(DemoSaveFile file)
-    {
-        var data = new SaveData { Coins = file.Coins, UpgradeTeachingCompleted = file.UpgradeTeachingCompleted, LastVisitedCityId = DemoContent!.Stage(file.LastStartedStageId)!.CityId };
-        data.Tianjin.EquipmentLevels = new(file.Equipment, StringComparer.Ordinal);
-        data.Tianjin.LearnedWorkbenchActions = new(file.LearnedActions, StringComparer.Ordinal);
-        data.Wuhan.EquipmentLevels = new(file.WuhanEquipment, StringComparer.Ordinal);
-        data.Wuhan.LearnedWorkbenchActions = new(file.WuhanLearnedActions, StringComparer.Ordinal);
-        foreach (var s in DemoContent.Stages)
-        {
-            var city = data.GetCity(s.CityId);
-            if (file.BestRecords.TryGetValue(s.Id, out var best)) city.DayBestRecords[s.Day] = best;
-            if (!file.CompletedStages.Contains(s.Id)) continue;
-            foreach (var unlock in s.CompletionUnlocks)
-                if (!city.UnlockedContentIds.Contains(unlock)) city.UnlockedContentIds.Add(unlock);
-            var next = DemoContent.Next(s);
-            if (next is not null)
-            {
-                if (!data.UnlockedCityIds.Contains(next.CityId)) data.UnlockedCityIds.Add(next.CityId);
-                data.GetCity(next.CityId).HighestUnlockedDay = Math.Max(data.GetCity(next.CityId).HighestUnlockedDay, next.Day);
-            }
-            city.Completed = s.Day == ChapterLength(s.CityId) && ChapterLength(s.CityId) >= (s.CityId == StableIds.Cities.Tianjin ? 7 : 6);
-        }
-        foreach (var s in DemoContent.Stages.Where(s => data.UnlockedCityIds.Contains(s.CityId) && s.Day <= data.GetCity(s.CityId).HighestUnlockedDay))
-        {
-            var city = data.GetCity(s.CityId);
-            foreach (var unlock in s.AvailableRecipes.Select(id => "recipe:" + id).Concat(s.StartUnlocks))
-                if (!city.UnlockedContentIds.Contains(unlock)) city.UnlockedContentIds.Add(unlock);
-            if (s.StartUnlocks.Contains("equipment:fryer_lv1")) city.EquipmentLevels["fryer"] = Math.Max(1, city.EquipmentLevels.GetValueOrDefault("fryer"));
-            if (s.StartUnlocks.Contains("equipment:doupi_griddle_lv1")) city.EquipmentLevels["doupi_griddle"] = Math.Max(1, city.EquipmentLevels.GetValueOrDefault("doupi_griddle"));
-        }
-        return data;
-    }
-
-    private string SerializeDemo()
-    {
-        if (DemoContent is null) throw new InvalidDataException("Cannot save without Demo content.");
-        var file = SnapshotDemo();
-        ValidateDemoSave(file, DemoContent);
-        return JsonSerializer.Serialize(file, DemoCatalog.JsonOptions);
-    }
-
-    private DemoSaveFile SnapshotDemo()
-    {
-        var file = CloneDemoProgress();
-        file.Coins = Data.Coins;
-        file.UpgradeTeachingCompleted = Data.UpgradeTeachingCompleted;
-        file.Equipment = new(Data.Tianjin.EquipmentLevels, StringComparer.Ordinal);
-        file.LearnedActions = new(Data.Tianjin.LearnedWorkbenchActions, StringComparer.Ordinal);
-        file.WuhanEquipment = new(Data.Wuhan.EquipmentLevels, StringComparer.Ordinal);
-        file.WuhanLearnedActions = new(Data.Wuhan.LearnedWorkbenchActions, StringComparer.Ordinal);
-        file.BestRecords = DemoContent!.Stages.Where(s => Data.GetCity(s.CityId).DayBestRecords.ContainsKey(s.Day))
-            .ToDictionary(s => s.Id, s => Data.GetCity(s.CityId).DayBestRecords[s.Day]);
-        return file;
-    }
-
-    private DemoSaveFile CloneDemoProgress() => JsonSerializer.Deserialize<DemoSaveFile>(
-        JsonSerializer.Serialize(DemoProgress, DemoCatalog.JsonOptions), DemoCatalog.JsonOptions)!;
-
-    private DayCommitResult CommitDemoDay(DayResult result, DayPlan plan, DayConfig config)
-    {
-        if (HasLoadError || DemoContent?.Stage(plan.StageId) is not { } stage || stage.Day != result.Day
-            || config.CityId != stage.CityId || config.Day != stage.Day || !CanEnter(config.CityId, stage.Day)
-            || string.IsNullOrEmpty(plan.RunId)) throw new IOException("Invalid Demo settlement or stage.");
-        if (DemoProgress.AcceptedRuns.Contains(plan.RunId)) return new(0, false);
-        var snapshot = Clone(Data); var demoSnapshot = CloneDemoProgress();
-        var city = Data.GetCity(stage.CityId);
-        bool hadBest = city.DayBestRecords.TryGetValue(result.Day, out var best);
-        int gain = Math.Max(0, result.TotalRevenue);
-        bool newBest = !hadBest || result.TotalRevenue > best!.TotalRevenue;
-        Data.Coins += gain;
-        if (newBest) city.DayBestRecords[result.Day] = ToRecord(result);
-        if (result.CompletedCustomers >= 1)
-        {
-            bool firstCompletion = DemoProgress.CompletedStages.Add(stage.Id);
-            city.HighestUnlockedDay = Math.Max(city.HighestUnlockedDay, Math.Min(ChapterLength(stage.CityId), stage.Day + 1));
-            if (DemoContent.Next(stage) is { } next)
-            {
-                if (!Data.UnlockedCityIds.Contains(next.CityId)) Data.UnlockedCityIds.Add(next.CityId);
-                Data.GetCity(next.CityId).HighestUnlockedDay = Math.Max(Data.GetCity(next.CityId).HighestUnlockedDay, next.Day);
-                if (firstCompletion) { DemoProgress.LastStartedStageId = next.Id; Data.LastVisitedCityId = next.CityId; }
-            }
-            city.Completed |= stage.Day == ChapterLength(stage.CityId) && ChapterLength(stage.CityId) >= (stage.CityId == StableIds.Cities.Tianjin ? 7 : 6);
-            foreach (string unlock in stage.CompletionUnlocks)
-                if (!city.UnlockedContentIds.Contains(unlock)) city.UnlockedContentIds.Add(unlock);
-        }
-        foreach (string id in plan.PendingBreakfastRecords)
-            DemoProgress.BreakfastRecords.TryAdd(id, stage.Id);
-        BreakfastStatistics.Merge(DemoProgress.BreakfastStats, plan.PendingBreakfastStats, config.CityId);
-        DemoProgress.AcceptedRuns.Add(plan.RunId);
-        if (!TrySave(out string error)) { Data = snapshot; DemoProgress = demoSnapshot; throw new IOException(error); }
-        Changed?.Invoke(); return new(gain, newBest, 0, !snapshot.GetCity(stage.CityId).Completed && city.Completed);
-    }
-
-    public bool TryRecordDemoStart(int day, out string error) => TryRecordDemoStart(StableIds.Cities.Tianjin, day, out error);
-    public bool TryRecordDemoStart(string cityId, int day, out string error)
-    {
-        error = string.Empty;
-        if (!IsDemo) return true;
-        if (!CanEnter(cityId, day) || DemoContent?.Stage(cityId, day) is not { } stage)
-        { error = "Demo stage is not available."; return false; }
-        if (DemoProgress.LastStartedStageId == stage.Id && Data.LastVisitedCityId == cityId) return true;
-        string previous = DemoProgress.LastStartedStageId, previousCity = Data.LastVisitedCityId;
-        DemoProgress.LastStartedStageId = stage.Id; Data.LastVisitedCityId = cityId;
-        if (!TrySave(out error)) { DemoProgress.LastStartedStageId = previous; Data.LastVisitedCityId = previousCity; return false; }
-        return true;
-    }
-
-    public bool SaveDemoTutorial(string stageId, bool skipped, out string error)
-    {
-        error = string.Empty;
-        if (!IsDemo || DemoContent?.Stage(stageId) is null) return false;
-        var snapshot = CloneDemoProgress();
-        if (skipped) DemoProgress.SkippedTutorials.Add(stageId);
-        else DemoProgress.CompletedTutorials.Add(stageId);
-        if (!TrySave(out error)) { DemoProgress = snapshot; return false; }
-        return true;
-    }
 }

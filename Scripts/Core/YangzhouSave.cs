@@ -10,6 +10,7 @@ public partial class SaveService
     };
     private void EnsureYangzhouUnlocked()
     {
+        if (!IsCityAvailable(ProjectCake.Data.StableIds.Cities.Yangzhou)) return;
         if (!Data.Cities.TryGetValue(ProjectCake.Data.StableIds.Cities.Guangzhou, out var previous) || !previous.Completed || previous.BestStars < 1) return;
         if (!Data.UnlockedCityIds.Contains(YangzhouCatalog.CityId)) Data.UnlockedCityIds.Add(YangzhouCatalog.CityId);
         Data.GetCity(YangzhouCatalog.CityId);

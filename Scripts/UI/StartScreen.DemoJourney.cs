@@ -43,11 +43,11 @@ public partial class StartScreen
             var city = JourneyModel.City(cityId); var p = _save!.Data.GetCity(cityId);
             HomeArt(_body, JourneyModel.Stamp(city), new(350, y, 110, 110));
             Text(_body, "EndingCity" + y, city.Name, new(485, y, 360, 52), 34);
-            Text(_body, "EndingRecord" + y, $"完成 {_save.DemoContent!.CityStages(cityId).Count(s => _save.DemoProgress.CompletedStages.Contains(s.Id))} 局 · 最佳收入合计 {p.DayBestRecords.Values.Sum(r => r.TotalRevenue)} 金币",
+            Text(_body, "EndingRecord" + y, $"完成 {p.DayBestRecords.Count} 天 · 最佳收入合计 {p.DayBestRecords.Values.Sum(r => r.TotalRevenue)} 金币",
                 new(485, y + 55, 390, 90), 23);
             y += 190;
         }
-        Text(_body, "EndingCollection", $"早餐记录 {_save!.DemoProgress.BreakfastRecords.Count} / 5", new(350, 778, 510, 55), 30);
+        Text(_body, "EndingCollection", $"早餐记录 {_save!.Data.BreakfastRecords.Count} / 5", new(350, 778, 510, 55), 30);
         var xian = JourneyModel.City(StableIds.Cities.Xian);
         CityPicture(_body, xian, new(1015, 367, 510, 282));
         Text(_body, "XianPreview", "下一站预告 · 西安", new(1020, 680, 500, 55), 34, true);

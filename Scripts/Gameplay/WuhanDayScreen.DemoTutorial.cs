@@ -18,15 +18,10 @@ public partial class WuhanDayScreen
     private BusinessBookModel? _demoPendingResult;
     private bool BeginWuhanDemoLesson()
     {
-        if (!_save.IsDemo && !ForceDemoTutorial) return false;
+        if (!ForceDemoTutorial) return false;
         _demoBusinessDay = _controller.CurrentConfig!.Day;
-        var stage = _save.IsDemo ? _save.DemoContent!.Stage(StableIds.Cities.Wuhan, _demoBusinessDay) : null;
-        _demoTeachingDay = !_save.IsDemo ? 1 : ForceDemoTutorial && stage!.Tutorial.Length == 0 ? (_demoBusinessDay >= 4 ? 4 : 1) : _demoBusinessDay;
-        var lesson = _save.IsDemo ? _save.DemoContent!.Stage(StableIds.Cities.Wuhan, _demoTeachingDay) : null;
-        bool requested = ForceDemoTutorial || lesson is { Tutorial.Length: > 0 }
-            && !_save.DemoProgress.CompletedTutorials.Contains(lesson.Id) && !_save.DemoProgress.SkippedTutorials.Contains(lesson.Id);
+        _demoTeachingDay = 1;
         ForceDemoTutorial = false;
-        if (!requested) return false;
         if (!_controller.TryPrepareTutorial(StableIds.Cities.Wuhan, _demoTeachingDay, _catalog, out var error))
         { Feedback(error, true); return true; }
         Workstation.CancelAnimations();
@@ -49,7 +44,7 @@ public partial class WuhanDayScreen
         Workstation.AllowedIngredients = _controller.CurrentConfig!.AvailableRecipeIds.SelectMany(id => _catalog.RecipesById[id].ExtraIngredients)
             .Append(StableIds.Ingredients.WuhanBaseSeasoning).ToHashSet();
         RefreshWorkbenchBackground();
-        _demoLessonTitle!.Text = lesson?.TitleZh ?? "第一碗热干面"; _demoLessonAction!.Text = "跳过教学"; _demoLesson.Show();
+        _demoLessonTitle!.Text = "第一碗热干面"; _demoLessonAction!.Text = "跳过教学"; _demoLesson.Show();
         LayoutWuhanDemoLesson();
         _controller.TryStartDay(out _); _controller.Tick(3); _controller.Tick(.01); Render();
         return true;
@@ -59,9 +54,7 @@ public partial class WuhanDayScreen
         if (!_controller.TutorialActive || !_focused || _controller.IsPaused || _abandon.Visible) return;
         var old = _save.Data.Wuhan.LearnedWorkbenchActions.ToHashSet();
         if (_demoLessonComplete) _save.Data.Wuhan.LearnedWorkbenchActions.UnionWith(_demoLearned);
-        bool saved = _save.IsDemo
-            ? _save.SaveDemoTutorial(_save.DemoContent!.Stage(StableIds.Cities.Wuhan, _demoTeachingDay)!.Id, !_demoLessonComplete, out _)
-            : _save.TrySave(out _);
+        bool saved = _save.TrySave(out _);
         if (!saved)
         {
             _save.Data.Wuhan.LearnedWorkbenchActions = old;
@@ -85,7 +78,7 @@ public partial class WuhanDayScreen
     }
     private void RetryWuhanDemoSettlement()
     {
-        if (_demoPendingResult is null || !_save.IsDemo) return;
+        if (_demoPendingResult is null) return;
         BusinessBookSettlement.Commit(_demoPendingResult, _save, _controller.CurrentPlan!, _controller.CurrentConfig!, _catalog);
         if (_demoPendingResult.CanRetry) _demoPendingResult.SaveMessage = "保存失败：请检查写入权限和可用空间。原有进度已保留。";
         BusinessDetails.Open(_demoPendingResult);

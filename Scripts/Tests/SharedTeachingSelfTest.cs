@@ -21,7 +21,7 @@ public partial class SharedTeachingSelfTest : Node
         {
             var catalog = GetNode<DataCatalog>("/root/DataCatalog");
             var save = GetNode<SaveService>("/root/SaveService");
-            Check(!save.IsDemo && catalog.Demo is null, "test uses full-game content and profile");
+            Check(catalog.IsValid, "test uses full-game content and profile");
             string directory = ProjectSettings.GlobalizePath("res://.tmp/shared-teaching/" + Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(directory); save.UsePathForTests(Path.Combine(directory, "save.json"));
             Check(save.ResetProgress(out _), "isolated full-game progress created");
@@ -30,7 +30,7 @@ public partial class SharedTeachingSelfTest : Node
             main.ProcessMode = ProcessModeEnum.Disabled;
             var controller = main.GetNode<DayController>("DayController");
             // Yangzhou uses its own controller and is covered by YangzhouSelfTest.
-            foreach (string city in new[] { StableIds.Cities.Tianjin, StableIds.Cities.Wuhan, StableIds.Cities.Xian, StableIds.Cities.Guangzhou })
+            foreach (string city in new[] { StableIds.Cities.Tianjin, StableIds.Cities.Wuhan, StableIds.Cities.Xian, StableIds.Cities.Guangzhou }.Where(save.IsCityAvailable))
             {
                 Check(controller.TryPrepareDay(city, 1, catalog, out _) && !controller.TutorialActive, city + " ordinary shift has no new tutorial protection");
                 controller.TryStartDay(out _); controller.Tick(DayController.OpeningDurationSeconds); controller.Tick(1);

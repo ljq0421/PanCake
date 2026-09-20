@@ -30,8 +30,8 @@ public partial class WuhanWorkbenchSelfTest : Node
             string path = $"res://.tmp/wuhan-workbench-{Guid.NewGuid():N}.json";
             if (ExperienceProfile.IsDemo)
             {
-                save.UseDemoPathForTests(ProjectSettings.GlobalizePath(path), catalog.Demo!);
-                save.DemoProgress.CompletedStages.UnionWith(catalog.Demo!.CityStages(StableIds.Cities.Tianjin).Select(s => s.Id));
+                save.UseDemoPathForTests(ProjectSettings.GlobalizePath(path));
+                save.Data.UnlockedCityIds.Add(StableIds.Cities.Wuhan);
                 Check(save.TrySave(out _), "save isolated Demo entry fixture");
                 save.Load();
             }
@@ -45,7 +45,7 @@ public partial class WuhanWorkbenchSelfTest : Node
 
             // Production/gestures have their own timed viewport tests. This loop supplies valid
             // production states without advancing cooking time, to isolate all real order routes.
-            for (int day = 1; day <= (ExperienceProfile.IsDemo ? 6 : 12); day++)
+            for (int day = 1; day <= 12; day++)
             {
                 Check(screen.Initialize(catalog, save, controller, day), $"Day {day}: initializes");
                 screen.BeginDay();
@@ -131,12 +131,12 @@ public partial class WuhanWorkbenchSelfTest : Node
                 Check(save.Data.Wuhan.DayBestRecords[day].CompletedCustomers == controller.CurrentPlan!.Customers.Count,
                     $"Day {day}: every generated customer's order can be completed");
                 Check(save.Data.Wuhan.DayBestRecords[day].IncorrectOrders == 0, $"Day {day}: every recipe matches");
-                Check(save.Data.Wuhan.HighestUnlockedDay == Math.Min(ExperienceProfile.IsDemo ? 6 : 12, day + 1), $"Day {day}: original progression");
+                Check(save.Data.Wuhan.HighestUnlockedDay == Math.Min(12, day + 1), $"Day {day}: original progression");
                 await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
             }
 
             save.Data.Coins = 10000;
-            foreach (int level in ExperienceProfile.IsDemo ? Array.Empty<int>() : new[] { 2, 3 })
+            foreach (int level in new[] { 2, 3 })
             {
                 foreach (string equipment in new[] { "noodle_cooker", "doupi_griddle" })
                     Check(save.TryPurchase(StableIds.Cities.Wuhan, $"equipment:{equipment}_lv{level}", catalog, out _), $"purchase {equipment} Lv{level}");

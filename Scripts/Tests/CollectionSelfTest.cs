@@ -33,8 +33,9 @@ public partial class CollectionSelfTest : Node
             var settings = GetNode<JourneySettings>("/root/JourneySettings");
             settings.UsePathForTests(Path.Combine(_dir, "settings.cfg")); settings.SetLanguage("zh_CN");
             string path = Path.Combine(_dir, "save.json");
-            save.UseDemoPathForTests(path, catalog.Demo!); Check(save.ResetProgress(out _), "isolated demo save");
-            var stage = catalog.Demo!.Stages[0]; var plan = stage.Plan(catalog);
+            save.UseDemoPathForTests(path); Check(save.ResetProgress(out _), "isolated demo save");
+            catalog.TryGetDay(StableIds.Cities.Tianjin, 1, out var config);
+            var plan = new OrderGenerator().Generate(config, catalog.RecipesById, catalog.ProductsById, catalog.CustomersById);
             var receipt = new DeliveryReceipt(plan.RunId, plan.StageId, new(ProductKind.Pancake, "pancake_basic", PancakeQuality.Perfect), true, true, false);
             foreach (var invalid in new[] { receipt with { Tutorial = true }, receipt with { Matched = false }, receipt with { Accepted = false }, receipt with { RunId = "stale" }, receipt with { StageId = "stale" } })
                 DemoBreakfastCollection.Observe(invalid, plan);
@@ -44,7 +45,6 @@ public partial class CollectionSelfTest : Node
             DemoBreakfastCollection.Observe(receipt with { Item = new(ProductKind.SoyMilk, "soy_milk") }, plan);
             Check(save.BreakfastStatsFor("pancake").Delivered == 0, "unsaved run has no durable counts");
             var result = new DayResult { Day = 1, CompletedCustomers = 1 };
-            var config = stage.Config(catalog.RecipesById, catalog.ProductsById);
             Directory.CreateDirectory(path + ".tmp");
             bool failed = false; try { save.CommitDay(result, plan, config); } catch (IOException) { failed = true; }
             Check(failed && save.BreakfastStatsFor("pancake").Delivered == 0 && !save.BreakfastRecordDay("pancake").HasValue, "failed save rolls back counts and stamps");
@@ -55,7 +55,7 @@ public partial class CollectionSelfTest : Node
             Check(save.BreakfastStatsFor("soy_milk").Delivered == 1 && save.BreakfastStatsFor("soy_milk").Perfect == 0, "soy milk does not accumulate Perfect counts");
             Check(!new BreakfastStatistics { Delivered = 19, Perfect = 9 }.Skilled && !new BreakfastStatistics { Delivered = 19, Perfect = 9 }.PerfectStamp, "below-threshold stamps remain locked");
             string earned = File.ReadAllText(path);
-            var old = JsonNode.Parse(earned)!; old.AsObject().Remove("breakfastStats");
+            var old = JsonNode.Parse(earned)!; old.AsObject().Remove("BreakfastStats");
             File.WriteAllText(path, old.ToJsonString()); save.Load();
             Check(!save.HasLoadError && save.BreakfastRecordDay("pancake") == 1 && save.BreakfastStatsFor("pancake").Delivered == 0, "old saves keep first record without inventing historical counts");
             File.WriteAllText(path, earned); save.Load();

@@ -14,7 +14,7 @@ public sealed partial class CityPageModel
         var progress = JourneyModel.Progress(save, city);
         int total = save.ChapterLength(city);
         int highest = Math.Clamp(progress.HighestUnlockedDay, 1, Math.Max(1, total));
-        int day = Math.Clamp(save.IsDemo ? selectedDay : highest, 1, Math.Max(1, total));
+        int day = Math.Clamp(highest, 1, Math.Max(1, total));
         var records = progress.DayBestRecords.Where(r => r.Key >= 1 && r.Key <= highest && r.Key <= total).ToArray();
         var best = records.OrderByDescending(r => r.Value.TotalRevenue).ThenBy(r => r.Key).FirstOrDefault();
         return new(day, total > 0 ? DayTitle(city, day) : "", save.Data.Coins,
@@ -34,20 +34,9 @@ public sealed partial class CityPageModel
         CityUnlockView[] latestBatch = Array.Empty<CityUnlockView>();
         for (int day = 1; day <= highest; day++)
         {
-            IEnumerable<string> ids;
-            if (save.IsDemo)
-            {
-                var stage = save.DemoContent?.Stage(city, day);
-                if (stage is null) continue;
-                ids = stage.StartUnlocks.Concat(stage.AvailableRecipes.Select(id => "recipe:" + id))
-                    .Concat(stage.AvailableProducts.Select(kind => "kind:" + kind));
-            }
-            else
-            {
-                if (catalog is null || !catalog.TryGetDay(city, day, out var config)) continue;
-                ids = config.StartUnlocks.Concat(config.AvailableRecipeIds.Select(id => "recipe:" + id))
-                    .Concat(config.AvailableProductKinds.Select(kind => "kind:" + kind));
-            }
+            if (catalog is null || !catalog.TryGetDay(city, day, out var config)) continue;
+            IEnumerable<string> ids = config.StartUnlocks.Concat(config.AvailableRecipeIds.Select(id => "recipe:" + id))
+                .Concat(config.AvailableProductKinds.Select(kind => "kind:" + kind));
             var batch = new List<CityUnlockView>();
             foreach (string id in ids)
             {

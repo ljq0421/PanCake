@@ -131,7 +131,7 @@ public partial class SaveService : Node
     public bool HasSavedGame { get; private set; }
     public bool CanContinue => HasSavedGame && !HasLoadError;
     public bool RequiresNewGameConfirmation => HasSavedGame || HasLoadError;
-    public string ContinueCityId => IsKnownCity(Data.LastVisitedCityId)
+    public string ContinueCityId => IsCityAvailable(Data.LastVisitedCityId) && IsKnownCity(Data.LastVisitedCityId)
         && Data.UnlockedCityIds.Contains(Data.LastVisitedCityId)
         ? Data.LastVisitedCityId : StableIds.Cities.Tianjin;
 
@@ -142,7 +142,7 @@ public partial class SaveService : Node
     {
         error = string.Empty;
         // Previewing locked cities through developer tools must never change the resume target.
-        if (!IsKnownCity(cityId) || !Data.UnlockedCityIds.Contains(cityId)) return true;
+        if (!IsCityAvailable(cityId) || !IsKnownCity(cityId) || !Data.UnlockedCityIds.Contains(cityId)) return true;
         if (HasLoadError) { error = LoadErrorMessage; return false; }
         if (!HasSavedGame || Data.LastVisitedCityId == cityId) return true;
         string previous = Data.LastVisitedCityId;
@@ -155,8 +155,8 @@ public partial class SaveService : Node
     {
         if (ExperienceProfile.IsDemo)
         {
-            IsDemo = true; DemoContent = GetNode<DataCatalog>("/root/DataCatalog").Demo;
-            _savePath = ExperienceProfile.SavePath; _legacyPath = null;
+            IsDemo = true;
+            _savePath = ExperienceProfile.ProgressPath(IsDemo); _legacyPath = null;
         }
         Load();
     }
@@ -165,7 +165,7 @@ public partial class SaveService : Node
 
     public void Load()
     {
-        if (IsDemo) { LoadDemo(); return; }
+        DemoMigrationNotice = ""; DemoMigrationRetryAvailable = false;
         PendingJourneyCompletion = null;
         ClearLoadError(); MigratedLegacySave = false; HasSavedGame = false;
         string absolute = ProjectSettings.GlobalizePath(_savePath);
@@ -175,7 +175,7 @@ public partial class SaveService : Node
             if (legacy is not null) { MigrateLegacy(legacy); Changed?.Invoke(); return; }
             Data = new SaveData(); Changed?.Invoke(); return;
         }
-        try { SaveData? loaded = JsonSerializer.Deserialize<SaveData>(File.ReadAllText(absolute), JsonOptions); Validate(loaded); Data = loaded!; EnsureXianUnlocked(); EnsureGuangzhouUnlocked(); EnsureYangzhouUnlocked(); Data.LastVisitedCityId = ContinueCityId; HasSavedGame = true; }
+        try { string json = File.ReadAllText(absolute); if (IsDemo && TryResetLegacyDemo(absolute, json)) { Changed?.Invoke(); return; } SaveData? loaded = JsonSerializer.Deserialize<SaveData>(json, JsonOptions); Validate(loaded); ValidateProfile(loaded!); Data = loaded!; EnsureXianUnlocked(); EnsureGuangzhouUnlocked(); EnsureYangzhouUnlocked(); Data.LastVisitedCityId = ContinueCityId; HasSavedGame = true; }
         catch (Exception exception) { SetCorruptError(absolute, exception); Data = new SaveData(); }
         Changed?.Invoke();
     }
@@ -219,7 +219,7 @@ public partial class SaveService : Node
 
     public DayCommitResult CommitDay(DayResult result, DayPlan plan, DayConfig config)
     {
-        if (IsDemo) return CommitDemoDay(result, plan, config);
+        if (IsDemo && !CanEnter(config.CityId, result.Day)) throw new IOException("当前城市或营业日尚未开放。");
         if (_settledRuns.TryGetValue(plan, out _)) return new(0, false);
         SaveData snapshot = Clone(Data); CityProgressData city = Data.GetCity(config.CityId);
         bool hadBest = city.DayBestRecords.TryGetValue(result.Day, out DayBestRecord? best);
@@ -295,15 +295,12 @@ public partial class SaveService : Node
 
     public bool ResetProgress(out string error)
     {
-        var demoSnapshot = DemoProgress;
-        if (IsDemo) DemoProgress = NewDemoProgress();
         SaveData snapshot = Clone(Data);
         var previous = (HasLoadError, LoadErrorMessage, CorruptBackupPath, MigratedLegacySave, HasSavedGame);
         Data = new SaveData(); ClearLoadError(); MigratedLegacySave = false;
         if (!TrySave(out error))
         {
             Data = snapshot;
-            DemoProgress = demoSnapshot;
             (HasLoadError, LoadErrorMessage, CorruptBackupPath, MigratedLegacySave, HasSavedGame) = previous;
             return false;
         }
@@ -316,9 +313,10 @@ public partial class SaveService : Node
         if (HasLoadError) { error = "损坏存档尚未确认重置，禁止覆盖。"; return false; }
         try
         {
+            ValidateProfile(Data);
             string absolute = ProjectSettings.GlobalizePath(_savePath); Directory.CreateDirectory(Path.GetDirectoryName(absolute)!);
             string temporary = absolute + ".tmp";
-            File.WriteAllText(temporary, IsDemo ? SerializeDemo() : JsonSerializer.Serialize(Data, JsonOptions));
+            File.WriteAllText(temporary, JsonSerializer.Serialize(Data, JsonOptions));
             File.Move(temporary, absolute, true);
             HasSavedGame = true; error = string.Empty; return true;
         }
@@ -337,6 +335,7 @@ public partial class SaveService : Node
     public static CityProgressData NewXianProgress() => new() { EquipmentLevels = new(StringComparer.Ordinal) { ["xian_board"] = 1, ["xian_oven"] = 0, ["xian_soup"] = 0 } };
     private void EnsureXianUnlocked()
     {
+        if (!IsCityAvailable(StableIds.Cities.Xian)) return;
         if (!Data.Cities.TryGetValue(StableIds.Cities.Wuhan, out var wuhan) || !wuhan.Completed) return;
         if (!Data.UnlockedCityIds.Contains(StableIds.Cities.Xian)) Data.UnlockedCityIds.Add(StableIds.Cities.Xian);
         Data.GetCity(StableIds.Cities.Xian);

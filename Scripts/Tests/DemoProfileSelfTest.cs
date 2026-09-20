@@ -1,117 +1,103 @@
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using Godot;
 using ProjectCake.Core;
 using ProjectCake.Data;
+using ProjectCake.UI;
 using ProjectCake.Gameplay;
-using ProjectCake.Orders;
-using ProjectCake.Pancake;
-
 namespace ProjectCake.Tests;
 
 public partial class DemoProfileSelfTest : Node
 {
     private int _checks;
-    private void Check(bool value, string description)
-    { if (!value) throw new InvalidOperationException(description); _checks++; GD.Print("PASS " + description); }
-
+    private void Check(bool ok, string message)
+    { if (!ok) throw new Exception(message); _checks++; GD.Print("PASS " + message); }
     public override void _Ready()
     {
         try
         {
-            var catalog = GetNode<DataCatalog>("/root/DataCatalog");
-            Check(ExperienceProfile.IsDemo && catalog.IsValid && catalog.Demo is not null, "Demo profile loads before autoload saves");
-            var content = catalog.Demo!;
-            Check(catalog.DaysByNumber.Count == content.CityStages(StableIds.Cities.Tianjin).Length
-                && !catalog.TryGetDay(StableIds.Cities.Xian, 1, out _), "Demo exposes configured city boundaries");
-            int[] totals = { 28, 46, 65 };
-            foreach (var stage in content.Stages.Take(3))
-            {
-                var plan = stage.Plan(catalog.RecipesById, catalog.CustomersById["normal"]);
-                var replay = stage.Plan(catalog.RecipesById, catalog.CustomersById["normal"]);
-                Check(plan.RunId != replay.RunId && plan.StageId == replay.StageId, "runs have distinct identities and stable stages");
-                Check(plan.Customers.Sum(c => c.Order.BasePrice) == totals[stage.Day - 1]
-                    && plan.Customers.Select(c => c.ArrivalTime).SequenceEqual(stage.Arrivals)
-                    && plan.Customers.All(c => c.Order.Lines.Single().Sauce == SaucePreference.Normal), "fixed recipe, arrival and price baseline");
-            }
-            string directory = ProjectSettings.GlobalizePath($"res://.tmp/demo-tests/{Guid.NewGuid():N}");
-            Directory.CreateDirectory(directory);
-            string path = Path.Combine(directory, "demo.json"), formal = Path.Combine(directory, "project_cake_save_v3.json");
-            File.WriteAllText(formal, "formal-progress-sentinel");
-            using var save = new SaveService(); save.UseDemoPathForTests(path, content);
-            Check(!save.HasSavedGame && !save.MigratedLegacySave && save.ResetProgress(out _), "new isolated Demo does not migrate formal progress");
-            Check(!save.Data.UpgradeTeachingCompleted, "new Demo has pending upgrade teaching");
-            var teachingSource = new ProjectCake.UI.BookUpgradeSource(save, catalog, StableIds.Cities.Tianjin);
-            Check(teachingSource.CompleteUpgradeTeaching(out _), "Demo upgrade teaching acknowledgement saved");
+            Check(ExperienceProfile.IsDemo, "Demo feature selected");
+            string dir = ProjectSettings.GlobalizePath("user://demo-qa-artifacts/profile-" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(dir);
+            string path = Path.Combine(dir, "demo.json");
+            var save = GetNode<SaveService>("/root/SaveService");
+            save.UseDemoPathForTests(path);
+            Check(save.ResetProgress(out _), "new isolated shared-format save");
+            Check(save.ChapterLength(StableIds.Cities.Tianjin) == 15 && save.ChapterLength(StableIds.Cities.Wuhan) == 12, "27 available days");
+            save.Data.UnlockedCityIds.Add(StableIds.Cities.Wuhan);
+            save.Data.LastVisitedCityId = StableIds.Cities.Wuhan;
+            save.Data.Coins = 987; save.Data.Tianjin.HighestUnlockedDay = 15;
+            save.Data.Tianjin.Completed = true; save.Data.Tianjin.BestStars = 3;
+            save.Data.Tianjin.EquipmentLevels["pancake_stove"] = 3;
+            save.Data.Tianjin.UnlockedContentIds.Add("equipment:pancake_stove_lv3");
+            save.Data.Tianjin.LearnedWorkbenchActions.Add("flip");
+            save.Data.Wuhan.HighestUnlockedDay = 12; save.Data.Wuhan.BestStars = 2; save.Data.Wuhan.Completed = true;
+            save.Data.Wuhan.EquipmentLevels["noodle_cooker"] = 3;
+            save.Data.Wuhan.EquipmentLevels["doupi_griddle"] = 3;
+            save.Data.Wuhan.EquipmentLevels["egg_rice_wine_station"] = 1;
+            save.Data.Wuhan.DayBestRecords[12] = new() { TotalRevenue = 400, CompletedCustomers = 24, Satisfaction = 95 };
+            save.Data.BreakfastRecords["doupi"] = 4;
+            save.Data.BreakfastStats["doupi"] = new() { Delivered = 25, Perfect = 15 };
+            string snapshot = JsonSerializer.Serialize(save.Data);
+            Check(save.TrySave(out _), "Lv3, egg wine and full city fields save");
             save.Load();
-            Check(save.Data.UpgradeTeachingCompleted, "Demo upgrade teaching acknowledgement survives reload");
-            Check(save.ResetProgress(out _) && !save.Data.UpgradeTeachingCompleted, "new Demo resets upgrade teaching");
-            if (OS.GetCmdlineUserArgs().Contains("--upgrade-teaching-only"))
+            Check(!save.HasLoadError && JsonSerializer.Serialize(save.Data) == snapshot, "all shared city data round trips without loss");
+            Check(save.ContinueCityId == StableIds.Cities.Wuhan && save.ContinueDay == 12, "continue uses full city progress");
+            Check(!save.Data.UnlockedCityIds.Contains(StableIds.Cities.Xian), "completed Wuhan never unlocks Demo Xian");
+            string formal = Path.Combine(dir, "formal.json");
+            File.WriteAllText(formal, snapshot); string formalBefore = File.ReadAllText(formal);
+
+            foreach (int schema in new[] { 1, 2 })
             {
-                GD.Print($"DEMO_UPGRADE_TEACHING_TEST_RESULT passed={_checks} failed=0");
-                GetTree().Quit(); return;
+                var old = new DemoSaveFile { SchemaVersion = schema, ContentRevision = schema == 1 ? 1 : 3, Coins = 123, LastStartedStageId = "demo_tj_02" };
+                old.CompletedStages.Add("demo_tj_01");
+                old.BestRecords["demo_tj_01"] = new() { TotalRevenue = 28, CompletedCustomers = 4 };
+                old.LearnedActions.Add("flip"); old.BreakfastRecords["pancake"] = "demo_tj_01";
+                string original = JsonSerializer.Serialize(old, DemoCatalog.JsonOptions);
+                File.WriteAllText(path, original);
+                string existingBackup = path + ".before-shared-cities.bak";
+                if (schema == 2) File.WriteAllText(existingBackup, "existing backup must survive");
+                save.Load();
+                Check(!save.HasLoadError && save.MigratedLegacySave && save.DemoMigrationNotice.Length > 0, "recognized old schema reset " + schema);
+                Check(save.Data.Coins == 0 && save.Data.Tianjin.HighestUnlockedDay == 1 && save.Data.BreakfastRecords.Count == 0
+                    && save.Data.Tianjin.DayBestRecords.Count == 0 && save.Data.Tianjin.LearnedWorkbenchActions.Count == 0, "old rewards and progress do not leak");
+                Check(Directory.GetFiles(dir, "*.bak").Any(p => File.ReadAllText(p) == original), "exact original bytes backed up");
+                if (schema == 2) Check(File.ReadAllText(existingBackup) == "existing backup must survive", "existing backup never overwritten");
+                int backups = Directory.GetFiles(dir, "*.bak").Length;
+                save.Load();
+                Check(!save.MigratedLegacySave && Directory.GetFiles(dir, "*.bak").Length == backups, "new format does not reset again");
             }
-            var first = content.Stages[0];
-            DayPlan Plan(DemoStage stage) => stage.Plan(catalog.RecipesById, catalog.CustomersById["normal"]);
-            DayResult Result(int day, int revenue, int completed) => new() { Day = day, SaleRevenue = revenue, CompletedCustomers = completed };
-            save.CommitDay(Result(1, 0, 0), Plan(first), first.Config(catalog.RecipesById));
-            Check(save.Data.Tianjin.HighestUnlockedDay == 1 && save.Data.Coins == 0 && save.CanEnter(StableIds.Cities.Tianjin, 1), "zero completed orders permit free retry but do not advance");
-            foreach (var stage in content.Stages.Take(3))
+
+            string oldJson = JsonSerializer.Serialize(new DemoSaveFile { ContentRevision = 3 }, DemoCatalog.JsonOptions);
+            File.WriteAllText(path, oldJson);
+            Directory.CreateDirectory(path + ".migration.tmp");
+            save.Load();
+            Check(save.HasLoadError && File.ReadAllText(path) == oldJson, "failed migration write preserves original");
+            Directory.Delete(path + ".migration.tmp");
+            save.Load(); Check(!save.HasLoadError && save.MigratedLegacySave, "migration write failure can retry");
+            string blocked = Path.Combine(dir, "backup-blocked.json");
+            File.WriteAllText(blocked, oldJson); Directory.CreateDirectory(blocked + ".before-shared-cities.bak");
+            save.UseDemoPathForTests(blocked);
+            Check(save.HasLoadError && File.ReadAllText(blocked) == oldJson, "backup failure never resets original");
+            var main = GD.Load<PackedScene>("res://Scenes/Main/Main.tscn").Instantiate<GameController>(); AddChild(main);
+            var screen = main.GetNode<StartScreen>("UI/StartScreen"); screen.PresentHome();
+            var retry = screen.Descendants<Button>().Single(b => b.Name == "RetryDemoMigration");
+            Check(retry.IsVisibleInTree(), "backup failure exposes a retry on the home screen");
+            Directory.Delete(blocked + ".before-shared-cities.bak");
+            retry.EmitSignal(Button.SignalName.Pressed);
+            Check(!save.HasLoadError && screen.Descendants<Label>().Any(l => l.Text == save.DemoMigrationNotice), "home retry restores new route and explains backup");
+            main.QueueFree();
+            save.UseDemoPathForTests(path);
+            foreach (string invalid in new[] { "{broken", oldJson.Replace("\"schemaVersion\": 2", "\"schemaVersion\": 99"),
+                oldJson.Replace("\"lastStartedStageId\": \"demo_tj_01\"", "\"lastStartedStageId\": \"unknown\"") })
             {
-                var plan = Plan(stage); var result = Result(stage.Day, totals[stage.Day - 1], stage.ExplicitOrders.Length);
-                save.CommitDay(result, plan, stage.Config(catalog.RecipesById));
-                Check(save.CommitDay(result, plan, stage.Config(catalog.RecipesById)).PermanentCoinGain == 0, "duplicate successful submission is idempotent");
+                File.WriteAllText(path, invalid); save.Load();
+                Check(save.HasLoadError && File.ReadAllText(path) == invalid, "unknown/corrupt data never silently resets");
             }
-            Check(save.Data.Coins == 139 && save.Data.UnlockedCityIds.SequenceEqual(new[] { StableIds.Cities.Tianjin })
-                && !save.Data.Tianjin.Completed, "pilot completion does not grant full-city completion or Wuhan access");
-            Check(save.TryPurchase("equipment:pancake_stove_lv2", catalog, out _) && save.Data.Coins == 19
-                && save.Data.PurchasedStoveLevel == 2, "real upgrade uses baseline price");
-            var third = content.Stages[2];
-            save.CommitDay(Result(3, 65, 8), Plan(third), third.Config(catalog.RecipesById));
-            Check(save.Data.Coins == 84, "same-revenue upgraded replay awards the full income");
-            save.CommitDay(Result(3, 70, 8), Plan(third), third.Config(catalog.RecipesById));
-            Check(save.Data.Coins == 154, "new best replay awards the full income");
-            save.CommitDay(Result(3, 40, 8), Plan(third), third.Config(catalog.RecipesById));
-            Check(save.Data.Coins == 194 && save.Data.Tianjin.DayBestRecords[3].TotalRevenue == 70,
-                "lower-revenue replay awards full income and retains the best record");
-            save.CommitDay(Result(3, 0, 0), Plan(third), third.Config(catalog.RecipesById));
-            Check(save.Data.Tianjin.HighestUnlockedDay == Math.Min(4, content.CityStages(StableIds.Cities.Tianjin).Length) && save.Data.Coins == 194, "zero-order replay never regresses progress or charges admission");
-            Check(save.TryRecordDemoStart(2, out _), "records the actual last-started main stage");
-            save.Load();
-            Check(save.ContinueDay == 2 && save.Data.PurchasedStoveLevel == 2 && save.Data.Coins == 194, "restart restores actual stage, equipment and money");
-            Check(!save.CanEnter(StableIds.Cities.Xian, 1) && !save.CanEnter(StableIds.Cities.Wuhan, 1)
-                && !save.CanEnter(StableIds.Cities.Tianjin, 8), "save guards all unshipped stage and city entries");
-            string temporary = path + ".tmp";
-            Directory.CreateDirectory(temporary);
-            var retryPlan = Plan(third);
-            bool failed = false;
-            try { save.CommitDay(Result(3, 80, 8), retryPlan, third.Config(catalog.RecipesById)); }
-            catch (IOException) { failed = true; }
-            Check(failed && save.Data.Coins == 194 && !save.DemoProgress.AcceptedRuns.Contains(retryPlan.RunId), "write failure rolls back money and submission identity");
-            Directory.Delete(temporary);
-            save.CommitDay(Result(3, 80, 8), retryPlan, third.Config(catalog.RecipesById));
-            Check(save.Data.Coins == 274, "the same failed result retries once after storage recovers");
-            save.Load();
-            Check(save.CommitDay(Result(3, 80, 8), retryPlan, third.Config(catalog.RecipesById)).PermanentCoinGain == 0
-                && save.Data.Coins == 274, "reloaded Demo still rejects duplicate settlement");
-            string corrupt = "{broken-demo-save"; File.WriteAllText(path, corrupt); save.Load();
-            Check(save.HasLoadError && !save.TrySave(out _) && File.ReadAllText(path) == corrupt, "corrupt file is retained and cannot be silently overwritten");
-            Check(File.ReadAllText(formal) == "formal-progress-sentinel", "formal progress stays byte-for-byte unchanged");
-            string json = Godot.FileAccess.GetFileAsString(ExperienceProfile.ManifestPath);
-            bool rejected = false;
-            try { var invalid = System.Text.Json.Nodes.JsonNode.Parse(json)!; invalid["stages"]![0]!["arrivals"]![2] = 16; DemoCatalog.Parse(invalid.ToJsonString(), catalog.RecipesById, catalog.ProductsById, catalog.CustomersById); }
-            catch (InvalidDataException) { rejected = true; }
-            Check(rejected, "invalid arrival schedule fails validation");
-            using var lowIncome = new SaveService(); lowIncome.UseDemoPathForTests(Path.Combine(directory, "low-income.json"), content); lowIncome.ResetProgress(out _);
-            lowIncome.CommitDay(Result(1, 0, 1), Plan(first), first.Config(catalog.RecipesById));
-            Check(lowIncome.ContinueDay == 2 && lowIncome.Data.Coins == 0, "one completed order unlocks and continues to next stage even with zero income");
-            foreach (var s in content.Stages.Skip(1))
-                lowIncome.CommitDay(Result(s.Day, 0, 1), s.Plan(catalog), s.Config(catalog.RecipesById, catalog.ProductsById));
-            Check(lowIncome.Data.Coins == 0 && lowIncome.Data.Wuhan.Completed, "entire route advances with zero income and no upgrade purchase");
-            using var stationFirst = new SaveService(); stationFirst.UseDemoPathForTests(Path.Combine(directory, "station-first.json"), content); stationFirst.ResetProgress(out _);
-            foreach (var stage in content.Stages.Take(3)) stationFirst.CommitDay(Result(stage.Day, totals[stage.Day - 1], 1), Plan(stage), stage.Config(catalog.RecipesById));
-            Check(stationFirst.TryPurchase("equipment:ingredient_station_lv2", catalog, out _) && stationFirst.Data.Coins == 79
-                && stationFirst.CanEnter(StableIds.Cities.Tianjin, 3), "buying the ingredient station first remains playable at the unchanged price");
-            GD.Print($"DEMO_PROFILE_SELF_TEST_OK {_checks}"); GetTree().Quit();
+            Check(File.ReadAllText(formal) == formalBefore, "formal file untouched");
+            Check(ExperienceProfile.ProgressPath(true) != ExperienceProfile.ProgressPath(false), "profile paths are isolated");
+            GD.Print($"DEMO_PROFILE_SELF_TEST_OK {_checks} artifacts={dir}"); GetTree().Quit();
         }
-        catch (Exception error) { GD.PushError(error.ToString()); GetTree().Quit(1); }
+        catch (Exception ex) { GD.PushError(ex.ToString()); GetTree().Quit(1); }
     }
 }

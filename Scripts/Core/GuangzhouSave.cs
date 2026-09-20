@@ -12,6 +12,7 @@ public partial class SaveService
     };
     private void EnsureGuangzhouUnlocked()
     {
+        if (!IsCityAvailable(StableIds.Cities.Guangzhou)) return;
         if (!Data.Cities.TryGetValue(StableIds.Cities.Xian, out var xian) || !xian.Completed || xian.BestStars < 1) return;
         if (!Data.UnlockedCityIds.Contains(StableIds.Cities.Guangzhou)) Data.UnlockedCityIds.Add(StableIds.Cities.Guangzhou);
         Data.GetCity(StableIds.Cities.Guangzhou);

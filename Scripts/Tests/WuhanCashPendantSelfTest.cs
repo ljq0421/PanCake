@@ -47,7 +47,7 @@ public partial class CoinCollectionSelfTest
             screen.RefreshForCapture(); await Frames();
             await TestWuhanPendantHover(screen, controller, width, day, reduced);
             Check(controller.CustomerQueue.Slots.Count == 5, "Wuhan retains five occupied customer slots");
-            Check(screen.GetNode<TextureRect>("WorkbenchBackground").Texture.ResourcePath.EndsWith(day == 1 ? "武汉-热干面-v1-无挂件.png" : "武汉-热干面-豆皮-蛋液-v2-无挂件.png"), "Wuhan clean background matches unlock stage");
+            Check(screen.GetNode<TextureRect>("WorkbenchBackground").Texture.ResourcePath.EndsWith(day == 1 ? "武汉-热干面-基础小料.png" : "武汉-热干面-豆皮-蛋液-v2-无挂件.png"), "Wuhan background matches menu stage");
             Check(!screen.CoinTray.IsVisibleInTree() && !screen.CoinTray.TryCollect(), "Wuhan old collection control is hidden and inert");
             var bubbles = screen.FindChildren("*", "", true, false).OfType<OrderBubbleView>().Where(b => b.IsVisibleInTree()).ToArray();
             Check(bubbles.Length == 5 && bubbles.All(b => !b.GetGlobalRect().Intersects(screen.CashPendant.GetGlobalRect())), "Wuhan five bubbles leave pendant unobscured");

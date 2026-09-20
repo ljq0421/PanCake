@@ -52,7 +52,7 @@ public partial class WuhanWorkstationView
         // A narrow search keeps close-set trays and spoon handles from snapping
         // to the dark edges of neighbouring cookware.
         void SourcePath(Vector2[] points, InteractionHighlightState state, int radius = 10) => BackgroundArtContour.Draw(this,
-            _art.WorkbenchBackground(_doupi is not null), points.Select(p => WuhanWorkbenchLayout.Point(p.X, p.Y)).ToArray(),
+            WorkbenchSheet, points.Select(p => WuhanWorkbenchLayout.Point(p.X, p.Y)).ToArray(),
             new Rect2(0, 0, 1920, 1080), state, edgeSearchRadius: radius);
         void SpriteContour(string id, Rect2 box, InteractionHighlightState state)
         {

@@ -48,7 +48,7 @@ public partial class WuhanDayScreen
         }
         Workstation.AllowedIngredients = _controller.CurrentConfig!.AvailableRecipeIds.SelectMany(id => _catalog.RecipesById[id].ExtraIngredients)
             .Append(StableIds.Ingredients.WuhanBaseSeasoning).ToHashSet();
-        GetNode<TextureRect>("WorkbenchBackground").Texture = _art.WorkbenchBackground(_doupi is not null);
+        RefreshWorkbenchBackground();
         _demoLessonTitle!.Text = lesson?.TitleZh ?? "第一碗热干面"; _demoLessonAction!.Text = "跳过教学"; _demoLesson.Show();
         LayoutWuhanDemoLesson();
         _controller.TryStartDay(out _); _controller.Tick(3); _controller.Tick(.01); Render();

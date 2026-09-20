@@ -40,7 +40,7 @@ public partial class WuhanWorkstationView
         int radius = id is "bowl" or "raw" or "trash" ? 0
             : id.StartsWith("ingredient") ? int.Parse(id[10..]) switch { 1 or 3 => 0, 0 => 10, _ => 2 }
             : id == "filling" ? 10 : 2;
-        return TutorialFocusTarget.Background(this, _art.WorkbenchBackground(_doupi is not null), path, radius: radius);
+        return TutorialFocusTarget.Background(this, WorkbenchSheet, path, radius: radius);
     }
     internal IEnumerable<TutorialFocusTarget> TeachingClearAreas()
     {

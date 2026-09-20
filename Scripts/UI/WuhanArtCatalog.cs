@@ -13,6 +13,7 @@ public sealed class WuhanArtCatalog
     public WuhanArtCatalog()
     {
         Load("background", "武汉早餐铺主界面背景＋空工作台_v4.png");
+        Load("workbench_basic", "武汉-热干面-基础小料.png");
         Load("workbench_noodles", "武汉-热干面-v1-无挂件.png");
         Load("workbench_doupi", "武汉-热干面-豆皮-蛋液-v2-无挂件.png");
         Load("cash_pendant", "武汉收银挂件-透明-v1.png");
@@ -44,7 +45,7 @@ public sealed class WuhanArtCatalog
 
     public Texture2D Background => Get("background");
     // Keep artwork and workstation geometry on the same unlock stage.
-    public Texture2D WorkbenchBackground(bool doupiUnlocked) => Get(doupiUnlocked ? "workbench_doupi" : "workbench_noodles");
+    public Texture2D WorkbenchBackground(bool doupiUnlocked, bool beefUnlocked = true) => Get(doupiUnlocked ? "workbench_doupi" : beefUnlocked ? "workbench_noodles" : "workbench_basic");
     public Texture2D CityNode => Get("city_node");
     public Texture2D Cooker(int level) => Get($"cooker_{Math.Clamp(level, 1, 3)}");
     public Texture2D Griddle(int level) => Get($"griddle_{Math.Clamp(level, 1, 3)}");

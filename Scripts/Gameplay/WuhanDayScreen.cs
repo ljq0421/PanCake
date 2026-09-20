@@ -166,12 +166,31 @@ public partial class WuhanDayScreen : Control
         CityProgressData city=save.Data.Wuhan; _cookerLevel=city.EquipmentLevels.GetValueOrDefault("noodle_cooker",1); _stationLevel=city.EquipmentLevels.GetValueOrDefault("ingredient_station",1); _doupiLevel=city.EquipmentLevels.GetValueOrDefault("doupi_griddle");
         _cooker=new NoodleCookerStateMachine(catalog.NoodleCookersByLevel[_cookerLevel]); _bowl=new HotDryNoodlesStateMachine(); _ingredients=new WuhanIngredientInventory(catalog.WuhanIngredientStationsByLevel[_stationLevel]); _doupiStock=new DoupiInventory();
         _doupi=_doupiLevel>0?new DoupiStateMachine(catalog.DoupiGriddlesByLevel[_doupiLevel]):null; _eggUnlocked=false;
-        GetNode<TextureRect>("WorkbenchBackground").Texture = _art.WorkbenchBackground(_doupi is not null);
         _basketLabels[1].Visible=false;
-        Workstation.AllowedIngredients = save.IsDemo ? controller.CurrentConfig!.AvailableRecipeIds.SelectMany(id => catalog.RecipesById[id].ExtraIngredients).Append(StableIds.Ingredients.WuhanBaseSeasoning).ToHashSet() : null;
+        Workstation.AllowedIngredients = controller.CurrentConfig!.AvailableRecipeIds.SelectMany(id => catalog.RecipesById[id].ExtraIngredients).Append(StableIds.Ingredients.WuhanBaseSeasoning).ToHashSet();
+        RefreshWorkbenchBackground();
         Workstation.Bind(_art,_cooker,_bowl,_doupi,_doupiStock,_eggUnlocked,_ingredients,_cookerLevel,_doupiLevel);
         Render();
         return true;
+    }
+    private void RefreshWorkbenchBackground()
+    {
+        var background = GetNode<TextureRect>("WorkbenchBackground");
+        background.Texture = _art.WorkbenchBackground(_doupi is not null, Workstation.BeefUnlocked);
+        // Reuse the clean wall behind the independently animated cash pendant.
+        // Keep the supplied basic-ingredients sheet intact on disk.
+        var wall = background.GetNodeOrNull<TextureRect>("CashPendantWall");
+        if (wall is null)
+        {
+            var target = WuhanWorkbenchLayout.Rect(1520, 110, 152, 295);
+            wall = new TextureRect { Name = "CashPendantWall",
+                Texture = new AtlasTexture { Atlas = _art.WorkbenchBackground(false), Region = new Rect2(1520, 110, 152, 295) },
+                Position = target.Position, Size = target.Size,
+                ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+                StretchMode = TextureRect.StretchModeEnum.Scale, MouseFilter = MouseFilterEnum.Ignore };
+            background.AddChild(wall);
+        }
+        wall.Visible = _doupi is null && !Workstation.BeefUnlocked;
     }
     public void BeginDay() { if (BeginWuhanDemoLesson()) return; if (!_controller.TryStartDay(out string error)) Feedback(error,true); else Feedback("铺门打开，准备迎接第一位客人。",false); }
 

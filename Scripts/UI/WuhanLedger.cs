@@ -150,8 +150,9 @@ public partial class WuhanLedger : Control
             return;
         string[] images = SelectedDay switch
         {
-            2 => new[] { "noodles", "scallion" },
-            3 => new[] { "noodles", "chili" },
+            1 => new[] { "noodles", "chili", "scallion" },
+            2 => new[] { "noodles", "scallion", "chili" },
+            3 => new[] { "noodles", "beef" },
             4 or 5 => new[] { "noodles", "doupi_single" },
             6 => new[] { "noodles", "egg_finished" },
             7 => new[] { "noodles", "beef" },

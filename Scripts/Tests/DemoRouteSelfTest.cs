@@ -27,7 +27,7 @@ public partial class DemoRouteSelfTest : Node
             string dir = ProjectSettings.GlobalizePath("res://.tmp/demo-route-" + Guid.NewGuid().ToString("N")); Directory.CreateDirectory(dir);
             var save = new SaveService(); save.UseDemoPathForTests(Path.Combine(dir, "route.json"), route!);
             Check(save.ResetProgress(out _), "fresh route");
-            int[] expected = {28,46,65,48,84,106,123,50,76,98,72,125,159}; int total = 0;
+            int[] expected = {28,46,65,48,84,106,123,53,76,105,80,133,165}; int total = 0;
             foreach (var pair in route!.Stages.Select((stage, index) => (stage, index)))
             {
                 var s = pair.stage; var config = s.Config(c.RecipesById, c.ProductsById); var plan = s.Plan(c);

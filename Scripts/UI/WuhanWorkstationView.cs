@@ -112,7 +112,7 @@ public partial class WuhanWorkstationView : Control
         if (kind == ProductKind.HotDryNoodles)
         {
             Rect2 food = new(BowlFood.Position - BowlRect.Position, BowlFood.Size);
-            Texture2D sheet = _art.WorkbenchBackground(_doupi is not null);
+            Texture2D sheet = WorkbenchSheet;
             Vector2[] outline = WuhanArtworkContours.MixingBowl.Select(p=>WuhanWorkbenchLayout.Point(p.X,p.Y)).ToArray();
             root.AddChild(new Polygon2D {
                 Polygon = outline.Select(p => p - BowlRect.Position).ToArray(),
@@ -130,6 +130,8 @@ public partial class WuhanWorkstationView : Control
     }
 
     public IReadOnlySet<string>? AllowedIngredients { get; set; }
+    internal bool BeefUnlocked => AllowedIngredients is null || AllowedIngredients.Contains(StableIds.Ingredients.WuhanBraisedBeef);
+    private Texture2D WorkbenchSheet => _art.WorkbenchBackground(_doupi is not null, BeefUnlocked);
     public static readonly string[] IngredientIds = { StableIds.Ingredients.WuhanBaseSeasoning,
         StableIds.Ingredients.WuhanScallion, StableIds.Ingredients.WuhanChiliOil, StableIds.Ingredients.WuhanBraisedBeef };
     private readonly Polygon2D[] _basketWater = new Polygon2D[2];
@@ -528,7 +530,7 @@ public partial class WuhanWorkstationView : Control
     // Restore the counter above customers, including the pot silhouette above the rear edge.
     private void DrawCounterForeground()
     {
-        Texture2D sheet = _art.WorkbenchBackground(_doupi is not null);
+        Texture2D sheet = WorkbenchSheet;
         Rect2 table = new(0, 560, 1920, 520);
         DrawTextureRectRegion(sheet, table, new Rect2(table.Position / WuhanWorkbenchLayout.DesignSize * sheet.GetSize(),
             table.Size / WuhanWorkbenchLayout.DesignSize * sheet.GetSize()));
@@ -566,7 +568,7 @@ public partial class WuhanWorkstationView : Control
         Rect2 fitted = FitSprite(texture,rect), source=Source(texture);
         Polygon2D water = _basketWater[index];
         Vector2[] polygon = RectQuad(fitted);
-        Texture2D sheet = _art.WorkbenchBackground(_doupi is not null);
+        Texture2D sheet = WorkbenchSheet;
         water.Polygon = polygon;
         water.UV = polygon.Select(p=>p/WuhanWorkbenchLayout.DesignSize*sheet.GetSize()).ToArray();
         water.Texture = sheet;
@@ -650,7 +652,7 @@ public partial class WuhanWorkstationView : Control
         // Sample only the front half of the pot, preserving the water above its curved rim.
         Vector2[] edge = _layout.CookerFront;
         DrawPolygon(edge, new[] { Colors.White }, edge.Select(p => p / WuhanWorkbenchLayout.DesignSize).ToArray(),
-            _art.WorkbenchBackground(_doupi is not null));
+            WorkbenchSheet);
     }
 
     private void DrawMixStation()

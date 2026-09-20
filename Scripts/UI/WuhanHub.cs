@@ -96,5 +96,5 @@ public partial class WuhanHub : Control
     private static bool Owned(CityProgressData city,string id) => id.Contains("ingredient_station") ? city.EquipmentLevels.GetValueOrDefault("ingredient_station",1) >= (id.EndsWith("lv3")?3:2) : id.Contains("noodle_cooker") ? city.EquipmentLevels.GetValueOrDefault("noodle_cooker",1) >= (id.EndsWith("lv3")?3:2) : city.EquipmentLevels.GetValueOrDefault("doupi_griddle") >= (id.EndsWith("lv3")?3:2);
     private static int Price(string id) => id switch { "equipment:wuhan_ingredient_station_lv2"=>120,"equipment:noodle_cooker_lv2"=>220,"equipment:doupi_griddle_lv2"=>280,"equipment:wuhan_ingredient_station_lv3"=>300,"equipment:noodle_cooker_lv3"=>520,"equipment:doupi_griddle_lv3"=>560,_=>0 };
     private void Purchase(string id) { bool ok=_save.TryPurchase(StableIds.Cities.Wuhan,id,_catalog,out string error); _message.Text=ok?"新设备已经装好，下次营业生效。":error; _message.Modulate=ok?TianjinUi.Green:TianjinUi.Red; Render(); }
-    public static string DaySubtitle(int day) => day switch {1=>"初到武汉",2=>"葱花",3=>"辣油高峰",4=>"豆皮开锅",5=>"双线程",6=>"双线熟练",7=>"牛肉与上班族",8=>"完整早餐",9=>"带走大单",10=>"高级豆皮锅",11=>"过早高峰",_=>"最终挑战"};
+    public static string DaySubtitle(int day) => day switch {1=>"初到武汉",2=>"葱香辣油双加",3=>"卤牛肉上桌",4=>"豆皮开锅",5=>"双线程",6=>"双线熟练",7=>"上班族到店",8=>"完整早餐",9=>"带走大单",10=>"高级豆皮锅",11=>"过早高峰",_=>"最终挑战"};
 }

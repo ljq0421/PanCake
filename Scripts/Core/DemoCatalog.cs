@@ -107,10 +107,10 @@ public sealed class DemoCatalog
                 ? new[] { ProductKind.Pancake, ProductKind.Youtiao, ProductKind.SoyMilk }
                 : new[] { ProductKind.HotDryNoodles, ProductKind.Doupi };
             if (s.AvailableProducts.Any(p => !allowed.Contains(p)) || s.AvailableRecipes.Distinct().Count() != s.AvailableRecipes.Length
-                || s.AvailableRecipes.Any(id => !recipes.ContainsKey(id) || id.Contains("ham") || id.Contains("beef")
+                || s.AvailableRecipes.Any(id => !recipes.ContainsKey(id) || id.Contains("ham") || (id.Contains("beef") && (s.CityId != StableIds.Cities.Wuhan || s.Day < 3))
                     || (s.CityId == StableIds.Cities.Tianjin ? !id.StartsWith("pancake_") : !id.StartsWith("hot_dry_noodles_")))
                 || s.StartUnlocks.Concat(s.CompletionUnlocks).Any(id => !StableIds.UnlockIds.Contains(id) || id.EndsWith("_lv3")
-                    || id.Contains("egg_rice_wine") || id.Contains("beef") || id.Contains("ham")))
+                    || id.Contains("egg_rice_wine") || (id.Contains("beef") && (s.CityId != StableIds.Cities.Wuhan || s.Day < 3)) || id.Contains("ham")))
                 throw new InvalidDataException($"Invalid resources or unlocks in {s.Id}.");
             for (int i = 0; i < s.Arrivals.Length; i++)
             {

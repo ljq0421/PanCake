@@ -980,7 +980,17 @@
           "lines": [
             {
               "productKind": "HotDryNoodles",
-              "definitionId": "hot_dry_noodles_classic",
+              "definitionId": "hot_dry_noodles_scallion",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "customerTypeId": "wuhan_normal",
+          "lines": [
+            {
+              "productKind": "HotDryNoodles",
+              "definitionId": "hot_dry_noodles_chili",
               "quantity": 1
             }
           ]
@@ -1010,24 +1020,16 @@
           "lines": [
             {
               "productKind": "HotDryNoodles",
-              "definitionId": "hot_dry_noodles_classic",
-              "quantity": 1
-            }
-          ]
-        },
-        {
-          "customerTypeId": "wuhan_normal",
-          "lines": [
-            {
-              "productKind": "HotDryNoodles",
-              "definitionId": "hot_dry_noodles_classic",
+              "definitionId": "hot_dry_noodles_scallion",
               "quantity": 1
             }
           ]
         }
       ],
       "availableRecipes": [
-        "hot_dry_noodles_classic"
+        "hot_dry_noodles_classic",
+        "hot_dry_noodles_scallion",
+        "hot_dry_noodles_chili"
       ],
       "availableProducts": [
         "HotDryNoodles"
@@ -1040,8 +1042,8 @@
       "id": "demo_wh_02",
       "cityId": "city:wuhan",
       "day": 2,
-      "titleZh": "葱香与辣香",
-      "titleEn": "Scallion and chili",
+      "titleZh": "葱香辣油双加",
+      "titleEn": "Scallion and chili together",
       "durationSeconds": 105,
       "patienceMultiplier": 1.35,
       "arrivals": [
@@ -1142,8 +1144,8 @@
       "id": "demo_wh_03",
       "cityId": "city:wuhan",
       "day": 3,
-      "titleZh": "面篮有余地",
-      "titleEn": "Room to breathe",
+      "titleZh": "卤牛肉上桌",
+      "titleEn": "Braised beef joins the menu",
       "durationSeconds": 120,
       "patienceMultiplier": 1.2,
       "arrivals": [
@@ -1233,7 +1235,7 @@
           "lines": [
             {
               "productKind": "HotDryNoodles",
-              "definitionId": "hot_dry_noodles_scallion_chili",
+              "definitionId": "hot_dry_noodles_beef",
               "quantity": 1
             }
           ]
@@ -1243,7 +1245,7 @@
           "lines": [
             {
               "productKind": "HotDryNoodles",
-              "definitionId": "hot_dry_noodles_classic",
+              "definitionId": "hot_dry_noodles_beef_chili",
               "quantity": 1
             }
           ]
@@ -1253,7 +1255,9 @@
         "hot_dry_noodles_classic",
         "hot_dry_noodles_scallion",
         "hot_dry_noodles_chili",
-        "hot_dry_noodles_scallion_chili"
+        "hot_dry_noodles_scallion_chili",
+        "hot_dry_noodles_beef",
+        "hot_dry_noodles_beef_chili"
       ],
       "availableProducts": [
         "HotDryNoodles"
@@ -1338,7 +1342,7 @@
           "lines": [
             {
               "productKind": "HotDryNoodles",
-              "definitionId": "hot_dry_noodles_chili",
+              "definitionId": "hot_dry_noodles_beef",
               "quantity": 1
             }
           ]
@@ -1358,7 +1362,7 @@
           "lines": [
             {
               "productKind": "HotDryNoodles",
-              "definitionId": "hot_dry_noodles_classic",
+              "definitionId": "hot_dry_noodles_beef_chili",
               "quantity": 1
             }
           ]
@@ -1368,7 +1372,9 @@
         "hot_dry_noodles_classic",
         "hot_dry_noodles_scallion",
         "hot_dry_noodles_chili",
-        "hot_dry_noodles_scallion_chili"
+        "hot_dry_noodles_scallion_chili",
+        "hot_dry_noodles_beef",
+        "hot_dry_noodles_beef_chili"
       ],
       "availableProducts": [
         "HotDryNoodles",
@@ -1409,7 +1415,7 @@
           "lines": [
             {
               "productKind": "HotDryNoodles",
-              "definitionId": "hot_dry_noodles_classic",
+              "definitionId": "hot_dry_noodles_beef",
               "quantity": 1
             },
             {
@@ -1504,7 +1510,7 @@
           "lines": [
             {
               "productKind": "HotDryNoodles",
-              "definitionId": "hot_dry_noodles_scallion",
+              "definitionId": "hot_dry_noodles_beef_chili",
               "quantity": 1
             },
             {
@@ -1529,7 +1535,9 @@
         "hot_dry_noodles_classic",
         "hot_dry_noodles_scallion",
         "hot_dry_noodles_chili",
-        "hot_dry_noodles_scallion_chili"
+        "hot_dry_noodles_scallion_chili",
+        "hot_dry_noodles_beef",
+        "hot_dry_noodles_beef_chili"
       ],
       "availableProducts": [
         "HotDryNoodles",
@@ -1690,7 +1698,7 @@
           "lines": [
             {
               "productKind": "HotDryNoodles",
-              "definitionId": "hot_dry_noodles_scallion_chili",
+              "definitionId": "hot_dry_noodles_beef",
               "quantity": 1
             }
           ]
@@ -1700,7 +1708,7 @@
           "lines": [
             {
               "productKind": "HotDryNoodles",
-              "definitionId": "hot_dry_noodles_scallion",
+              "definitionId": "hot_dry_noodles_beef_chili",
               "quantity": 1
             },
             {
@@ -1715,7 +1723,9 @@
         "hot_dry_noodles_classic",
         "hot_dry_noodles_scallion",
         "hot_dry_noodles_chili",
-        "hot_dry_noodles_scallion_chili"
+        "hot_dry_noodles_scallion_chili",
+        "hot_dry_noodles_beef",
+        "hot_dry_noodles_beef_chili"
       ],
       "availableProducts": [
         "HotDryNoodles",

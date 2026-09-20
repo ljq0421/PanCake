@@ -200,10 +200,13 @@ public partial class WuhanVisualCapture : Node
     private async Task Frames(int count){for(int i=0;i<count;i++)await ToSignal(GetTree(),SceneTree.SignalName.ProcessFrame);}
     private async Task CaptureUnlockStages()
     {
+        var settings = GetNode<JourneySettings>("/root/JourneySettings");
+        settings.UsePathForTests($"res://.tmp/wuhan-stage-settings-{Guid.NewGuid():N}.cfg");
+        InterfaceLessons.MarkAllSeen(settings);
         bool small = OS.GetCmdlineUserArgs().Contains("--capture-720");
         GetWindow().Size = small ? new Vector2I(1280, 720) : new Vector2I(1920, 1080);
         var catalog = GetNode<DataCatalog>("/root/DataCatalog");
-        foreach (int number in new[] { 1, 3, 4, 5, 6, 7, 12 })
+        foreach (int number in new[] { 1, 2, 3, 4, 5, 6, 7, 12 })
         {
             var save = new SaveService(); save.UsePathForTests($"res://.tmp/wuhan-stages-{Guid.NewGuid():N}.json"); AddChild(save);
             for (int previous = 1; previous < number; previous++)
@@ -212,6 +215,7 @@ public partial class WuhanVisualCapture : Node
             var day = SceneFactory.Instantiate<WuhanDayScreen>("res://Scenes/Gameplay/WuhanDayScreen.tscn"); AddChild(day);
             day.ConnectController(controller); day.Initialize(catalog, save, controller, number); day.SetProcess(false);
             day.BeginDay(); day._Notification((int)NotificationApplicationFocusIn); day._Process(3.1);
+            day.TeachingFocus.Dismiss();
             if ((day.Doupi is not null) != (number >= 4) || day.EggUnlocked)
                 throw new InvalidOperationException($"Incorrect unlock stage: {number}");
             await Frames(3); await ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);

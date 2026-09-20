@@ -43,8 +43,9 @@ public sealed partial class CityPageModel(DataCatalog? catalog, SaveService save
         if (city == StableIds.Cities.Wuhan)
         {
             string[] names = day switch {
-                2 => new[] { "热干面完整成品", "葱花覆盖层" },
-                3 => new[] { "热干面完整成品", "辣油壶_v2" },
+                1 => new[] { "热干面完整成品", "辣油壶_v2", "葱花覆盖层" },
+                2 => new[] { "热干面完整成品", "葱花覆盖层", "辣油壶_v2" },
+                3 => new[] { "热干面完整成品", "卤牛肉片" },
                 4 or 5 => new[] { "热干面完整成品", "DoupiPieces_v1/piece-01" },
                 6 => new[] { "热干面完整成品", "成品蛋酒杯_v2" },
                 7 => new[] { "热干面完整成品", "卤牛肉片" },

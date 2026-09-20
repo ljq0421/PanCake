@@ -22,8 +22,20 @@ public partial class WuhanWorkbenchSelfTest : Node
         try
         {
             var catalog = GetNode<DataCatalog>("/root/DataCatalog");
+            var settings = GetNode<JourneySettings>("/root/JourneySettings");
+            settings.UsePathForTests($"res://.tmp/wuhan-menu-settings-{Guid.NewGuid():N}.cfg");
+            InterfaceLessons.MarkAllSeen(settings);
             var save = new SaveService();
-            save.UsePathForTests($"res://.tmp/wuhan-workbench-{Guid.NewGuid():N}.json"); AddChild(save);
+            AddChild(save);
+            string path = $"res://.tmp/wuhan-workbench-{Guid.NewGuid():N}.json";
+            if (ExperienceProfile.IsDemo)
+            {
+                save.UseDemoPathForTests(ProjectSettings.GlobalizePath(path), catalog.Demo!);
+                save.DemoProgress.CompletedStages.UnionWith(catalog.Demo!.CityStages(StableIds.Cities.Tianjin).Select(s => s.Id));
+                Check(save.TrySave(out _), "save isolated Demo entry fixture");
+                save.Load();
+            }
+            else save.UsePathForTests(path);
             var controller = new DayController(); AddChild(controller);
             var screen = SceneFactory.Instantiate<WuhanDayScreen>("res://Scenes/Gameplay/WuhanDayScreen.tscn");
             AddChild(screen); screen.ConnectController(controller); screen.SetProcess(false);
@@ -33,11 +45,34 @@ public partial class WuhanWorkbenchSelfTest : Node
 
             // Production/gestures have their own timed viewport tests. This loop supplies valid
             // production states without advancing cooking time, to isolate all real order routes.
-            for (int day = 1; day <= 12; day++)
+            for (int day = 1; day <= (ExperienceProfile.IsDemo ? 6 : 12); day++)
             {
-                screen.Initialize(catalog, save, controller, day); screen.BeginDay();
+                Check(screen.Initialize(catalog, save, controller, day), $"Day {day}: initializes");
+                screen.BeginDay();
+                screen._Notification((int)NotificationApplicationFocusIn);
+                if (controller.TutorialActive) screen.FinishWuhanDemoLesson();
+                Check(!controller.TutorialActive, $"Day {day}: tests normal business after tutorial");
                 screen._Notification((int)NotificationApplicationFocusIn);
                 screen._Process(3.1);
+                string[] recipes = controller.CurrentConfig!.AvailableRecipeIds.ToArray();
+                Check(recipes.Length == (day == 1 ? 3 : day == 2 ? 4 : 6), $"Day {day}: correct menu size");
+                Check(recipes.Contains("hot_dry_noodles_scallion_chili") == (day >= 2), $"Day {day}: double topping unlock");
+                Check(recipes.Contains("hot_dry_noodles_beef") == (day >= 3)
+                    && recipes.Contains("hot_dry_noodles_beef_chili") == (day >= 3), $"Day {day}: both beef recipes unlock together");
+                Check(screen.Workstation.BeefUnlocked == (day >= 3), $"Day {day}: beef input follows the menu");
+                Check(screen.GetNode<TextureRect>("WorkbenchBackground").Texture == art.WorkbenchBackground(day >= 4, day >= 3),
+                    $"Day {day}: background follows the menu");
+                // Test both direct action and actual click input on the locked/available beef bowl.
+                screen.Bowl.TryAddNoodles(NoodleQuality.Optimal);
+                screen.Bowl.TryAddBaseSeasoning();
+                screen.Bowl.AddMixDistance(1000);
+                screen.IngredientAction(StableIds.Ingredients.WuhanBraisedBeef);
+                screen.Workstation.CancelAnimations();
+                screen.Workstation._GuiInput(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true,
+                    Position = screen.Workstation.IngredientCenter(3) });
+                Check(screen.Bowl.Toppings.Contains(StableIds.Ingredients.WuhanBraisedBeef) == (day >= 3),
+                    $"Day {day}: beef action and click respect the unlock");
+                screen.Workstation.CancelAnimations(); screen.Bowl.Reset();
                 Check((screen.Doupi is not null) == (day >= 4), $"Day {day}: original doupi unlock");
                 Check(screen.Workstation.Descendants<EquipmentProgressView>().All(view => !view.ShowCaption), $"Day {day}: progress bars have no text captions");
                 Check(!screen.EggUnlocked, $"Day {day}: egg retired");
@@ -92,16 +127,16 @@ public partial class WuhanWorkbenchSelfTest : Node
                     }
                     screen._Process(.2);
                 }
-                Check(controller.State == DayState.Results, $"Day {day}: reaches results");
+                Check(controller.State == DayState.Results, $"Day {day}: reaches results (state={controller.State}, paused={controller.IsPaused}, elapsed={controller.DayElapsedSeconds}, iterations={iterations})");
                 Check(save.Data.Wuhan.DayBestRecords[day].CompletedCustomers == controller.CurrentPlan!.Customers.Count,
                     $"Day {day}: every generated customer's order can be completed");
                 Check(save.Data.Wuhan.DayBestRecords[day].IncorrectOrders == 0, $"Day {day}: every recipe matches");
-                Check(save.Data.Wuhan.HighestUnlockedDay == Math.Min(12, day + 1), $"Day {day}: original progression");
+                Check(save.Data.Wuhan.HighestUnlockedDay == Math.Min(ExperienceProfile.IsDemo ? 6 : 12, day + 1), $"Day {day}: original progression");
                 await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
             }
 
             save.Data.Coins = 10000;
-            foreach (int level in new[] { 2, 3 })
+            foreach (int level in ExperienceProfile.IsDemo ? Array.Empty<int>() : new[] { 2, 3 })
             {
                 foreach (string equipment in new[] { "noodle_cooker", "doupi_griddle" })
                     Check(save.TryPurchase(StableIds.Cities.Wuhan, $"equipment:{equipment}_lv{level}", catalog, out _), $"purchase {equipment} Lv{level}");

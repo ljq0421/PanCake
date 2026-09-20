@@ -694,7 +694,7 @@ public partial class PancakeWorkstation : Control
             _canvas.SetFlipProgress(0);
             Render();
         }
-        if (command == PancakeCommand.CompleteSauce) _stroke.CancelStroke();
+        if (command == PancakeCommand.CompleteSauce) _stroke.ShowSauceCompletion(Machine.Runtime.SauceCoverage);
 
         if (consumedYoutiao is YoutiaoQuality quality)
         {

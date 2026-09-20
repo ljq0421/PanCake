@@ -14,12 +14,11 @@ public partial class CityPagesSelfTest
         string locale = GetNode<JourneySettings>("/root/JourneySettings").Language;
         string prefix = $"map-{(demo ? "demo" : "full")}-{locale}-";
         var playable = JourneyModel.Cities.Where(c => _save.ChapterLength(c.Id) > 0).ToArray();
-        int total = playable.Length;
         string slotRoot = Path.Combine(Path.GetDirectoryName(_path)!, "map-slots");
         _save.UseSlotsForTests(slotRoot, demo);
         _path = Path.Combine(slotRoot, "slot-1.json");
         _screen.PresentMap(); await Frames();
-        Check(!_save.CanContinue && Find<Label>("MapLitCount").Text == $"1/{total}", "missing save shows first unlocked city");
+        Check(!_save.CanContinue && JourneyModel.MapCityUnlocked(_save, JourneyModel.Cities[0]), "missing save shows first unlocked city");
         Check(!File.Exists(_path), "map browsing never creates a save");
         CheckMapLayout(); await Capture(prefix + "no-save");
 
@@ -46,7 +45,7 @@ public partial class CityPagesSelfTest
         else
         {
             Check(_screen.Visible && _screen.Page == JourneyPage.Map
-                && Find<Label>("SummaryGoal").Text == "完成天津章节后开放", "locked city stays on map with prerequisite");
+                && Find<Button>("Node1").GetNode<Label>("State").Text == "尚未抵达", "locked city stays on map with prerequisite");
             Check(File.ReadAllText(_path) == persisted, "locked selection does not modify save");
             CheckMapLayout(); await Capture(prefix + "locked");
         }
@@ -63,7 +62,7 @@ public partial class CityPagesSelfTest
         await Frames();
         Check(!_screen.Visible && _screen.SelectedDay == 1, "Enter on city starts business");
         _main.OpenCity(StableIds.Cities.Tianjin); _screen.PresentMap(); await Frames();
-        await MapClick("Back"); Check(_screen.Page == JourneyPage.Home, "map returns home");
+        await MapClick("Home"); Check(_screen.Page == JourneyPage.Home, "map returns home");
         await MapClick("Continue"); Check(_screen.Page == JourneyPage.Map, "continue opens map");
 
         foreach (var city in playable)
@@ -97,8 +96,8 @@ public partial class CityPagesSelfTest
         {
             await MapClick("Node2");
             Check(_screen.Visible && _screen.Page == JourneyPage.Map
-                && Find<Label>("SummaryGoal").Text == "下一站预告 · 本次不可营业", "demo preview cannot start business");
-            Check(Find<Label>("MapLitCount").Text == $"2/{total}", "demo excludes preview from playable count");
+                && Find<Button>("Node2").GetNode<Label>("State").Text == "下一站预告", "demo preview cannot start business");
+            Check(_screen.FindChildren("Node*", "Button", true, false).Count == 3, "demo keeps two playable cities and one preview");
             CheckMapLayout(); await Capture(prefix + "preview");
         }
         foreach (var city in playable)
@@ -109,7 +108,7 @@ public partial class CityPagesSelfTest
         _save.Data.LastVisitedCityId = StableIds.Cities.Wuhan;
         Check(_save.TrySave(out string completedError), "completed fixture saves: " + completedError);
         _screen.PresentMap(); await Frames();
-        Check(Find<Label>("SummaryGoal").Text.Contains("回访"), "completed route offers revisits");
+        Check(Find<Button>("Node0").GetNode<Label>("State").Text == "已完成", "completed route retains completed markers");
         CheckMapLayout(); await Capture(prefix + "complete");
         Directory.CreateDirectory(_path + ".tmp");
         await MapClick("Node0");
@@ -131,7 +130,8 @@ public partial class CityPagesSelfTest
         _main.OpenCity(StableIds.Cities.Tianjin); _screen.PresentMap(); await Frames();
         await MapClick("Home"); Check(_screen.Page == JourneyPage.Home, "map Home opens home");
         _screen.PresentMap(() => _screen.PresentCity(StableIds.Cities.Tianjin)); await Frames();
-        await MapClick("Back"); Check(_screen.Page == JourneyPage.City, "in-game map preserves caller return destination");
+        _screen._Input(new InputEventKey { Keycode = Key.Escape, Pressed = true });
+        await Frames(); Check(_screen.Page == JourneyPage.City, "map Escape preserves caller return destination");
         if (!demo)
         {
             _screen.PresentCompletion(StableIds.Cities.Tianjin, () => _screen.PresentHome());
@@ -159,30 +159,20 @@ public partial class CityPagesSelfTest
     {
         Check(_screen.FindChildren("MapJourneyCard", "", true, false).Count == 0
             && _screen.FindChildren("PageTitle", "", true, false).Count == 0, "old title and side card removed");
-        var strip = Find<Panel>("MapJourneyStrip"); var map = Find<TextureRect>("MapFrame");
+        Check(_screen.FindChildren("MapJourneyStrip", "", true, false).Count == 0
+            && _screen.FindChildren("Back", "Button", true, false).Count == 0, "map summary and back button removed");
+        var frame = Find<TextureRect>("MapFrame");
         var world = Find<TextureRect>("WorldMapArt");
         Vector2 native = world.Texture.GetSize();
         Check(Math.Abs(world.Size.X / native.X - world.Size.Y / native.Y) < .0001f,
             "world map preserves the original artwork proportions");
-        Check(Find<TextureRect>("MapJourneyStripArt").Texture is AtlasTexture stripArt && stripArt.Atlas.ResourcePath.EndsWith("世界早餐地图解锁.png"), "map uses supplied strip artwork");
-        Check(strip.Position.Y >= map.Position.Y + map.Size.Y, "information strip is below the map");
-        Check(_screen.FindChildren("EnterCity", "Button", true, false).Count == 0, "separate view-city button removed");
-        Check(Math.Abs(strip.Position.X + strip.Size.X / 2 - 960) < 1, "bottom strip is horizontally centered");
-        foreach (string name in new[] { "MapSelection", "SummaryCity", "MapNextLabel", "MapNextCity", "MapLitLabel", "MapLitCount", "SummaryGoal" })
+        Check(frame.Size.Y > 685 && world.Size.Y > 535, "frame and artwork enlarged");
+        Check(new Rect2(Vector2.Zero, new Vector2(1920, 1080)).Encloses(frame.GetRect()), "frame fits design viewport");
+        Check(frame.GetRect().Encloses(world.GetRect()), "world artwork fits frame");
+        foreach (var node in _screen.Descendants<Button>().Where(b => b.Name.ToString().StartsWith("Node")))
         {
-            var label = Find<Label>(name);
-            Check(label.Position.X >= 0 && label.Position.Y >= 0 && label.Position.X + label.Size.X <= strip.Size.X
-                && label.Position.Y + label.Size.Y <= strip.Size.Y, name + " fits inside strip");
-            Check(label.GetLineCount() <= (name == "SummaryGoal" ? 3 : 1), name + " stays within its line budget");
-            if (name != "SummaryGoal")
-                Check(label.GetThemeFont("font").GetStringSize(label.Tr(label.Text), HorizontalAlignment.Left, -1,
-                    label.GetThemeFontSize("font_size")).X <= label.Size.X + 1, name + " translated text fits");
-        }
-        if (GetNode<JourneySettings>("/root/JourneySettings").Language == "en")
-        {
-            Check(Find<Label>("MapLitLabel").Tr("已点亮城市") == "Cities unlocked", "English map labels translated");
-            string goal = Find<Label>("SummaryGoal").Tr(Find<Label>("SummaryGoal").Text);
-            Check(!goal.Any(c => c is >= '\u4e00' and <= '\u9fff'), "English dynamic goal translated");
+            Check(world.GetRect().Encloses(node.GetRect()), "city marker fits map " + node.Name);
+            Check(!node.GetGlobalRect().Intersects(Find<Button>("Home").GetGlobalRect()), "city marker clears navigation " + node.Name);
         }
     }
 }

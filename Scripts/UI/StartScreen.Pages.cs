@@ -116,25 +116,27 @@ public partial class StartScreen
     private Vector2 MapNodePosition(int index) => MapArtworkPoint(MapPoints[index] + new Vector2(65, 40)) - new Vector2(65, 40);
     private void RenderMap()
     {
-        Begin(JourneyPage.Map); Chrome(() => (_mapReturn ?? RenderHome)()); DrawMap();
-        DrawMapSummary(); Focus("Node" + Math.Max(0, Array.FindIndex(JourneyModel.Cities, c => c.Id == _city)));
+        Begin(JourneyPage.Map); Chrome(() => (_mapReturn ?? RenderHome)(), showBack: false); DrawMap();
+        Focus("Node" + Math.Max(0, Array.FindIndex(JourneyModel.Cities, c => c.Id == _city)));
         _status.Position = new(340, 75); _status.Size = new(1240, 40);
         _status.AddThemeColorOverride("font_color", StartScreenTheme.Ink);
         _status.MoveToFront();
     }
     private void DrawMap(bool reveal = false)
     {
-        HomeArt(_body, "世界地图墙挂底板", new(160, 125, 1600, 685)).Name = "MapFrame";
-        var map = HomeArt(_body, "卡通世界地图母版", MapArtworkBounds);
+        // Keep the chapter-unlock presentation at its existing size.
+        Rect2 frameBounds = reveal ? new(160, 125, 1600, 685) : new(100, 170, 1720, 870);
+        Rect2 artworkBounds = reveal ? MapArtworkBounds : new(175, 297, 1570, 680);
+        HomeArt(_body, "世界地图墙挂底板", frameBounds).Name = "MapFrame";
+        var map = HomeArt(_body, "卡通世界地图母版", artworkBounds);
         map.Name = "WorldMapArt";
         Vector2 nativeSize = map.Texture.GetSize();
-        float mapScale = Math.Min(MapArtworkBounds.Size.X / nativeSize.X, MapArtworkBounds.Size.Y / nativeSize.Y);
+        float mapScale = Math.Min(artworkBounds.Size.X / nativeSize.X, artworkBounds.Size.Y / nativeSize.Y);
         map.Size = nativeSize * mapScale;
-        map.Position = MapArtworkBounds.GetCenter() - map.Size / 2;
+        map.Position = artworkBounds.GetCenter() - map.Size / 2;
         _mapArtworkRect = new(map.Position, map.Size);
         Art(_body, "美洲区域装饰", new(MapArtworkPoint(new(380, 417.5f)) - new Vector2(65, 47.5f), new Vector2(130, 95))).Modulate = new Color(1,1,1,.3f);
         Art(_body, "欧洲区域装饰", new(MapArtworkPoint(new(905, 282.5f)) - new Vector2(55, 37.5f), new Vector2(110, 75))).Modulate = new Color(1,1,1,.3f);
-        Text(_body, "MapRegion", "中国旅程 · 城市路线示意", new(995, 219, 540, 40), 24, true);
         if (_save is not null && JourneyModel.Cities.All(c => JourneyModel.Progress(_save, c.Id).Completed))
             Art(_body, "中国阶段完成纪念章", new(MapArtworkPoint(new(790, 555)) - new Vector2(90, 90), new Vector2(180, 180)));
         int visibleCities = _save?.IsDemo == true ? 3 : JourneyModel.Cities.Length;
@@ -169,50 +171,6 @@ public partial class StartScreen
             stateLabel.AddThemeColorOverride("font_outline_color", StartScreenTheme.Cream); stateLabel.AddThemeConstantOverride("outline_size", 4);
             if (city.Id == _city) { var ring = Art(node,"城市节点悬停高亮环",new(-4,-15,140,105)); ring.ShowBehindParent = true; }
         }
-    }
-    private void DrawMapSummary()
-    {
-        var view = JourneyModel.MapSummary(_save!, JourneyModel.City(_city), DeveloperToolsVisible);
-        var panel = new Panel { Name = "MapJourneyStrip", Position = new(375, 825), Size = new(1170, 245), MouseFilter = MouseFilterEnum.Ignore };
-        panel.AddThemeStyleboxOverride("panel", new StyleBoxEmpty()); _body.AddChild(panel);
-        HomeArt(panel, "世界早餐地图解锁", new(Vector2.Zero, panel.Size)).Name = "MapJourneyStripArt";
-        MapLandmark(panel, view.City, new(197, 115, 190, 112));
-        if (view.NextCity is { } destination) MapLandmark(panel, destination, new(556, 115, 190, 112));
-
-        HomeArt(panel, JourneyModel.NodeArt(view.City), new(59, 53, 74, 91)).Name = "SelectedCityIcon";
-        MapStripText(panel, "MapSelection", view.IsCurrent ? "当前城市" : "所选城市", new(149, 64, 216, 34), 26);
-        MapStripText(panel, "SummaryCity", view.City.Name, new(149, 100, 216, 62), 44);
-        var arrow = HomeArt(panel, "箭头", new(375, 94, 44, 44));
-        arrow.Name = "MapNextArrow";
-        arrow.PivotOffset = arrow.Size / 2;
-        arrow.RotationDegrees = -90;
-        if (view.NextCity is { } next)
-            HomeArt(panel, JourneyModel.NodeArt(next), new(435, 53, 74, 91)).Name = "NextCityIcon";
-        else HomeArt(panel, "小红旗", new(435, 69, 64, 64));
-        MapStripText(panel, "MapNextLabel", view.IsPreview || view.NextIsPreview ? "下一站预告" : view.NextCity is null ? "最终站" : "下一站", new(525, 64, 230, 34), 26);
-        MapStripText(panel, "MapNextCity", view.NextCity?.Name ?? (view.IsPreview ? "敬请期待" : view.City.Name), new(525, 100, 230, 62), 44);
-
-        HomeArt(panel, "小红旗", new(805, 58, 43, 47));
-        MapStripText(panel, "MapLitLabel", "已点亮城市", new(862, 64, 267, 34), 26);
-        MapStripText(panel, "MapLitCount", $"{view.LitCities}/{view.TotalCities}", new(862, 100, 267, 62), 44);
-
-        Art(panel, "res://resource/art/Global/BookUI/奖励章中心符号｜星星.png", new(805, 168, 25, 25)).Name = "MapGoalStar";
-        var goal = Text(panel, "SummaryGoal", view.Goal, new(843, 164, 286, 64), 19);
-        FitContinueLines(goal, 19, 18, 3);
-    }
-    private void MapLandmark(Control parent, JourneyCity city, Rect2 bounds)
-    {
-        if (city.Id is not (StableIds.Cities.Tianjin or StableIds.Cities.Wuhan)) return;
-        var art = HomeArt(parent, "早餐地图-" + city.Name, bounds);
-        art.Name = "MapLandmark" + city.Name;
-        art.Modulate = new Color(1, 1, 1, .6f);
-    }
-    private Label MapStripText(Control parent, string name, string value, Rect2 bounds, int size)
-    {
-        var label = Text(parent, name, value, bounds, size);
-        label.AutowrapMode = TextServer.AutowrapMode.Off;
-        FitTextWidth(label, size, 20);
-        return label;
     }
     public void OpenCard(string cityId)
     {

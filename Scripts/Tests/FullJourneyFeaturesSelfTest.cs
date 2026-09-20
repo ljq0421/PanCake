@@ -19,22 +19,29 @@ public partial class FullJourneyFeaturesSelfTest : Node
 {
     private int _checks;
     private string _dir = "";
+    private SubViewport? _captureViewport;
     private void Check(bool ok, string message)
     { if (!ok) throw new InvalidOperationException(message); _checks++; GD.Print("PASS " + message); }
     private async Task Frames(int count = 3)
-    { for (int i = 0; i < count; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame); }
+    {
+        for (int i = 0; i < count; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+        for (int i = 0; i < 240 && GetTree().Root.GetNodeOrNull<JourneyTransition>("JourneyTransition")?.Active == true; i++)
+            await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+    }
     private async Task Capture(string name)
     {
         if (!OS.GetCmdlineUserArgs().Contains("--capture")) return;
         await Frames(); await ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
-        using var image = GetViewport().GetTexture().GetImage(); image.SavePng(Path.Combine(_dir, name + ".png"));
+        using var image = (_captureViewport ?? GetViewport()).GetTexture().GetImage(); image.SavePng(Path.Combine(_dir, name + ".png"));
     }
     private async Task Click(Control control)
     {
+        var viewport = control.GetViewport();
+        viewport.NotifyMouseEntered();
         var p = control.GetGlobalTransformWithCanvas() * (control.Size / 2);
-        GetViewport().PushInput(new InputEventMouseMotion { Position = p, GlobalPosition = p }, true);
+        viewport.PushInput(new InputEventMouseMotion { Position = p, GlobalPosition = p }, true);
         foreach (bool down in new[] { true, false })
-            GetViewport().PushInput(new InputEventMouseButton { Position = p, GlobalPosition = p, Pressed = down, ButtonIndex = MouseButton.Left }, true);
+            viewport.PushInput(new InputEventMouseButton { Position = p, GlobalPosition = p, Pressed = down, ButtonIndex = MouseButton.Left }, true);
         await Frames();
     }
     public override async void _Ready()
@@ -43,7 +50,7 @@ public partial class FullJourneyFeaturesSelfTest : Node
         {
             _dir = ProjectSettings.GlobalizePath("res://.tmp/full-journey-features/" + Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(_dir);
-            GetWindow().Size = new(1920, 1080);
+            GetWindow().Size = OS.GetCmdlineUserArgs().Contains("--small") ? new(1280, 720) : new(1920, 1080);
             var catalog = GetNode<DataCatalog>("/root/DataCatalog");
             var save = GetNode<SaveService>("/root/SaveService");
             Check(catalog.IsValid, "full profile uses full content");
@@ -101,7 +108,15 @@ public partial class FullJourneyFeaturesSelfTest : Node
             var receipt = new DeliveryReceipt(stale.RunId, stale.StageId, new(ProductKind.SoyMilk, "soy_milk"), true, true, false);
             DemoBreakfastCollection.Observe(receipt, plan);
             Check(plan.PendingBreakfastRecords.Count == 0, "full-game run IDs reject stale receipts");
-            var main = GD.Load<PackedScene>("res://Scenes/Main/Main.tscn").Instantiate<GameController>(); AddChild(main); await Frames();
+            var main = GD.Load<PackedScene>("res://Scenes/Main/Main.tscn").Instantiate<GameController>();
+            if (OS.GetCmdlineUserArgs().Contains("--capture"))
+            {
+                _captureViewport = new SubViewport { Size = GetWindow().Size, Size2DOverride = new(1920, 1080),
+                    Size2DOverrideStretch = true, Disable3D = true, RenderTargetUpdateMode = SubViewport.UpdateMode.Always };
+                AddChild(_captureViewport); _captureViewport.AddChild(main);
+            }
+            else AddChild(main);
+            await Frames();
             foreach (var node in main.Descendants<Control>().Where(n => n is TianjinDayScreen or WuhanDayScreen or XianDayScreen or GuangzhouDayScreen or YangzhouDayScreen))
                 node.SetProcess(false);
             var screen = main.GetNode<StartScreen>("UI/StartScreen");
@@ -134,26 +149,86 @@ public partial class FullJourneyFeaturesSelfTest : Node
                 screen.PresentCity(city); await Frames(); int requestedDay = screen.SelectedDay;
                 int coins = save.Data.Coins, highest = save.Data.GetCity(city).HighestUnlockedDay;
                 string records = JsonSerializer.Serialize(save.Data.BreakfastRecords);
+                string learnedBefore = string.Join(',', save.Data.GetCity(city).LearnedWorkbenchActions.Order());
+                var lesson = city == StableIds.Cities.Tianjin ? (Control)main.GetNode<TianjinDayScreen>("UI/TianjinDayScreen") : main.GetNode<WuhanDayScreen>("UI/WuhanDayScreen");
+                bool Failed() => lesson is TianjinDayScreen t ? t.DemoLessonFailed : ((WuhanDayScreen)lesson).DemoLessonFailed;
+                void TickLesson() { if (lesson is TianjinDayScreen t) t._Process(.1); else ((WuhanDayScreen)lesson)._Process(.1); }
+                void WrongDelivery()
+                {
+                    if (lesson is TianjinDayScreen t)
+                    {
+                        t.RefreshForCapture(true);
+                        var station = t.GetNode<PancakeWorkstation>("PancakeWorkstation"); var machine = station.Machine;
+                        void Do(PancakeCommand command) => Check(machine.TryExecute(command).Success, "prepare incorrect practice pancake " + command);
+                        Do(PancakeCommand.PlaceBatter); Do(PancakeCommand.BeginSpread); Do(PancakeCommand.CompleteSpread); Do(PancakeCommand.AddEgg);
+                        station.Tick(100); Do(PancakeCommand.Flip); station.Tick(100);
+                        Do(PancakeCommand.BeginSauce); machine.SetSauceCoverage(.1); Do(PancakeCommand.CompleteSauce); Do(PancakeCommand.Fold); Do(PancakeCommand.Bag);
+                        station.Tick(1); t.RefreshForCapture(true);
+                        Check(t.Descendants<DropZone>().First(z => z.Name.ToString().StartsWith("CustomerDropZone") && z.CanAccept("finished_pancake")).TryAccept("finished_pancake"), "incorrect pancake uses real drop handler");
+                    }
+                    else
+                    {
+                        var w = (WuhanDayScreen)lesson;
+                        w.Bowl.TryAddNoodles(NoodleQuality.Optimal); w.Bowl.TryAddBaseSeasoning();
+                        w.Bowl.TryAddTopping(StableIds.Ingredients.WuhanChiliOil); w.Bowl.AddMixDistance(500);
+                        Check(w.DeliverToCustomer(dayController.CustomerQueue!.Slots.Single().Id, ProductKind.HotDryNoodles), "incorrect noodles use real delivery handler");
+                    }
+                    Check(Failed(), "incorrect lesson waits for retry " + city);
+                }
                 Check(!screen.Descendants<Button>().Any(b => b.IsVisibleInTree() && (b.Name == "Back" || b.Name == "ReplayTutorial")), "preparation omits back and tutorial links");
                 await Click(Find("Help"));
                 await Capture("full-help-" + city.Replace(':', '-'));
                 await Click(Find("ReplayTutorial"));
+                lesson._Notification((int)NotificationApplicationFocusIn);
                 Check(dayController.TutorialActive && dayController.CurrentConfig!.Day == 1 && dayController.CurrentConfig.CityId == city,
                     "replay opens isolated first lesson " + city);
-                dayController.Tick(500);
+                dayController.Tick(500); dayController.Tick(.01); dayController.Tick(2);
                 Check(dayController.DayElapsedSeconds == 0 && dayController.CustomerQueue!.Slots.Single().WaitSeconds == 0, "lesson clocks and patience frozen");
                 Check(save.Data.Coins == coins && save.Data.GetCity(city).HighestUnlockedDay == highest
                     && JsonSerializer.Serialize(save.Data.BreakfastRecords) == records, "lesson leaves business rewards unchanged");
                 if (city == StableIds.Cities.Tianjin) main.GetNode<TianjinDayScreen>("UI/TianjinDayScreen").RefreshForCapture(true);
                 await Capture("full-lesson-" + city.Replace(':', '-'));
-                if (city == StableIds.Cities.Tianjin) main.GetNode<TianjinDayScreen>("UI/TianjinDayScreen").FinishDemoLesson();
-                else main.GetNode<WuhanDayScreen>("UI/WuhanDayScreen").FinishWuhanDemoLesson();
+                var skip = lesson.Descendants<Button>().Single(b => b.Name == "SkipLesson");
+                var pause = lesson.Descendants<Button>().Single(b => b.Name == "HudPause");
+                Check(skip.GetGlobalRect().Position.X > 1500 && !skip.GetGlobalRect().Intersects(pause.GetGlobalRect()) && !skip.HasFocus(), "skip fixed clear of pause without default focus");
+                WrongDelivery(); TickLesson(); await Frames();
+                var action = lesson.Descendants<Button>().Single(b => b.Name == "LessonAction");
+                Check(Failed() && action.Text == "重新练习" && !action.Disabled && skip.IsVisibleInTree(), "failure persists with retry and skip");
+                Check(!(lesson is TianjinDayScreen focusT ? focusT.TeachingFocus : ((WuhanDayScreen)lesson).TeachingFocus).Visible, "failed lesson stops spotlight");
+                await Capture("lesson-failed-zh-" + city.Replace(':', '-'));
+                settings.SetLanguage("en"); TickLesson(); await Capture("lesson-failed-en-" + city.Replace(':', '-')); settings.SetLanguage("zh_CN");
+                Check(lesson.GetNode<Panel>("DemoLesson").GetChildren().OfType<Label>()
+                    .Where(l => l.Visible).All(l => l.GetGlobalRect().End.Y <= action.GetGlobalRect().Position.Y), "translated result text stays above retry button");
+                dayController.IsPaused = true; TickLesson();
+                var pausedQueue = dayController.CustomerQueue;
+                if (lesson is TianjinDayScreen pausedT) pausedT.RetryDemoLesson(); else ((WuhanDayScreen)lesson).RetryWuhanDemoLesson();
+                Check(action.Disabled && skip.Disabled && ReferenceEquals(pausedQueue, dayController.CustomerQueue), "paused lesson cannot retry or skip");
+                dayController.IsPaused = false; TickLesson();
+                lesson._Notification((int)NotificationApplicationFocusOut); TickLesson();
+                Check(action.Disabled && skip.Disabled, "failure actions disabled while unfocused");
+                lesson._Notification((int)NotificationApplicationFocusIn); TickLesson();
+                Check(Failed() && !action.Disabled && !skip.Disabled, "failure survives focus restore");
+                Directory.CreateDirectory(path + ".tmp");
+                await Click(skip);
+                Check(Failed() && action.Text == "重试保存" && dayController.TutorialActive, "failed skip save retains failure and offers save retry");
+                Directory.Delete(path + ".tmp");
+                await Click(action);
                 Check(!dayController.TutorialActive && dayController.CurrentConfig!.Day == requestedDay && dayController.State == DayState.Opening,
                     "skip resumes original full-game day " + city);
                 Check(dayController.CurrentPlan!.PendingBreakfastRecords.Count == 0, "practice records do not leak");
+                Check(string.Join(',', save.Data.GetCity(city).LearnedWorkbenchActions.Order()) == learnedBefore, "failed practice does not persist learned actions");
                 dayController.AbandonDay(); main.OpenCity(city); await Frames();
                 await Click(Find("Help"));
                 await Click(Find("ReplayTutorial")); dayController.Tick(2);
+                lesson._Notification((int)NotificationApplicationFocusIn); dayController.Tick(3); dayController.Tick(2);
+                WrongDelivery();
+                await Click(lesson.Descendants<Button>().Single(b => b.Name == "LessonAction"));
+                Check(!Failed() && dayController.TutorialActive, "retry button starts fresh lesson");
+                var retryQueue = dayController.CustomerQueue;
+                if (lesson is TianjinDayScreen retryT) retryT.RetryDemoLesson(); else ((WuhanDayScreen)lesson).RetryWuhanDemoLesson();
+                Check(ReferenceEquals(retryQueue, dayController.CustomerQueue), "duplicate retry does not restart active practice");
+                dayController.Tick(2);
+                TickLesson();
                 if (city == StableIds.Cities.Tianjin)
                 {
                     var t = main.GetNode<TianjinDayScreen>("UI/TianjinDayScreen"); t.RefreshForCapture(true);

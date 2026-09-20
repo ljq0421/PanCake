@@ -146,16 +146,34 @@ public partial class StageFourSelfTest
 
         PrepareSauce();
         EllipseGeometry geometry = stroke.ResolveSpreadGeometry!();
-        for (int cell = 0; cell < 24; cell++)
+        // A fast sweep must leave room to stop at light sauce. Retracing cannot add sauce.
+        Vector2 sweepStart = geometry.Center - new Vector2(geometry.Radii.X * .95f, 0);
+        Vector2 sweepEnd = geometry.Center + new Vector2(geometry.Radii.X * .95f, 0);
+        using (var press = new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true, Position = sweepStart }) stroke._GuiInput(press);
+        using (var motion = new InputEventMouseMotion { Position = sweepEnd, ButtonMask = MouseButtonMask.Left }) stroke._GuiInput(motion);
+        double fastSweepAmount = station.Machine.Runtime.SauceCoverage;
+        Check(fastSweepAmount > .1 && fastSweepAmount < .3, "快速横划仍为少酱，留有继续刷动的余量");
+        using (var motion = new InputEventMouseMotion { Position = sweepStart, ButtonMask = MouseButtonMask.Left }) stroke._GuiInput(motion);
+        Check(station.Machine.Runtime.SauceCoverage == fastSweepAmount, "沿原路重复刷不增加酱量");
+        using (var release = new InputEventMouseButton { ButtonIndex = MouseButton.Left, Position = sweepStart }) stroke._GuiInput(release);
+        finish.EmitSignal(Button.SignalName.Pressed);
+        Check(station.Machine.Runtime.State == PancakeState.Sauced && stroke.SauceCompletionVisible
+            && station.Machine.Runtime.SauceCoverage == fastSweepAmount, "主动收刷保留少酱并展示完成反馈");
+        stroke._Process(1.2);
+        Check(!stroke.SauceCompletionVisible, "收刷完成反馈短暂展示后消失");
+
+        PrepareSauce();
+        Check(!stroke.SauceCompletionVisible, "重开清除收刷反馈");
+        for (int cell = 0; cell < StrokeInteractor.SauceRequiredCells * 1.5; cell++)
         {
-            float radius = (cell / 8 + .5f) / 4;
-            float angle = (cell % 8 + .5f) / 8 * Mathf.Tau;
+            float radius = (cell / StrokeInteractor.SauceSectors + .5f) / StrokeInteractor.SauceRings;
+            float angle = (cell % StrokeInteractor.SauceSectors + .5f) / StrokeInteractor.SauceSectors * Mathf.Tau;
             Vector2 point = geometry.Center + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * geometry.Radii * radius;
             using (var press = new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true, Position = point }) stroke._GuiInput(press);
             using (var release = new InputEventMouseButton { ButtonIndex = MouseButton.Left, Position = point }) stroke._GuiInput(release);
-            if (cell is 7 or 15)
+            if (cell + 1 == StrokeInteractor.SauceRequiredCells / 2 || cell + 1 == StrokeInteractor.SauceRequiredCells)
                 Check(station.Machine.Runtime.State == PancakeState.Saucing
-                    && station.Machine.Runtime.SauceCoverage == (cell + 1) / 16d
+                    && station.Machine.Runtime.SauceCoverage == (cell + 1) / (double)StrokeInteractor.SauceRequiredCells
                     && status.Text.EndsWith("正常"), "真实刷酱达到50%或100%仍为正常且可继续操作");
         }
         Check(station.Machine.Runtime.State == PancakeState.Sauced && station.Machine.Runtime.SauceCoverage == 1.5,
@@ -185,14 +203,23 @@ public partial class StageFourSelfTest
             foreach (double amount in new[] { .4375, .75, 1.25 })
             {
                 PrepareSauce(); station.Machine.SetSauceCoverage(amount); screen.RefreshForCapture(true);
-                GetViewport().WarpMouse(stroke.GetGlobalTransformWithCanvas() * stroke.ResolveSpreadGeometry!().Center);
                 stroke.RefreshVisualState();
+                // Keep the capture independent of the desktop cursor when the test window is unfocused.
+                stroke.SetProcess(false);
+                using (var motion = new InputEventMouseMotion { Position = stroke.ResolveSpreadGeometry!().Center })
+                    stroke._GuiInput(motion);
                 await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
                 await ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
-                string path = $"res://.godot/sauce-{amount * 100:0}.png";
+                string path = $"user://sauce-{amount * 100:0}.png";
                 Check(GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath(path)) == Error.Ok,
                     $"保存酱量画面 {path}");
             }
+            finish.EmitSignal(Button.SignalName.Pressed);
+            await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+            await ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
+            Check(GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("user://sauce-complete.png")) == Error.Ok,
+                "保存收刷完成反馈画面");
+            stroke.SetProcess(true);
         }
         screen.Free(); controller.Free(); save.Free();
         DirAccess.RemoveAbsolute(ProjectSettings.GlobalizePath(savePath));

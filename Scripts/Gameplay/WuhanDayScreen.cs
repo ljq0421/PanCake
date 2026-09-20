@@ -39,7 +39,7 @@ public partial class WuhanDayScreen : Control
     internal WuhanIngredientInventory Ingredients => _ingredients;
     private PanelContainer _results = null!; private ColorRect _blocker = null!; private RichTextLabel _resultText = null!; private Label _unlock = null!;
     private ConfirmationDialog _abandon = null!; private bool _committed; private bool _focused = true; private double _feedbackSeconds;
-    private bool CanInteract => _focused && IsVisibleInTree() && !_committed && !_demoLessonComplete && !_abandon.Visible
+    private bool CanInteract => _focused && IsVisibleInTree() && !_committed && !_demoLessonComplete && !DemoLessonFailed && !_abandon.Visible
         && _controller is not null && !_controller.IsPaused && _controller.State is DayState.Running or DayState.Closing;
 
     public override void _Ready()
@@ -153,7 +153,7 @@ public partial class WuhanDayScreen : Control
     }
     public bool Initialize(DataCatalog catalog, SaveService save, DayController controller, int day)
     {
-        _demoLesson?.Hide(); _demoLessonComplete = false; _demoPendingResult = null;
+        _demoLesson?.Hide(); _demoLessonSkipFrame?.Hide(); _demoLessonFailure = _demoLessonSaveError = ""; _demoLessonComplete = false; _demoPendingResult = null;
         TeachingFocus.ResetSession(); _teachingDoupiLast = false;
         _hudPaused = false; _hudPauseMenu.Hide(); controller.SetPauseReason("wuhan-hud", false); _sceneFeedback.Clear();
         BusinessFeedbackAudio.Attach(this, controller.Feedback, () => controller.CurrentConfig?.CityId == StableIds.Cities.Wuhan && (CanInteract));
@@ -196,13 +196,14 @@ public partial class WuhanDayScreen : Control
 
     public override void _Process(double delta)
     {
-        if (_demoLessonAction is not null) _demoLessonAction.Disabled = !_focused || _controller.IsPaused || _abandon.Visible;
+        if (_demoLessonAction is not null) _demoLessonAction.Disabled = _demoLessonSkip!.Disabled = !DemoLessonControlsEnabled;
+        if (_demoLesson?.Visible == true && _demoLessonLocale != TranslationServer.GetLocale()) LayoutWuhanDemoLesson();
         UpdatePendantState();
         Workstation.SetCookingAudioPaused(!CanInteract);
         if (!CanInteract) Workstation.CancelInput();
         if (_feedbackSeconds>0 && (_feedbackSeconds-=delta)<=0) _feedback.Visible=false;
         if (!_focused || !IsVisibleInTree() || _controller?.CurrentConfig is null || _controller.IsPaused || _abandon.Visible) { Workstation.EndMix(); return; }
-        _controller.Tick(delta);
+        if (!DemoLessonFailed) _controller.Tick(delta);
         if (!CanInteract) { Render(); return; }
         _cooker?.Tick(delta); _doupi?.Tick(delta);
         Workstation.Tick(delta); AdvanceAutomaticTransfers(); Render();

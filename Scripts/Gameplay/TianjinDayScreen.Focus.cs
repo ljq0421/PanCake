@@ -26,7 +26,7 @@ public partial class TianjinDayScreen
     private TutorialFocusStep? ResolveTeachingFocus()
     {
         if (_controller?.CurrentConfig?.CityId != StableIds.Cities.Tianjin || !_focused || _manualPaused || _focusPaused || _detailsPaused
-            || _abandonDialog.Visible || _controller.IsPaused || _committed || _demoLessonComplete
+            || _abandonDialog.Visible || _controller.IsPaused || _committed || _demoLessonComplete || DemoLessonFailed
             || _controller.State is not (DayState.Running or DayState.Closing)) return null;
         var orders = TutorialOrders.Pending(_controller, _catalog);
         TutorialFocusTarget[] Recipients(ProductKind kind, string? recipe)

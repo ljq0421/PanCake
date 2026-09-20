@@ -71,6 +71,7 @@ public partial class StageFourSelfTest : Node
             await TestSauceWorkstation(catalog);
             if (OS.GetCmdlineUserArgs().Contains("--sauce-only", StringComparer.Ordinal))
             {
+                await TestSinglePancakeOnStove(catalog);
                 GD.Print($"酱量自测完成：{_passed} 项通过，{_failed} 项失败。");
                 GetTree().Quit(_failed == 0 ? 0 : 1);
                 return;

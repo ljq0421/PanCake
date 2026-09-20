@@ -10,17 +10,27 @@ public sealed class CoverageTracker
     public const float SampleSpacing = 12.0f;
     public const float EdgeAssistDistance = 32.0f;
 
-    private readonly bool[] _covered = new bool[CellCount];
+    private readonly bool[] _covered;
+    private readonly int _rings;
+    private readonly int _sectors;
+    private readonly float _sampleSpacing;
 
-    public CoverageTracker(int requiredCells, double maximumProgress = 1)
+    public CoverageTracker(int requiredCells, double maximumProgress = 1,
+        int rings = RingCount, int sectors = SectorCount, float sampleSpacing = SampleSpacing)
     {
-        if (requiredCells is < 1 or > CellCount)
+        if (rings < 1 || sectors < 1 || !float.IsFinite(sampleSpacing) || sampleSpacing <= 0)
+            throw new ArgumentOutOfRangeException(nameof(rings));
+        _rings = rings;
+        _sectors = sectors;
+        _sampleSpacing = sampleSpacing;
+        _covered = new bool[checked(rings * sectors)];
+        if (requiredCells < 1 || requiredCells > _covered.Length)
         {
             throw new ArgumentOutOfRangeException(nameof(requiredCells));
         }
 
         RequiredCells = requiredCells;
-        if (!double.IsFinite(maximumProgress) || maximumProgress < 1 || requiredCells * maximumProgress > CellCount)
+        if (!double.IsFinite(maximumProgress) || maximumProgress < 1 || requiredCells * maximumProgress > _covered.Length)
             throw new ArgumentOutOfRangeException(nameof(maximumProgress));
         MaximumProgress = maximumProgress;
     }
@@ -45,7 +55,7 @@ public sealed class CoverageTracker
     public bool AddSegment(Vector2 from, Vector2 to, float radius)
     {
         float distance = from.DistanceTo(to);
-        int steps = Math.Max(1, Mathf.CeilToInt(distance / SampleSpacing));
+        int steps = Math.Max(1, Mathf.CeilToInt(distance / _sampleSpacing));
         bool changed = false;
 
         for (int index = 0; index <= steps; index++)
@@ -80,15 +90,15 @@ public sealed class CoverageTracker
     private bool MarkPoint(Vector2 point, float radius)
     {
         float normalizedRadius = Math.Clamp(point.Length() / radius, 0, 0.9999f);
-        int ring = Math.Min((int)(normalizedRadius * RingCount), RingCount - 1);
+        int ring = Math.Min((int)(normalizedRadius * _rings), _rings - 1);
         float angle = Mathf.Atan2(point.Y, point.X);
         if (angle < 0)
         {
             angle += Mathf.Tau;
         }
 
-        int sector = Math.Min((int)(angle / Mathf.Tau * SectorCount), SectorCount - 1);
-        int cell = ring * SectorCount + sector;
+        int sector = Math.Min((int)(angle / Mathf.Tau * _sectors), _sectors - 1);
+        int cell = ring * _sectors + sector;
         if (_covered[cell])
         {
             return false;

@@ -156,7 +156,7 @@ public partial class TianjinDayScreen : Control
         _catalog = catalog;
         _save = save;
         _controller = controller;
-        _demoLesson?.Hide(); _demoLessonComplete = false; _demoPendingResult = null;
+        _demoLesson?.Hide(); _demoLessonSkipFrame?.Hide(); _demoLessonFailure = ""; _demoLessonComplete = false; _demoPendingResult = null;
         _workstation.ConfigureTutorial(save.Data.Tianjin.LearnedWorkbenchActions);
         _committed = false;
         _results.Visible = false;
@@ -233,10 +233,10 @@ public partial class TianjinDayScreen : Control
             _feedbackRemaining -= delta;
             if (_feedbackRemaining <= 0) _feedbackPanel.Visible = false;
         }
-        if (_controller is null || !_focused || !IsVisibleInTree()) return;
-        _controller.Tick(delta);
-        _workstation.Paused = _controller.IsPaused;
-        _workstation.InteractionEnabled = !_demoLessonComplete && _controller.State is DayState.Running or DayState.Closing;
+        if (_controller is null || !_focused || !IsVisibleInTree()) { UpdateDemoLesson(); return; }
+        if (!DemoLessonFailed) _controller.Tick(delta);
+        _workstation.Paused = _controller.IsPaused || DemoLessonFailed;
+        _workstation.InteractionEnabled = !_demoLessonComplete && !DemoLessonFailed && _controller.State is DayState.Running or DayState.Closing;
         _workstation.Tick(delta);
         UpdateDemoLesson();
         Render();

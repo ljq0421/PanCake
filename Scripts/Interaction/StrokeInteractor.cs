@@ -15,7 +15,13 @@ public readonly record struct EllipseGeometry(Vector2 Center, Vector2 Radii);
 public partial class StrokeInteractor : Control
 {
     private readonly CircularStrokeTracker _spread = new();
-    private readonly CoverageTracker _sauce = new(16, ProjectCake.Pancake.SauceRules.MaximumAmount);
+    // Fine cells make a single sweep gradual while preserving unique-area coverage.
+    internal const int SauceRings = 16, SauceSectors = 32, SauceRequiredCells = 144;
+    private readonly CoverageTracker _sauce = new(SauceRequiredCells, SauceRules.MaximumAmount,
+        SauceRings, SauceSectors, 1);
+    private double _sauceCompletionRemaining;
+    private double _completedSauceAmount;
+    internal bool SauceCompletionVisible => _sauceCompletionRemaining > 0;
     private StrokeMode _activeMode;
     private bool _dragging;
     private bool _pointerInside;
@@ -73,6 +79,21 @@ public partial class StrokeInteractor : Control
     public override void _Process(double delta)
     {
         if (IsToolHeld?.Invoke() == true || _toolVisible) RefreshVisualState();
+        if (_sauceCompletionRemaining > 0)
+        {
+            _sauceCompletionRemaining = Math.Max(0, _sauceCompletionRemaining - delta);
+            ZIndex = _sauceCompletionRemaining > 0 ? 88 : 0;
+            QueueRedraw();
+        }
+    }
+
+    public void ShowSauceCompletion(double amount)
+    {
+        CancelStroke();
+        _completedSauceAmount = amount;
+        _sauceCompletionRemaining = 1.1;
+        ZIndex = 88;
+        QueueRedraw();
     }
 
     public override void _GuiInput(InputEvent @event)
@@ -114,6 +135,7 @@ public partial class StrokeInteractor : Control
         CancelStroke();
         _spread.Reset();
         _sauce.Reset();
+        _sauceCompletionRemaining = 0;
         QueueRedraw();
     }
 
@@ -126,7 +148,7 @@ public partial class StrokeInteractor : Control
         bool show = IsVisibleInTree() && (_pointerInside || held || activeSpreadTool)
             && mode is StrokeMode.Spread or StrokeMode.Sauce
             && (!SpreadToolOnlyDuringStroke || mode != StrokeMode.Spread || _dragging);
-        ZIndex = held || activeSpreadTool ? 88 : 0;
+        ZIndex = held || activeSpreadTool || SauceCompletionVisible ? 88 : 0;
         SetToolVisible(show);
         if (show && !(SpreadToolOnlyDuringStroke && _dragging))
         {
@@ -214,6 +236,15 @@ public partial class StrokeInteractor : Control
 
     public override void _Draw()
     {
+        if (SauceCompletionVisible)
+        {
+            EllipseGeometry finishedGeometry = GetSpreadGeometry();
+            Vector2 origin = finishedGeometry.Center - new Vector2(112, finishedGeometry.Radii.Y + 58);
+            DrawStyleBox(_sauceMeterStyle, new Rect2(origin, new Vector2(224, 44)));
+            DrawString(GetThemeFont("font"), origin + new Vector2(14, 29),
+                $"{SauceRules.Name(SauceRules.Classify(_completedSauceAmount))}完成 · {_completedSauceAmount * 100:0}%",
+                HorizontalAlignment.Center, 196, 20, new Color("#36583B"));
+        }
         StrokeMode mode = ResolveMode?.Invoke() ?? StrokeMode.None;
         if (mode == StrokeMode.None)
         {
@@ -243,7 +274,7 @@ public partial class StrokeInteractor : Control
     private void DrawSauceMeter()
     {
         double amount = Math.Clamp(ResolveSauceAmount!(), 0, SauceRules.MaximumAmount);
-        Vector2 size = new(176, 58);
+        Vector2 size = new(240, 106);
         // Work in viewport coordinates to keep the readout inside the screen even
         // when the held brush moves beyond the stove's input rectangle.
         Transform2D transform = GetGlobalTransformWithCanvas();
@@ -257,14 +288,22 @@ public partial class StrokeInteractor : Control
         DrawStyleBox(_sauceMeterStyle, new Rect2(position, size));
         DrawString(GetThemeFont("font"), position + new Vector2(12, 26), SauceRules.Describe(amount),
             HorizontalAlignment.Left, size.X - 24, 20, new Color("#553322"));
-        Rect2 track = new(position + new Vector2(12, 38), new Vector2(size.X - 24, 9));
-        DrawRect(track, new Color("#D8BE99"));
-        DrawRect(new Rect2(track.Position, new Vector2(track.Size.X * (float)(amount / SauceRules.MaximumAmount), track.Size.Y)), new Color("#A9562D"));
-        foreach (float fraction in new[] { 1f / 3, 2f / 3 })
+        Rect2 track = new(position + new Vector2(12, 63), new Vector2(size.X - 24, 6));
+        SaucePreference current = SauceRules.Classify(amount);
+        SaucePreference[] bands = { SaucePreference.Light, SaucePreference.Normal, SaucePreference.Extra };
+        for (int index = 0; index < bands.Length; index++)
         {
-            Vector2 tick = track.Position + new Vector2(track.Size.X * fraction, -2);
-            DrawLine(tick, tick + new Vector2(0, track.Size.Y + 4), new Color("#553322"), 2);
+            bool active = current == bands[index];
+            Vector2 segment = track.Position + new Vector2(index * track.Size.X / 3, 0);
+            DrawRect(new Rect2(segment, new Vector2(track.Size.X / 3 - 3, track.Size.Y)),
+                new Color(active ? "#A9562D" : "#D8BE99"));
+            DrawString(GetThemeFont("font"), segment + new Vector2(0, -12), SauceRules.Name(bands[index]),
+                HorizontalAlignment.Center, track.Size.X / 3 - 3, 18, new Color(active ? "#713717" : "#725C46"));
         }
+        Vector2 pointerTip = track.Position + new Vector2(track.Size.X * (float)(amount / SauceRules.MaximumAmount), 8);
+        DrawColoredPolygon(new[] { pointerTip, pointerTip + new Vector2(-5, 7), pointerTip + new Vector2(5, 7) }, new Color("#553322"));
+        DrawString(GetThemeFont("font"), position + new Vector2(12, 96), "到所需档位后收刷",
+            HorizontalAlignment.Center, size.X - 24, 16, new Color("#725C46"));
     }
 
     private EllipseGeometry GetSpreadGeometry() => ResolveSpreadGeometry?.Invoke()

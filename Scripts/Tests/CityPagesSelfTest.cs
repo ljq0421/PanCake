@@ -89,11 +89,7 @@ public partial class CityPagesSelfTest : Node
                 Click("Node" + i); await Frames();
                 Check(!_screen.Visible && _screen.SelectedCityId == city.Id && _screen.SelectedDay == city.Days, "unlocked node starts latest day " + city.Name);
                 _main.OpenCity(city.Id); _screen.PresentMap(); await Frames();
-                var mapCard = Find<Panel>("MapJourneyStrip");
-                Check(Find<TextureRect>("MapJourneyStripArt").Texture is AtlasTexture, "map uses supplied three-column strip " + city.Name);
-                Check(Find<Label>("MapLitCount").Text == "5/5", "map counts unlocked cities " + city.Name);
-                Check(Find<Label>("SummaryCity").Text == city.Name, "map strip selects city " + city.Name);
-                Check(Math.Abs(mapCard.Position.X + mapCard.Size.X / 2 - 960) < 1, "map strip is centered " + city.Name);
+                CheckMapLayout();
                 await Capture("map-card-" + city.Name);
             }
             foreach (var city in JourneyModel.Cities)

@@ -138,14 +138,15 @@ public partial class StageFourSelfTest
         sauceInput.EmitSignal(Button.SignalName.Pressed);
         Check(partial > 0 && partial < 1 && station.Machine.Runtime.SauceCoverage == partial
             && !station.Machine.TryExecute(PancakeCommand.Fold).Success, "重复取刷保留部分覆盖，尚未刷匀不能折叠");
-        foreach (float radius in new[] { .375f, .625f, .875f })
+        for (int ring = 0; ring < StrokeInteractor.SauceRings; ring++)
         {
+            float radius = (ring + .5f) / StrokeInteractor.SauceRings;
             Vector2 start = geometry.Center + new Vector2(geometry.Radii.X * radius, 0);
             using (var press = new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true, Position = start })
                 stroke._GuiInput(press);
-            for (int step = 1; step <= 32 && station.Machine.Runtime.State == PancakeState.Saucing; step++)
+            for (int step = 1; step <= 64 && station.Machine.Runtime.State == PancakeState.Saucing; step++)
             {
-                float angle = Mathf.Tau * step / 32;
+                float angle = Mathf.Tau * step / 64;
                 Vector2 point = geometry.Center + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * geometry.Radii * radius;
                 using var motion = new InputEventMouseMotion { Position = point, ButtonMask = MouseButtonMask.Left };
                 stroke._GuiInput(motion);

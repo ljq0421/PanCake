@@ -15,6 +15,12 @@ public partial class TianjinDayScreen
     private Button? _demoLessonAction;
     private Panel? _demoLessonActionFrame;
     private bool _demoLessonComplete;
+    private string _demoLessonFailure = "";
+    private Button? _demoLessonSkip;
+    private Panel? _demoLessonSkipFrame;
+    internal bool DemoLessonFailed => _demoLessonFailure.Length > 0;
+    private bool DemoLessonControlsEnabled => _focused && !_manualPaused && !_focusPaused && !_detailsPaused
+        && !_abandonDialog.Visible && !_controller.IsPaused;
     private bool _demoLessonReplay;
     private string _demoLessonSaveError = "";
     private string _demoLessonLayout = "";
@@ -43,7 +49,7 @@ public partial class TianjinDayScreen
             _workstation.ConfigureFirstPancakeEggLesson(1);
         _workstation.Tutorial = _controller.Tutorial;
         GetNode<TextureRect>("ShopBackground").Texture = _art.LivingWorkbenchBackground(_controller.CurrentConfig!.AvailableProductKinds);
-        _demoLessonComplete = false; _demoPartialSeeded = false; _demoLessonSaveError = ""; _demoLearned.Clear();
+        _demoLessonFailure = ""; _demoLessonComplete = false; _demoPartialSeeded = false; _demoLessonSaveError = ""; _demoLearned.Clear();
         EnsureDemoLesson();
         _demoLesson!.Show(); _demoLessonAction!.Disabled = false;
         _controller.TryStartDay(out _);
@@ -69,10 +75,20 @@ public partial class TianjinDayScreen
         _demoLessonHint.AddThemeFontSizeOverride("font_size", 21);
         _demoLessonHint.AddThemeColorOverride("font_color", TianjinUi.BrownText);
         _demoLesson.AddChild(_demoLessonHint);
-        _demoLessonAction = new Button { Text = "跳过教学", FocusMode = Control.FocusModeEnum.All };
+        _demoLessonAction = new Button { Name = "LessonAction", Text = "开始营业", FocusMode = Control.FocusModeEnum.All };
         _demoLessonActionFrame = TianjinTeachingUi.ActionFrame(_demoLessonAction, new(285, 46), new(160, 58));
         _demoLesson.AddChild(_demoLessonActionFrame);
-        _demoLessonAction.Pressed += () => { if (_controller.TutorialActive) FinishDemoLesson(); else _demoLesson.Hide(); };
+        _demoLessonAction.Pressed += () =>
+        {
+            if (_demoLessonSaveError.Length > 0) FinishDemoLesson();
+            else if (DemoLessonFailed) RetryDemoLesson();
+            else FinishDemoLesson();
+        };
+        _demoLessonSkip = new Button { Name = "SkipLesson", Text = "跳过教学" };
+        _demoLessonSkipFrame = TianjinTeachingUi.ActionFrame(_demoLessonSkip, new(1620, 28), new(196, 56));
+        _demoLessonSkipFrame.ZIndex = 90;
+        AddChild(_demoLessonSkipFrame);
+        _demoLessonSkip.Pressed += FinishDemoLesson;
     }
 
     private void UpdateDemoLesson()
@@ -82,22 +98,27 @@ public partial class TianjinDayScreen
         {
             example.WaitSeconds = example.LeaveAtSeconds * .4; example.Tick(0); _demoPartialSeeded = true;
         }
-        _demoLessonAction!.Disabled = _manualPaused || _focusPaused || _detailsPaused;
-        _demoLessonTitle!.Text = _demoLessonComplete ? "第一份早餐，做好了！" : "第一张煎饼";
-        _demoLessonAction.Text = _demoLessonSaveError.Length > 0 ? "重试保存" : _demoLessonComplete ? "开始营业" : "跳过教学";
+        _demoLessonAction!.Disabled = _demoLessonSkip!.Disabled = !DemoLessonControlsEnabled;
+        _demoLessonSkipFrame!.Visible = !_demoLessonComplete;
+        _demoLessonAction.Visible = _demoLessonComplete || DemoLessonFailed || _demoLessonSaveError.Length > 0;
+        _demoLessonActionFrame!.Visible = _demoLessonAction.Visible;
+        _demoLesson.MouseFilter = DemoLessonFailed ? MouseFilterEnum.Stop : MouseFilterEnum.Ignore;
+        _demoLessonTitle!.Text = DemoLessonFailed ? "本次教学未通过" : _demoLessonComplete ? "第一份早餐，做好了！" : "第一张煎饼";
+        _demoLessonAction.Text = _demoLessonSaveError.Length > 0 ? "重试保存" : DemoLessonFailed ? "重新练习" : "开始营业";
         _demoLessonHint!.Text = _demoLessonSaveError.Length > 0 ? _demoLessonSaveError
+            : DemoLessonFailed ? $"{_demoLessonFailure}\n请按订单要求重新制作并交付。"
             : _demoLessonComplete ? "接下来自己试试。营业时留意火候，并按订单添加配料。"
             : "";
         _demoLessonHint.Visible = _demoLessonHint.Text.Length > 0;
         // Operation copy comes only from the focus resolver, which respects learned actions.
         TeachingFocus.Refresh();
         LayoutDemoLesson();
-        if (_demoLessonComplete) RestDemoLesson();
+        if (_demoLessonComplete || DemoLessonFailed) RestDemoLesson();
     }
 
     internal void FinishDemoLesson()
     {
-        if (!_controller.TutorialActive || _manualPaused || _focusPaused || _detailsPaused) return;
+        if (!_controller.TutorialActive || !DemoLessonControlsEnabled) return;
         var oldActions = _save.Data.Tianjin.LearnedWorkbenchActions.ToHashSet();
         if (_demoLessonComplete) _save.Data.Tianjin.LearnedWorkbenchActions.UnionWith(_demoLearned);
         bool saved = _save.TrySave(out _);
@@ -109,7 +130,7 @@ public partial class TianjinDayScreen
         }
         int? remainingLessonEggs = _demoLessonComplete && _demoTeachingDay == 1 && _demoBusinessDay == 1
             ? _workstation.Inventory.GetQuantity(StableIds.Ingredients.Egg) : null;
-        _demoLesson!.Hide(); _workstation.Tutorial = TutorialProtection.None;
+        _demoLesson!.Hide(); _demoLessonSkipFrame!.Hide(); _workstation.Tutorial = TutorialProtection.None;
         _workstation.CancelInput(); _sceneFeedback.Clear(); ClearCoinFlights();
         _controller.AbandonDay();
         if (!Initialize(_catalog, _save, _controller, _demoBusinessDay)) return;
@@ -135,7 +156,7 @@ public partial class TianjinDayScreen
     {
         bool soyLessonCompleted = _demoTeachingDay == 6 && deliveredKind == ProductKind.SoyMilk && evaluation.ItemAccepted;
         bool completedObjective = evaluation.CompletesOrder || soyLessonCompleted;
-        if (!_controller.TutorialActive || !completedObjective) return;
+        if (!_controller.TutorialActive || _demoLessonComplete || DemoLessonFailed || !completedObjective) return;
         if (evaluation.Grade is DeliveryGrade.Correct or DeliveryGrade.Perfect || soyLessonCompleted)
         {
             _demoLessonComplete = true; _workstation.InteractionEnabled = false;
@@ -143,13 +164,18 @@ public partial class TianjinDayScreen
         }
         else
         {
-            // A wrong example is consumed by the real delivery flow. Start a clean example.
-            Callable.From(() =>
-            {
-                int businessDay = _demoBusinessDay;
-                BeginDemoLesson(retry: true); _demoBusinessDay = businessDay;
-            }).CallDeferred();
+            _demoLessonFailure = string.IsNullOrWhiteSpace(evaluation.Message) ? "交付的商品未达到订单要求。" : evaluation.Message.Split('，')[0];
+            _workstation.CancelInput(); _workstation.InteractionEnabled = false;
+            _sceneFeedback.Clear();
+            UpdateDemoLesson();
         }
+    }
+
+    internal void RetryDemoLesson()
+    {
+        if (!DemoLessonFailed || !DemoLessonControlsEnabled) return;
+        int businessDay = _demoBusinessDay;
+        BeginDemoLesson(retry: true); _demoBusinessDay = businessDay;
     }
 
     private void RetryDemoSettlement()

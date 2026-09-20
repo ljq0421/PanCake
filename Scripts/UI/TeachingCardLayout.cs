@@ -43,6 +43,14 @@ internal static class TeachingCardLayout
     {
         const float left = 60, right = 36, top = 38, bottom = 22, gap = 16;
         bool summary = body?.Visible == true;
+        if (!action.Visible)
+        {
+            float contentWidth = Mathf.Clamp(Mathf.Max(NaturalWidth(title), summary ? NaturalWidth(body!) : 0) + left + right, 360, maxWidth);
+            float contentHeight = top + Place(title, left, top, contentWidth - left - right);
+            if (summary) contentHeight += 12 + Place(body!, left, contentHeight + 12, contentWidth - left - right);
+            card.Size = new(contentWidth, contentHeight + bottom);
+            return;
+        }
         float actionWidth = ButtonWidth(action, 160);
         float desired = summary ? Mathf.Max(NaturalWidth(title), NaturalWidth(body!))
             : NaturalWidth(title) + gap + actionWidth;

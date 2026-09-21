@@ -19,7 +19,6 @@ public partial class StageFourSelfTest
         screen.ConnectController(controller);
         screen.Initialize(catalog, save, controller, 15);
         screen.SetProcess(false);
-        screen.BeginDay();
         var station = screen.GetChildren().OfType<PancakeWorkstation>().Single();
         var drag = station.GetChildren().OfType<DragService>().Single();
         var machine = station.Machine;
@@ -31,8 +30,8 @@ public partial class StageFourSelfTest
             PrepareFirstSide();
             machine.Tick(machine.Stove.SideAReadySeconds);
             Send(Key.F);
-            Check(machine.Runtime.State == PancakeState.SideAReady, "开门倒计时屏蔽 F");
-            controller.Tick(3);
+            Check(machine.Runtime.State == PancakeState.SideAReady, "开店前屏蔽 F");
+            screen.BeginDay();
             screen.RefreshForCapture(true);
             Button flip = (Button)station.FindChild("PancakeFlipAction", true, false);
             flip.GrabFocus();

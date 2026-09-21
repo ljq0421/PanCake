@@ -16,6 +16,13 @@ public partial class WuhanAnimationSelfTest : Node
         try
         {
             _catalog = GetNode<DataCatalog>("/root/DataCatalog");
+            if (OS.GetCmdlineUserArgs().Contains("--loop-only"))
+            {
+                TestImmediateLoop();
+                GD.Print($"WUHAN_ANIMATION_TEST_RESULT passed={_passed} failed={_failed}");
+                GetTree().Quit(_failed == 0 ? 0 : 1);
+                return;
+            }
             Check(new WuhanArtCatalog().MissingRequiredAssets().Count == 0, "全部武汉必需美术可加载");
             using (var spoon = new WuhanArtCatalog().Texture("egg_ladle").GetImage())
             {
@@ -25,7 +32,7 @@ public partial class WuhanAnimationSelfTest : Node
             TestBasketReadySound();
             if (!OS.GetCmdlineUserArgs().Contains("--basket-ready-sound"))
             {
-                TestActionSounds(); TestTransfer(); TestClickFlow(); TestBeefTiming(); TestAutomatic(); TestDoupi(); TestEgg(); TestSupply(); TestLifecycle(); TestCookingPresentation();
+                TestActionSounds(); TestTransfer(); TestClickFlow(); TestBeefTiming(); TestAutomatic(); TestDoupi(); TestEgg(); TestSupply(); TestLifecycle(); TestCookingPresentation(); TestImmediateLoop();
             }
         }
         catch (Exception e) { _failed++; GD.PushError(e.ToString()); }
@@ -67,13 +74,13 @@ public partial class WuhanAnimationSelfTest : Node
         var f=NewDay();var s=f.Screen;var v=s.Workstation;
         int stock=s.Ingredients.Count(StableIds.Ingredients.WuhanNoodles);
         Click(v,v.BasketRect(0).GetCenter());s.BasketAction(0);
-        Check(s.Ingredients.Count(StableIds.Ingredients.WuhanNoodles)==stock&&v.Busy("basket0"),"空漏勺点击不下面，制作提交不消耗无限供应");
+        Check(s.Ingredients.Count(StableIds.Ingredients.WuhanNoodles)==stock&&v.MotionProgress("basket0")<1&&!v.Busy("basket0"),"下面有视觉反馈但不锁操作，不消耗无限供应");
         s._Process(.12);Check(v.MotionProgress("basket0")>.1f&&v.MotionProgress("basket0")<1,"下面动画存在可捕获的中间帧");
         s._Process(1.5);s.BasketAction(0);s._Process(.71);
         Check(s.Cooker.Baskets[0].State==NoodleBasketState.Drained&&!v.Busy("basket0"),"提篮后自然沥水完成");
         s._Process(.25);s.BasketAction(0);
         s.IngredientAction(StableIds.Ingredients.WuhanBaseSeasoning);
-        Check(v.Busy("basket0")&&v.Busy("bowl")&&s.Bowl.State==NoodleBowlState.Noodles,"倒面同时锁住漏勺和碗，期间不能提前加料");
+        Check(!v.Busy("basket0")&&!v.Busy("bowl")&&s.Bowl.State==NoodleBowlState.Seasoned,"倒面后立即接受调味，旧倒面表现落定");
         Check(!s.Workstation.CanDeliver(ProductKind.EggRiceWine),"蛋酒已下架");
         s._Process(.7);Click(v,v.IngredientCenter(0));s.IngredientAction(StableIds.Ingredients.WuhanBaseSeasoning);
         Check(s.Bowl.State==NoodleBowlState.Seasoned && s.Ingredients.CanUse(StableIds.Ingredients.WuhanBaseSeasoning),"基础调味加入一次后仍持续供应");
@@ -92,7 +99,7 @@ public partial class WuhanAnimationSelfTest : Node
     private void TestAutomatic()
     {
         var f=NewDay(3);var s=f.Screen;s.BasketAction(0);s.BasketAction(1);s._Process(1.31);
-        Check(s.Cooker.Baskets.All(b=>b.State==NoodleBasketState.Draining)&&s.Workstation.Busy("basket0")&&s.Workstation.Busy("basket1"),"Lv3 两个漏勺同帧自动提篮都播放动画");
+        Check(s.Cooker.Baskets.All(b=>b.State==NoodleBasketState.Draining)&&s.Workstation.MotionProgress("basket0")<1&&s.Workstation.MotionProgress("basket1")<1,"Lv3 两个漏勺同帧自动提篮都播放动画");
         s._Process(.8);Check(s.Cooker.Baskets.All(b=>b.State==NoodleBasketState.Drained),"自然沥水结束状态同步");
         s.BasketAction(0);s._Process(.7);s.BasketAction(1);
         Check(s.Cooker.Baskets[1].State==NoodleBasketState.Drained&&!s.Workstation.Busy("basket1"),"界面碗满拒绝倒入第二勺，不播放虚假成功动作");DisposeDay(f);
@@ -116,10 +123,10 @@ public partial class WuhanAnimationSelfTest : Node
         Check(!eggDay.AddDoupiEgg() && eggDay.Workstation.MotionProgress("pan") == eggProgress,
             "舀取蛋液期间重复点击不重启动画");
         egg.Controller.IsPaused = true; eggDay._Process(1);
-        Check(eggDay.Workstation.MotionProgress("pan") == eggProgress, "暂停冻结倒蛋液阶段");
+        Check(eggDay.Workstation.ActiveMotionCount == 0 && eggDay.Doupi!.HasEgg, "暂停结束倒蛋液表现，保留已提交蛋液");
         egg.Controller.IsPaused = false; eggDay._Process(.2);
-        Check(eggDay.Workstation.Busy("pan") && eggDay.Doupi!.SkinCookProgress > 0,
-            "自动摊蛋时煎制计时继续");
+        Check(!eggDay.Workstation.Busy("pan") && eggDay.Doupi!.SkinCookProgress > 0,
+            "恢复后煎制计时继续，旧动画不补播");
         eggDay._Process(.21);
         Check(!eggDay.Workstation.Busy("pan") && eggDay.Doupi!.State == DoupiState.SkinCooking,
             "无需手动摊蛋即完成动画并保留煎制状态");
@@ -159,11 +166,11 @@ public partial class WuhanAnimationSelfTest : Node
         DisposeDay(waiting);
         var f=NewDay();var s=f.Screen;MakeDoupi(s);
         Check(s.Doupi!.State==DoupiState.Empty&&s.DoupiStock.Count==8,"豆皮四刀切割后自动入盘");
-        s.PourDoupiBatter();s.PourDoupiBatter();Check(s.DoupiStock.Count==8&&s.Workstation.Busy("stock"),"豆皮入库连点不重复增加一锅");
+        s.PourDoupiBatter();s.PourDoupiBatter();Check(s.DoupiStock.Count==8&&s.Doupi.State==DoupiState.Batter&&!s.Workstation.Busy("stock"),"豆皮入库立即可开始下一锅，连点不重复增加一锅");
         s._Process(.5);MakeDoupi(s);s.PourDoupiBatter();s._Process(.5);MakeDoupi(s);s.PourDoupiBatter();
         Check(s.DoupiStock.Count==8&&s.Doupi.State==DoupiState.Cut&&!s.Workstation.Busy("pan"),"备货满盘保留锅内成品，不播放入库动作");DisposeDay(f);
         f=NewDay(3);s=f.Screen;s.PourDoupiBatter();s._Process(.4);s.AddDoupiEgg();s._Process(2.1);
-        Check(s.Doupi!.State==DoupiState.Flipped&&s.Workstation.Busy("pan"),"Lv3 豆皮自动翻面可见");DisposeDay(f);
+        Check(s.Doupi!.State==DoupiState.Flipped&&s.Workstation.MotionProgress("pan")<1,"Lv3 豆皮自动翻面可见");DisposeDay(f);
         f=NewDay();s=f.Screen;s.PourDoupiBatter();s._Process(.4);s.AddDoupiEgg();s._Process(2.6);s._Process(2);
         Check(s.Doupi!.State==DoupiState.Burnt,"豆皮仍遵守焦糊时限");s.DiscardDoupi();s._Process(.4);
         Check(s.Doupi.State==DoupiState.Empty&&!s.Workstation.Busy("pan"),"丢弃焦糊豆皮后清空锅面与动画");DisposeDay(f);
@@ -206,10 +213,10 @@ public partial class WuhanAnimationSelfTest : Node
     {
         var f=NewDay();var s=f.Screen;s.BasketAction(0);s._Process(.1);float progress=s.Workstation.MotionProgress("basket0");double cook=s.Cooker.Baskets[0].CookSeconds;
         f.Controller.IsPaused=true;s._Process(2);
-        Check(s.Workstation.MotionProgress("basket0")==progress&&s.Cooker.Baskets[0].CookSeconds==cook&&!s.Workstation.CanDeliver(ProductKind.EggRiceWine),"暂停冻结动作、制作和输入");
+        Check(s.Workstation.ActiveMotionCount==0&&s.Cooker.Baskets[0].CookSeconds==cook&&!s.Workstation.CanDeliver(ProductKind.EggRiceWine),"暂停复位表现，冻结制作和输入");
         f.Controller.IsPaused=false;s._Notification((int)NotificationApplicationFocusOut);s._Process(2);
-        Check(s.Workstation.MotionProgress("basket0")==progress,"失焦冻结动画");s._Notification((int)NotificationApplicationFocusIn);s._Process(.2);
-        Check(!s.Workstation.Busy("basket0"),"恢复后继续原动画");s.Hide();
+        Check(s.Workstation.ActiveMotionCount==0,"失焦不恢复旧动画");s._Notification((int)NotificationApplicationFocusIn);s._Process(.2);
+        Check(!s.Workstation.Busy("basket0")&&s.Workstation.ActiveMotionCount==0,"恢复后不补播原动画");s.Hide();
         Check(s.Workstation.ActiveMotionCount==0,"隐藏页面清理所有临时动作");s.Show();s.Initialize(_catalog,f.Save,f.Controller,8);
         Check(s.Cooker.Baskets[0].State==NoodleBasketState.Empty&&s.Workstation.ActiveMotionCount==0,"重新开局复位全部制作画面");DisposeDay(f);
         ProjectSettings.SetSetting("accessibility/reduce_motion",true);
@@ -232,9 +239,9 @@ public partial class WuhanAnimationSelfTest : Node
             if (manual)
             {
                 f.Controller.IsPaused = true; s._Process(.1);
-                Check(cue.StreamPaused, "暂停营业同步暂停提示音");
+                Check(!cue.Playing, "暂停营业停止提示音");
                 f.Controller.IsPaused = false; s._Process(.1);
-                Check(!cue.StreamPaused, "恢复营业同步恢复提示音");
+                Check(!cue.Playing, "恢复营业不补播提示音");
             }
             cue.Stop(); s._Process(4);
             Check(!cue.Playing, "等待和品质变化不会重复提示");
@@ -262,8 +269,8 @@ public partial class WuhanAnimationSelfTest : Node
             Check(s.Bowl.State == NoodleBowlState.Mixing && !view.Busy("bowl"), "搅拌中点击牛肉不推进状态或播动画");
             s.Bowl.AddMixDistance(325);
             Click(view, view.IngredientCenter(3));
-            Check(s.Bowl.Toppings.Contains(StableIds.Ingredients.WuhanBraisedBeef) && view.Busy("bowl")
-                && !view.CanDeliver(ProductKind.HotDryNoodles), "拌匀后点击牛肉加料，动画期间不能提前交付");
+            Check(s.Bowl.Toppings.Contains(StableIds.Ingredients.WuhanBraisedBeef) && !view.Busy("bowl")
+                && view.CanDeliver(ProductKind.HotDryNoodles), "拌匀后点击牛肉立即可交付，不等落料动画");
             s._Process(.5);
             Check(s.Bowl.State == NoodleBowlState.Ready && view.CanDeliver(ProductKind.HotDryNoodles), "加牛肉动画结束即可出餐");
             Click(view, view.IngredientCenter(3));
@@ -326,7 +333,7 @@ public partial class WuhanAnimationSelfTest : Node
         s.BasketAction(0); s._Process(.1);
         Check(water.Playing && !pan.Playing, "煮水声只在锅内有面时播放");
         f.Controller.IsPaused = true; s._Process(1);
-        Check(water.StreamPaused, "营业暂停冻结煮水声");
+        Check(!water.Playing, "营业暂停停止煮水声");
         f.Controller.IsPaused = false; s._Process(.1);
         Check(water.Playing && !water.StreamPaused, "恢复营业继续煮水声");
         s.PourDoupiBatter(); s._Process(.5); s.AddDoupiEgg(); s._Process(.7);
@@ -347,6 +354,57 @@ public partial class WuhanAnimationSelfTest : Node
         Check(!water.Playing && !pan.Playing, "重新营业不遗留上一局声音");
         DisposeDay(f);
     }
+    private void TestImmediateLoop()
+    {
+        foreach (bool reduced in new[] { false, true })
+        {
+            ProjectSettings.SetSetting("accessibility/reduce_motion", reduced);
+            var f = NewDay(); var s = f.Screen; var v = s.Workstation;
+            Vector2 bowlCenter = v.BowlCenter, panCenter = v.PanCenter;
+            s.BasketAction(0);
+            Check(!v.Busy("basket0") && s.Cooker.Baskets[0].State == NoodleBasketState.Cooking,
+                "下面立即提交，制作时间仍由面篮状态控制");
+            s._Process(1.7); s.BasketAction(0);
+            s.BasketAction(0);
+            Check(s.Bowl.State == NoodleBowlState.Empty, "动画不锁定也不能跳过实际沥水时间");
+            s._Process(.9); s.BasketAction(0);
+            s.IngredientAction(StableIds.Ingredients.WuhanBaseSeasoning);
+            s.IngredientAction(StableIds.Ingredients.WuhanScallion);
+            s.IngredientAction(StableIds.Ingredients.WuhanChiliOil);
+            Check(s.Bowl.State == NoodleBowlState.Seasoned && s.Bowl.Toppings.Count == 2 && v.ActiveMotionCount == 1,
+                "同帧倒面、调味、葱花和辣油均生效，旧动画不叠加");
+            Click(v, bowlCenter); Move(v, bowlCenter + new Vector2(75, 0));
+            Check(s.Bowl.MixProgress > 0 && v.ActiveMotionCount == 0, "立即搅拌会落定加料表现，不丢输入");
+            v.EndMix(); s.Bowl.AddMixDistance(500);
+            s.IngredientAction(StableIds.Ingredients.WuhanBraisedBeef);
+            Check(v.CanDeliver(ProductKind.HotDryNoodles) && s.DeliveryDrag.ImmediateAcceptance,
+                "牛肉加入后立即可拖出，并启用松手即时交付");
+            Check(!s.DeliverToCustomer("missing", ProductKind.HotDryNoodles) && s.Bowl.State == NoodleBowlState.Ready,
+                "动画未结束时错误交付仍保留成品");
+            s.PourDoupiBatter(); s.AddDoupiEgg();
+            Check(s.Doupi!.HasEgg && !s.AddDoupiEgg() && !s.FlipDoupi(),
+                "倒浆后立即加蛋，重复加蛋和未熟翻面仍被状态机拒绝");
+            s._Process(2.51); s.FlipDoupi(); s.AddDoupiFilling();
+            Check(s.Doupi.HasFilling && !s.CutDoupi(DoupiCutLine.Horizontal),
+                "翻面后立即加馅，实际煎制时间不能跳过");
+            s._Process(3.51);
+            Check(s.CutDoupi(DoupiCutLine.Horizontal) && s.CutDoupi(DoupiCutLine.Left),
+                "横切后可立即竖切，不等刀具收尾");
+            s._Process(.001);
+            Check(s.DoupiStock.Count == 8 && v.CanDeliver(ProductKind.Doupi) && !v.Busy("pan"),
+                "切完立即入盘并可出餐，不等入盘动画");
+            Check(s.PourDoupiBatter() && s.AddDoupiEgg() && s.DoupiStock.Count == 8,
+                "入盘期间可直接做下一锅，上一锅库存完整");
+            Check(v.BowlCenter == bowlCenter && v.PanCenter == panCenter, "连续动效不改变容器与命中区域");
+            s.OpenBusinessDetails(); s._Process(.01);
+            Check(v.ActiveMotionCount == 0 && !v.CanDeliver(ProductKind.Doupi), "明细暂停清除收尾并禁止出餐");
+            s.CloseBusinessDetails(); s._Process(.01);
+            Check(v.ActiveMotionCount == 0 && s.Doupi.HasEgg, "恢复不重播，保留已提交制作状态");
+            DisposeDay(f);
+        }
+        ProjectSettings.SetSetting("accessibility/reduce_motion", false);
+    }
+
     private void Check(bool condition,string name)
     { if(condition){_passed++;GD.Print("PASS "+name);}else{_failed++;GD.PushError("FAIL "+name);} }
 }

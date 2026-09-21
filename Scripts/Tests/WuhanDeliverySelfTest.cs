@@ -352,10 +352,15 @@ public partial class WuhanDeliverySelfTest : Node
         await Drop(ProductKind.Doupi, 2);
         Check(first.Progress.DeliveredItems.Count == 1 && !first.Progress.IsComplete && _screen.DoupiStock.Count == 0, "insufficient stock delivers available piece and leaves remaining demand");
         _screen.DoupiStock.TryAddBatch(3); Step(.001); await Frames();
-        Press(ProductKind.Doupi); Move(Target(1), true); Button(Target(1), false);
-        var leaving = _controller.CustomerQueue.Slots[1]; leaving.State = CustomerState.Leaving;
+        Press(ProductKind.Doupi); Move(Target(1), true);
+        var leaving = _controller.CustomerQueue.Slots[1];
+        Button(Target(1), false);
+        Check(_screen.DoupiStock.Count == 0 && leaving.Progress.IsComplete && !_screen.DeliveryDrag.IsDragging,
+            "release commits the whole batch immediately, before visual snap finishes");
+        leaving.State = CustomerState.Leaving;
         Step(.01); await Settled();
-        Check(_screen.DoupiStock.Count == 3 && leaving.Progress.DeliveredItems.Count == 0, "customer leaving during snap cancels entire pending batch");
+        Check(_screen.DoupiStock.Count == 0 && leaving.Progress.DeliveredItems.Count == 3, "departure after accepted release does not roll back or repeat delivery");
+        _screen.DoupiStock.TryAddBatch(3);
         Step(.001); await Frames(); Press(ProductKind.Doupi); _screen.Workstation.CancelInput();
         Check(_screen.DoupiStock.Count == 3, "cancelled batch keeps all pieces");
     }

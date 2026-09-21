@@ -37,7 +37,7 @@ public partial class BusinessBookSelfTest
             foreach (var size in CaptureSizes)
             {
                 GetWindow().Size = size; await Frames(5);
-                view.Open(model); view.FinishAnimation(); await Frames();
+                view.Open(model); view.FinishAnimation(); JourneyTransition.For(view).Finish(); await Frames();
                 CheckArtPage(view, city, "reference summary");
                 CheckTravelHighlightLayout(view);
                 Check(view.Descendants<Button>().Single(b => b.Name == "OpenBookUpgrades").IsVisibleInTree(), city + " reference upgrade entry");

@@ -35,15 +35,15 @@ public partial class BusinessBookSelfTest
         var challenge = view.Descendants<Label>().Single(l => l.Name == "ChallengeSettlement");
         var note = view.Descendants<Control>().Single(c => c.Name == "DailyNote");
         var title = view.Descendants<Label>().Single(l => l.Text == "营业小结");
-        var upgrade = view.Descendants<Button>().Single(b => b.Name == "OpenBookUpgrades");
+        var upgrade = view.Descendants<Control>().Single(c => c.Name == "UpgradeSticker");
         Check(new Control[] { reception, evaluation, note }.All(c => InLocalSpace(book, c).End.X < book.Size.X / 2),
             "reception, satisfaction and daily note read on the left page");
         Check(new Control[] { income, challenge, upgrade, view.CloseButton }.All(c => InLocalSpace(book, c).Position.X > book.Size.X / 2),
             "income, challenge and next-step actions read on the right page");
         Check(!title.GetGlobalRect().Intersects(reception.GetGlobalRect()), "left-page reception clears the book title");
         Check(!view.Descendants<Control>().Any(c => c.Name == "BookHighlights")
-            && !view.Descendants<Label>().Any(l => l.Text is "收入详情" or "菜品销售" or "顾客小费" or "今日亮点" or "本次亮点"),
-            "travel summary removes secondary income, highlights and rating content");
+            && !view.Descendants<Label>().Any(l => l.Text is "收入详情" or "今日亮点" or "本次亮点"),
+            "travel summary removes highlights and rating content while retaining income detail");
         Check(!note.GetGlobalRect().Intersects(upgrade.GetGlobalRect()) && !challenge.GetGlobalRect().Intersects(upgrade.GetGlobalRect())
             && !upgrade.GetGlobalRect().Intersects(view.CloseButton.GetGlobalRect()), "summary actions remain clear of results");
     }

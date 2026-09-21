@@ -140,7 +140,7 @@ public partial class WuhanTrashSelfTest : Node
                     View.RememberProductionState(); Hold(View.PanCenter); _screen.Doupi.TransferAvailable(_screen.DoupiStock);
                     Check(!View.TrashZone.CanAccept(WuhanWorkstationView.TrashPayload), "automatic stock transfer invalidates pan drag"); View.CancelInput();
                     _screen.Doupi.TryPourBatter(); View.PlayDoupi(DoupiState.Empty); Hold(View.PanCenter);
-                    Check(!_screen.DeliveryDrag.IsDragging, "busy source rejected"); Button(View.PanCenter, false); View.CancelAnimations(); _screen.Doupi.Discard();
+                    Check(_screen.DeliveryDrag.IsDragging, "pure animation does not block long-press discard"); View.CancelInput(); Button(View.PanCenter, false); View.CancelAnimations(); _screen.Doupi.Discard();
                     while (_screen.DoupiStock.Count > 0) _screen.DoupiStock.TryTake(1, out _);
                     _screen.DoupiStock.TryAddBatch(DoupiInventory.Capacity - 1);
                     State(_screen.Doupi, DoupiState.ReadyToCut);

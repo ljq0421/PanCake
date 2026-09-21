@@ -316,6 +316,8 @@ public partial class WuhanDayScreen : Control
                 for (int i = 0; i < 3; i++) _paymentFeedback.Spawn(this, GD.Load<Texture2D>("res://resource/art/Global/HUDUI/小费飞行金币.png"), origin + new Vector2(i * 13 - 13, 0), WuhanWorkbenchLayout.CashSlot, i * .08);
             }
         }
+        if (result.ItemAccepted || result.CompletesOrder)
+            Workstation.FinishPresentation(kind == ProductKind.Doupi ? "stock" : "bowl");
         if ((result.ItemAccepted || result.CompletesOrder) && result.Grade != DeliveryGrade.Incorrect)
             LearnTeachingAction(kind == ProductKind.Doupi ? "deliver:doupi" : "deliver:hot_dry_noodles");
         int feedbackSlot = Array.IndexOf(_deliveryCustomerIds, customerId);

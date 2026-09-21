@@ -216,10 +216,9 @@ public partial class StageThreeSelfTest : Node
     {
         var controller = new DayController(); AddChild(controller);
         Check(controller.TryPrepareDay(1, catalog, out _) && controller.State == DayState.Preparing, "Day 1 可进入 Preparing");
-        Check(controller.TryStartDay(out _) && controller.State == DayState.Opening, "点击开店进入 Opening");
-        controller.Tick(2.99); Check(controller.State == DayState.Opening, "3 秒倒计时结束前保持 Opening");
-        controller.Tick(.01); Check(controller.State == DayState.Running, "3 秒倒计时后进入 Running");
-        controller.Tick(.001); Check(controller.CustomerQueue!.Slots.Count == 1, "倒计时结束后的首个营业帧立即出现首位顾客");
+        Check(controller.TryStartDay(out _) && controller.State == DayState.Running, "点击开店立即进入 Running");
+        Check(controller.DayElapsedSeconds == 0 && controller.OpeningRemainingSeconds == 0, "开店不等待也不预扣营业时间");
+        controller.Tick(.001); Check(controller.CustomerQueue!.Slots.Count == 1, "首个营业帧立即出现首位顾客");
         controller.Tick(60); Check(controller.State == DayState.Closing, "营业计时归零进入 Closing");
         controller.Tick(14.99); Check(controller.State == DayState.Closing, "15 秒保护期结束前保持 Closing");
         controller.Tick(.01); Check(controller.State == DayState.Results && controller.Ledger!.Build().LostCustomers == 6, "15 秒结束强制流失并结算");

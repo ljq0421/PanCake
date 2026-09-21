@@ -174,7 +174,7 @@ public partial class BusinessDetailsView : Control
         _previousPage.Visible = details; _nextPage.Visible = !details;
         if (UsesTravelBook)
         {
-            SetButtonBounds(CloseButton, _model.NewWuhanUnlock ? new(1225, 776, 240, 64) : details ? new(1145, 776, 280, 70) : new(1170, 625, 260, 64));
+            SetButtonBounds(CloseButton, _model.NewWuhanUnlock ? new(1225, 776, 240, 64) : details ? new(1145, 776, 280, 70) : new(1184, 625, 260, 64));
             CloseButton.AddThemeFontSizeOverride("font_size", details ? 30 : TravelActionFontSize);
             if (CanContinueBusiness) CloseButton.AddThemeFontSizeOverride("font_size", 23);
         }

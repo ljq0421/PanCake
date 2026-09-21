@@ -461,7 +461,7 @@ public partial class WuhanVisualCapture : Node
                 planned.Order = new ProjectCake.Orders.OrderData {
                     OrderId=planned.Order.OrderId, CityId=StableIds.Cities.Wuhan, CustomerTypeId=planned.CustomerTypeId,
                     BasePrice=30, PatienceSeconds=1000,
-                    Lines=new[]{new ProjectCake.Orders.OrderLineData(ProductKind.HotDryNoodles,StableIds.Recipes.HotDryNoodlesScallion,2),
+                    Lines=new[]{new ProjectCake.Orders.OrderLineData(ProductKind.HotDryNoodles,StableIds.Recipes.HotDryNoodlesBeefChili,2),
                         new ProjectCake.Orders.OrderLineData(ProductKind.Doupi,StableIds.Products.Doupi,2)} };
             day.BeginDay();
             void Step(double seconds)
@@ -492,8 +492,10 @@ public partial class WuhanVisualCapture : Node
             async Task Deliver(ProductKind kind,string shot)
             {
                 Step(.001);
-                int slot=controller.CustomerQueue!.Slots.ToList().FindIndex(c=>controller.CanDeliverTo(c.Id,kind));
-                if(slot<0)throw new InvalidOperationException($"Capture: no customer for {kind}");
+                var customer=controller.CustomerQueue!.Slots.FirstOrDefault(c=>controller.CanDeliverTo(c.Id,kind));
+                if(customer is null)throw new InvalidOperationException($"Capture: no customer for {kind}");
+                int slot=customer.SlotIndex;
+                int delivered=customer.Progress.DeliveredItems.Count;
                 Vector2 source=kind==ProductKind.HotDryNoodles?day.Workstation.BowlCenter:kind==ProductKind.Doupi?day.Workstation.StockCenter:day.Workstation.CupCenter;
                 Click(source,true);
                 var zone=(Control)day.FindChild($"WuhanCustomerDropZone{slot+1}",true,false);
@@ -501,6 +503,8 @@ public partial class WuhanVisualCapture : Node
                 GetViewport().PushInput(new InputEventMouseMotion{Position=target,ButtonMask=MouseButtonMask.Left},true);
                 await Shot(shot);
                 GetViewport().PushInput(new InputEventMouseButton{ButtonIndex=MouseButton.Left,Position=target},true);
+                if(customer.Progress.DeliveredItems.Count<=delivered)
+                    throw new InvalidOperationException($"Capture: {kind} was not accepted immediately at physical slot {slot}");
                 await ToSignal(GetTree().CreateTimer(.3),SceneTreeTimer.SignalName.Timeout);
                 Step(.001);
             }
@@ -538,8 +542,8 @@ public partial class WuhanVisualCapture : Node
             }
             if(level<3)day.FlipDoupi();Step(.18);await Shot("16-flipping");Step(.35);
             day.AddDoupiFilling();Step(.17);await Shot("17-filling");Step(3.4);await Shot("18-doupi-cooked");
-            for(int cut=1;cut<=4;cut++)
-            {day.CutDoupi((DoupiCutLine)(cut-1));Step(.15);await Shot($"19-cut-{cut}");Step(.24);}
+            for(int cut=1;cut<=2;cut++)
+            {day.CutDoupi(cut == 1 ? DoupiCutLine.Horizontal : DoupiCutLine.Left);Step(.15);await Shot($"19-cut-{cut}");Step(.24);}
             Step(.20);await Shot("20-stocking");Step(.3);await Shot("21-stocked-eight");
             if(day.DoupiStock.Count!=8)throw new InvalidOperationException("Capture: doupi batch was not stocked");
             await Deliver(ProductKind.Doupi,"22-doupi-delivery");

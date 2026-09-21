@@ -66,7 +66,9 @@ public partial class AllDaysClosingSelfTest : Node
         Require(controller.TryPrepareDay(city, day, catalog, out _), $"prepare {city} {day}");
         int finished = 0;
         controller.DayFinished += _ => finished++;
-        controller.TryStartDay(out _); controller.Tick(DayController.OpeningDurationSeconds);
+        Require(controller.TryStartDay(out _) && controller.State == DayState.Running
+            && controller.DayElapsedSeconds == 0 && controller.OpeningRemainingSeconds == 0,
+            $"{city} {day} starts immediately without spending business time");
         bool lostOne = false;
         for (int tick = 0; tick < 20000 && controller.State != DayState.Results; tick++)
         {

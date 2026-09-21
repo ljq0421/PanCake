@@ -35,7 +35,7 @@ public partial class WuhanWorkstationView : Control
     };
 
     public bool CanDeliver(ProductKind kind) => _cooker is not null && CanInteract?.Invoke() == true
-        && !_motions.Any(m => m.Locks.Contains(DeliveryChannel(kind))) && kind switch
+        && kind switch
         {
             ProductKind.HotDryNoodles => _bowl.State == NoodleBowlState.Ready,
             ProductKind.Doupi => _doupi is not null && _stock.Count > 0,
@@ -48,6 +48,7 @@ public partial class WuhanWorkstationView : Control
         if (_drag == drag && _deliverySources.Count == 2) return;
         GetNode<Control>("WuhanDrag_EggRiceWine").Hide();
         _drag = drag;
+        drag.ImmediateAcceptance = true;
         ConfigureTrash(drag);
         drag.DragStarted += OnDragStarted;
         drag.DragEnded += OnDragEnded;
@@ -68,6 +69,7 @@ public partial class WuhanWorkstationView : Control
     {
         IsKnifeHeld = false;
         _draggedProduct = DeliveryProduct(payload);
+        if (_draggedProduct is ProductKind kind) FinishPresentation(DeliveryChannel(kind));
         EndMix(); ResetFoodMotion(); QueueRedraw();
     }
     private void OnDragEnded(DragResult result)
@@ -151,7 +153,13 @@ public partial class WuhanWorkstationView : Control
     private WuhanCookingAudio? _cookingAudio;
     private WuhanActionAudio? _actionAudio;
     internal void PlaySound(WuhanSound sound) => _actionAudio?.Play(sound);
-    internal void SetCookingAudioPaused(bool paused) { _cookingAudio?.SetPaused(paused); _actionAudio?.SetPaused(paused); }
+    internal void SetCookingAudioPaused(bool paused)
+    {
+        if (paused && !_presentationPaused) CancelAnimations();
+        _presentationPaused = paused;
+        _cookingAudio?.SetPaused(paused); _actionAudio?.SetPaused(paused);
+    }
+    private bool _presentationPaused;
     private Vector2? _mixLast;
     private bool _mixHeld;
     private string _hover = "";
@@ -239,8 +247,14 @@ public partial class WuhanWorkstationView : Control
         RememberStates(); BindRefillControls(); RefreshRefillControls(); RefreshDeliverySources(); QueueRedraw();
     }
 
-    public bool Busy(string channel) => (_draggedProduct is ProductKind kind && DeliveryChannel(kind) == channel)
-        || _motions.Any(m => m.Locks.Contains(channel));
+    // Production state owns eligibility; presentation never delays the next action.
+    public bool Busy(string channel) => _draggedProduct is ProductKind kind && DeliveryChannel(kind) == channel;
+    public void FinishPresentation(string channel)
+    {
+        foreach (Motion motion in _motions.Where(m => m.Locks.Contains(channel)).ToArray())
+        { motion.Tween.Kill(); _motions.Remove(motion); }
+        QueueRedraw();
+    }
     public float MotionProgress(string channel) => _motions.FirstOrDefault(m => m.Locks.Contains(channel))?.Progress ?? 1;
     public void EndMix() { _mixHeld = false; _mixLast = null; QueueRedraw(); }
     public void CancelAnimations()
@@ -249,7 +263,7 @@ public partial class WuhanWorkstationView : Control
         _actionAudio?.Stop();
         CancelInput();
         foreach (Motion m in _motions) m.Tween.Kill();
-        _motions.Clear(); EndMix(); ResetFoodMotion(); _hover = ""; QueueRedraw();
+        _motions.Clear(); EndMix(); ResetFoodMotion(); ResetLoopFeedback(); _hover = ""; QueueRedraw();
     }
     public override void _ExitTree()
     {
@@ -259,6 +273,9 @@ public partial class WuhanWorkstationView : Control
 
     private Motion Play(string kind, double seconds, params string[] channels)
     {
+        // Snap a superseded visual to its already committed result. Never replay it
+        // over another portion, or keep a basket hidden after it starts cooking again.
+        foreach (string channel in channels) FinishPresentation(channel);
         var tween = CreateTween(); tween.Pause();
         var motion = new Motion { Kind = kind, Locks = channels, Tween = tween };
         tween.TweenMethod(Callable.From<float>(p => motion.Progress = p), 0f, 1f, ReducedMotion ? .12 : seconds);
@@ -340,6 +357,7 @@ public partial class WuhanWorkstationView : Control
     public void Tick(double delta)
     {
         if (_cooker is null || delta <= 0) return;
+        TickLoopFeedback(delta);
         TickFoodMotion(delta);
         if (!CanHoldKnife) IsKnifeHeld = false;
         TickTrashPress(delta);
@@ -403,7 +421,7 @@ public partial class WuhanWorkstationView : Control
             if (hit == "knife")
             {
                 if (CanHoldKnife && !Busy("pan")) { IsKnifeHeld = true; _pointer = mb.Position; }
-                else GestureRejected?.Invoke("豆皮煎好且操作动画结束后，点击小刀取刀。 ");
+                else GestureRejected?.Invoke("豆皮煎好后，点击小刀取刀。 ");
                 AcceptEvent(); QueueRedraw(); return;
             }
             if (hit != "pan") IsKnifeHeld = false;
@@ -413,7 +431,7 @@ public partial class WuhanWorkstationView : Control
             else if (hit == "pan" && _doupi is not null) GestureRejected?.Invoke(HoverDescription("pan"));
             else if (hit == "bowl" && !Busy("bowl"))
             {
-                if (InBowl(mb.Position) && _bowl.State is NoodleBowlState.Seasoned or NoodleBowlState.Mixing) { _mixLast = mb.Position; _mixHeld = true; }
+                if (InBowl(mb.Position) && _bowl.State is NoodleBowlState.Seasoned or NoodleBowlState.Mixing) { FinishPresentation("bowl"); _mixLast = mb.Position; _mixHeld = true; }
             }
             AcceptEvent(); QueueRedraw();
         }
@@ -671,8 +689,8 @@ public partial class WuhanWorkstationView : Control
         if (!delivering)
         {
             if (_bowl.State != NoodleBowlState.Empty && !(m?.Kind == "pour" && m.Progress < .82f && !ReducedMotion))
-                DrawBowlContents(BowlFood, _bowl.State, (float)_bowl.MixProgress, _bowl.Quality, _bowl.Toppings,
-                    m?.Kind == "ingredient" && m.Progress < .62f ? m.Ingredient : "");
+                DrawBowlContents(LoopFoodRect(BowlFood), _bowl.State, (float)_bowl.MixProgress, _bowl.Quality, _bowl.Toppings,
+                    !ReducedMotion && m?.Kind == "ingredient" && m.Progress < .62f ? m.Ingredient : "");
         }
         if (_bowl.State != NoodleBowlState.Ready && _mixLast is Vector2 pointer && InBowl(pointer))
         {

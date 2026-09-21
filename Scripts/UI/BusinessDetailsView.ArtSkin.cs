@@ -209,7 +209,7 @@ public partial class BusinessDetailsView
         var label = Text(sticker, caption, new(unlock ? 72 : 18, paper.Position.Y + (paper.Size.Y - 28) / 2, textWidth, 28), 17);
         if (travelUpgrade)
         {
-            label.Text = CanUpgrade ? "店铺升级 · 查看设备" : "可升级 · 回店查看";
+            label.Text = "店铺升级";
             label.Position = paper.Position + new Vector2(16, (paper.Size.Y - 32) / 2);
             label.Size = new(paper.Size.X - 72, 32);
             label.AddThemeFontSizeOverride("font_size", TravelActionFontSize);

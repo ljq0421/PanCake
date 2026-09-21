@@ -20,7 +20,7 @@ public enum DayState
 
 public partial class DayController : Node
 {
-    public const double OpeningDurationSeconds = 3.0;
+    public const double OpeningDurationSeconds = 0.0;
     public const double ClosingDurationSeconds = 15.0;
 
     public event Action<DayConfig>? DayPrepared;
@@ -135,7 +135,7 @@ public partial class DayController : Node
         }
 
         OpeningRemainingSeconds = OpeningDurationSeconds;
-        SetState(DayState.Opening);
+        SetState(DayState.Running);
         error = string.Empty;
         return true;
     }

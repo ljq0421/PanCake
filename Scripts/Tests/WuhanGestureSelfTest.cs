@@ -171,9 +171,9 @@ public partial class WuhanGestureSelfTest : Node
                 double ingredientSeconds = _screen.Doupi.IngredientSeconds;
                 float animation = View.MotionProgress("pan");
                 controller.IsPaused=true;_screen._Process(2);controller.IsPaused=false;
-                Check(_screen.Doupi.IngredientSeconds==ingredientSeconds && View.MotionProgress("pan")==animation,"pause freezes committed filling animation and minimum cooking time");
+                Check(_screen.Doupi.IngredientSeconds==ingredientSeconds && View.ActiveMotionCount==0,"pause settles committed filling presentation and freezes minimum cooking time");
                 Drag(View.FillingCenter,View.PanCenter);
-                Check(_screen.Doupi.HasFilling&&View.MotionProgress("pan")==animation,"busy pan rejects duplicate filling without restarting animation");
+                Check(_screen.Doupi.HasFilling&&View.ActiveMotionCount==0,"production state rejects duplicate filling without restarting animation");
                 Step(.31);Check(!View.Busy("pan")&&_screen.Doupi.HasFilling,"automatic filling finishes without another input");
                 Move(View.PanPoint(.05f,.5f));Button(View.PanPoint(.05f,.5f),true);
                 Step(catalog.DoupiGriddlesByLevel[level].SecondStageReadySeconds/catalog.DoupiGriddlesByLevel[level].SpeedMultiplier+.01);

@@ -214,7 +214,7 @@ public partial class FullJourneyFeaturesSelfTest : Node
                 Check(Failed() && action.Text == "重试保存" && dayController.TutorialActive, "failed skip save retains failure and offers save retry");
                 Directory.Delete(path + ".tmp");
                 await Click(action);
-                Check(!dayController.TutorialActive && dayController.CurrentConfig!.Day == requestedDay && dayController.State == DayState.Opening,
+                Check(!dayController.TutorialActive && dayController.CurrentConfig!.Day == requestedDay && dayController.State == DayState.Running,
                     "skip resumes original full-game day " + city);
                 Check(dayController.CurrentPlan!.PendingBreakfastRecords.Count == 0, "practice records do not leak");
                 Check(string.Join(',', save.Data.GetCity(city).LearnedWorkbenchActions.Order()) == learnedBefore, "failed practice does not persist learned actions");

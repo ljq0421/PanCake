@@ -114,8 +114,7 @@ public partial class UpgradeCelebrationSelfTest : Node
         screen.SetProcess(false);
         var effect = screen.GetNode<EquipmentUpgradeCelebration>("UpgradeCelebration"); effect.SetProcess(false);
         Check(save.Data.GetCity(city).PendingUpgradeCelebrations.Count == Equipment(city).Length, "prepare does not consume");
-        begin(); Check(!effect.IsPlaying, "countdown does not play");
-        controller.Tick(DayController.OpeningDurationSeconds);
+        begin(); Check(controller.State == DayState.Running, "begin starts business immediately");
         Check(effect.IsPlaying && save.Data.GetCity(city).PendingUpgradeCelebrations.Count == 0, "opening queues all equipment once");
         int i = 0;
         while (effect.IsPlaying)

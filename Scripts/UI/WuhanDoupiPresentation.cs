@@ -170,26 +170,19 @@ public partial class WuhanWorkstationView
             if (_stock.SlotAt(i) % 8 / 4 != row) continue;
             DoupiInventory.Piece piece = _stock.PieceAt(i);
             Vector2[] target = FitDoupiPieceQuad(piece.Tile, StockItemRect(_stock.SlotAt(i)));
-            if (motion?.Kind != "stock" || i < motion.StockStart || i >= motion.StockStart + motion.Amount)
+            if (ReducedMotion || motion?.Kind != "stock" || i < motion.StockStart || i >= motion.StockStart + motion.Amount)
             {
-                DrawStockPiece(piece.Tile, target, piece.Quality);
+                DrawStockPiece(piece.Tile, LoopStockQuad(target, i == 0), piece.Quality);
                 continue;
             }
             float delay = ((i - motion.StockStart) / 4) * .07f;
             float t = Phase(motion.Progress, delay, 1);
             Vector2[] source = PanPiece(piece.Tile);
-            if (ReducedMotion)
-            {
-                DrawPiece(piece.Tile, source, piece.Quality, 1 - t);
-                DrawStockPiece(piece.Tile, target, piece.Quality, t);
-            }
-            else
-            {
-                Vector2[] quad = source.Select((v, j) => v.Lerp(target[j], t) - new Vector2(0, Mathf.Sin(t * Mathf.Pi) * 24)).ToArray();
-                float reveal = Phase(motion.Progress, .08f, .48f);
-                if (reveal < 1) DrawPiece(piece.Tile, quad, piece.Quality, 1 - reveal);
-                DrawStockPiece(piece.Tile, quad, piece.Quality, reveal);
-            }
+            Vector2[] quad = source.Select((v, j) => v.Lerp(target[j], t) - new Vector2(0, Mathf.Sin(t * Mathf.Pi) * 24)).ToArray();
+            float reveal = Phase(motion.Progress, .08f, .48f);
+            if (reveal < 1) DrawPiece(piece.Tile, quad, piece.Quality, 1 - reveal);
+            float landing = Mathf.Sin(Phase(motion.Progress, .72f, 1) * Mathf.Pi);
+            DrawStockPiece(piece.Tile, LoopStockQuad(quad, i == 0, landing), piece.Quality, reveal);
         }
     }
     private void DrawDoupi()
@@ -323,10 +316,10 @@ public partial class WuhanWorkstationView
     private void DrawDoupiIngredients()
     {
         if (_gesture != "batter" && (ReducedMotion || Find("pan")?.Kind != "batter"))
-            Sprite("doupi_ladle", _layout.BatterLadle);
+            Sprite("doupi_ladle", LoopToolRect(_layout.BatterLadle, "batter"));
         // Egg liquid and its tray are painted into the sheet. The spoon is the only overlay.
         if (ReducedMotion || Find("pan")?.Kind != "egg")
-            Sprite("egg_ladle", _layout.DoupiEggFood);
+            Sprite("egg_ladle", LoopToolRect(_layout.DoupiEggFood, "doupi_egg"));
     }
 
     private Vector2[] FlipQuad(Motion motion) => FlipQuad(motion.Progress, motion.Lift);

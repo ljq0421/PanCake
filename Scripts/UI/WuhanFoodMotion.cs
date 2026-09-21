@@ -105,8 +105,18 @@ public partial class WuhanWorkstationView
             Vector2[] points = ring == 0
                 ? new[] { Point(0, sector), Point(1, sector), Point(1, sector + 1) }
                 : new[] { Point(ring, sector), Point(ring + 1, sector), Point(ring + 1, sector + 1), Point(ring, sector + 1) };
-            DrawPolygon(points.Select(Vertex).ToArray(), new[] { new Color(1, 1, 1, alpha) },
-                points.Select(p => (source.Position + source.Size * p) / texture.GetSize()).ToArray(), texture);
+            Vector2[] vertices = points.Select(Vertex).ToArray();
+            Vector2[] uv = points.Select(p => (source.Position + source.Size * p) / texture.GetSize()).ToArray();
+            // Adjacent noodle groups can pass each other during the fall. A quad
+            // can then fold across itself; explicit triangles keep the textured
+            // surface drawable throughout that transient pose.
+            for (int triangle = 1; triangle < vertices.Length - 1; triangle++)
+            {
+                Vector2 a = vertices[0], b = vertices[triangle], c = vertices[triangle + 1];
+                if (Mathf.Abs((b - a).Cross(c - a)) < .001f) continue;
+                DrawPolygon(new[] { a, b, c }, new[] { new Color(1, 1, 1, alpha) },
+                    new[] { uv[0], uv[triangle], uv[triangle + 1] }, texture);
+            }
         }
     }
 

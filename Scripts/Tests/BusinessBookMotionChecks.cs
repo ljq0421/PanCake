@@ -63,7 +63,7 @@ public partial class BusinessBookSelfTest
         {
             Check(Income().Text == $"¥{view.Model.Result.TotalRevenue}" && Income().Modulate.A == 1
                 && Income().Scale == Vector2.One && Note().Modulate.A == 1
-                && Note().Position == new Vector2(230, 373), context + " restores exact final values and transforms");
+                && Note().Position == new Vector2(230, 424), context + " restores exact final values and transforms");
         }
         try
         {
@@ -115,9 +115,11 @@ public partial class BusinessBookSelfTest
                         CheckMotionInk(Caption("今日接待"));
                     }
                 }
-                foreach (double moment in new[] { .1, .7, 1.1, 1.6, 2.0 })
+                // The current reveal ends at .52 + 1.04 + .25 = 1.81 seconds.
+                foreach (double moment in new[] { .1, .7, 1.1, 1.6, 1.75 })
                 {
                     view.Open(model); var tween = PauseMotion(view); StepMotion(tween, moment);
+                    Check(MotionField<bool>(view, "_travelAnimating"), "skip input occurs during reveal");
                     bool closed = false;
                     void Closed() => closed = true;
                     view.CloseRequested += Closed;

@@ -204,8 +204,7 @@ public partial class TianjinDayScreen : Control
         if (_controller.TryStartDay(out string error))
         {
             SetManualPaused(false);
-            _countdown.Visible = true;
-            ShowFeedback("铺门打开，准备迎接第一位客人。", false);
+            _countdown.Visible = false;
         }
         else ShowFeedback(error, true);
     }

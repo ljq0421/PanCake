@@ -39,7 +39,12 @@ public partial class WuhanWorkstationView
         else if (hit == "pan" && NearPan(point) && !Busy("pan")) gesture = _doupi?.State switch {
             DoupiState.ReadyToFlip => "flip", DoupiState.ReadyToCut or DoupiState.Overbrowned or DoupiState.Cutting when IsKnifeHeld => "cut", _ => "" };
         if (gesture.Length == 0) return false;
-        if (gesture == "basket") _basketGrabOffset = BasketRect(_gestureBasket).GetCenter() - point;
+        if (gesture == "basket")
+        {
+            _basketGrabOffset = BasketRect(_gestureBasket).GetCenter() - point;
+            FinishPresentation(hit);
+        }
+        if (gesture is "flip" or "cut") FinishPresentation("pan");
         EndMix(); _gesture = gesture; _gestureStart = _gesturePoint = _gesturePrevious = point;
         _gestureTravel = _maximumExcursion = 0; _cutCommitted = false;
         _cutStroke = gesture == "cut" ? new DoupiCutStroke(SurfacePoint(point)) : null;

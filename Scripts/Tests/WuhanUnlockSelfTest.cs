@@ -85,7 +85,7 @@ public partial class WuhanUnlockSelfTest : Node
             await Delay(.38); await Capture("departure"); await Delay(.6);
             Check(!home.Visible && main.GetNode<WuhanDayScreen>("UI/WuhanDayScreen").Visible, "departure opens Wuhan business without the calendar");
             Check(_save.Data.LastVisitedCityId == StableIds.Cities.Wuhan && day.CurrentConfig?.Day == 1
-                && day.State == DayState.Opening, "visit saved and Wuhan Day1 starts opening");
+                && day.State == DayState.Running, "visit saved and Wuhan Day1 starts immediately");
             Check(_save.Data.Tianjin.HighestUnlockedDay == 8 && _save.Data.Coins == 100, "departure preserves Tianjin progress and earnings");
             await Capture("wuhan-business");
             ProjectSettings.SetSetting("accessibility/reduce_motion", true);

@@ -76,20 +76,34 @@ public partial class BusinessDetailsView
         BuildTravelSatisfaction();
         BuildTravelNote();
 
-        TravelPanel(_summary, new(890, 0, 560, 166));
+        TravelPanel(_summary, new(890, 0, 560, 240));
         TravelHeading(_summary, "今日收入", new(905, -18, 245, 51));
         CaptureTravelMotion(TravelMotionGroup.Income, _summary, () =>
         {
-            Art(_summary, "总收入图标", new(920, 56, 92, 84));
-            _income = TravelValue(_summary, $"¥{r.TotalRevenue}", new(1030, 50, 380, 94), 78);
+            Art(_summary, "总收入图标", new(906, 85, 116, 116));
+            _income = TravelValue(_summary, $"¥{r.TotalRevenue}", new(1026, 85, 174, 112), 96);
+            TravelPanel(_summary, new(1210, 62, 220, 150), true);
+            TravelValue(_summary, "菜品销售", new(1222, 72, 120, 28), 22, color: Muted);
+            TravelValue(_summary, $"¥{r.SaleRevenue}", new(1222, 103, 194, 32), 28, HorizontalAlignment.Right);
+            TravelRule(_summary, new(1222, 140, 194, 1));
+            Art(_summary, "小费图标", new(1222, 150, 28, 28));
+            TravelValue(_summary, "顾客小费", new(1258, 149, 158, 28), 22, color: Muted);
+            TravelValue(_summary, $"+¥{r.Tips}", new(1222, 177, 194, 30), 28, HorizontalAlignment.Right);
         });
 
-        TravelPanel(_summary, new(890, 194, 560, 166));
-        TravelHeading(_summary, "挑战结果", new(905, 176, 245, 51));
+        TravelPanel(_summary, new(890, 276, 560, 160));
+        TravelHeading(_summary, "挑战结果", new(905, 258, 245, 51));
         CaptureTravelMotion(TravelMotionGroup.Challenge, _summary, () =>
         {
             string result = _model.Challenge is null ? "今日暂无挑战" : _model.ChallengeCaption;
-            var challenge = Text(_summary, result, new(925, 245, 490, 78), 24, wrap: true);
+            bool hasChallenge = _model.Challenge is not null;
+            if (hasChallenge)
+            {
+                string asset = _model.Challenge!.Achieved(r) ? "挑战完成" : "挑战失败";
+                var icon = Picture(_summary, GD.Load<Texture2D>($"res://resource/art/Global/StartPage/{asset}.png"), new(914, 318, 105, 105));
+                icon.Name = "ChallengeResultIcon";
+            }
+            var challenge = Text(_summary, result, hasChallenge ? new(1035, 320, 390, 96) : new(925, 326, 490, 76), 24, wrap: true);
             challenge.Name = "ChallengeSettlement";
         });
 
@@ -104,35 +118,73 @@ public partial class BusinessDetailsView
 
     private void BuildTravelReception()
     {
-        TravelPanel(_metrics, new(230, 25, 560, 145));
+        TravelPanel(_metrics, new(230, 25, 560, 200));
         var heading = TravelHeading(_metrics, "今日接待", new(245, 7, 233, 51));
         Explain(heading, "显示本次营业已结束的客单数：完成 + 流失。营业中尚在等待的顾客暂不计入。" );
         CaptureTravelMotion(TravelMotionGroup.Reception, _metrics, () =>
         {
-            TravelValue(_metrics, $"{_model.Resolved} {_model.Unit}", new(255, 77, 480, 62), 56, HorizontalAlignment.Center);
+            var r = _model.Result;
+            var columns = new[] {
+                ("接待人数", "完成顾客图标", _model.Resolved),
+                ("完成", "完成顾客图标", r.CompletedCustomers),
+                ("错误", "状态章-错误完成", r.IncorrectOrders),
+                ("流失", "流失顾客图标", r.LostCustomers)
+            };
+            for (int i = 0; i < columns.Length; i++)
+            {
+                float x = 250 + i * 132;
+                var (caption, asset, count) = columns[i];
+                var label = TravelValue(_metrics, caption, new(x, 67, 124, 30), 23, HorizontalAlignment.Center);
+                Explain(label, i is 1 or 2 ? "完成包含出餐正确与出餐错误的订单；错误为完成订单的子集。" : heading.TooltipText);
+                if (i == 0)
+                {
+                    _art ??= new TianjinArtCatalog();
+                    Picture(_metrics, BookPortraits.Head(_art, "elder_regular", CustomerExpression.Happy), new(x + 2, 104, 48, 48));
+                }
+                else Art(_metrics, asset, new(x + 2, 104, 48, 48));
+                TravelValue(_metrics, count.ToString(), new(x + 54, 102, 66, 50), 36, HorizontalAlignment.Center);
+                if (i > 0) TravelRule(_metrics, new(x - 6, 72, 1, 80));
+            }
+            TravelValue(_metrics, "完成率", new(250, 174, 88, 32), 23, color: Muted);
+            var progress = new ProgressBar { Name = "ReceptionCompletionBar", Value = _model.CompletionRate ?? 0,
+                ShowPercentage = false, MouseFilter = MouseFilterEnum.Ignore };
+            var track = TianjinUi.Box(new Color("#FFF8E5"), 13, 2, false);
+            track.BorderColor = Ink;
+            progress.AddThemeStyleboxOverride("background", track);
+            var fill = TianjinUi.Box(new Color("#79BD4A"), 13, 2, false);
+            fill.BorderColor = Ink;
+            progress.AddThemeStyleboxOverride("fill", fill);
+            Place(_metrics, progress, new(346, 179, 312, 24));
+            TravelValue(_metrics, Percent(_model.CompletionRate), new(671, 170, 99, 38), 28, HorizontalAlignment.Right);
         });
     }
 
     private void BuildTravelSatisfaction()
     {
-        TravelPanel(_metrics, new(230, 214, 560, 130));
-        var heading = TravelHeading(_metrics, "顾客满意度", new(245, 196, 266, 47));
+        TravelPanel(_metrics, new(230, 258, 560, 137));
+        var heading = TravelHeading(_metrics, "顾客满意度", new(245, 240, 266, 47));
         heading.Name = "BookSatisfaction";
         Explain(heading, "只计算已完成订单的顾客，包含出餐错误的订单；流失顾客不计入平均值。没有完成订单时显示 —。");
         CaptureTravelMotion(TravelMotionGroup.Evaluation, _metrics, () =>
         {
-            Art(_metrics, "满意度图标", new(258, 260, 58, 58));
-            Text(_metrics, Percent(_model.Satisfaction), new(340, 251, 330, 72), 56);
+            Art(_metrics, "满意度图标", new(258, 309, 58, 58));
+            Text(_metrics, Percent(_model.Satisfaction), new(334, 300, 185, 72), 56);
+            TravelRule(_metrics, new(545, 296, 1, 80));
+            Art(_metrics, "Perfect 印章", new(621, 283, 76, 76));
+            TravelValue(_metrics, $"Perfect ×{_model.Result.PerfectOrders}", new(561, 360, 210, 30), 23, HorizontalAlignment.Center);
         });
     }
+
+    private void TravelRule(Control parent, Rect2 bounds)
+        => Place(parent, new ColorRect { Color = CityTheme.Secondary with { A = .46f }, MouseFilter = MouseFilterEnum.Ignore }, bounds);
 
     private void BuildTravelNote()
     {
         CaptureTravelMotion(TravelMotionGroup.Note, _summary, () =>
         {
-            _note = new Control { Name = "DailyNote", Position = new(230, 373), Size = new(560, 142), MouseFilter = MouseFilterEnum.Ignore };
+            _note = new Control { Name = "DailyNote", Position = new(230, 424), Size = new(560, 122), MouseFilter = MouseFilterEnum.Ignore };
             _summary.AddChild(_note);
-            var paper = Art(_note, "今日手记便签底板", new(0, 0, 560, 142));
+            var paper = Art(_note, "今日手记便签底板", new(0, 0, 560, 122));
             paper.StretchMode = TextureRect.StretchModeEnum.Scale;
             Text(_note, "营业手记", new(64, 18, 430, 34), 26);
             Text(_note, _model.DailyNote, new(34, 57, 488, 68), 21, wrap: true);
@@ -141,9 +193,10 @@ public partial class BusinessDetailsView
 
     private void AddTravelUpgradeButton()
     {
-        _upgradeEntry = ButtonAt(_summary, "店铺升级", new(900, 470, 235, 64), OpenUpgrades);
-        _upgradeEntry.Name = "OpenBookUpgrades";
-        _upgradeEntry.Disabled = !CanUpgrade;
+        AddSummarySticker(new[] { "店铺升级" }, "可升级提示贴片", "UpgradeSticker", new(912, 470, 235, 64), false);
+        var sticker = _summary.GetNode<Control>("UpgradeSticker");
+        sticker.PivotOffset = sticker.Size / 2;
+        sticker.Scale = Vector2.One * 1.2f;
     }
 
     private Label TravelValue(Control parent, string value, Rect2 bounds, int size,

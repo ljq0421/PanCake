@@ -113,6 +113,7 @@ public partial class GameController : Node
         wuhanHub.DayRequested += day => { wuhanDay.Initialize(catalog, save, dayController, day); ShowOnly(wuhanDay); wuhanDay.BeginDay(); };
         wuhanHub.MapRequested += () => { mapOriginCity = Data.StableIds.Cities.Wuhan; ShowOnly(mapScreen); };
         wuhanDay.HubRequested += () => ShowOnly(wuhanHub);
+        wuhanDay.HomeRequested += () => { ShowOnly(_startScreen); _startScreen.PresentHome(); };
         _xianHub.DayRequested += day => { if (_xianDay.Initialize(catalog, save, dayController, day)) { ShowOnly(_xianDay); _xianDay.BeginDay(); } };
         _xianHub.MapRequested += () => { mapOriginCity = Data.StableIds.Cities.Xian; ShowOnly(mapScreen); };
         _xianDay.HubRequested += () => { _xianHub.Render(); ShowOnly(_xianHub); };

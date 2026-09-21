@@ -165,6 +165,13 @@ public partial class StartScreen
                 else RenderMap();
             }, bare:true);
             Art(node, completed ? JourneyModel.Stamp(city) : unlocked ? JourneyModel.NodeArt(city) : "未解锁城市节点", new(20,0,90,78));
+            if (city.Id == ProjectCake.Data.StableIds.Cities.Wuhan && _save?.HasUnseenWuhanUnlock == true)
+            {
+                var fresh = Text(node, "WuhanNewTag", "新", new(91, -12, 42, 38), 22, true);
+                fresh.AddThemeColorOverride("font_color", new Color("#24594F"));
+                fresh.AddThemeColorOverride("font_outline_color", StartScreenTheme.Cream);
+                fresh.AddThemeConstantOverride("outline_size", 5);
+            }
             var cityLabel = Text(node,"Name",city.Name,new(0,77,130,38),26,true);
             cityLabel.AddThemeColorOverride("font_outline_color", StartScreenTheme.Cream); cityLabel.AddThemeConstantOverride("outline_size", 4);
             var stateLabel = Text(node,"State",preview ? "下一站预告" : completed ? "已完成" : !unlocked ? "尚未抵达" : city.Id == (_save?.ContinueCityId ?? JourneyModel.Cities[0].Id) ? "当前城市" : "可前往",new(-15,115,160,32),20,true);

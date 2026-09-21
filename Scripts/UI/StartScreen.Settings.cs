@@ -143,7 +143,10 @@ public partial class StartScreen
         {
             string state = slot.Corrupt ? Tr("存档无法读取").ToString()
                 : slot.Exists ? slot.Name : Tr("空白手账").ToString();
-            choice.AddItem(string.Format(Tr("存档位 {0} · {1}").ToString(), slot.Id, state));
+            string progress = slot.Exists && !slot.Corrupt
+                ? string.Format(Tr(" · {0} · 第 {1} 天").ToString(), Tr(JourneyModel.City(slot.CityId).Name), slot.Day)
+                : "";
+            choice.AddItem(string.Format(Tr("存档位 {0} · {1}{2}").ToString(), slot.Id, state, progress));
             choice.SetItemDisabled(choice.ItemCount - 1, !slot.Exists || slot.Corrupt);
         }
         int active = slots.ToList().FindIndex(slot => slot.Id == _save?.ActiveSlotId);

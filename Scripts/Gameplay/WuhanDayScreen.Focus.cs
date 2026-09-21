@@ -15,8 +15,15 @@ public partial class WuhanDayScreen
     {
         TeachingFocus = new TutorialFocusLayer { CardSkin = TutorialFocusCardSkin.Wuhan, Resolve = ResolveTeachingFocus,
             DismissAtScreenEdge = true, ShowDismiss = () => !_controller.TutorialActive,
-            KeepClear = () => Workstation.TeachingClearAreas() };
+            KeepClear = TeachingClearAreas, PlaceNearTargets = true,
+            PresentationCard = () => _demoLesson?.IsVisibleInTree() == true ? _demoLesson : null };
         AddChild(TeachingFocus);
+    }
+    private IEnumerable<TutorialFocusTarget> TeachingClearAreas()
+    {
+        foreach (var target in Workstation.TeachingClearAreas()) yield return target;
+        foreach (var card in _orders)
+            if (card.IsVisibleInTree()) yield return TutorialFocusTarget.Control(card, false);
     }
     private void LearnTeachingAction(string action)
     {
@@ -26,6 +33,13 @@ public partial class WuhanDayScreen
         if (!_save.TrySave(out string error)) Callable.From(() => Feedback(error, true)).CallDeferred();
     }
     private TutorialFocusStep? ResolveTeachingFocus()
+    {
+        var step = ResolveTeachingStep();
+        // Share one moving card between the lesson and its current operation, as in Tianjin.
+        if (_demoLesson?.Visible == true) LayoutWuhanDemoLesson(step);
+        return step;
+    }
+    private TutorialFocusStep? ResolveTeachingStep()
     {
         if (!CanInteract || _controller.CurrentConfig?.CityId != StableIds.Cities.Wuhan || _cooker is null) return null;
         var learned = _controller.TutorialActive ? new HashSet<string>() : _save.Data.Wuhan.LearnedWorkbenchActions;

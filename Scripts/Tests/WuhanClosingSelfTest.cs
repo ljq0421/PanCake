@@ -68,6 +68,15 @@ public partial class WuhanClosingSelfTest : Node
             Check(wuhan.BusinessDetails.IsVisibleInTree() && wuhan.BusinessDetails.Model.Closing, "repeat Wuhan results visible");
             Check(wuhan.BusinessDetails.Model.SaveMessage == "已入账 ¥20 · 新纪录", "Wuhan shows full income without the replay hint");
             Check(save.Data.Coins == 33, "both Wuhan business runs award their full income");
+
+            // Early closing is intentionally different from a completed day's return:
+            // the confirmation returns to the main home page, not Wuhan's city page.
+            wuhan.Initialize(catalog, save, controller, 7);
+            wuhan.Show();
+            wuhan.BeginDay();
+            wuhan.Descendants<ConfirmationDialog>().Single().EmitSignal(ConfirmationDialog.SignalName.Confirmed);
+            Check(controller.State == DayState.Preparing, "early closing abandons the active Wuhan day");
+            Check(hub.IsVisibleInTree() && hub.Page == JourneyPage.Home, "early closing returns to the main home page");
             GD.Print("WUHAN_CLOSING_RESULT passed=true");
             GetTree().Quit();
         }

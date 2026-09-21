@@ -67,8 +67,12 @@ public partial class TutorialFocusSelfTest : Node
             var catalog = GetNode<DataCatalog>("/root/DataCatalog");
             string savePath = Path.Combine(_directory, Guid.NewGuid() + ".json");
             var save = new SaveService(); save.UsePathForTests(savePath); AddChild(save);
-            await TianjinMaintenance(catalog, save);
-            if (!OS.GetCmdlineUserArgs().Contains("--maintenance-only")) { await Tianjin(catalog, save); await Wuhan(catalog, save); }
+            if (OS.GetCmdlineUserArgs().Contains("--wuhan-only")) await Wuhan(catalog, save, savePath);
+            else
+            {
+                await TianjinMaintenance(catalog, save);
+                if (!OS.GetCmdlineUserArgs().Contains("--maintenance-only")) { await Tianjin(catalog, save); await Wuhan(catalog, save, savePath); }
+            }
             Check(save.TrySave(out _), "learned operations persist");
             var reloaded = new SaveService(); reloaded.UsePathForTests(savePath); AddChild(reloaded);
             Check(reloaded.Data.Tianjin.LearnedWorkbenchActions.SetEquals(save.Data.Tianjin.LearnedWorkbenchActions)
@@ -188,7 +192,7 @@ public partial class TutorialFocusSelfTest : Node
             Check(target.Bounds.End.Y > clip.End.Y, "fixture includes hidden lower body beyond the counter");
         }
     }
-    private async Task Wuhan(DataCatalog catalog, SaveService save)
+    private async Task Wuhan(DataCatalog catalog, SaveService save, string savePath)
     {
         var controller = new DayController(); AddChild(controller);
         var screen = SceneFactory.Instantiate<WuhanDayScreen>("res://Scenes/Gameplay/WuhanDayScreen.tscn"); _viewport.AddChild(screen);
@@ -198,6 +202,7 @@ public partial class TutorialFocusSelfTest : Node
         OneOrder(controller, StableIds.Cities.Wuhan, new OrderLineData(ProductKind.HotDryNoodles, recipe, 1));
         void Step(double dt) { screen._Notification((int)NotificationApplicationFocusIn); screen._Process(dt); }
         Step(3.1); Step(.5); for (int i = 0; i < 30 && TutorialOrders.Pending(controller, catalog).Count == 0; i++) Step(1); await Frames();
+        screen._Notification((int)NotificationApplicationFocusIn);
         var view = screen.Workstation; var focus = screen.TeachingFocus; focus.Refresh();
         CheckSkipGuidance(screen, focus);
         var skip = focus.Descendants<Godot.Button>().Single(b => b.Name == "SkipGuidance");
@@ -205,6 +210,8 @@ public partial class TutorialFocusSelfTest : Node
         Check(focus.Dismissed && !focus.Visible && controller.State == DayState.Running, "Wuhan right-edge skip preserves normal business");
         focus.ResetSession(); focus.Refresh();
         Check(focus.CurrentAction == "take:noodles", "Wuhan first action highlights raw tray"); await Shot("wuhan-raw");
+        CheckAdjacent(focus);
+        Vector2 rawCardPosition = focus.CardBounds.Position;
         Check(InteractionHighlightPresentation.ColorFor(InteractionHighlightState.Hover, focus) == new Color("20B8AA"), "Wuhan tutorial inherits hover color");
         Move(view, view.RawCenter); Button(view, view.RawCenter, true); Move(view, view.BasketRect(0).GetCenter(), true); focus.Refresh();
         Check(view.HasProductionGesture && focus.CurrentAction == "take:noodles" && focus.CurrentText.Contains("松手"), "actual raw drag switches to basket"); await Shot("wuhan-held-noodles");
@@ -217,6 +224,8 @@ public partial class TutorialFocusSelfTest : Node
         Check(screen.ReservePour(0), "pour reservation succeeds"); Step(1); await Frames(); Step(.01); focus.Refresh();
         Check(save.Data.Wuhan.LearnedWorkbenchActions.Contains("pour:noodles"), "actual pour completion is learned");
         Check(focus.CurrentAction == "take:" + StableIds.Ingredients.WuhanBaseSeasoning, "seasoning is the next target"); await Shot("wuhan-seasoning");
+        CheckAdjacent(focus);
+        Check(focus.CardBounds.Position != rawCardPosition, "Wuhan card moves from raw noodles to seasoning");
         screen.IngredientAction(StableIds.Ingredients.WuhanBraisedBeef);
         Check(!save.Data.Wuhan.LearnedWorkbenchActions.Contains("take:" + StableIds.Ingredients.WuhanBraisedBeef), "failed topping is not learned");
         Click(view, view.IngredientCenter(0)); Step(.8); focus.Refresh();
@@ -252,6 +261,65 @@ public partial class TutorialFocusSelfTest : Node
         }
         Step(.6); focus.Refresh();
         Check(save.Data.Wuhan.LearnedWorkbenchActions.Contains("doupi:cut") && screen.DoupiStock.Count == 8, "complete cut gesture teaches and transfers eight pieces"); await Shot("wuhan-doupi-ready");
+        controller.AbandonDay();
+        Check(screen.Initialize(catalog, save, controller, 1), "Wuhan replay initializes");
+        screen.ForceDemoTutorial = true; screen.BeginDay(); Step(.5); focus.Refresh();
+        var lesson = screen.GetNode<Panel>("DemoLesson");
+        Check(controller.TutorialActive && focus.CurrentAction == "take:noodles", "replay teaches raw noodles despite learned actions");
+        Check(!focus.DefaultCardVisible && focus.CardBounds == lesson.GetGlobalRect()
+            && lesson.Descendants<Label>().Any(l => l.Visible && l.Text == focus.CurrentText), "replay uses one card for title and current instruction");
+        CheckAdjacent(focus); await Shot("wuhan-lesson-raw");
+        Move(view, view.RawCenter); Button(view, view.RawCenter, true); Move(view, view.BasketRect(0).GetCenter(), true); focus.Refresh();
+        CheckAdjacent(focus); await Shot("wuhan-lesson-held");
+        view.CancelInput(); Button(view, view.RawCenter, false);
+        Drag(view, view.RawCenter, view.BasketRect(0).GetCenter()); Step(.3); Step(catalog.NoodleCookersByLevel[1].OptimalSeconds + .01);
+        Check(screen.RaiseBasket(0), "replay raising succeeds"); Step(.4); screen.Cooker.TryQuickDrain(0);
+        Check(screen.ReservePour(0), "replay pour succeeds"); Step(1); await Frames(); Step(.01); focus.Refresh();
+        CheckAdjacent(focus); await Shot("wuhan-lesson-seasoning");
+        Click(view, view.IngredientCenter(0)); Step(.8); focus.Refresh();
+        CheckAdjacent(focus); await Shot("wuhan-lesson-topping");
+        foreach (string topping in TutorialOrders.Pending(controller, catalog).Single().Toppings)
+        {
+            Click(view, view.IngredientCenter(Array.IndexOf(WuhanWorkstationView.IngredientIds, topping))); Step(.8);
+        }
+        focus.Refresh(); Check(focus.CurrentAction == "mix:noodles", "lesson targets the bowl after required toppings");
+        CheckAdjacent(focus); await Shot("wuhan-lesson-mix");
+        Move(view, view.BowlCenter); Button(view, view.BowlCenter, true);
+        for (int i = 0; i < 12; i++) Move(view, view.BowlCenter + new Vector2(i % 2 == 0 ? 45 : -45, 0), true);
+        Button(view, view.BowlCenter, false); Step(.01);
+        Check(screen.DeliverToCustomer(controller.CustomerQueue!.Slots.Single().Id, ProductKind.HotDryNoodles), "lesson completes through actual delivery");
+        focus.Refresh();
+        var lessonAction = lesson.Descendants<Godot.Button>().Single(b => b.Name == "LessonAction");
+        Check(!focus.Visible && lessonAction.IsVisibleInTree() && lessonAction.Text == "开始营业", "completion clears spotlight and restores the action card");
+        await Shot("wuhan-lesson-complete");
+        Directory.CreateDirectory(savePath + ".tmp");
+        screen.FinishWuhanDemoLesson(); focus.Refresh();
+        Check(controller.TutorialActive && lessonAction.Text == "重试保存"
+            && lesson.Descendants<Label>().Any(l => l.Visible && l.Text.Contains("未保存")), "save failure keeps retry message in the single card");
+        Directory.Delete(savePath + ".tmp");
+        screen.FinishWuhanDemoLesson();
+        Check(!lesson.Visible && !controller.TutorialActive, "successful save closes the lesson");
+        controller.AbandonDay(); screen.ForceDemoTutorial = true; screen.BeginDay(); Step(.5);
+        screen.Bowl.TryAddNoodles(NoodleQuality.Optimal); screen.Bowl.TryAddBaseSeasoning();
+        screen.Bowl.AddMixDistance(500); screen.Bowl.TryAddTopping(StableIds.Ingredients.WuhanBraisedBeef);
+        screen.DeliverToCustomer(controller.CustomerQueue!.Slots.Single().Id, ProductKind.HotDryNoodles); focus.Refresh();
+        Check(screen.DemoLessonFailed && !focus.Visible && lessonAction.Text == "重新练习", "incorrect delivery restores failure card without spotlight");
+        await Shot("wuhan-lesson-failed");
+        screen.RetryWuhanDemoLesson(); Step(.5); focus.Refresh();
+        Check(!screen.DemoLessonFailed && focus.CurrentAction == "take:noodles" && !focus.DefaultCardVisible, "retry resumes the single moving card");
+        screen.FinishWuhanDemoLesson();
+        Check(!lesson.Visible && !controller.TutorialActive, "skip closes the moving lesson card and starts business");
         screen.Hide(); focus.Refresh(); Check(!focus.Visible, "Wuhan hidden city clears mask"); screen.QueueFree(); controller.QueueFree(); await Frames();
+    }
+    private void CheckAdjacent(TutorialFocusLayer focus)
+    {
+        Rect2 card = focus.CardBounds;
+        var points = focus.FocusPolygons.SelectMany(p => p).ToArray();
+        var anchor = new Rect2(points[0], Vector2.Zero);
+        foreach (var point in points) anchor = anchor.Expand(point);
+        float dx = Mathf.Max(0, Mathf.Max(anchor.Position.X - card.End.X, card.Position.X - anchor.End.X));
+        float dy = Mathf.Max(0, Mathf.Max(anchor.Position.Y - card.End.Y, card.Position.Y - anchor.End.Y));
+        Check(!card.Intersects(anchor) && new Vector2(dx, dy).Length() <= 40, "instruction sits beside the operation without covering it");
+        Check(new Rect2(0, 0, 1920, 1080).Encloses(card), "instruction stays within the viewport");
     }
 }

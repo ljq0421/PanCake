@@ -28,6 +28,7 @@ public partial class GameController
         }
         screen.HubRequested += () => ReturnFromBusiness(StableIds.Cities.Tianjin);
         wuhan.HubRequested += () => ReturnFromBusiness(StableIds.Cities.Wuhan);
+        wuhan.HomeRequested += () => { ShowOnly(_startScreen); _startScreen.PresentHome(); };
         _startScreen.Initialize(_save);
         _startScreen.ConfigureCities(catalog, null);
         _startScreen.BusinessRequested += (city, day) => StartCityBusiness(city, day);

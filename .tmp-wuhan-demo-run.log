@@ -1,0 +1,43 @@
+Godot Engine v4.7.1.stable.mono.official.a13da4feb - https://godotengine.org
+OpenGL API 3.3.0 NVIDIA 610.88 - Compatibility - Using Device: NVIDIA - NVIDIA GeForce RTX 5070
+
+PASS isolated progress
+PASS Day7 starts
+PASS abandon does not unlock
+PASS Day7 can restart
+ERROR: 保存失败：The process cannot access the file 'D:\Project\ProjectCake\project-cake\.tmp\wuhan-unlock\demo-small\65b49a82e302426785749d7ed3ce0042\save.json.tmp' because it is being used by another process.
+   at: bool ProjectCake.Core.SaveService.TrySave(System.String&) (res://Scripts/Core/SaveService.cs:333)
+   C# backtrace (most recent call first):
+       [0] void Godot.GD.PushError(string) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Core/GD.cs:366)
+       [1] bool ProjectCake.Core.SaveService.TrySave(System.String&) (D:\Project\ProjectCake\project-cake\Scripts\Core\SaveService.cs:333)
+       [2] ProjectCake.Core.DayCommitResult ProjectCake.Core.SaveService.CommitDay(ProjectCake.Gameplay.DayResult, ProjectCake.Orders.DayPlan, ProjectCake.Data.DayConfig) (D:\Project\ProjectCake\project-cake\Scripts\Core\SaveService.cs:263)
+       [3] ProjectCake.UI.BusinessBookModel ProjectCake.UI.BusinessBookSettlement.Commit(ProjectCake.UI.BusinessBookModel, ProjectCake.Core.SaveService, ProjectCake.Orders.DayPlan, ProjectCake.Data.DayConfig, ProjectCake.Core.DataCatalog, bool) (D:\Project\ProjectCake\project-cake\Scripts\UI\BusinessBookSession.cs:59)
+       [4] void ProjectCake.Tests.WuhanUnlockSelfTest+<_Ready>d__3.MoveNext() (D:\Project\ProjectCake\project-cake\Scripts\Tests\WuhanUnlockSelfTest.cs:38)
+       [5] void System.Threading.ExecutionContext.RunInternal(System.Threading.ExecutionContext, System.Threading.ContextCallback, object)
+       [6] void System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1+AsyncStateMachineBox`1.MoveNext(System.Threading.Thread)
+       [7] void System.Threading.Tasks.AwaitTaskContinuation.RunCallback(System.Threading.ContextCallback, object, System.Threading.Tasks.Task&)
+       [8] void System.Threading.Tasks.Task.RunContinuations(object)
+       [9] bool System.Threading.Tasks.Task`1.TrySetResult(TResult)
+       [10] void System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1.SetExistingTaskResult(System.Threading.Tasks.Task`1[TResult], TResult)
+       [11] void ProjectCake.Tests.WuhanUnlockSelfTest+<Frames>d__5.MoveNext() (D:\Project\ProjectCake\project-cake\Scripts\Tests\WuhanUnlockSelfTest.cs:87)
+       [12] void System.Threading.ExecutionContext.RunInternal(System.Threading.ExecutionContext, System.Threading.ContextCallback, object)
+       [13] void System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1+AsyncStateMachineBox`1.MoveNext(System.Threading.Thread)
+       [14] void Godot.SignalAwaiter.SignalCallback(nint, Godot.NativeInterop.godot_variant**, int, Godot.NativeInterop.godot_bool*) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Core/SignalAwaiter.cs:65)
+PASS failed settlement rolls back unlock
+PASS Day7 unlocks without star or purchase requirement
+PASS same settlement cannot pay twice
+PASS unlock persists before animation
+PASS stable first-frame primary caption
+PASS settlement stay opens Tianjin Day8 ledger
+PASS unseen unlock has a quiet map reminder
+PASS interrupted animation keeps durable unlock and unseen flag
+PASS Escape lands on final postcard and persists seen state
+PASS skip cannot click through into Wuhan
+PASS postcard stay retains both cities
+PASS natural ending waits for player
+PASS departure opens Wuhan Day1 ledger
+PASS visit saved without starting business
+PASS departure preserves Tianjin progress and earnings
+PASS reduced motion reaches full information with short fade
+PASS seen flag survives reload
+WUHAN_UNLOCK_TEST_PASS checks=21 demo=True

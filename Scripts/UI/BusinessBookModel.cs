@@ -27,6 +27,7 @@ public sealed class BusinessBookModel
     public DayResult Result { get; init; } = new();
     public IReadOnlyList<BookOrder> Orders { get; init; } = Array.Empty<BookOrder>();
     public bool Closing { get; set; }
+    public bool NewWuhanUnlock { get; set; }
     public bool CanClose { get; set; } = true;
     public bool CanRetry { get; set; }
     public string SaveMessage { get; set; } = "";

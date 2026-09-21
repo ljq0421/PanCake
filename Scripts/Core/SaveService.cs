@@ -38,6 +38,7 @@ public sealed class CityProgressData
 public sealed class SaveData
 {
     public bool UpgradeTeachingCompleted { get; set; }
+    public bool WuhanUnlockPresentationSeen { get; set; }
     public Dictionary<string, BreakfastStatistics> BreakfastStats { get; set; } = new(StringComparer.Ordinal);
     public Dictionary<string, int> BreakfastRecords { get; set; } = new(StringComparer.Ordinal);
     public int Version { get; set; } = SaveService.CurrentVersion;

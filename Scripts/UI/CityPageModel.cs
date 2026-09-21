@@ -94,14 +94,15 @@ public sealed partial class CityPageModel(DataCatalog? catalog, SaveService save
                 else { var d = Catalog.IngredientStationsByLevel[target]; name = "配料台"; price = d.UpgradePrice; detail = $"鸡蛋 {d.EggCapacity} · 薄脆 {d.CrispyCapacity}\n香葱 {d.ScallionCapacity} · 火腿 {d.HamCapacity}"; art = root + "TianJin/升级小料.png"; }
                 break;
             case StableIds.Cities.Wuhan:
-                if (id == "noodle_cooker") { var d = Catalog.NoodleCookersByLevel[target]; name = "煮面锅"; price = d.UpgradePrice; detail = $"{d.BasketCount} 个面篮 · {d.OptimalSeconds:0.##} 秒\n{(d.AutoRaise ? "自动提篮" : "手动提篮")}"; art = root + $"Wuhan/煮面锅 Lv{Math.Max(1, level)} {new[] { "基础锅体", "自动提篮版锅体", "双漏勺快热版锅体" }[Math.Max(1, level)-1]}_v2.png"; }
-                else if (id == "doupi_griddle") { var d = Catalog.DoupiGriddlesByLevel[target]; name = "豆皮锅"; price = d.UpgradePrice; detail = $"每锅 {d.BatchYield} 份\n{(d.AutoFlip ? "自动翻面" : d.CanBurn ? "手动控温" : "恒温不焦")}"; art = root + "Wuhan/" + (level >= 3 ? "三鲜豆皮锅 Lv3 自动翻面快热版锅体_v2.png" : level == 2 ? "三鲜豆皮锅 Lv2 恒温版_v2.png" : "三鲜豆皮锅 Lv1 基础锅体_v2.png"); }
+                // Upgrades change operation rules, not the equipment's appearance in the shop.
+                if (id == "noodle_cooker") { var d = Catalog.NoodleCookersByLevel[target]; name = "煮面锅"; price = d.UpgradePrice; detail = $"{d.BasketCount} 个面篮 · {d.OptimalSeconds:0.##} 秒\n{(d.AutoRaise ? "自动提篮" : "手动提篮")}"; art = root + "Wuhan/煮面锅 Lv1 基础锅体_v2.png"; }
+                else if (id == "doupi_griddle") { var d = Catalog.DoupiGriddlesByLevel[target]; name = "豆皮锅"; price = d.UpgradePrice; detail = $"每锅 {d.BatchYield} 份\n{(d.AutoFlip ? "自动翻面" : d.CanBurn ? "手动控温" : "恒温不焦")}"; art = root + "Wuhan/三鲜豆皮锅 Lv1 基础锅体_v2.png"; }
                 else { name = "备料台"; detail = "生面无限供应"; art = root + "Wuhan/生热干面面条.png"; }
                 break;
             case StableIds.Cities.Xian:
                 var x = Catalog.GetXianEquipment(id, target); name = XianRules.EquipmentName(id); price = x.UpgradePrice; after = x.UnlockAfterDay;
                 detail = id == XianRules.Board ? $"预剁 {x.StockCapacity} 份\n操作量 {x.WorkMultiplier:P0}" : id == XianRules.Oven ? $"一炉 {x.Capacity} 个 · 备货 {x.StockCapacity}\n{(x.Automatic ? "自动翻面、出炉" : x.BurnProof ? "恒温不焦" : "手动翻面")}" : $"容量 {x.Capacity} 份\n补锅 {x.RefillSeconds:0.#} 秒";
-                art = root + "XiAn/" + (id == XianRules.Oven ? $"白吉馍炉 Lv{Math.Max(1, level)} {new[] { "基础版", "恒温版", "自动翻面快热版" }[Math.Max(1, level)-1]}" : id == XianRules.Board ? "肉夹馍砧板＋主组装台" : level >= 3 ? "肉丸胡辣汤锅 Lv3 大容量版_v1" : level == 2 ? "肉丸胡辣汤锅 Lv2 扩容版_v1" : "肉丸胡辣汤锅 Lv1") + ".png";
+                art = root + "XiAn/" + (id == XianRules.Oven ? "白吉馍炉 Lv1 基础版" : id == XianRules.Board ? "肉夹馍砧板＋主组装台" : "肉丸胡辣汤锅 Lv1") + ".png";
                 break;
             case StableIds.Cities.Guangzhou:
                 var g = Catalog.GetGuangzhouEquipment(id, target); name = GuangzhouRules.Name(id); price = g.UpgradePrice; after = g.UnlockAfterDay;

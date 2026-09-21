@@ -1,0 +1,67 @@
+Godot Engine v4.7.1.stable.mono.official.a13da4feb - https://godotengine.org
+
+PASS isolated progress
+ERROR: Condition "!actions.custom_samplers.has(function->arguments[j].tex_builtin)" is true. Continuing.
+   at: _dump_node_code (servers/rendering/shader_compiler.cpp:1329)
+   C# backtrace (most recent call first):
+       [0] void Godot.NativeCalls.godot_icall_1_56(nint, nint, nint) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/NativeCalls.cs:495)
+       [1] void Godot.ShaderMaterial.SetShader(Godot.Shader) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/ShaderMaterial.cs:63)
+       [2] void Godot.ShaderMaterial.set_Shader(Godot.Shader) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/ShaderMaterial.cs:27)
+       [3] Godot.ShaderMaterial ProjectCake.UI.FoodInk.Material(bool) (D:\Project\ProjectCake\project-cake\Scripts\UI\FoodInk.cs:17)
+       [4] void ProjectCake.UI.FryerVisualView._Ready() (D:\Project\ProjectCake\project-cake\Scripts\UI\FryerVisualView.cs:85)
+       [5] bool Godot.Node.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/Node.cs:2660)
+       [6] bool Godot.CanvasItem.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/CanvasItem.cs:1845)
+       [7] bool Godot.Control.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/Control.cs:4029)
+       [8] bool ProjectCake.UI.FryerVisualView.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (D:\Project\ProjectCake\project-cake\.godot\mono\temp\obj\Debug\Godot.SourceGenerators\Godot.SourceGenerators.ScriptMethodsGenerator\ProjectCake.UI.FryerVisualView_ScriptMethods.generated.cs:320)
+       [9] Godot.NativeInterop.godot_bool Godot.Bridge.CSharpInstanceBridge.Call(nint, Godot.NativeInterop.godot_string_name*, Godot.NativeInterop.godot_variant**, int, Godot.NativeInterop.godot_variant_call_error*, Godot.NativeInterop.godot_variant*) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Core/Bridge/CSharpInstanceBridge.cs:24)
+       [10] void Godot.NativeInterop.NativeFuncs.godotsharp_method_bind_ptrcall(nint, nint, System.Void**, System.Void*) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Godot.SourceGenerators.Internal/Godot.SourceGenerators.Internal.UnmanagedCallbacksGenerator/Godot.NativeInterop.NativeFuncs.generated.cs:380)
+       [11] void Godot.NativeCalls.godot_icall_3_912(nint, nint, nint, Godot.NativeInterop.godot_bool, int) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/NativeCalls.cs:8061)
+       [12] void Godot.Node.AddChild(Godot.Node, bool, Godot.Node+InternalMode) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/Node.cs:848)
+       [13] void ProjectCake.Tests.WuhanUnlockSelfTest+<_Ready>d__3.MoveNext() (D:\Project\ProjectCake\project-cake\Scripts\Tests\WuhanUnlockSelfTest.cs:26)
+       [14] void System.Runtime.CompilerServices.AsyncMethodBuilderCore.Start<TStateMachine>(TStateMachine&)
+       [15] void ProjectCake.Tests.WuhanUnlockSelfTest._Ready()
+       [16] bool Godot.Node.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Generated/GodotObjects/Node.cs:2660)
+       [17] bool ProjectCake.Tests.WuhanUnlockSelfTest.InvokeGodotClassMethod(Godot.NativeInterop.godot_string_name&, Godot.NativeInterop.NativeVariantPtrArgs, Godot.NativeInterop.godot_variant&) (D:\Project\ProjectCake\project-cake\.godot\mono\temp\obj\Debug\Godot.SourceGenerators\Godot.SourceGenerators.ScriptMethodsGenerator\ProjectCake.Tests.WuhanUnlockSelfTest_ScriptMethods.generated.cs:50)
+       [18] Godot.NativeInterop.godot_bool Godot.Bridge.CSharpInstanceBridge.Call(nint, Godot.NativeInterop.godot_string_name*, Godot.NativeInterop.godot_variant**, int, Godot.NativeInterop.godot_variant_call_error*, Godot.NativeInterop.godot_variant*) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Core/Bridge/CSharpInstanceBridge.cs:24)
+PASS Day7 starts
+PASS abandon does not unlock
+PASS Day7 can restart
+ERROR: 保存失败：The process cannot access the file 'D:\Project\ProjectCake\project-cake\.tmp\wuhan-unlock\demo\b75d0960da6443cf8a00d2333daa9eca\save.json.tmp' because it is being used by another process.
+   at: bool ProjectCake.Core.SaveService.TrySave(System.String&) (res://Scripts/Core/SaveService.cs:333)
+   C# backtrace (most recent call first):
+       [0] void Godot.GD.PushError(string) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Core/GD.cs:366)
+       [1] bool ProjectCake.Core.SaveService.TrySave(System.String&) (D:\Project\ProjectCake\project-cake\Scripts\Core\SaveService.cs:333)
+       [2] ProjectCake.Core.DayCommitResult ProjectCake.Core.SaveService.CommitDay(ProjectCake.Gameplay.DayResult, ProjectCake.Orders.DayPlan, ProjectCake.Data.DayConfig) (D:\Project\ProjectCake\project-cake\Scripts\Core\SaveService.cs:263)
+       [3] ProjectCake.UI.BusinessBookModel ProjectCake.UI.BusinessBookSettlement.Commit(ProjectCake.UI.BusinessBookModel, ProjectCake.Core.SaveService, ProjectCake.Orders.DayPlan, ProjectCake.Data.DayConfig, ProjectCake.Core.DataCatalog, bool) (D:\Project\ProjectCake\project-cake\Scripts\UI\BusinessBookSession.cs:59)
+       [4] void ProjectCake.Tests.WuhanUnlockSelfTest+<_Ready>d__3.MoveNext() (D:\Project\ProjectCake\project-cake\Scripts\Tests\WuhanUnlockSelfTest.cs:38)
+       [5] void System.Threading.ExecutionContext.RunInternal(System.Threading.ExecutionContext, System.Threading.ContextCallback, object)
+       [6] void System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1+AsyncStateMachineBox`1.MoveNext(System.Threading.Thread)
+       [7] void System.Threading.Tasks.AwaitTaskContinuation.RunCallback(System.Threading.ContextCallback, object, System.Threading.Tasks.Task&)
+       [8] void System.Threading.Tasks.Task.RunContinuations(object)
+       [9] bool System.Threading.Tasks.Task`1.TrySetResult(TResult)
+       [10] void System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1.SetExistingTaskResult(System.Threading.Tasks.Task`1[TResult], TResult)
+       [11] void ProjectCake.Tests.WuhanUnlockSelfTest+<Frames>d__5.MoveNext() (D:\Project\ProjectCake\project-cake\Scripts\Tests\WuhanUnlockSelfTest.cs:95)
+       [12] void System.Threading.ExecutionContext.RunInternal(System.Threading.ExecutionContext, System.Threading.ContextCallback, object)
+       [13] void System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1+AsyncStateMachineBox`1.MoveNext(System.Threading.Thread)
+       [14] void Godot.SignalAwaiter.SignalCallback(nint, Godot.NativeInterop.godot_variant**, int, Godot.NativeInterop.godot_bool*) (/root/godot/modules/mono/glue/GodotSharp/GodotSharp/Core/SignalAwaiter.cs:65)
+PASS failed settlement rolls back unlock
+PASS Day7 unlocks without star or purchase requirement
+PASS a repeated result does not trigger another first unlock
+PASS same settlement cannot pay twice
+PASS unlock persists before animation
+PASS stable first-frame primary caption
+PASS settlement stay opens Tianjin Day8 ledger
+PASS unseen unlock has a quiet map reminder
+PASS interrupted animation keeps durable unlock and unseen flag
+PASS Escape lands on final postcard and persists seen state
+PASS focus changes after skip retain the final postcard
+PASS skip cannot click through into Wuhan
+PASS postcard stay retains both cities
+PASS natural ending waits for player
+PASS Tab focuses postcard action without reaching underlying ledger
+PASS departure opens Wuhan Day1 ledger
+PASS visit saved without starting business
+PASS departure preserves Tianjin progress and earnings
+PASS reduced motion reaches full information with short fade
+PASS seen flag survives reload
+WUHAN_UNLOCK_TEST_PASS checks=24 demo=True

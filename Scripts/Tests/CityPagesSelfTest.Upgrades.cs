@@ -2,6 +2,7 @@ using Godot;
 using ProjectCake.Core;
 using ProjectCake.Data;
 using ProjectCake.UI;
+using ProjectCake.Xian;
 using ProjectCake.Yangzhou;
 
 namespace ProjectCake.Tests;
@@ -29,6 +30,20 @@ public partial class CityPagesSelfTest
             Check(Find<Button>("Home").IsVisibleInTree() && !_screen.Descendants<Button>().Any(b => b.Name == "MapTab"), city.Name + " upgrade page retains home without map bookmark");
             Check(!_screen.Descendants<Button>().Any(b => b.Name == "CloseUpgrades"), city.Name + " home has no settlement return");
             var offer = model.Equipment(city.Id).First(e => e.CanBuy);
+            if (city.Id == StableIds.Cities.Wuhan)
+            {
+                var equipment = model.Equipment(city.Id);
+                Check(equipment.Single(e => e.Id == "noodle_cooker").Art?.EndsWith("煮面锅 Lv1 基础锅体_v2.png") == true
+                    && equipment.Single(e => e.Id == "doupi_griddle").Art?.EndsWith("三鲜豆皮锅 Lv1 基础锅体_v2.png") == true,
+                    "Wuhan upgrades retain original equipment art");
+            }
+            else if (city.Id == StableIds.Cities.Xian)
+            {
+                var equipment = model.Equipment(city.Id);
+                Check(equipment.Single(e => e.Id == XianRules.Oven).Art?.EndsWith("白吉馍炉 Lv1 基础版.png") == true
+                    && equipment.Single(e => e.Id == XianRules.Soup).Art?.EndsWith("肉丸胡辣汤锅 Lv1.png") == true,
+                    "Xi'an upgrades retain original equipment art");
+            }
             Click("Select_" + offer.Id);
             Check(_save.Data.Coins == 10000, city.Name + " selection does not purchase");
             var upgrade = _screen.Descendants<EquipmentUpgradeView>().Single();

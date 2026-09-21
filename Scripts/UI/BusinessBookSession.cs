@@ -53,9 +53,11 @@ public static class BusinessBookSettlement
         model.Challenge = plan.Challenge; model.ChallengeReward = 0; model.ChallengeClaimed = false;
         var before = save.Data.GetCity(config.CityId).UnlockedContentIds.ToHashSet(StringComparer.Ordinal);
         var collected = save.CollectedBreakfastIds.ToHashSet();
+        bool wuhanWasLocked = !save.Data.UnlockedCityIds.Contains(StableIds.Cities.Wuhan);
         try
         {
             var commit = save.CommitDay(model.Result, plan, config);
+            model.NewWuhanUnlock |= wuhanWasLocked && save.Data.UnlockedCityIds.Contains(StableIds.Cities.Wuhan);
             model.ChallengeReward = commit.ChallengeCoinGain;
             model.ChallengeClaimed = save.Data.GetCity(config.CityId).ClaimedChallenges.ContainsKey(config.Day);
             model.SaveMessage = $"已入账 ¥{commit.PermanentCoinGain}" + (commit.NewBest ? " · 新纪录" : "");

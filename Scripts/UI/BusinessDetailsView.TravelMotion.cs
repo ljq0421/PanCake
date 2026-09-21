@@ -95,6 +95,14 @@ public partial class BusinessDetailsView
             BuildFallingCoins(opening + landing);
         }
         Reveal(_note, landing + .30, .25);
+        if (_note.GetNodeOrNull<Control>("WuhanUnlockTag") is { } tag)
+        {
+            _travelRest[tag] = (Colors.White, tag.Position, Vector2.One, Vector2.Zero);
+            tag.Modulate = new(1, 1, 1, 0); tag.Position += new Vector2(26, 0);
+            Reveal(tag, landing + .85, .18);
+            _entrance.TweenProperty(tag, "position", _travelRest[tag].Position, .35)
+                .SetDelay(opening + landing + .85).SetTrans(Tween.TransitionType.Back).SetEase(Tween.EaseType.Out);
+        }
         _entrance.TweenProperty(_note, "position", _travelRest[_note].Position, .25)
             .SetDelay(opening + landing + .30).SetTrans(Tween.TransitionType.Cubic).SetEase(Tween.EaseType.Out);
         _entrance.Chain().TweenCallback(Callable.From(() =>

@@ -66,7 +66,7 @@ public partial class BusinessDetailsView
             var offer = source.Offers.FirstOrDefault(o => o.EquipmentId == e.Id && o.CurrentLevel == e.Level && o.Price == e.Price);
             if (offer is null) { RenderUpgradeModal("设备状态已变化，请查看最新升级信息。"); return; }
             BuyUpgrade(offer);
-        }, CanContinueBusiness ? RequestPrimary : null, message);
+        }, CanContinueBusiness && !_model.NewWuhanUnlock ? RequestPrimary : null, message);
     }
     private void BuyUpgrade(BookUpgradeOffer offer)
     {

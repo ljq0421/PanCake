@@ -55,6 +55,8 @@ internal static class SaveSlotChecks
         var selector = Find<OptionButton>("SaveSlot");
         Check(selector.ItemCount == SaveService.SlotCount && !selector.IsItemDisabled(0) && !selector.IsItemDisabled(1)
             && selector.IsItemDisabled(2), "settings selector lists all five slots and disables empty ones");
+        Check(selector.GetItemText(0).Contains("天津 · 第 4 天") && selector.GetItemText(1).Contains("天津 · 第 6 天"),
+            "save selector shows each journey's city and current day");
         await SelectSaveSlot(1);
         Check(save.ActiveSlotId == 2 && save.Data.Coins == 654 && screen.Page == JourneyPage.Home && screen.ModalOpen,
             "settings selector directly switches to the chosen journey");

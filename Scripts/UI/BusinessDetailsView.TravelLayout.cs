@@ -97,8 +97,16 @@ public partial class BusinessDetailsView
         // The existing note silhouette is wider than its content area; stretch the paper, never its lettering.
         var paper = Art(_note, "今日手记便签底板", new(0, 0, 527, 127));
         paper.StretchMode = TextureRect.StretchModeEnum.Scale;
-        Text(_note, _model.Upgrades is null ? "营业手记" : "下一步期待", new(66, 19, 400, 34), 26);
-        Text(_note, _model.Upgrades?.NextGoal ?? _model.DailyNote, new(38, 57, 452, 65), 20, wrap: true);
+        Text(_note, _model.NewWuhanUnlock || _model.Upgrades is null ? "营业手记" : "下一步期待", new(66, 19, 400, 34), 26);
+        Text(_note, _model.NewWuhanUnlock ? "在天津忙碌了七天，早餐旅程有了新的方向。" : _model.Upgrades?.NextGoal ?? _model.DailyNote, new(38, 57, 452, 65), 20, wrap: true);
+        if (_model.NewWuhanUnlock)
+        {
+            var tag = new Panel { Name = "WuhanUnlockTag", Position = new(110, 112), Size = new(385, 46), MouseFilter = MouseFilterEnum.Ignore };
+            tag.AddThemeStyleboxOverride("panel", TianjinUi.Box(new Color("#C8DDD0"), 9, 1, false));
+            _note.AddChild(tag);
+            tag.AddChild(new BookFoodIcon { Position = new(8, 2), Size = new(46, 44), Product = new("", "热干面", 1, "HotDryNoodles") });
+            Text(tag, "新城市已解锁 · 武汉", new(58, 4, 317, 40), 23, new Color("#24594F"));
+        }
         if (_model.Challenge is not null)
             Text(_summary, _model.ChallengeCaption, new(890, 345, 560, 30), 21, wrap: false).Name = "ChallengeSettlement";
 

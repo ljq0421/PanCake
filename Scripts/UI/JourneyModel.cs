@@ -33,7 +33,7 @@ public static class JourneyModel
     public static string Stamp(JourneyCity city) => city.Name switch
     { "天津" => "天津城市印章", "武汉" => "武汉城市旅行印章", "西安" => "西安城市旅行印章", _ => "已完成城市节点" };
     public static string NodeArt(JourneyCity city) => city.Name switch
-    { "天津" => "第一站天津节点专属素材", "武汉" => "武汉世界地图城市节点专属图标", "西安" => "西安世界地图城市节点专属图标", _ => "世界地图城市节点母版" };
+    { "天津" => "第一站天津节点专属素材", "武汉" => "第二站武汉节点专属素材", "西安" => "西安世界地图城市节点专属图标", _ => "世界地图城市节点母版" };
     public static CityProgressData Progress(SaveService save, string id) =>
         save.Data.Cities.TryGetValue(id, out var progress) ? progress : new CityProgressData();
     public static JourneyCity? Next(string id) => Cities.SkipWhile(c => c.Id != id).Skip(1).FirstOrDefault();
@@ -69,6 +69,9 @@ public static class JourneyModel
     public static string Goal(SaveService save, JourneyCity city)
     {
         if (!save.IsCityAvailable(city.Id)) return "新城市的早餐，留待下一段旅程。";
+        if (city.Id == StableIds.Cities.Tianjin)
+            return save.Data.UnlockedCityIds.Contains(StableIds.Cities.Wuhan)
+                ? "下一站：武汉 · 已开放" : "完成第 7 天营业\n下一站：武汉";
         if (ExperienceProfile.HasTwoCityEnding(save.IsDemo) && city.Id == StableIds.Cities.Wuhan)
             return Progress(save, city.Id).Completed ? "本站试玩已完成。可回访营业，继续早餐旅程。"
                 : $"完成第 {city.Days} 天并获得至少一星\n下一站预告 · 西安";

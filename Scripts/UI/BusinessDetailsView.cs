@@ -12,6 +12,9 @@ public partial class BusinessDetailsView : Control
     public event Action? PageChanged;
     public event Action? RetryRequested;
     public event Action? ContinueRequested;
+    public event Action? WuhanUnlockRequested;
+    public event Action? WuhanUnlockStayRequested;
+    private Button? _stayInTianjin;
     private bool _continuing;
     private bool CanContinueBusiness => ContinueRequested is not null && _model.Closing && _model.CanClose && !_model.CanRetry && _model.Upgrades?.SupportsContinue == true;
     private Control _canvas = null!, _book = null!, _bookContent = null!, _summary = null!, _details = null!, _metrics = null!, _note = null!, _stamp = null!;
@@ -91,7 +94,17 @@ public partial class BusinessDetailsView : Control
         _save.Text = model.SaveMessage;
         _save.Visible = _save.Text.Length > 0 && !(UsesTravelBook && _save.Text.Contains("已入账", StringComparison.Ordinal));
         _retry.Visible = model.CanRetry; CloseButton.Disabled = !model.CanClose;
-        CloseButton.Text = CanContinueBusiness ? $"开始第 {_model.Upgrades!.NextDay} 天" : "收好账本";
+        CloseButton.Text = model.NewWuhanUnlock ? "展开新旅程" : CanContinueBusiness ? $"开始第 {_model.Upgrades!.NextDay} 天" : "收好账本";
+        if (_stayInTianjin is null)
+            _stayInTianjin = ButtonAt(_bookContent, "留在天津", new(890, 776, 230, 70), RequestClose);
+        _stayInTianjin.Visible = model.NewWuhanUnlock;
+        if (model.NewWuhanUnlock)
+        {
+            SetButtonBounds(_stayInTianjin, new(960, 776, 240, 64));
+            _stayInTianjin.AddThemeFontSizeOverride("font_size", 27);
+            foreach (string state in new[] { "normal", "hover", "pressed", "disabled", "focus" })
+                _stayInTianjin.AddThemeStyleboxOverride(state, CloseButton.GetThemeStylebox(state));
+        }
         BuildSummary(); RefreshRows(); SelectPage(false, false); Show();
         (model.CanClose ? CloseButton : _retry).GrabFocus(); StartAnimation();
         InterfaceTeaching.Offer(this, InterfaceLessons.BookKey, InterfaceLessons.Book,
@@ -161,7 +174,7 @@ public partial class BusinessDetailsView : Control
         _previousPage.Visible = details; _nextPage.Visible = !details;
         if (UsesTravelBook)
         {
-            SetButtonBounds(CloseButton, details ? new(1145, 776, 280, 70) : new(1225, 703, 220, 64));
+            SetButtonBounds(CloseButton, _model.NewWuhanUnlock ? new(1225, 776, 240, 64) : details ? new(1145, 776, 280, 70) : new(1225, 703, 220, 64));
             CloseButton.AddThemeFontSizeOverride("font_size", details ? 30 : TravelActionFontSize);
             if (CanContinueBusiness) CloseButton.AddThemeFontSizeOverride("font_size", 23);
         }
@@ -214,9 +227,21 @@ public partial class BusinessDetailsView : Control
         if (!_model.Filter(_filter).Any()) _rows.AddChild(TianjinUi.Label(_model.Orders.Count == 0 ? "还没有结束的客单，第一笔收入值得期待。" : "这一类客单还没有记录。", 26, Muted));
         _scroll.ScrollVertical = 0;
     }
-    private void RequestClose() { FinishAnimation(); if (_upgradeModal is null && _model.CanClose) CloseRequested?.Invoke(); }
+    private void RequestClose()
+    {
+        FinishAnimation();
+        if (_upgradeModal is not null || !_model.CanClose) return;
+        if (_model.NewWuhanUnlock && WuhanUnlockStayRequested is not null) WuhanUnlockStayRequested.Invoke();
+        else CloseRequested?.Invoke();
+    }
     private void RequestPrimary()
     {
+        if (_model.NewWuhanUnlock && _model.CanClose && WuhanUnlockRequested is not null)
+        {
+            if (_entrance?.IsRunning() == true) { FinishAnimation(); return; }
+            if (_continuing) return;
+            _continuing = true; RemoveUpgradeModal(); WuhanUnlockRequested.Invoke(); return;
+        }
         if (!CanContinueBusiness) { RequestClose(); return; }
         if (_continuing) return;
         if (_entrance?.IsRunning() == true) { FinishAnimation(); return; }

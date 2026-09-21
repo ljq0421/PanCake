@@ -13,6 +13,8 @@ public partial class GameController
         AddChild(music);
         music.Bind(() =>
         {
+            if (GetNodeOrNull<WuhanUnlockPresentation>("WuhanUnlockPresentation") is { } unlock)
+                return (unlock.WuhanMusicReady ? StableIds.Cities.Wuhan : StableIds.Cities.Tianjin, false);
             bool business = GetNode<TianjinDayScreen>(TianjinDayPath).IsVisibleInTree()
                 || GetNode<WuhanDayScreen>(WuhanDayPath).IsVisibleInTree()
                 || _xianDay?.IsVisibleInTree() == true || _guangzhouDay?.IsVisibleInTree() == true;

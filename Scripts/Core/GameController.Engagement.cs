@@ -6,6 +6,11 @@ public partial class GameController
 {
     private void ConnectBusinessContinuation(BusinessDetailsView book, string city)
     {
+        book.WuhanUnlockRequested += () => PresentWuhanUnlock(book);
+        book.WuhanUnlockStayRequested += () =>
+        {
+            book.Hide(); ShowOnly(_startScreen); _startScreen.PresentCity(city); _startScreen.PresentLedger();
+        };
         book.ContinueRequested += () =>
         {
             void StartNext()

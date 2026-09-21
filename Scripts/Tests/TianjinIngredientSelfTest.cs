@@ -123,6 +123,8 @@ public partial class TianjinIngredientSelfTest : Node
                 Check(stove.TryAccept("ham"), "ham accepts while crispy settles");
                 await Wait(.15); await Shot($"{width}-toppings");
                 Check(_station.Machine.Runtime.ExtraIngredients.Count == 3, "all accepted ingredients remain recorded");
+                Check(_station.Machine.Runtime.ExtraIngredientOrder.SequenceEqual(new[] { "scallion", "crispy", "ham" }),
+                    "toppings retain their actual addition order for top-layer rendering");
                 var preview = canvas.CreateFoodPreview(new(150, 120));
                 {
                     AddChild(preview);

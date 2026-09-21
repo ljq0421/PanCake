@@ -74,7 +74,7 @@ public partial class MorningHub : Control
         RenderLedger();
         if (_save.HasLoadError)
         {
-            _message.Text = "！ 存档无法读取。请返回首页，在存档管理中选择旅程。";
+            _message.Text = "！ 存档无法读取。请打开设置，在存档管理中选择旅程。";
             _message.Modulate = TianjinUi.Red;
         }
     }
@@ -163,7 +163,7 @@ public partial class MorningHub : Control
     internal static string DaySubtitle(int day) => day switch
     {
         1 => "第一张煎饼", 2 => "薄脆与葱香", 3 => "油条开锅", 4 => "油条卷进煎饼",
-        5 => "豆浆套餐", 6 => "熟客的早餐", 7 => "火腿新品", 8 => "双线忙起来",
+        5 => "豆浆套餐", 6 => "火腿新品", 7 => "熟客的早餐", 8 => "双线忙起来",
         9 => "赶时间的客人", 10 => "完整早餐铺", 11 => "大订单来了", 12 => "自动提篮新体验",
         13 => "完整早高峰", 14 => "熟练挑战", _ => "最终高峰",
     };

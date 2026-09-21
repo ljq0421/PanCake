@@ -203,16 +203,26 @@ public partial class PancakeCanvas : Control
     {
         if (_runtime is not { } runtime || _art is null || IsFlipping || runtime.State is PancakeState.Empty or PancakeState.Folded or PancakeState.Bagged or PancakeState.Delivered) return;
         Rect2 surface = GetSurfaceRect();
-        if (runtime.ExtraIngredients.Contains(StableIds.Ingredients.Crispy))
-            DrawIngredient(StableIds.Ingredients.Crispy, _art.Ingredient(StableIds.Ingredients.Crispy), surface.GetCenter() + new Vector2(-surface.Size.X * 0.13f, 0), surface.Size * new Vector2(0.42f, 0.58f), painter: painter);
-        if (runtime.ExtraIngredients.Contains(StableIds.Ingredients.Scallion))
-            DrawScallions(painter, surface);
-        if (runtime.ExtraIngredients.Contains(StableIds.Ingredients.Ham))
-            DrawIngredient(StableIds.Ingredients.Ham, _art.Ingredient(StableIds.Ingredients.Ham), surface.GetCenter() + new Vector2(surface.Size.X * 0.14f, surface.Size.Y * 0.14f), surface.Size * new Vector2(0.38f, 0.5f), painter: painter);
-        if (runtime.ExtraIngredients.Contains(StableIds.Ingredients.Youtiao))
+        // Canvas drawing is painter's-order: rendering in join order makes the
+        // most recently added topping visually sit on top of prior toppings.
+        foreach (string ingredient in runtime.ExtraIngredientOrder)
         {
-            Color youtiaoTint = YoutiaoPresentation.Tint(runtime.InternalYoutiaoQuality ?? YoutiaoQuality.Golden);
-            DrawIngredient(StableIds.Ingredients.Youtiao, _art.Ingredient(StableIds.Ingredients.Youtiao), surface.GetCenter() + new Vector2(-surface.Size.X * 0.03f, surface.Size.Y * 0.1f), surface.Size * new Vector2(0.51f, 0.66f), youtiaoTint, painter);
+            switch (ingredient)
+            {
+                case StableIds.Ingredients.Crispy:
+                    DrawIngredient(ingredient, _art.Ingredient(ingredient), surface.GetCenter() + new Vector2(-surface.Size.X * .13f, 0), surface.Size * new Vector2(.42f, .58f), painter: painter);
+                    break;
+                case StableIds.Ingredients.Scallion:
+                    DrawScallions(painter, surface);
+                    break;
+                case StableIds.Ingredients.Ham:
+                    DrawIngredient(ingredient, _art.Ingredient(ingredient), surface.GetCenter() + new Vector2(surface.Size.X * .14f, surface.Size.Y * .14f), surface.Size * new Vector2(.38f, .5f), painter: painter);
+                    break;
+                case StableIds.Ingredients.Youtiao:
+                    Color youtiaoTint = YoutiaoPresentation.Tint(runtime.InternalYoutiaoQuality ?? YoutiaoQuality.Golden);
+                    DrawIngredient(ingredient, _art.Ingredient(ingredient), surface.GetCenter() + new Vector2(-surface.Size.X * .03f, surface.Size.Y * .1f), surface.Size * new Vector2(.51f, .66f), youtiaoTint, painter);
+                    break;
+            }
         }
 
         if (runtime.Quality == PancakeQuality.Burnt || runtime.State == PancakeState.Burnt)
@@ -259,7 +269,7 @@ public partial class PancakeCanvas : Control
             HasEgg = _runtime.HasEgg, HasSauce = _runtime.HasSauce,
             InternalYoutiaoQuality = _runtime.InternalYoutiaoQuality,
         };
-        foreach (string ingredient in _runtime.ExtraIngredients) snapshot.AddIngredient(ingredient);
+        foreach (string ingredient in _runtime.ExtraIngredientOrder) snapshot.AddIngredient(ingredient);
         Rect2 bounds = GetSurfaceRect();
         if (snapshot.State is PancakeState.Folded or PancakeState.Bagged)
         {

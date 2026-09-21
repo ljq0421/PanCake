@@ -7,6 +7,8 @@ public partial class StartScreen
 {
     private void OpenModal(string kind)
     {
+        // A utility dialog opened from a home-book overlay returns to the unchanged
+        // home backdrop first; utility dialogs are not nested inside journey books.
         CloseModal(); _previousFocus = GetViewport().GuiGetFocusOwner(); _modalKind = kind;
         Clear(_modal); _modalControls.Clear(); _modal.Show();
         _modal.AddChild(new ColorRect { Size = new(1920, 1080), Color = new Color(.15f, .1f, .06f, .65f) });
@@ -18,17 +20,19 @@ public partial class StartScreen
             panel.AddThemeStyleboxOverride("panel", StartScreenTheme.Box(StartScreenTheme.Cream, 3, true));
             _modal.AddChild(panel);
         }
-        else
+        else if (kind != "home-overlay")
         {
             var book = HomeArt(_modal, "旅行手账双页母版", BookBounds);
             if (kind == "settings")
             {
                 book.Name = "SettingsBook";
-                book.Material = new ShaderMaterial { Shader = GD.Load<Shader>("res://resource/shaders/settings_book_decor.gdshader") };
+                ApplyHomeBookBackground(book);
             }
         }
         foreach (var button in _buttons) button.FocusMode = FocusModeEnum.None;
     }
+    private static void ApplyHomeBookBackground(TextureRect book)
+        => book.Material = new ShaderMaterial { Shader = GD.Load<Shader>("res://resource/shaders/settings_book_decor.gdshader") };
     // Reference: the approved Tianjin dialog, using the supplied panel and button art unchanged.
     private void AddConfirmationPanel(Control parent, string prefix)
     {
@@ -62,10 +66,12 @@ public partial class StartScreen
     private void CloseModal()
     {
         if (_modal is null || !_modal.Visible) return;
+        bool restoreHomeBody = _homeOverlayOpen;
         CloseSettingsPopups();
         _settings.RevertDisplay(); _modal.Hide(); _modalKind = "";
         _settingsMessage = null; _countdown = null; _displayConfirmation = null;
         foreach (var button in _buttons) if (GodotObject.IsInstanceValid(button)) button.FocusMode = FocusModeEnum.All;
+        if (restoreHomeBody) RestoreHomeBody();
         if (GodotObject.IsInstanceValid(_previousFocus) && _previousFocus!.IsInsideTree() && _previousFocus.IsVisibleInTree()) _previousFocus.GrabFocus();
         _previousFocus = null;
     }

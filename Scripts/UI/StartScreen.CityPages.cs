@@ -22,6 +22,7 @@ public partial class StartScreen
     public void PresentCity(string cityId, Action? returnToSource = null, bool fromHome = false)
     {
         if (_save?.IsDemo == true && (_save.ChapterLength(cityId) == 0 || !_save.Data.UnlockedCityIds.Contains(cityId))) return;
+        if (fromHome && Page == JourneyPage.Home) OpenHomeOverlay();
         _city = cityId; _cityReturn = returnToSource ?? RenderHome; _homeBookPalette = fromHome;
         SelectedDay = Math.Max(1, JourneyModel.Progress(_save!, cityId).HighestUnlockedDay);
         Show(); RenderCity();
@@ -57,33 +58,32 @@ public partial class StartScreen
     {
         if (HostedByBook)
         {
-            Begin(page); BookFrame(_city); BookUpgradeNavigation(); return;
+            Begin(page); BookFrame(_city); return;
         }
         Begin(page);
         if (page == JourneyPage.City) NavigationUtilities(includeHome: true);
-        else Chrome(RenderCity, title);
+        else if (page == JourneyPage.Ledger) NavigationUtilities(includeHome: true);
+        else Chrome(RenderCity, title, showBack: page != JourneyPage.Upgrades);
         if (page == JourneyPage.Ledger)
         {
             var ledger = HomeArt(_body, "旅行手账双页母版-经营手账", BookBounds);
             ledger.Name = "SharedBook";
             CityPageArtSkin.Apply(ledger, BookPaletteCity);
-            var heading = _body.GetNode<Label>("PageTitle");
-            var sign = HomeArt(_body, "城市名称牌底板", new(615, 12, 690, 146));
-            _body.MoveChild(sign, heading.GetIndex());
-            heading.Position = new(655, 42); heading.Size = new(610, 72);
-            heading.AddThemeColorOverride("font_color", StartScreenTheme.Cream);
         }
         else BookFrame(_city, page == JourneyPage.City);
+        if (!HostedByBook && _homeBookPalette)
+            ApplyHomeBookBackground(_body.GetNode<TextureRect>("SharedBook"));
         (string Name, string Caption, Action Action)[] tabs = {
-            ("ContinueTab", "继续旅程", RenderCity),
+            ("ContinueTab", "继续营业", RenderCity),
             ("LedgerTab", "经营手账", PresentLedger), ("UpgradeTab", "店铺升级", PresentUpgrades) };
         for (int i = 0; i < tabs.Length; i++)
         {
             var bookmark = tabs[i];
             bool selected = page == JourneyPage.City && i == 0 || page == JourneyPage.Ledger && i == 1 || page == JourneyPage.Upgrades && i == 2;
             var button = Button(_body, bookmark.Name, "", new(selected ? 1617 : 1607, 290 + i * 170, 140, 155), bookmark.Action, bare: true);
-            var tabArt = HomeArt(button, "书页标签-" + (i == 0 ? "经营手账" : bookmark.Caption) + "-v2", new(0, 0, 140, 155), stretch: true);
-            CityPageArtSkin.Apply(tabArt, BookPaletteCity);
+            var tabArt = HomeArt(button, i == 0 ? "书页标签-继续旅程" : "书页标签-" + bookmark.Caption + "-v2", new(0, 0, 140, 155), stretch: true);
+            // The supplied journey tab has its own green artwork and icon; leave it unmodified.
+            if (i != 0) CityPageArtSkin.Apply(tabArt, BookPaletteCity);
             button.Disabled = selected;
             var caption = Text(button, "Caption", bookmark.Caption.Insert(2, "\n"), new(25, 85, 94, 57), 25, true);
             FitContinueLines(caption, 25, 16, 2);
@@ -127,33 +127,39 @@ public partial class StartScreen
         var note = new Control { Name = "BusinessNote", Position = new(1018, 350), Size = new(460, 380),
             RotationDegrees = -3.4f, MouseFilter = MouseFilterEnum.Ignore };
         _body.AddChild(note);
+        bool embeddedChallenge = _city is StableIds.Cities.Tianjin or StableIds.Cities.Wuhan;
+        var challenge = embeddedChallenge ? _cityModel?.Challenge(_city, day) : null;
         ContinueSummaryRow(note, "Coins", "当前金币", (overview?.Coins ?? _save.Data.Coins).ToString(), 0);
         var unlockRow = ContinueSummaryRow(note, "LatestUnlock", "最新解锁", "", 76);
         DrawLatestUnlocks(unlockRow, overview?.LatestUnlocks ?? Array.Empty<CityUnlockView>());
         ContinueSummaryRow(note, "Goal", "下一目标", overview?.Goal ?? JourneyModel.Goal(_save, city), 152, true);
-        ContinueSummaryRow(note, "Progress", "城市进度", $"已营业 {overview?.CompletedDays ?? 0} 天 · 可持续营业", 228);
+        string challengeValue = challenge is null ? "第2天起开放"
+            : p.ClaimedChallenges.ContainsKey(day) ? $"{challenge.Requirement} · 奖励已领取"
+            : $"{challenge.Requirement} · 奖励 {challenge.Reward}金币";
+        ContinueSummaryRow(note, "Progress", embeddedChallenge ? "每日挑战" : "城市进度",
+            embeddedChallenge ? challengeValue : $"已营业 {overview?.CompletedDays ?? 0} 天 · 可持续营业", 228,
+            icon: embeddedChallenge ? "下一目标" : null);
         ContinueSummaryRow(note, "BestRecord", "历史最佳", overview?.BestRevenue is { } best ? $"{best} 金币(第{overview.BestDay}天)" : "暂无记录", 304);
-        var goals = new Control { Name = "JourneyGoals", Position = new(1015, 755), Size = new(425, 90), MouseFilter = MouseFilterEnum.Ignore };
-        _body.AddChild(goals);
         if (p.Completed) HomeArt(_body, JourneyModel.Stamp(city), new(788, 230, 92, 92)).Name = "CompletionStamp";
-        if (_city == StableIds.Cities.Yangzhou)
+        if (!embeddedChallenge)
         {
-            var collection = Text(goals, "Collection", p.UnlockedCollectibleIds.Contains("collectible:yangzhou_crab_soup_bun") ? "已收藏：蟹黄汤包图鉴 · 三星城市徽章" : "三星收藏：蟹黄汤包图鉴\n最终日18组 / 满意度90% / Perfect干丝10份", new(0, 0, 425, 58), 18);
-            collection.AddThemeConstantOverride("line_spacing", -6);
-            collection.AddThemeColorOverride("font_color", StartScreenTheme.Muted);
+            var goals = new Control { Name = "JourneyGoals", Position = new(1015, 755), Size = new(425, 90), MouseFilter = MouseFilterEnum.Ignore };
+            _body.AddChild(goals);
+            if (_city == StableIds.Cities.Yangzhou)
+            {
+                var collection = Text(goals, "Collection", p.UnlockedCollectibleIds.Contains("collectible:yangzhou_crab_soup_bun") ? "已收藏：蟹黄汤包图鉴 · 三星城市徽章" : "三星收藏：蟹黄汤包图鉴\n最终日18组 / 满意度90% / Perfect干丝10份", new(0, 0, 425, 58), 18);
+                collection.AddThemeConstantOverride("line_spacing", -6);
+                collection.AddThemeColorOverride("font_color", StartScreenTheme.Muted);
+            }
         }
-        var open = Button(_body, "OpenBusiness", "继续营业", new(680, 863, 520, 112), () => RequestBusiness(day), bare: true);
-        var plate = HomeArt(open, "首页地图按钮底板", new(0, 0, 520, 112), stretch: true);
+        // Tianjin and Wuhan put the business action directly below their five-row information card.
+        var open = Button(_body, "OpenBusiness", "继续营业", new(1110, embeddedChallenge ? 752 : 862, 360, 78), () => RequestBusiness(day), bare: true);
+        var plate = HomeArt(open, "首页地图按钮底板", new(0, 0, 360, 78), stretch: true);
         CityPageArtSkin.Apply(plate, BookPaletteCity);
         plate.ShowBehindParent = true;
-        open.AddThemeFontSizeOverride("font_size", 46);
+        open.AddThemeFontSizeOverride("font_size", 34);
         open.AddThemeColorOverride("font_outline_color", StartScreenTheme.Cream);
         open.AddThemeConstantOverride("outline_size", 5);
-        if (_cityModel?.Challenge(_city, day) is { } challenge)
-        {
-            var challengeText = Text(goals, "DailyChallengePreview", challenge.Preview(p.ClaimedChallenges.ContainsKey(day)), new(0, 0, 425, 90), 21, true);
-            FitContinueLines(challengeText, 21, 16, 3);
-        }
         open.Disabled = !CanOpenDay(day) || !reconciled;
         if (!reconciled) ShowError("解锁进度保存失败，请重试进入城市。原有进度已保留。");
         if (open.Disabled) plate.Modulate = new Color(1, 1, 1, .55f);
@@ -218,7 +224,7 @@ public partial class StartScreen
         }
         bool hasRecord = p.DayBestRecords.TryGetValue(SelectedDay, out var best) && SelectedDay <= p.HighestUnlockedDay && !_save!.HasLoadError;
         Text(_body, "RecordTitle", _save.HasLoadError ? "存档无法读取" : hasRecord ? "历史最佳收入" : SelectedDay > p.HighestUnlockedDay ? "营业日尚未解锁" : "等待开店", new(1100, 589, 270, 36), 25);
-        var revenue = Text(_body, "BestRevenue", _save.HasLoadError ? "请返回首页管理存档" : hasRecord ? $"{best!.TotalRevenue} 金币" : SelectedDay > p.HighestUnlockedDay ? $"完成第 {SelectedDay - 1} 天后开放" : "这一天还没有营业记录", new(1100, 630, 250, 48), hasRecord ? 38 : 23);
+        var revenue = Text(_body, "BestRevenue", _save.HasLoadError ? "请打开设置管理存档" : hasRecord ? $"{best!.TotalRevenue} 金币" : SelectedDay > p.HighestUnlockedDay ? $"完成第 {SelectedDay - 1} 天后开放" : "这一天还没有营业记录", new(1100, 630, 250, 48), hasRecord ? 38 : 23);
         FitTextWidth(revenue, hasRecord ? 38 : 23, 19);
         var satisfaction = Text(_body, "BestMetrics", hasRecord ? $"满意度 {best!.Satisfaction:0}%" : "满意度 —", new(1100, 710, 235, 38), 28);
         FitTextWidth(satisfaction, 28, 19);
@@ -227,10 +233,24 @@ public partial class StartScreen
         var perfect = Text(_body, "BestPerfect", hasRecord ? $"Perfect {best!.PerfectOrders} 单" : "", new(1335, 687, 108, 60), 18, true);
         FitTextWidth(perfect, 18, 12);
         if (_save.HasLoadError)
-            Text(_body, "ReplayNote", "可返回首页，在存档管理中选择其他旅程。", new(1010, 803, 505, 38), 21, true);
-        var start = Button(_body, "StartSelectedDay", $"{(hasRecord ? "再次营业" : "开张")} · 第 {SelectedDay} 天", new(1030, 873, 510, 76), () => RequestBusiness(SelectedDay), true);
-        CityPageArtSkin.ApplyPrimaryButton(start, BookPaletteCity);
+            Text(_body, "ReplayNote", "可打开设置，在存档管理中选择其他旅程。", new(1010, 803, 505, 38), 21, true);
+        string startCaption = hasRecord ? "再次营业" : "开张";
+        var start = Button(_body, "StartSelectedDay", "", new(1110, 795, 340, 48), () => RequestBusiness(SelectedDay), bare: true);
+        var plateTexture = Texture("首页地图按钮底板");
+        float plateScale = start.Size.Y / plateTexture.GetHeight();
+        var plate = new NinePatchRect
+        {
+            Name = "StartSelectedDayButtonPlate", Texture = plateTexture, Size = start.Size / plateScale,
+            Scale = Vector2.One * plateScale, PatchMarginLeft = plateTexture.GetHeight() / 2,
+            PatchMarginRight = plateTexture.GetHeight() / 2, MouseFilter = MouseFilterEnum.Ignore
+        };
+        start.AddChild(plate);
+        var startLabel = Text(start, "Caption", startCaption, new(0, 0, start.Size.X, start.Size.Y), 29, true);
+        startLabel.AddThemeColorOverride("font_color", StartScreenTheme.Ink);
+        startLabel.AddThemeColorOverride("font_outline_color", StartScreenTheme.Cream);
+        startLabel.AddThemeConstantOverride("outline_size", 3);
         start.Disabled = !CanOpenDay(SelectedDay);
+        if (start.Disabled) { plate.Modulate = new(1, 1, 1, .55f); startLabel.Modulate = new(1, 1, 1, .55f); }
         Focus("Date" + SelectedDay);
         InterfaceTeaching.Offer(_body, InterfaceLessons.CalendarKey, InterfaceLessons.Calendar,
             () => !ModalOpen && Page == JourneyPage.Ledger);
@@ -263,7 +283,8 @@ public partial class StartScreen
                 if (current is null || !current.CanBuy || current.Level != e.Level || current.Price != e.Price)
                 { RefreshCityPage(); ShowError("设备状态已变化，请查看最新升级信息。"); return; }
                 _busy = true; UpgradeRequested?.Invoke(_city, e.PurchaseId);
-            });
+            }, HostedByBook && _bookUpgradeSource?.SupportsContinue == true ? $"开始第 {_bookUpgradeSource.NextDay} 天" : null,
+            HostedByBook && _bookUpgradeSource?.SupportsContinue == true ? _bookUpgradeContinue : null);
         Focus("Select_" + view.SelectedId);
     }
 }

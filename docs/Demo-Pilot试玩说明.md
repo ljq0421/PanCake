@@ -5,7 +5,7 @@
 ## 开始与推进
 
 - 关卡、顾客订单与到达计划、耐心、食物解锁、设备升级和教学方式直接使用正式版配置。相关可升级设备最高 Lv3。
-- 普通营业日按正式规则结算并推进；天津第 15 天、武汉第 12 天需要达到各自至少一星的章节目标并保存成功，才算完成章节。天津完成后开放武汉。
+- 普通营业日按正式规则结算并推进；完成天津 Day 7 营业后开放武汉。天津第 15 天、武汉第 12 天仍需要达到各自至少一星的章节目标并保存成功，才算完成章节。
 - 每次营业收入全额入账，重玩也一样；相同场次的结算重试不会重复入账。
 - 当前武汉食物开放以正式日配置为准，没有额外开放蛋酒。
 - 教学提示及“帮助 → 重看首份教学”与正式版相同。独立练习不产生收入、章节进度或收藏。
@@ -39,7 +39,7 @@ Demo 仍使用独立路径：
 The current source shares the full game's 15 Tianjin days and 12 Wuhan days. Xi'an is a preview; Guangzhou and Yangzhou remain unavailable. Finish Wuhan to view the two-city keepsake, then revisit either city.
 
 - Days, seeded orders and arrivals, patience, food unlocks, upgrades up to Lv3, progression and tutorials use the full-game rules.
-- Ordinary days advance on settlement. Complete Tianjin Day 15 or Wuhan Day 12 with at least one star and save successfully to finish that chapter. Finishing Tianjin opens Wuhan.
+- Ordinary days advance on settlement. Finishing Tianjin Day 7 opens Wuhan. Tianjin Day 15 and Wuhan Day 12 still require at least one star and a successful save to finish their chapters.
 - Every shift credits its full earnings, including replays. Retrying the same settlement never pays twice.
 - Food availability follows the current full-game configuration; egg rice wine is not additionally enabled.
 - Replay the first lesson from Help. Isolated practice grants no income, chapter progress or food records.

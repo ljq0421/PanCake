@@ -3,7 +3,7 @@ using ProjectCake.Core;
 
 namespace ProjectCake.UI;
 
-public enum JourneyPage { Splash, Home, Opening, NewJourney, Continue, Map, City, Completion, Ledger, Upgrades, Collection, Saves, NewJourneyMap }
+public enum JourneyPage { Splash, Home, Opening, NewJourney, Continue, Map, City, Completion, Ledger, Upgrades, Collection, NewJourneyMap }
 
 /// <summary>Travel navigation uses a single fitted canvas, independent of gameplay views.</summary>
 public partial class StartScreen : Control
@@ -18,7 +18,7 @@ public partial class StartScreen : Control
     public bool DeveloperToolsVisible => !ExperienceProfile.IsDemo && OS.GetCmdlineUserArgs().Contains("--dev-ui");
     private SaveService? _save;
     private JourneySettings _settings = null!;
-    private Control _canvas = null!, _body = null!, _modal = null!;
+    private Control _canvas = null!, _body = null!, _homeBody = null!, _modal = null!;
     private Label _status = null!;
     private string _city = JourneyModel.Cities[0].Id, _modalKind = "", _error = "";
     private string? _completedCity;
@@ -36,6 +36,7 @@ public partial class StartScreen : Control
     private bool _hasPresentedPage;
     private string _presentedCity = "";
     private bool _completionOverWorkbench;
+    private bool _homeOverlayOpen;
 
     public override void _Ready()
     {
@@ -43,7 +44,7 @@ public partial class StartScreen : Control
         _settings = GetNode<JourneySettings>("/root/JourneySettings");
         _settings.Changed += SettingsChanged;
         _canvas = GetNode<Control>("Canvas");
-        _body = GetNode<Control>("Canvas/Page");
+        _body = _homeBody = GetNode<Control>("Canvas/Page");
         _modal = GetNode<Control>("Canvas/Modal");
         JourneyTransition.Watch(_modal, bounds: () => new Rect2(
             _canvas.GetGlobalTransformWithCanvas() * BookBounds.Position, BookBounds.Size * _canvas.Scale),
@@ -62,7 +63,7 @@ public partial class StartScreen : Control
         if (_save is not null) _save.Changed -= SaveChanged;
         _save = save; _save.Changed += SaveChanged;
     }
-    private void SaveChanged() { if (!IsVisibleInTree() || _busy) return; if (Page == JourneyPage.Home) RenderHome(); else if (Page == JourneyPage.Saves) RenderSaves(_selectEmptySlot); else if (Page is JourneyPage.City or JourneyPage.Ledger or JourneyPage.Upgrades) RefreshCityPage(); }
+    private void SaveChanged() { if (!IsVisibleInTree() || _busy) return; if (Page == JourneyPage.Home) RenderHome(); else if (Page is JourneyPage.City or JourneyPage.Ledger or JourneyPage.Upgrades) RefreshCityPage(); }
     public void Present() { Show(); RenderHome(); }
     public void PresentHome() { Show(); RenderHome(); }
     public void PresentMap(Action? returnToSource = null) { Show(); _mapReturn = returnToSource ?? RenderHome; _city = _save?.ContinueCityId ?? JourneyModel.Cities[0].Id; RenderMap(); }
@@ -94,11 +95,13 @@ public partial class StartScreen : Control
     private void SetStatus()
     {
         if (_status is not null) _status.Text = _error.Length > 0 ? _error : _save?.DemoMigrationRetryAvailable == true ? "旧试玩存档升级失败，请检查写入权限后重试。原存档已保留。"
-            : !string.IsNullOrEmpty(_save?.SlotError) ? _save.SlotError : _save?.HasLoadError == true ? "存档无法读取。请返回首页管理存档。" : "";
+            : !string.IsNullOrEmpty(_save?.SlotError) ? _save.SlotError : _save?.HasLoadError == true ? "存档无法读取。请打开设置管理存档。" : "";
     }
     private void Begin(JourneyPage page, bool animate = true)
     {
-        CloseModal();
+        // The home journey and collection books live above the intact home page.
+        // Other pages still replace the page content as before.
+        if (!_homeOverlayOpen) CloseModal();
         if (animate && _hasPresentedPage && IsVisibleInTree() && (Page != page || _presentedCity != _city))
         {
             bool openingBook = IsBookPage(page), closingBook = IsBookPage(Page);
@@ -109,7 +112,7 @@ public partial class StartScreen : Control
                 dimBackdrop: false);
         }
         _hasPresentedPage = true; _presentedCity = _city;
-        KillAnimations(); Clear(_body); _buttons.Clear(); _audioButton = null;
+        KillAnimations(); Clear(_body); if (!_homeOverlayOpen) _buttons.Clear(); _audioButton = null;
         Page = page; _busy = false; _error = "";
         // A result reached from a city hub is an overlay: keep that workbench visible
         // behind the book instead of exposing the start-page artwork.
@@ -125,7 +128,7 @@ public partial class StartScreen : Control
     private static void Clear(Node parent)
     { foreach (Node child in parent.GetChildren()) { parent.RemoveChild(child); child.QueueFree(); } }
     private static bool IsBookPage(JourneyPage page) => page is JourneyPage.City or JourneyPage.Ledger or JourneyPage.Upgrades
-        or JourneyPage.Collection or JourneyPage.Saves or JourneyPage.NewJourney or JourneyPage.Opening or JourneyPage.Completion;
+        or JourneyPage.Collection or JourneyPage.NewJourney or JourneyPage.Opening or JourneyPage.Completion;
     private void Focus(string name)
     { (_body.Descendants<Button>().FirstOrDefault(b => b.Name == name && !b.Disabled) ?? _buttons.FirstOrDefault(b => !b.Disabled))?.GrabFocus(); }
     private void Chrome(Action back, string? title = null, bool showBack = true)
@@ -169,6 +172,19 @@ public partial class StartScreen : Control
     {
         CancelJourneyOpening();
         foreach (var t in _tweens) t.Kill(); _tweens.Clear();
+    }
+    private void OpenHomeOverlay()
+    {
+        OpenModal("home-overlay");
+        _homeOverlayOpen = true;
+        _body = new Control { Name = "HomeOverlayContent", Size = new(1920, 1080), MouseFilter = MouseFilterEnum.Stop };
+        _modal.AddChild(_body);
+    }
+    private void RestoreHomeBody()
+    {
+        _homeOverlayOpen = false;
+        _body = _homeBody;
+        Page = JourneyPage.Home;
     }
     private void FitCanvas()
     {

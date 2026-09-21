@@ -57,11 +57,7 @@
       "customerRatio": 0.1
     }
   ],
-  "startUnlocks": [
-    "ingredient:ham",
-    "recipe:pancake_ham",
-    "recipe:pancake_ham_crispy"
-  ],
+  "startUnlocks": [],
   "completionUnlocks": [],
   "availableRecipeIds": [
     "pancake_basic",

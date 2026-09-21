@@ -11,6 +11,9 @@ public partial class SaveService
         if (!HasSavedGame) return true;
         var snapshot = Clone(Data);
         bool changed = false;
+        bool wuhanWasUnlocked = Data.UnlockedCityIds.Contains(StableIds.Cities.Wuhan, StringComparer.Ordinal);
+        EnsureWuhanUnlocked();
+        changed |= !wuhanWasUnlocked && Data.UnlockedCityIds.Contains(StableIds.Cities.Wuhan, StringComparer.Ordinal);
         foreach (string id in new[] { StableIds.Cities.Tianjin, StableIds.Cities.Wuhan })
         {
             if (!Data.UnlockedCityIds.Contains(id)) continue;

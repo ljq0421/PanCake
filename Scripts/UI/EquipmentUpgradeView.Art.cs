@@ -101,4 +101,25 @@ public partial class EquipmentUpgradeView
         Refresh();
         button.AddThemeColorOverride("font_disabled_color", Muted);
     }
+
+    internal static void SkinSecondaryButton(Button button)
+    {
+        var texture = TrimmedArt("res://resource/art/TianJin/DialogUI/button-secondary-v1.png");
+        foreach (string state in new[] { "normal", "hover", "pressed", "disabled" })
+            button.AddThemeStyleboxOverride(state, new StyleBoxEmpty());
+        float scale = button.Size.Y / texture.GetHeight();
+        var background = new NinePatchRect { Name = "ContinueButtonArt", Texture = texture,
+            TextureFilter = TextureFilterEnum.Linear,
+            Size = button.Size / scale, Scale = Vector2.One * scale,
+            PatchMarginLeft = texture.GetHeight() / 2, PatchMarginRight = texture.GetHeight() / 2,
+            MouseFilter = MouseFilterEnum.Ignore, ShowBehindParent = true };
+        button.AddChild(background);
+        void Refresh() => background.SelfModulate = button.IsPressed() ? new(.92f, .88f, .80f)
+            : button.IsHovered() || button.HasFocus() ? new(1.06f, 1.04f, 1f) : Colors.White;
+        button.Draw += Refresh;
+        button.MouseEntered += Refresh; button.MouseExited += Refresh;
+        button.FocusEntered += Refresh; button.FocusExited += Refresh;
+        button.ButtonDown += Refresh; button.ButtonUp += Refresh;
+        Refresh();
+    }
 }

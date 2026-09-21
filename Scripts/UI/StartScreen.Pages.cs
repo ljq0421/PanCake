@@ -8,6 +8,7 @@ public partial class StartScreen
 {
     private void RenderHome()
     {
+        if (_homeOverlayOpen) CloseModal();
         _homeBookPalette = true;
         // Home composition: breakfast-shop wall, overlapping left logo and four tabletop actions.
         // Art is user supplied; layout and live progress remain independent of the textures.
@@ -49,7 +50,6 @@ public partial class StartScreen
         HomeAction("NewGame", "新的旅程", "闭合旅行手账封面｜新旅程入口", new(940, 835, 500, 150), () => RequestNewGame());
         HomeAction("BreakfastRecords", "旅途收藏", "已有旅程手账封面", new(1475, 855, 170, 145), PresentBreakfastCollection, small: true);
         HomeAction("WorldMap", "世界地图", "世界地图入口图标", new(1655, 855, 170, 145), () => PresentMap(), small: true);
-        Button(_body, "ManageSaves", "存档管理", new(1610, 725, 225, 60), () => RenderSaves());
         Utilities(); Focus(canContinue ? "Continue" : "NewGame");
         // The wall remains an additional map entrance, after the main actions in keyboard order.
         Button(_body, "WallMap", "", new(490, 205, 990, 470), () => PresentMap(), bare: true, hoverVisual: wall);
@@ -61,7 +61,7 @@ public partial class StartScreen
         int? slot = requestedSlot ?? _save.GetSlots().FirstOrDefault(s => !s.Exists)?.Id;
         if (slot is null)
         {
-            ShowError("五个槽位已满，请前往存档管理删除一个存档后重试。");
+            ShowError("五个槽位已满，无法新建旅程。");
             return;
         }
         CloseModal(); _busy = true;

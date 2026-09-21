@@ -180,7 +180,7 @@ public partial class SaveService : Node
             if (legacy is not null) { MigrateLegacy(legacy); Changed?.Invoke(); return; }
             Data = new SaveData(); Changed?.Invoke(); return;
         }
-        try { string json = File.ReadAllText(absolute); if (IsDemo && TryResetLegacyDemo(absolute, json)) { Changed?.Invoke(); return; } SaveData? loaded = JsonSerializer.Deserialize<SaveData>(json, JsonOptions); Validate(loaded); ValidateProfile(loaded!); Data = loaded!; EnsureXianUnlocked(); EnsureGuangzhouUnlocked(); EnsureYangzhouUnlocked(); Data.LastVisitedCityId = ContinueCityId; HasSavedGame = true; }
+        try { string json = File.ReadAllText(absolute); if (IsDemo && TryResetLegacyDemo(absolute, json)) { Changed?.Invoke(); return; } SaveData? loaded = JsonSerializer.Deserialize<SaveData>(json, JsonOptions); Validate(loaded); ValidateProfile(loaded!); Data = loaded!; EnsureWuhanUnlocked(); EnsureXianUnlocked(); EnsureGuangzhouUnlocked(); EnsureYangzhouUnlocked(); Data.LastVisitedCityId = ContinueCityId; HasSavedGame = true; }
         catch (Exception exception) { SetCorruptError(absolute, exception); Data = new SaveData(); }
         Changed?.Invoke();
     }
@@ -248,11 +248,7 @@ public partial class SaveService : Node
         int stars = EvaluateStars(result, config); bool newlyCompleted = false;
         if (stars > city.BestStars) city.BestStars = stars;
         if (result.Day >= chapterDays && stars >= 1 && !city.Completed) { city.Completed = true; newlyCompleted = true; }
-        if (config.CityId == StableIds.Cities.Tianjin && city.Completed)
-        {
-            if (!Data.UnlockedCityIds.Contains(StableIds.Cities.Wuhan, StringComparer.Ordinal)) Data.UnlockedCityIds.Add(StableIds.Cities.Wuhan);
-            Data.GetCity(StableIds.Cities.Wuhan);
-        }
+        EnsureWuhanUnlocked();
         if (config.CityId == StableIds.Cities.Wuhan && city.Completed)
             foreach (string id in new[] { "collectible:wuhan_hot_dry_noodles", "collectible:wuhan_doupi", "badge:wuhan_chapter" })
                 if (!city.UnlockedCollectibleIds.Contains(id, StringComparer.Ordinal)) city.UnlockedCollectibleIds.Add(id);
@@ -348,8 +344,17 @@ public partial class SaveService : Node
         return stars;
     }
 
+    public const int WuhanUnlockDay = 7;
     public static int ChapterDays(string cityId) => cityId switch { StableIds.Cities.Tianjin => 15, StableIds.Cities.Wuhan or StableIds.Cities.Xian or StableIds.Cities.Guangzhou or StableIds.Cities.Yangzhou => 12, _ => throw new ArgumentException("未知城市") };
     public static CityProgressData NewXianProgress() => new() { EquipmentLevels = new(StringComparer.Ordinal) { ["xian_board"] = 1, ["xian_oven"] = 0, ["xian_soup"] = 0 } };
+    private void EnsureWuhanUnlocked()
+    {
+        if (!IsCityAvailable(StableIds.Cities.Wuhan)
+            || !Data.Cities.TryGetValue(StableIds.Cities.Tianjin, out CityProgressData? tianjin)
+            || !tianjin.DayBestRecords.ContainsKey(WuhanUnlockDay)) return;
+        if (!Data.UnlockedCityIds.Contains(StableIds.Cities.Wuhan, StringComparer.Ordinal)) Data.UnlockedCityIds.Add(StableIds.Cities.Wuhan);
+        Data.GetCity(StableIds.Cities.Wuhan);
+    }
     private void EnsureXianUnlocked()
     {
         if (!IsCityAvailable(StableIds.Cities.Xian)) return;
@@ -386,7 +391,8 @@ public partial class SaveService : Node
             tianjin.UnlockedContentIds = legacy.UnlockedUpgradeIds; tianjin.DayBestRecords = legacy.DayBestRecords; tianjin.LastDayPlan = legacy.LastDayPlan;
             if (tianjin.HighestUnlockedDay == 15 && tianjin.DayBestRecords.ContainsKey(15)) tianjin.HighestUnlockedDay = 16;
             Data = new SaveData { Coins = legacy.Coins, Cities = new(StringComparer.Ordinal) { [StableIds.Cities.Tianjin] = tianjin }, UnlockedCityIds = new() { StableIds.Cities.Tianjin } };
-            if (legacy.TianjinCompleted || legacy.UnlockedCityIds.Contains(StableIds.Cities.Wuhan, StringComparer.Ordinal)) { Data.UnlockedCityIds.Add(StableIds.Cities.Wuhan); Data.Cities[StableIds.Cities.Wuhan] = NewWuhanProgress(); }
+            if (legacy.UnlockedCityIds.Contains(StableIds.Cities.Wuhan, StringComparer.Ordinal)) { Data.UnlockedCityIds.Add(StableIds.Cities.Wuhan); Data.Cities[StableIds.Cities.Wuhan] = NewWuhanProgress(); }
+            EnsureWuhanUnlocked();
             if (!TrySave(out string error)) throw new IOException(error); MigratedLegacySave = true;
         }
         catch (Exception exception) { _loadIoFailure = exception is IOException or UnauthorizedAccessException && exception is not InvalidDataException; HasLoadError = true; LoadErrorMessage = $"旧存档迁移失败：{exception.Message}"; Data = new SaveData(); GD.PushError(LoadErrorMessage); }

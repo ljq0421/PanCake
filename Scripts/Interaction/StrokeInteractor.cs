@@ -275,13 +275,12 @@ public partial class StrokeInteractor : Control
     {
         double amount = Math.Clamp(ResolveSauceAmount!(), 0, SauceRules.MaximumAmount);
         Vector2 size = new(240, 106);
-        // Work in viewport coordinates to keep the readout inside the screen even
-        // when the held brush moves beyond the stove's input rectangle.
+        // Keep the readout anchored above the pancake. It must remain readable
+        // while the brush moves across the work surface.
+        EllipseGeometry geometry = GetSpreadGeometry();
         Transform2D transform = GetGlobalTransformWithCanvas();
         Rect2 viewport = GetViewportRect();
-        Vector2 pointer = transform * _toolPosition;
-        Vector2 position = pointer + new Vector2(78, -38);
-        if (position.X + size.X > viewport.End.X - 12) position.X = pointer.X - size.X - 64;
+        Vector2 position = transform * (geometry.Center - new Vector2(size.X * 0.5f, geometry.Radii.Y + size.Y + 20));
         position.X = Mathf.Clamp(position.X, viewport.Position.X + 12, viewport.End.X - size.X - 12);
         position.Y = Mathf.Clamp(position.Y, viewport.Position.Y + 12, viewport.End.Y - size.Y - 12);
         position = transform.AffineInverse() * position;

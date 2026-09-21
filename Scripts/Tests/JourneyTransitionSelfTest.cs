@@ -199,7 +199,9 @@ public partial class JourneyTransitionSelfTest : Node
                 }
                 Check(_home.Page == entry.Item2 && _home.SelectedCityId == city.Id, city.Id + " tab reaches " + entry.Item2);
                 var book = _home.GetNode<TextureRect>("Canvas/Page/SharedBook");
-                Check(book.Material is null, city.Id + " home book keeps original palette " + entry.Item2);
+                Check(book.Material is ShaderMaterial homeMaterial
+                    && homeMaterial.Shader.ResourcePath == "res://resource/shaders/settings_book_decor.gdshader",
+                    city.Id + " home book uses settings background " + entry.Item2);
                 Check(new[] { "ContinueTab", "LedgerTab", "UpgradeTab" }.All(n => FindButton(n).IsVisibleInTree()), "three persistent bookmarks");
                 Check(FindButton(entry.Item1).Disabled, "current bookmark selected");
                 if (city.Id is StableIds.Cities.Tianjin or StableIds.Cities.Wuhan) await Capture("home-" + city.Id + "-" + entry.Item2);
@@ -209,7 +211,7 @@ public partial class JourneyTransitionSelfTest : Node
                 Check(_home.GetNode<TextureRect>("Canvas/Page/SharedBook").Material is ShaderMaterial, "city chapter retains its palette " + city.Id);
         }
         _home.PresentHome(); await Complete();
-        foreach (string entry in new[] { "ManageSaves", "BreakfastRecords" })
+        foreach (string entry in new[] { "BreakfastRecords" })
         {
             FindButton(entry).EmitSignal(BaseButton.SignalName.Pressed);
             CheckEffect(JourneyTransition.Effect.SpreadOpen, entry + " uses shared book unfolding");
@@ -241,8 +243,8 @@ public partial class JourneyTransitionSelfTest : Node
             CheckEffect(JourneyTransition.Effect.SpreadOpen, city + " upgrades unfold");
             if (city == "yangzhou") { await Sample("shared-yangzhou-upgrades-fold", .5f); _motion.Finish(); }
             await Complete();
-            book.Descendants<Button>().Single(b => b.Name == "CloseUpgrades").EmitSignal(BaseButton.SignalName.Pressed);
-            CheckEffect(JourneyTransition.Effect.SpreadOpen, city + " return from upgrades unfolds");
+            GetViewport().PushInput(new InputEventKey { Keycode = Key.Escape, Pressed = true }, true);
+            CheckEffect(JourneyTransition.Effect.SpreadOpen, city + " Escape return from upgrades unfolds");
             await Complete();
             book.Hide();
             CheckEffect(JourneyTransition.Effect.SpreadClose, city + " business book closes");

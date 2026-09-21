@@ -338,7 +338,9 @@ public partial class BusinessBookSelfTest : Node
         stress.Open(stickerFixture);stress.FinishAnimation();await Frames();CheckArtPage(stress,city,"double stickers");
         var unlock=stress.FindChild("UnlockSticker",true,false) as Control;
         var upgrade=stress.FindChild("UpgradeSticker",true,false) as Control;
-        Check(unlock is not null&&upgrade is not null&&!unlock.GetGlobalRect().Intersects(upgrade.GetGlobalRect()),city+" unlock and upgrade stickers coexist without overlap");
+        Check(upgrade is not null && (city is "tianjin" or "wuhan"
+            ? unlock is null
+            : unlock is not null && !unlock.GetGlobalRect().Intersects(upgrade.GetGlobalRect())),city+" settlement stickers match its navigation layout");
         if(Capture)await Shot(city+"-unlocks-summary");
         stickerFixture.CanClose=false;stickerFixture.CanRetry=true;stickerFixture.Stickers=Array.Empty<string>();
         stickerFixture.SaveMessage="未保存 · 存档暂时无法写入；本次金币与进度已回退。";

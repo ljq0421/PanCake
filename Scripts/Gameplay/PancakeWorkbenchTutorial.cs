@@ -9,6 +9,7 @@ namespace ProjectCake.Gameplay;
 
 public partial class PancakeWorkstation
 {
+    internal const string RefillLessonAction = "refill";
     private readonly HashSet<string> _learnedActions = new(StringComparer.Ordinal);
     private readonly HashSet<string> _pendingRefillLessons = new(StringComparer.Ordinal);
     private readonly Dictionary<string, Label> _firstUseHints = new(StringComparer.Ordinal);
@@ -20,7 +21,7 @@ public partial class PancakeWorkstation
     internal static readonly string[] AllWorkbenchActions = {
         "take:batter", "take:egg", "take:sauce", "take:crispy", "take:ham", "take:scallion", "take:youtiao", "take:soy_milk",
         "spread", "flip", "sauce", "fold", "bag", "discard", "fryer:load", "fryer:lower", "fryer:raise",
-        "refill:egg", "refill:crispy", "refill:ham", "refill:scallion", "refill:soy_milk",
+        RefillLessonAction,
         "deliver:finished_pancake", "deliver:stored_youtiao", "deliver:soy_milk_cup"
     };
 
@@ -30,6 +31,9 @@ public partial class PancakeWorkstation
         _tutorialMemory = true;
         _learnedActions.Clear();
         if (learned is not null) _learnedActions.UnionWith(learned);
+        // Older saves tracked each ingredient separately. One completed refill already teaches the gesture.
+        if (_learnedActions.Any(action => action.StartsWith("refill:", StringComparison.Ordinal)))
+            _learnedActions.Add(RefillLessonAction);
         Render();
     }
 
@@ -41,7 +45,9 @@ public partial class PancakeWorkstation
         Render();
     }
 
-    private bool NeedsTeaching(string action) => !_learnedActions.Contains(action);
+    private bool NeedsTeaching(string action) => action.StartsWith("refill:", StringComparison.Ordinal)
+        ? !_learnedActions.Contains(RefillLessonAction)
+        : !_learnedActions.Contains(action);
 
     internal void ConfigureFirstPancakeEggLesson(int quantity)
     {
@@ -55,7 +61,7 @@ public partial class PancakeWorkstation
     private void TrackRefillLesson(string id)
     {
         if (IsTianjinWorkbench) _pendingRefillLessons.Add(id);
-        else LearnWorkbenchAction("refill:" + id);
+        else LearnWorkbenchAction(RefillLessonAction);
     }
 
     private void CompleteRefillLessons()
@@ -67,7 +73,7 @@ public partial class PancakeWorkstation
                 : !Inventory.IsRefilling(id) && Inventory.GetQuantity(id) == Inventory.GetCapacity(id);
             if (!complete) continue;
             _pendingRefillLessons.Remove(id);
-            LearnWorkbenchAction("refill:" + id);
+            LearnWorkbenchAction(RefillLessonAction);
         }
     }
 

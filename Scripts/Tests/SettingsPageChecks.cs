@@ -33,8 +33,8 @@ internal static class SettingsPageChecks
         }
         else
         {
-            viewport.PushInput(new InputEventKey { Keycode = key, Pressed = true }, true);
-            viewport.PushInput(new InputEventKey { Keycode = key, Pressed = false }, true);
+            Input.ParseInputEvent(new InputEventKey { WindowId = viewport.GetWindow().GetWindowId(), Keycode = key, Pressed = true });
+            Input.ParseInputEvent(new InputEventKey { WindowId = viewport.GetWindow().GetWindowId(), Keycode = key, Pressed = false });
         }
         await Frames(viewport);
     }
@@ -59,7 +59,11 @@ internal static class SettingsPageChecks
         var originalSize = window.Size;
         bool graphical = DisplayServer.GetName() != "headless";
         string path = settings.SettingsPath;
-        string beforeSave = JsonSerializer.Serialize(save.Data);
+        string slotRoot = Path.Combine(Path.GetDirectoryName(path)!, "save-slots");
+        save.UseSlotsForTests(slotRoot);
+        save.TryCreateSlot(1, out _); save.Data.Coins = 111; save.TrySave(out _);
+        save.TryCreateSlot(2, out _); save.Data.Coins = 222; save.TrySave(out _);
+        save.TryLoadSlot(1, out _);
         Check(JourneySettings.SizesForArea(new(4000, 2300)).Contains(new Vector2I(3840, 2160)), "4K included on a fitting display");
         Check(JourneySettings.SizesForArea(new(2700, 1500)).Contains(new Vector2I(2560, 1440)), "1440p included on a fitting display");
         Check(JourneySettings.SizesForArea(new(1920, 1040)).SequenceEqual(new[] { new Vector2I(1280, 720), new Vector2I(1600, 900) }), "window presets fit usable client area");
@@ -71,11 +75,39 @@ internal static class SettingsPageChecks
         await Click(Find<Button>(screen, "Settings"));
         Check(Find<TextureRect>(screen, "SettingsBook").GetRect() == StartScreen.BookBounds, "book size and position unchanged");
         Check(Find<Button>(screen, "Windowed").HasFocus(), "first display option initially focused");
-        foreach (string name in new[] { "Fullscreen", "Resolution", "VSync", "Language", "Volumemaster", "Volumemusic", "Volumeeffects", "Mute", "ReduceMotion", "Close", "Windowed" })
+        if (!graphical)
         {
-            await KeyPress(screen.GetViewport(), Key.Tab);
-            Check(screen.GetViewport().GuiGetFocusOwner()?.Name == name, "Tab reaches " + name);
+            foreach (string name in new[] { "Fullscreen", "Resolution", "VSync", "Language", "SaveSlot", "Volumemaster", "Volumemusic", "Volumeeffects", "Mute", "ReduceMotion", "Close", "Windowed" })
+            {
+                await KeyPress(screen.GetViewport(), Key.Tab);
+                string actual = screen.GetViewport().GuiGetFocusOwner()?.Name.ToString() ?? "none";
+                Check(actual == name, $"Tab reaches {name} (actual {actual})");
+            }
         }
+        var saveSlot = Find<OptionButton>(screen, "SaveSlot");
+        Check(saveSlot.ItemCount == SaveService.SlotCount && !saveSlot.IsItemDisabled(0) && !saveSlot.IsItemDisabled(1)
+            && saveSlot.IsItemDisabled(2), "save selector lists five slots and disables empty ones");
+        var close = Find<Button>(screen, "Close");
+        Check(close.GetThemeStylebox("normal") is StyleBoxTexture { Texture.ResourcePath: "res://resource/art/TianJin/DialogUI/button-secondary-v1.png" },
+            "close uses the specified secondary button texture");
+        if (graphical && OS.GetCmdlineUserArgs().Contains("--capture"))
+        {
+            await capture("settings-new-zh");
+            saveSlot.ShowPopup(); await Frames(screen);
+            await capture("settings-save-slot-menu");
+            saveSlot.GetPopup().Hide();
+            settings.SetLanguage("en"); await Frames(screen);
+            await capture("settings-new-en");
+            settings.SetLanguage("zh_CN");
+            GD.Print("SETTINGS_VISUAL_CAPTURE_OK");
+            return;
+        }
+        saveSlot.EmitSignal(OptionButton.SignalName.ItemSelected, 1);
+        await Frames(screen);
+        Check(save.ActiveSlotId == 2 && save.Data.Coins == 222 && screen.Page == JourneyPage.Home && screen.ModalOpen
+            && !JourneyTransition.For(screen).Active,
+            "save selector directly switches the active save without reopening the book");
+        string beforeSave = JsonSerializer.Serialize(save.Data);
         Check(Find<Label>(screen, "Labelmusic").Text == "音乐", "music label has no playback-status copy");
         Check(Find<Button>(screen, "Mute").ToggleMode && !Find<Button>(screen, "Mute").ButtonPressed, "mute is an explicit state switch");
         Check(Find<HSlider>(screen, "Volumemusic").GetThemeStylebox("slider") is StyleBoxFlat, "slider uses local paper theme");

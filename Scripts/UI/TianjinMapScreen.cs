@@ -106,7 +106,7 @@ public partial class TianjinMapScreen : Control
         _wuhanLockedIcon.Visible = true;
         _wuhanUnlockedEmblem.Visible = false;
         CityProgressData wuhanProgress = _save.Data.GetCity(StableIds.Cities.Wuhan);
-        _wuhanState.Text = !wuhan && DeveloperToolsVisible ? "测试直达\n不写入城市解锁" : !wuhan ? "未开放\n可使用上方测试入口" : wuhanProgress.Completed
+        _wuhanState.Text = !wuhan && DeveloperToolsVisible ? "测试直达\n不写入城市解锁" : !wuhan ? "未开放\n完成天津 Day 7 营业后开放" : wuhanProgress.Completed
             ? $"已点亮  {new string('★', wuhanProgress.BestStars)}{new string('☆', 3 - wuhanProgress.BestStars)}\n下一站：西安"
             : $"路线已开放\n武汉 Day {wuhanProgress.HighestUnlockedDay}";
         SetCardColor(_wuhanCard, wuhanProgress.Completed ? TianjinUi.Yellow : wuhan ? new Color("#D9E8C3") : TianjinUi.Paper);

@@ -48,54 +48,26 @@ internal static class SaveSlotChecks
         save.Data.Tianjin.LearnedWorkbenchActions.Add("flip");
         Check(save.TrySave(out _), "save first journey");
         string first = File.ReadAllText(Path.Combine(root, "slot-1.json"));
-        screen.PresentHome(); await Click("ManageSaves");
-        Check(File.ReadAllText(Path.Combine(root, "slot-1.json")) == first, "listing is read only");
-        await Click("CreateSlot2");
-        Check(save.ActiveSlotId == 2 && screen.Page == JourneyPage.NewJourneyMap && save.Data.Coins == 0 && save.Data.Tianjin.HighestUnlockedDay == 1,
-            "second journey starts fresh");
-        Check(File.ReadAllText(Path.Combine(root, "slot-1.json")) == first, "new journey preserves first file");
-        screen.PresentHome(); await Click("ManageSaves");
-        await Click("RenameSlot1");
-        Find<LineEdit>("SlotName").Text = " "; await Click("Confirm");
-        Check(screen.ModalOpen && Find<Label>("NameError").Text.Length > 0, "invalid name stays open for correction");
-        Find<LineEdit>("SlotName").Text = "  我的早餐旅程  "; await Click("Confirm");
-        Check(save.GetSlots()[0].Name == "我的早餐旅程" && save.ActiveSlotId == 2, "rename trims and does not switch");
-        await Click("LoadSlot1");
-        Check(save.Data.Coins == 321 && save.Data.Tianjin.HighestUnlockedDay == 4 && screen.Page == JourneyPage.City
-            && screen.SelectedCityId == StableIds.Cities.Tianjin && screen.SelectedDay == 4,
-            "continue restores the selected journey");
-        screen.PresentCity(StableIds.Cities.Tianjin); screen.PresentLedger(); await Frames();
-        Check(!screen.FindChildren("ResetLedgerProgress", "Button", true, false).Any(), "ledger reset removed");
-        screen.PresentHome(); await Click("ManageSaves");
-        await Click("DeleteSlot1");
-        Check(Find<Button>("Cancel").HasFocus(), "delete defaults to cancel");
-        await capture("slots-delete"); KeyPress(Key.Tab); await Frames();
-        Check(Find<Button>("Confirm").HasFocus(), "delete keyboard focus stays in modal");
-        KeyPress(Key.Escape); await Frames(); Check(save.ActiveSlotId == 1, "Escape cancels deletion");
-        await Click("DeleteSlot1"); await Click("Confirm");
-        Check(save.ActiveSlotId is null && !save.CanContinue && save.GetSlots()[1].Exists, "delete current leaves other slot intact");
-        KeyPress(Key.Escape); await Frames(); Check(Find<Button>("Continue").Disabled, "home does not silently choose another slot");
-        await Click("ManageSaves"); await Click("LoadSlot2");
-        for (int id = 1; id <= 5; id++) if (id != 2) Check(save.TryCreateSlot(id, out _), "fill slot " + id);
+        Check(save.TryCreateSlot(2, out _), "create second journey outside settings");
+        save.Data.Coins = 654; save.Data.Tianjin.HighestUnlockedDay = 6; Check(save.TrySave(out _), "save second journey");
+        save.TryLoadSlot(1, out _);
+        screen.PresentHome(); await Click("Settings");
+        var selector = Find<OptionButton>("SaveSlot");
+        Check(selector.ItemCount == SaveService.SlotCount && !selector.IsItemDisabled(0) && !selector.IsItemDisabled(1)
+            && selector.IsItemDisabled(2), "settings selector lists all five slots and disables empty ones");
+        await SelectSaveSlot(1);
+        Check(save.ActiveSlotId == 2 && save.Data.Coins == 654 && screen.Page == JourneyPage.Home && screen.ModalOpen,
+            "settings selector directly switches to the chosen journey");
+        Check(File.ReadAllText(Path.Combine(root, "slot-1.json")) == first, "switching preserves the first journey");
+        for (int id = 3; id <= 5; id++) Check(save.TryCreateSlot(id, out _), "fill slot " + id);
         save.TryLoadSlot(2, out _); screen.PresentHome(); await Click("NewGame");
         Check(screen.Page == JourneyPage.Home && Find<Label>("Status").Text.Contains("已满") && save.ActiveSlotId == 2,
             "full slots stay on home without replacing current journey");
-        await Click("ManageSaves");
-        Check(Find<Label>("SlotsFull").Text.Contains("已满"), "full slots explain deletion requirement");
-        Check(!screen.FindChildren("CreateSlot*", "Button", true, false).Any(), "full slots offer no overwrite");
-        await capture("slots-full");
-        await Click("RenameSlot2"); Find<LineEdit>("SlotName").Text = "二十个字的旅程名称测试用于检查显示是否清楚";
-        await capture("slots-rename");
-        Find<LineEdit>("SlotName").Text = new string('旅', 20); Find<LineEdit>("SlotName").GrabFocus();
-        KeyPress(Key.Enter); await Frames();
-        Check(save.GetSlots()[1].Name == new string('旅', 20), "Enter submits a maximum-length name");
-        await capture("slots-long-name");
-        await Click("DeleteSlot2"); await capture("slots-delete-long-name"); KeyPress(Key.Escape); await Frames();
         File.WriteAllText(Path.Combine(root, "slot-3.json"), "broken");
-        screen.PresentHome(); await Click("ManageSaves");
-        Check(Find<Button>("LoadSlot3").Disabled && !Find<Button>("LoadSlot2").Disabled, "corrupt slot does not block others");
+        screen.PresentHome(); await Click("Settings");
+        Check(Find<OptionButton>("SaveSlot").IsItemDisabled(2) && !Find<OptionButton>("SaveSlot").IsItemDisabled(1), "corrupt slot does not block other slot choices");
         await capture("slots-corrupt");
-        await Click("LoadSlot2"); save.Load();
+        save.Load();
         Check(save.ActiveSlotId == 2 && save.CanContinue, "restart restores last selected slot");
         // Exercise actual city initialization and ownership binding, including Yangzhou's separate session.
         string[] cities = ExperienceProfile.IsDemo ? new[] { StableIds.Cities.Tianjin, StableIds.Cities.Wuhan }
@@ -132,10 +104,10 @@ internal static class SaveSlotChecks
             host.GetViewport().PushInput(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Position = at, GlobalPosition = at }, true);
             await Frames();
         }
-        void KeyPress(Key key)
+        async Task SelectSaveSlot(int index)
         {
-            host.GetViewport().PushInput(new InputEventKey { Keycode = key, Pressed = true }, true);
-            host.GetViewport().PushInput(new InputEventKey { Keycode = key, Pressed = false }, true);
+            Find<OptionButton>("SaveSlot").EmitSignal(OptionButton.SignalName.ItemSelected, index);
+            await Frames();
         }
     }
 

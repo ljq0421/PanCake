@@ -25,7 +25,7 @@ public partial class TutorialFocusSelfTest
         var stock = station.Descendants<StockGesture>().Single(g => g.Name == "StockGesture_egg");
         var trash = station.Descendants<DropZone>().Single(z => z.Name == "TrashZone");
         Control canvas = (Control)station.FindChild("PancakeCanvas", true, false);
-        station.ConfigureTutorial(PancakeWorkstation.AllWorkbenchActions.Where(a => a != "discard" && !a.StartsWith("refill:")));
+        station.ConfigureTutorial(PancakeWorkstation.AllWorkbenchActions.Where(a => a != "discard" && a != PancakeWorkstation.RefillLessonAction));
         void Focus() { screen.RefreshForCapture(); focus.Refresh(); }
         void Right(bool pressed, Vector2 at)
         {
@@ -81,28 +81,28 @@ public partial class TutorialFocusSelfTest
             "actual drop in bin teaches discard");
         Check(focus.CurrentAction == "refill:egg", "cleanup hands off to missing stock");
         HoldEgg(.2); ReleaseEgg(); Focus();
-        Check(!station.Inventory.IsRefilling("egg") && !save.Data.Tianjin.LearnedWorkbenchActions.Contains("refill:egg"),
+        Check(!station.Inventory.IsRefilling("egg") && !save.Data.Tianjin.LearnedWorkbenchActions.Contains(PancakeWorkstation.RefillLessonAction),
             "short left hold does not restock or teach");
         HoldEgg(.45); ReleaseEgg(); Focus();
         Check(station.Inventory.IsRefilling("egg") && focus.CurrentAction == "refill:egg" && focus.CurrentText.Contains("等待补满")
-            && !save.Data.Tianjin.LearnedWorkbenchActions.Contains("refill:egg"), "hold starts real refill but mastery waits for completion");
+            && !save.Data.Tianjin.LearnedWorkbenchActions.Contains(PancakeWorkstation.RefillLessonAction), "hold starts real refill but mastery waits for completion");
         await Shot("tianjin-refill-progress");
         screen._Notification((int)NotificationApplicationFocusOut); station.Tick(100); focus.Refresh();
-        Check(station.Inventory.IsRefilling("egg") && !focus.Visible && !save.Data.Tianjin.LearnedWorkbenchActions.Contains("refill:egg"),
+        Check(station.Inventory.IsRefilling("egg") && !focus.Visible && !save.Data.Tianjin.LearnedWorkbenchActions.Contains(PancakeWorkstation.RefillLessonAction),
             "focus pause freezes refill and does not mark mastery");
         screen._Notification((int)NotificationApplicationFocusIn); station.Tick(station.Inventory.LevelData.RefillSeconds); Focus();
-        Check(station.Inventory.GetQuantity("egg") == station.Inventory.GetCapacity("egg") && save.Data.Tianjin.LearnedWorkbenchActions.Contains("refill:egg")
+        Check(station.Inventory.GetQuantity("egg") == station.Inventory.GetCapacity("egg") && save.Data.Tianjin.LearnedWorkbenchActions.Contains(PancakeWorkstation.RefillLessonAction)
             && focus.CurrentAction != "refill:egg", "completed refill persists mastery and removes the instruction");
         station.Inventory.TryConsume("egg", station.Inventory.GetCapacity("egg")); station.Machine.Runtime.State = PancakeState.Burnt; Focus();
         Check(focus.CurrentAction is null, "successful maintenance does not repeat instructions");
         // A day reset fills stock without teaching an unfinished refill.
         station.ResetForDay(); station.ConfigureTutorial(Array.Empty<string>()); station.Inventory.TryConsume("egg", 1);
         HoldEgg(.45); ReleaseEgg(); station.ResetForDay(); station.Tick(1);
-        Check(!station.LearnedWorkbenchActions.Contains("refill:egg"), "reset does not treat an abandoned refill as mastery");
+        Check(!station.LearnedWorkbenchActions.Contains(PancakeWorkstation.RefillLessonAction), "reset does not treat an abandoned refill as mastery");
         controller.AbandonDay(); save.Data.Tianjin.HighestUnlockedDay = 12;
         Check(screen.Initialize(catalog, save, controller, 9), "maintenance with fryer and soy initializes");
         screen.BeginDay(); controller.Tick(DayController.OpeningDurationSeconds); controller.Tick(1); screen.RefreshForCapture(true);
-        station.ConfigureTutorial(PancakeWorkstation.AllWorkbenchActions.Where(a => a != "discard" && a != "fryer:lower" && !a.StartsWith("refill:")));
+        station.ConfigureTutorial(PancakeWorkstation.AllWorkbenchActions.Where(a => a != "discard" && a != "fryer:lower" && a != PancakeWorkstation.RefillLessonAction));
         station.LearnWorkbenchAction("fryer:load");
         station.FryerMachine!.Runtime.State = ProjectCake.Fryer.FryerState.Loaded; station.FryerMachine.Runtime.Quantity = 1;
         station.Inventory.TryConsume("egg", station.Inventory.GetCapacity("egg"));
@@ -113,18 +113,22 @@ public partial class TutorialFocusSelfTest
         station.ResetForDay(); station.FryerMachine.Runtime.State = ProjectCake.Fryer.FryerState.Burnt; station.FryerMachine.Runtime.Quantity = 1; Focus();
         Check(focus.CurrentAction == "discard" && focus.CurrentText.Contains("0.45"), "burnt fryer teaches the same right hold");
         station.ResetForDay();
+        station.LearnWorkbenchAction(PancakeWorkstation.RefillLessonAction);
         var soy = station.SoyMilkTray!;
         void TakeSoy() { Check(soy.TryConsumeForDelivery(), "consume soy fixture"); soy.Tick(SoyMilkTrayRuntime.TakeSeconds); }
         TakeSoy(); Focus(); Check(focus.CurrentAction != "refill:soy_milk", "one used soy cup does not prompt low-stock restocking");
         while (soy.Quantity > 2) TakeSoy(); Focus();
-        Check(focus.CurrentAction == "refill:soy_milk", "soy low stock follows the same idle-time rule");
+        Check(focus.CurrentAction != "refill:soy_milk", "one completed restock suppresses soy's duplicate long-press lesson");
         var soyGesture = station.Descendants<StockGesture>().Single(g => g.Name == "StockGesture_soy_milk");
         using (var press = new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true, Position = soyGesture.Size / 2 }) soyGesture._GuiInput(press);
         station.Tick(.45); soyGesture.Cancel(); Focus();
-        Check(soy.IsRefilling && focus.CurrentText.Contains("等待补满") && !station.LearnedWorkbenchActions.Contains("refill:soy_milk"),
-            "soy hold also waits for actual refill completion");
+        Check(soy.IsRefilling && station.LearnedWorkbenchActions.Contains(PancakeWorkstation.RefillLessonAction),
+            "soy long hold still starts a refill without reopening the lesson");
         station.Tick(SoyMilkTrayRuntime.RefillSeconds); Focus();
-        Check(soy.Quantity == soy.Capacity && station.LearnedWorkbenchActions.Contains("refill:soy_milk"), "soy refill completion teaches once");
+        Check(soy.Quantity == soy.Capacity && station.LearnedWorkbenchActions.Contains(PancakeWorkstation.RefillLessonAction), "soy refill completion keeps the single shared lesson");
+        station.ConfigureTutorial(new[] { "refill:egg" });
+        while (soy.Quantity > 2) TakeSoy(); Focus();
+        Check(focus.CurrentAction != "refill:soy_milk", "legacy ingredient-specific refill records suppress the shared lesson");
         screen.QueueFree(); controller.QueueFree(); await Frames();
     }
 }

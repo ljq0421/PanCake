@@ -25,13 +25,13 @@ public partial class StartScreen
         FitTextWidth(name, 28, 20);
     }
 
-    private Control ContinueSummaryRow(Control parent, string name, string caption, string value, float y, bool wrap = false)
+    private Control ContinueSummaryRow(Control parent, string name, string caption, string value, float y, bool wrap = false, string? icon = null)
     {
         var row = new Control { Name = name + "Row", Position = new(0, y), Size = new(460, 70), MouseFilter = MouseFilterEnum.Ignore };
         parent.AddChild(row);
-        var icon = HomeArt(row, caption, new(0, 17, 34, 36));
-        icon.Name = name + "Icon";
-        CityPageArtSkin.Apply(icon, BookPaletteCity);
+        var artwork = HomeArt(row, icon ?? caption, new(0, 17, 34, 36));
+        artwork.Name = name + "Icon";
+        CityPageArtSkin.Apply(artwork, BookPaletteCity);
         var label = Text(row, name + "Label", caption, new(44, 8, 99, 54), 23);
         if (CityPageArtSkin.UsesWuhanPalette(BookPaletteCity))
             label.AddThemeColorOverride("font_color", CitySettlementTheme.For("wuhan").Primary.Darkened(.42f));

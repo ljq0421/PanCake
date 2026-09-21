@@ -1197,4 +1197,4 @@ metadata/_scene_bindings = PackedStringArray("ProjectCake.UI.TianjinMapScreen|_y
 layout_mode = 2
 theme_override_colors/font_color = Color(0.23137255, 0.14117648, 0.101960786, 1)
 theme_override_font_sizes/font_size = 19
-text = "天津 Day 15 一星开放武汉；武汉 Day 12 一星开放西安；西安 Day 12 一星开放广州。"
+text = "天津 Day 7 营业后开放武汉；武汉 Day 12 一星开放西安；西安 Day 12 一星开放广州。"

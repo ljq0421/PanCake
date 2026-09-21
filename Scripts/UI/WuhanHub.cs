@@ -51,7 +51,7 @@ public partial class WuhanHub : Control
         _primary.Disabled = _save.HasLoadError;
         _dayTitle.Text = $"Day {day}";
         _daySubtitle.Text = DaySubtitle(day);
-        _dayRecord.Text = _save.HasLoadError ? "存档无法读取，暂时无法营业。\n请返回首页管理存档。"
+        _dayRecord.Text = _save.HasLoadError ? "存档无法读取，暂时无法营业。\n请打开设置管理存档。"
             : city.DayBestRecords.TryGetValue(day, out DayBestRecord? best)
                 ? $"历史最佳营业额  ¥{best.TotalRevenue}\n满意度  {best.Satisfaction:0}%  ·  Perfect {best.PerfectOrders} 单\n\n设备和食材已经备好，随时可以开门。"
                 : "这是新的营业日，先看订单再安排工作台。\n\n翻开经营手账，可以查看往日记录或重玩。";

@@ -681,9 +681,10 @@ public partial class StageFourSelfTest : Node
             save.CommitDay(Result(day, 1, 100, 1), Generate(catalog, day), catalog.DaysByNumber[day]);
         Check(save.Data.UnlockedUpgradeIds.Contains("equipment:fryer_lv2") && save.Data.UnlockedUpgradeIds.Contains("equipment:ingredient_station_lv3")
             && save.Data.UnlockedUpgradeIds.Contains("equipment:pancake_stove_lv3") && save.Data.UnlockedUpgradeIds.Contains("equipment:fryer_lv3"), "Day 7/10/11/12 按顺序开放三级升级");
+        Check(!save.Data.TianjinCompleted && save.Data.UnlockedCityIds.Contains(StableIds.Cities.Wuhan), "完成 Day 7 营业即开放武汉，不要求天津章节星级");
 
         save.CommitDay(Result(15, 24, 90, 15, 356), Generate(catalog, 15), day15);
-        Check(save.Data.TianjinCompleted && save.Data.TianjinBestStars == 3 && save.Data.UnlockedCityIds.Contains("city:wuhan"), "Day 15 三星点亮天津并开放武汉占位");
+        Check(save.Data.TianjinCompleted && save.Data.TianjinBestStars == 3, "Day 15 三星点亮天津章节");
         save.CommitDay(Result(15, 18, 70, 0, 100), Generate(catalog, 15), day15);
         Check(save.Data.TianjinBestStars == 3, "重玩低星级不会降低历史最高星级");
 

@@ -13,15 +13,19 @@ public partial class EquipmentUpgradeView : Control
     private Control _detail = null!;
     private Action<CityEquipmentView> _purchase = null!;
     private Action<string> _selection = null!;
+    private string? _continueCaption;
+    private Action? _continueBusiness;
     private string _cityId = "";
     private bool _submitted;
     public string SelectedId { get; private set; } = "";
     public IEnumerable<Button> Buttons => _cards.Concat(_detail.GetChildren().OfType<Button>());
 
-    public void Configure(CityEquipmentView[] items, string? selected, string cityId, Action<string> selection, Action<CityEquipmentView> purchase)
+    public void Configure(CityEquipmentView[] items, string? selected, string cityId, Action<string> selection, Action<CityEquipmentView> purchase,
+        string? continueCaption = null, Action? continueBusiness = null)
     {
         Size = new(1260, 620); MouseFilter = MouseFilterEnum.Ignore;
         _items = items; _purchase = purchase; _selection = selection; _cityId = cityId;
+        _continueCaption = continueCaption; _continueBusiness = continueBusiness;
         LabelAt(this, "EquipmentListTitle", "设备一览", new(0, 0, 280, 62), 43);
         LabelAt(this, "EquipmentListHint", "好的设备，是美味的开始！", new(275, 12, 300, 45), 22, Muted);
         for (int i = 0; i < items.Length; i++)
@@ -109,10 +113,18 @@ public partial class EquipmentUpgradeView : Control
         }
         MoneyPlate(_detail, "UpgradePriceFrame", "UpgradePrice", e.TargetLevel is not null ? $"{e.Price} 金币" : e.Level >= 3 ? "当前可用的最好设备" : e.Notice,
             new(30, 449, 500, 62), e.TargetLevel is not null, _cityId);
-        var buy = MakeButton(_detail, "UpgradeEquipment", "升级设备", new(45, 519, 470, 72));
+        bool showContinue = _continueCaption is not null && _continueBusiness is not null;
+        var buy = MakeButton(_detail, "UpgradeEquipment", "升级设备", new(45, 519, showContinue ? 235 : 470, 72));
         buy.Disabled = !e.CanBuy; buy.AddThemeFontSizeOverride("font_size", 34);
         SkinPurchaseButton(buy, _cityId);
         buy.Pressed += () => { if (_submitted || buy.Disabled || !buy.IsVisibleInTree()) return; _submitted = true; buy.Disabled = true; _purchase(e); };
+        if (showContinue)
+        {
+            var continueButton = MakeButton(_detail, "ContinueAfterUpgrade", _continueCaption!, new(280, 519, 235, 72));
+            continueButton.AddThemeFontSizeOverride("font_size", 25);
+            SkinSecondaryButton(continueButton);
+            continueButton.Pressed += () => { if (continueButton.IsVisibleInTree()) _continueBusiness!(); };
+        }
         if (!e.CanBuy)
             LabelAt(_detail, "UpgradeNotice", e.Notice, new(0, 591, 560, 29), 20, Muted, true);
     }

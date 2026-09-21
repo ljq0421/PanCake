@@ -1,7 +1,7 @@
 shader_type canvas_item;
 render_mode unshaded;
 
-// Only the settings instance uses this material. Coordinates refer to the source book atlas.
+// Shared by settings and city pages opened from home. Coordinates refer to the source book atlas.
 float spot(vec2 uv, vec2 center, vec2 radius) {
     return 1.0 - smoothstep(0.65, 1.0, length((uv - center) / radius));
 }

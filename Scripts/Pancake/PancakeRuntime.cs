@@ -7,6 +7,7 @@ public sealed class PancakeRuntime
 {
     internal long Generation { get; private set; }
     private readonly HashSet<string> _extraIngredients = new(StringComparer.Ordinal);
+    private readonly List<string> _extraIngredientOrder = [];
 
     public PancakeState State { get; internal set; } = PancakeState.Empty;
     public PancakeQuality Quality { get; internal set; } = PancakeQuality.Perfect;
@@ -16,9 +17,16 @@ public sealed class PancakeRuntime
     public bool HasEgg { get; internal set; }
     public bool HasSauce { get; internal set; }
     public IReadOnlySet<string> ExtraIngredients => _extraIngredients;
+    /// <summary>附加小料的实际加入顺序；末项应绘制在最上层。</summary>
+    public IReadOnlyList<string> ExtraIngredientOrder => _extraIngredientOrder;
     public YoutiaoQuality? InternalYoutiaoQuality { get; internal set; }
 
-    internal bool AddIngredient(string ingredientId) => _extraIngredients.Add(ingredientId);
+    internal bool AddIngredient(string ingredientId)
+    {
+        if (!_extraIngredients.Add(ingredientId)) return false;
+        _extraIngredientOrder.Add(ingredientId);
+        return true;
+    }
 
     internal void Reset()
     {
@@ -31,6 +39,7 @@ public sealed class PancakeRuntime
         HasEgg = false;
         HasSauce = false;
         _extraIngredients.Clear();
+        _extraIngredientOrder.Clear();
         InternalYoutiaoQuality = null;
     }
 

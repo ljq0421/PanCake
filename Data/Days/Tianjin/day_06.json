@@ -20,12 +20,14 @@
     "pancake_soy_milk": 0.15
   },
   "recipeWeights": {
-    "pancake_basic": 0.07142857142857142,
-    "pancake_crispy": 0.14285714285714285,
-    "pancake_scallion": 0.14285714285714285,
-    "pancake_scallion_crispy": 0.2857142857142857,
-    "pancake_youtiao": 0.21428571428571425,
-    "pancake_scallion_youtiao": 0.14285714285714285
+    "pancake_basic": 0.05,
+    "pancake_crispy": 0.08,
+    "pancake_scallion": 0.08,
+    "pancake_scallion_crispy": 0.14,
+    "pancake_ham": 0.15,
+    "pancake_ham_crispy": 0.15,
+    "pancake_youtiao": 0.2,
+    "pancake_scallion_youtiao": 0.15
   },
   "arrivalSegments": [
     {
@@ -54,13 +56,19 @@
       "customerRatio": 0.1
     }
   ],
-  "startUnlocks": [],
+  "startUnlocks": [
+    "ingredient:ham",
+    "recipe:pancake_ham",
+    "recipe:pancake_ham_crispy"
+  ],
   "completionUnlocks": [],
   "availableRecipeIds": [
     "pancake_basic",
     "pancake_crispy",
     "pancake_scallion",
     "pancake_scallion_crispy",
+    "pancake_ham",
+    "pancake_ham_crispy",
     "pancake_youtiao",
     "pancake_scallion_youtiao"
   ],

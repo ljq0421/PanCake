@@ -30,6 +30,11 @@ public partial class CityPagesSelfTest : Node
             _main = GD.Load<PackedScene>("res://Scenes/Main/Main.tscn").Instantiate<GameController>(); AddChild(_main);
             _screen = _main.GetNode<StartScreen>("UI/StartScreen");
             await Frames();
+            if (args.Contains("--tabs-only"))
+            {
+                await ReviewCityTabs();
+                GD.Print($"CITY_TABS_TEST_RESULT passed={_passed} failed=0"); GetTree().Quit(); return;
+            }
             if (args.Contains("--completion-overlay-only"))
             {
                 _save.QueueJourneyCompletion(StableIds.Cities.Tianjin);
@@ -48,6 +53,11 @@ public partial class CityPagesSelfTest : Node
             {
                 await ReviewWuhanLedger();
                 GD.Print($"CITY_LEDGER_TEST_RESULT passed={_passed} failed=0"); GetTree().Quit(); return;
+            }
+            if (args.Contains("--ledger-chrome-only"))
+            {
+                await ReviewLedgerChrome();
+                GD.Print($"CITY_LEDGER_CHROME_TEST_RESULT passed={_passed} failed=0"); GetTree().Quit(); return;
             }
             if (args.Contains("--map-only"))
             {
@@ -107,6 +117,14 @@ public partial class CityPagesSelfTest : Node
                 Check(city.Id == StableIds.Cities.Wuhan
                     ? Find<TextureRect>("SharedBook").Material is ShaderMaterial
                     : Find<TextureRect>("SharedBook").Material is null, "ledger palette scope " + city.Name);
+                Check(!_screen.FindChildren("Back", "Button", true, false).Any()
+                    && !_screen.FindChildren("PageTitle", "Label", true, false).Any(), "ledger omits top return and title " + city.Name);
+                var ledgerStart = Find<Button>("StartSelectedDay");
+                var plate = ledgerStart.GetNode<NinePatchRect>("StartSelectedDayButtonPlate");
+                Check(plate.Texture is AtlasTexture plateAtlas
+                    && plateAtlas.Atlas.ResourcePath.EndsWith("首页地图按钮底板.png"), "ledger action uses supplied map button plate " + city.Name);
+                Check(ledgerStart.GetGlobalRect().GetCenter().X > Find<TextureRect>("SharedBook").GetGlobalRect().GetCenter().X,
+                    "ledger action stays on right book page " + city.Name);
                 Check(_screen.SelectedDay == city.Days, "ledger selects latest " + city.Name);
                 Check(Find<Label>("BestRevenue").Text == "140 金币", "ledger record " + city.Name);
                 Check(Find<TextureRect>("FinalDayCrown") is not null && Find<TextureRect>("PerfectStamp") is not null, "final day and perfect badges " + city.Name);
@@ -256,7 +274,16 @@ public partial class CityPagesSelfTest : Node
                     Check(label.GetLineCount() <= label.GetVisibleLineCount(), "all lines visible " + label.Name);
                     Check(label.Position.Y + label.Size.Y <= ((Control)label.GetParent()).Size.Y + 1, "row text fits height " + label.Name);
                 }
-                foreach (var node in Find<Control>("JourneyGoals").FindChildren("*", "Label", true, false))
+                bool embeddedChallenge = city.Id is StableIds.Cities.Tianjin or StableIds.Cities.Wuhan;
+                if (embeddedChallenge)
+                {
+                    Check(Find<Label>("ProgressLabel").Text == "每日挑战" && Find<Label>("Progress").Text.Contains("奖励"),
+                        "daily challenge occupies the progress row " + city.Name + state);
+                    Check(!_screen.FindChildren("DailyChallengePreview", "Label", true, false).Any()
+                        && !_screen.FindChildren("JourneyGoals", "Control", true, false).Any(),
+                        "no duplicate daily challenge below card " + city.Name + state);
+                }
+                else foreach (var node in Find<Control>("JourneyGoals").FindChildren("*", "Label", true, false))
                 {
                     var label = (Label)node;
                     Check(label.GetLineCount() <= label.GetVisibleLineCount(), "goal and collection lines visible " + label.Name);
@@ -264,7 +291,22 @@ public partial class CityPagesSelfTest : Node
                 Check(Find<Label>("Coins").GetLineCount() == 1, "coin amount fits one row");
                 var button = Find<Button>("OpenBusiness");
                 Check(!button.Disabled && button.HasFocus(), "primary action available and focused");
-                Check(button.Text == "继续营业" && button.Position.X + button.Size.X / 2 == StartScreen.BookBounds.GetCenter().X, "primary action centered on book");
+                Check(button.Text == "继续营业" && button.Size == new Vector2(360, 78)
+                    && button.Position.X >= StartScreen.BookBounds.GetCenter().X
+                    && button.Position.X + button.Size.X <= StartScreen.BookBounds.End.X
+                    && button.Position.Y == (embeddedChallenge ? 752 : 862)
+                    && button.Position.Y + button.Size.Y <= StartScreen.BookBounds.End.Y,
+                    "primary action is compact and contained on right page " + city.Name + state);
+                var continueTab = Find<Button>("ContinueTab");
+                var continueArt = continueTab.GetChildren().OfType<TextureRect>().Single();
+                Check(continueTab.GetNode<Label>("Caption").Text == "继续\n营业"
+                    && continueArt.Texture is AtlasTexture continueAtlas
+                    && continueAtlas.Atlas.ResourcePath.EndsWith("书页标签-继续旅程.png")
+                    && continueArt.Material is null,
+                    "continue tab uses supplied journey artwork without train overlay");
+                var ledgerArt = Find<Button>("LedgerTab").GetChildren().OfType<TextureRect>().Single();
+                Check(!ReferenceEquals(continueArt.Texture, ledgerArt.Texture),
+                    "three book tabs keep distinguishable colors");
                 string before = File.ReadAllText(_path);
                 _screen.RefreshCityPage(); await Frames();
                 Check(File.ReadAllText(_path) == before, "overview refresh leaves save untouched");
@@ -299,9 +341,32 @@ public partial class CityPagesSelfTest : Node
         var selectedDate = Find<Button>("Date1").GetChildren().OfType<Panel>().Single().GetThemeStylebox("panel") as StyleBoxFlat;
         Check(selectedDate is not null && selectedDate.BgColor == CitySettlementTheme.Paper.Lerp(CitySettlementTheme.For("wuhan").Primary, .32f), "Wuhan ledger date card uses city palette");
         var start = Find<Button>("StartSelectedDay");
-        var startStyle = start.GetThemeStylebox("normal") as StyleBoxFlat;
-        Check(startStyle is not null && startStyle.BgColor == CitySettlementTheme.For("wuhan").Primary, "Wuhan ledger action uses city palette");
+        var plate = start.GetNode<NinePatchRect>("StartSelectedDayButtonPlate");
+        Check(plate.Texture is AtlasTexture atlas && atlas.Atlas.ResourcePath.EndsWith("首页地图按钮底板.png"), "Wuhan ledger action uses supplied map button plate");
+        Check(!_screen.FindChildren("Back", "Button", true, false).Any()
+            && !_screen.FindChildren("PageTitle", "Label", true, false).Any(), "Wuhan ledger omits top return and title");
         await Capture("武汉-ledger-review");
+    }
+    private async Task ReviewLedgerChrome()
+    {
+        foreach (var city in JourneyModel.Cities)
+        {
+            if (!_save.Data.UnlockedCityIds.Contains(city.Id)) _save.Data.UnlockedCityIds.Add(city.Id);
+            _save.Data.GetCity(city.Id).HighestUnlockedDay = city.Days;
+            _screen.PresentCity(city.Id); await Frames();
+            _screen.PresentLedger(); await Frames();
+            Check(!_screen.FindChildren("Back", "Button", true, false).Any()
+                && !_screen.FindChildren("PageTitle", "Label", true, false).Any(), "ledger omits top return and title " + city.Name);
+            var start = Find<Button>("StartSelectedDay");
+            var plate = start.GetNode<NinePatchRect>("StartSelectedDayButtonPlate");
+            Check(plate.Texture is AtlasTexture atlas && atlas.Atlas.ResourcePath.EndsWith("首页地图按钮底板.png"),
+                "ledger action uses supplied map button plate " + city.Name);
+            Check(start.GetGlobalRect().GetCenter().X > Find<TextureRect>("SharedBook").GetGlobalRect().GetCenter().X,
+                "ledger action stays on right book page " + city.Name);
+            Check(start.Position.Y > Find<Label>("BestMetrics").Position.Y + Find<Label>("BestMetrics").Size.Y
+                && start.Position.Y + start.Size.Y <= 845, "ledger action clears record labels and page edge " + city.Name);
+            await Capture(city.Name + "-ledger-chrome");
+        }
     }
     private void CheckOverviewModel(CityPageModel model)
     {
@@ -330,6 +395,42 @@ public partial class CityPagesSelfTest : Node
             Check(overview.LatestUnlocks.Count > 0 && overview.TotalDays == destination.Days, "overview uses city content " + destination.Name);
             p.HighestUnlockedDay = old;
         }
+    }
+    private async Task ReviewCityTabs()
+    {
+        _save.Data.GetCity(StableIds.Cities.Tianjin).HighestUnlockedDay = 2;
+        Check(_main.OpenCity(StableIds.Cities.Tianjin), "open city tab review"); await Frames();
+        Check(_screen.Page == JourneyPage.City, "city tab review shows overview");
+        var button = Find<Button>("OpenBusiness");
+        Check(button.Text == "继续营业" && button.Size == new Vector2(360, 78)
+            && button.Position.X >= StartScreen.BookBounds.GetCenter().X
+            && button.Position.X + button.Size.X <= StartScreen.BookBounds.End.X
+            && button.Position.Y == 752 && button.Position.Y + button.Size.Y <= StartScreen.BookBounds.End.Y,
+            "Tianjin action sits below the five-row card");
+        Check(Find<Label>("ProgressLabel").Text == "每日挑战" && Find<Label>("Progress").Text.Contains("奖励")
+            && !_screen.FindChildren("DailyChallengePreview", "Label", true, false).Any(),
+            "Tianjin embeds daily challenge without duplicate preview");
+        var continueTab = Find<Button>("ContinueTab");
+        var continueArt = continueTab.GetChildren().OfType<TextureRect>().Single();
+        Check(continueTab.GetNode<Label>("Caption").Text == "继续\n营业"
+            && continueArt.Texture is AtlasTexture continueAtlas
+            && continueAtlas.Atlas.ResourcePath.EndsWith("书页标签-继续旅程.png")
+            && continueArt.Material is null,
+            "continue tab uses supplied journey artwork without train overlay");
+        var ledgerArt = Find<Button>("LedgerTab").GetChildren().OfType<TextureRect>().Single();
+        Check(!ReferenceEquals(continueArt.Texture, ledgerArt.Texture),
+            "three book tabs keep distinguishable colors");
+        // Capture the settled page, not the temporary book-spread transition frame.
+        await ToSignal(GetTree().CreateTimer(.8), SceneTreeTimer.SignalName.Timeout); await Frames();
+        await Capture("city-tabs-tianjin");
+        if (!_save.Data.UnlockedCityIds.Contains(StableIds.Cities.Wuhan)) _save.Data.UnlockedCityIds.Add(StableIds.Cities.Wuhan);
+        _save.Data.GetCity(StableIds.Cities.Wuhan).HighestUnlockedDay = 2;
+        _screen.PresentCity(StableIds.Cities.Wuhan); await Frames();
+        Check(Find<Button>("OpenBusiness").Position.Y == 752 && Find<Label>("ProgressLabel").Text == "每日挑战"
+            && Find<Label>("Progress").Text.Contains("奖励") && !_screen.FindChildren("JourneyGoals", "Control", true, false).Any(),
+            "Wuhan embeds daily challenge and action below card");
+        await ToSignal(GetTree().CreateTimer(.8), SceneTreeTimer.SignalName.Timeout); await Frames();
+        await Capture("city-tabs-wuhan");
     }
     private void CheckBookTheme(string city)
     {

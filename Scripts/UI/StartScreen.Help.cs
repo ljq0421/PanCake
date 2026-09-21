@@ -26,7 +26,7 @@ public partial class StartScreen
         HelpJourneyCard(content, "New", "新的旅程", "从天津出发，建立新的旅行进度。", 270, "#FFF0DC", "#F3C49B",
             "新的旅程");
         HelpPanel(content, "SaveWarning", new(385, 408, 475, 45), "#FFD0C0", "#EFAE9D", 16, 2);
-        var warning = HelpText(content, "HelpSaveWarning", "五段旅程独立保存，可在首页管理存档", new(398, 410, 449, 40), 27, true);
+        var warning = HelpText(content, "HelpSaveWarning", "五段旅程独立保存，可在设置中管理存档", new(398, 410, 449, 40), 27, true);
         warning.AddThemeColorOverride("font_color", new Color("#9A3326"));
         HelpJourneyCard(content, "Continue", "继续旅程", "回到上次早餐铺\n继续营业与升级", 490, "#ECF2D9", "#C6D8A0", "继续旅程");
         HelpJourneyCard(content, "Map", "世界地图", "查看已点亮城市和下一站。", 710, "#DEF1F7", "#AFDCEB", "世界地图入口图标");
@@ -44,10 +44,6 @@ public partial class StartScreen
         DrawHelpCityTips(content);
         DrawHelpKeys(content);
 
-        {
-            var credits = Button(content, "MusicCredits", "配乐与署名", new(164, 919, 270, 40), OpenDemoMusicCredits, bare: true);
-            credits.AddThemeFontSizeOverride("font_size", 22);
-        }
         var close = Button(content, "Close", "记住了", new(800, 945, 320, 82), CloseModal, bare: true);
         var closeArt = HomeArt(close, "首页地图按钮底板", new(0, 0, 320, 82), stretch: true);
         closeArt.Name = "HelpCloseArt";

@@ -41,6 +41,12 @@ public partial class EngagementSelfTest : Node
     }
     private void CheckPlans(DataCatalog c)
     {
+        c.TryGetDay(StableIds.Cities.Tianjin, 6, out var tianjinDay6);
+        c.TryGetDay(StableIds.Cities.Tianjin, 7, out var tianjinDay7);
+        Check(tianjinDay6.StartUnlocks.Contains("ingredient:ham")
+            && tianjinDay6.AvailableRecipeIds.Contains(StableIds.Recipes.Ham)
+            && tianjinDay6.AvailableRecipeIds.Contains(StableIds.Recipes.HamCrispy)
+            && tianjinDay7.StartUnlocks.Count == 0, "天津 Day 6 开场开放火腿配方，Day 7 不重复开放");
         foreach (string city in new[] { StableIds.Cities.Tianjin, StableIds.Cities.Wuhan })
         {
             foreach (int day in Enumerable.Range(1, SaveService.ChapterDays(city)).Concat(new[] { 31, 100 }))
@@ -113,10 +119,11 @@ public partial class EngagementSelfTest : Node
     {
         string path=Path.Combine(_dir,"legacy-save.json");
         using var save=new SaveService(); save.UsePathForTests(path); save.ResetProgress(out _);
-        save.Data.Tianjin.HighestUnlockedDay=7; save.Data.Coins=123;
+        save.Data.Tianjin.HighestUnlockedDay=8; save.Data.Coins=123;
         save.Data.Tianjin.EquipmentLevels["pancake_stove"]=3;
         save.Data.Tianjin.LearnedWorkbenchActions.Add("test-learned-action");
-        save.Data.Tianjin.DayBestRecords[2]=new(){TotalRevenue=57}; save.TrySave(out _);
+        save.Data.Tianjin.DayBestRecords[2]=new(){TotalRevenue=57}; save.Data.Tianjin.DayBestRecords[SaveService.WuhanUnlockDay]=new(){TotalRevenue=126}; save.TrySave(out _);
+        save.Load(); Check(save.Data.UnlockedCityIds.Contains(StableIds.Cities.Wuhan), "existing Day 7 completion opens Wuhan on load");
         using(var locked=new FileStream(path+".tmp",FileMode.OpenOrCreate,System.IO.FileAccess.ReadWrite,FileShare.None))
             Check(!save.ReconcileEngagementUnlocks(c,out _) && !save.Data.Tianjin.UnlockedContentIds.Contains("product:soy_milk"), "migration rolls back on failure");
         Check(save.ReconcileEngagementUnlocks(c,out _),"migration retry");
@@ -196,8 +203,7 @@ public partial class EngagementSelfTest : Node
             book.Open(model);book.FinishAnimation();await Shot(city[5..]+"-settlement",book);
             Check(book.Model.ChallengeReward==20,"real settlement exposes bonus");
             var upgradeEntry=book.Descendants<Button>().Single(b=>b.Name=="OpenBookUpgrades");
-            var back=book.Descendants<Button>().Single(b=>b.Name=="ReturnFromSettlement");
-            Check(!upgradeEntry.GetGlobalRect().Intersects(back.GetGlobalRect()) && !book.CloseButton.GetGlobalRect().Intersects(back.GetGlobalRect()), "settlement actions do not overlap");
+            Check(!book.Descendants<Button>().Any(b=>b.Name=="ReturnFromSettlement") && !upgradeEntry.GetGlobalRect().Intersects(book.CloseButton.GetGlobalRect()), "settlement keeps only the upgrade and next-day actions");
             var source=book.Model.Upgrades!;
             string equipment=city==StableIds.Cities.Tianjin?"pancake_stove":"noodle_cooker";
             int before=save.Data.Coins;
@@ -210,7 +216,11 @@ public partial class EngagementSelfTest : Node
             Check(source.NextGoal.StartsWith("下次营业体验"),"purchased upgrade becomes next goal");
             Check(book.Descendants<EquipmentUpgradeView>().Single().SelectedId==equipment,"selection survives purchase");
             await Shot(city[5..]+"-upgrade",book);
+            var compactBuy=book.Descendants<Button>().Single(b=>b.Name=="UpgradeEquipment");
             var next=book.Descendants<Button>().Single(b=>b.Name=="ContinueAfterUpgrade");
+            var continueArt=next.GetNode<NinePatchRect>("ContinueButtonArt");
+            Check(compactBuy.Size.X==235 && next.Size==compactBuy.Size && Mathf.IsEqualApprox(next.Position.X,compactBuy.Position.X+compactBuy.Size.X)
+                && continueArt.Texture is AtlasTexture { Atlas: { ResourcePath: var texturePath } } && texturePath.EndsWith("TianJin/DialogUI/button-secondary-v1.png"),"book upgrade actions share the compact secondary-button row");
             next.EmitSignal(Button.SignalName.Pressed);next.EmitSignal(Button.SignalName.Pressed);await Frames();
             Check(controller.CurrentConfig!.Day==day+1 && controller.CurrentConfig.CityId==city && !book.Visible,"direct next day uses current city and next date");
             controller.AbandonDay();screen.Hide();start.Show();

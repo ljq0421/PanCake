@@ -20,6 +20,10 @@ internal static class HelpPageChecks
         {
             for (int i = 0; i < count; i++) await screen.ToSignal(screen.GetTree(), SceneTree.SignalName.ProcessFrame);
         }
+        async Task SettleTransition()
+        {
+            for (int i = 0; i < 180 && JourneyTransition.For(screen).Active; i++) await Frames(1);
+        }
         T Find<T>(string name) where T : Control => screen.Descendants<T>().First(c => c.Name == name && c.IsVisibleInTree());
         async Task Click(Control target)
         {
@@ -29,12 +33,14 @@ internal static class HelpPageChecks
             await Frames(1);
             screen.GetViewport().PushInput(new InputEventMouseButton { Position = p, GlobalPosition = p, ButtonIndex = MouseButton.Left, Pressed = false }, true);
             await Frames();
+            await SettleTransition();
         }
         async Task KeyPress(Key key)
         {
             screen.GetViewport().PushInput(new InputEventKey { Keycode = key, Pressed = true }, true);
             screen.GetViewport().PushInput(new InputEventKey { Keycode = key, Pressed = false }, true);
             await Frames();
+            await SettleTransition();
         }
         void CheckText(bool english)
         {
@@ -71,14 +77,14 @@ internal static class HelpPageChecks
             settings.SetLanguage(english ? "en" : "zh_CN");
             foreach (var city in cities)
             {
-                screen.PresentCity(city.Id); await Frames();
+                screen.PresentCity(city.Id); await Frames(); await SettleTransition();
                 string before = JsonSerializer.Serialize(save.Data);
                 var previousFocus = Find<Button>("Help");
                 await Click(previousFocus);
                 Check(Find<Panel>("HelpCityTips").GetMeta("city_id").AsString() == city.Id, "city context " + city.Id);
                 Check(Find<Label>("HelpTitle").Text == "一本早餐旅行手册", "shared guide title");
                 Check(Find<Button>("Close").HasFocus(), "close initially focused");
-                Check(screen.Descendants<Button>().Any(b => b.Name == "MusicCredits" && b.IsVisibleInTree()), "both profiles expose music credits");
+                Check(!screen.Descendants<Button>().Any(b => b.Name == "MusicCredits" && b.IsVisibleInTree()), "help omits music credits entry");
                 CheckText(english);
                 await capture("help-" + city.Id.Replace(':', '-') + (english ? "-en" : "-zh"));
                 await Click(Find<Panel>("HelpJourneyNew"));
@@ -92,15 +98,9 @@ internal static class HelpPageChecks
         }
         // A stale selected city must not win over the resume city on Home.
         save.Data.LastVisitedCityId = StableIds.Cities.Wuhan;
-        screen.PresentHome(); await Frames();
+        screen.PresentHome(); await Frames(); await SettleTransition();
         await Click(Find<Button>("Help"));
         Check(Find<Panel>("HelpCityTips").GetMeta("city_id").AsString() == StableIds.Cities.Wuhan, "home follows resume city");
-        {
-            await Click(Find<Button>("MusicCredits"));
-            Check(Find<Label>("CreditsTitle").Text == "配乐与署名", "credits remain reachable");
-            await KeyPress(Key.Escape);
-            await Click(Find<Button>("Help"));
-        }
         await KeyPress(Key.Escape);
         Check(!screen.ModalOpen && Find<Button>("Help").HasFocus(), "Escape restores page focus");
         await Click(Find<Button>("Help")); await Click(Find<Button>("Close"));

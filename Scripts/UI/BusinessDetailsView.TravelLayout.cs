@@ -132,8 +132,6 @@ public partial class BusinessDetailsView
         {
             var rating = _model.Stickers.Where(s => s.Contains("评级")).ToArray();
             if (rating.Length > 0) Text(_summary, string.Join(" · ", rating), new(245, 572, 530, 26), 19);
-            var unlocked = _model.Stickers.Where(s => !s.Contains("评级") && !s.Contains("升级") && !s.StartsWith("早餐新记录：", StringComparison.Ordinal)).ToArray();
-            AddSummarySticker(unlocked, "新解锁提示贴片", "UnlockSticker", new(890, 626, 246, 64), true);
         });
         var upgrades = _model.Stickers.Where(s => s.Contains("升级")).ToArray();
         AddSummarySticker(upgrades, "可升级提示贴片", "UpgradeSticker", new(890, 540, 320, 80), false);

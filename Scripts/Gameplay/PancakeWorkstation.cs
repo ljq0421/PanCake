@@ -569,9 +569,10 @@ public partial class PancakeWorkstation : Control
         }
         if (Machine.Runtime.State != PancakeState.Saucing && !Execute(PancakeCommand.BeginSauce)) return;
         _stroke.RefreshVisualState();
-        Inform(ProductionShortcutsEnabled
-            ? "按住左键刷酱，达到所需酱量后短按右键、按 F 或点击收刷。"
-            : "按住左键刷酱，达到所需酱量后点击收刷。", false);
+        if (Tutorial.IsActive && NeedsTeaching("sauce"))
+            Inform(ProductionShortcutsEnabled
+                ? "按住左键刷酱，达到所需酱量后短按右键、按 F 或点击收刷。"
+                : "按住左键刷酱，达到所需酱量后点击收刷。", false);
     }
     private EllipseGeometry ResolveSpreadGeometry()
     {

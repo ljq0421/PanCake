@@ -93,22 +93,15 @@ public partial class StartScreenSelfTest : Node
     {
         string root = Path.Combine(Path.GetDirectoryName(_path)!, "panel-slots");
         _save.UseSlotsForTests(root);
-        if (!_save.GetSlots()[0].Exists) Check(_save.TryCreateSlot(1, out _), "panel fixture creates isolated slot");
-        _path = Path.Combine(root, "slot-1.json");
-        string before = File.ReadAllText(_path);
-        _screen.PresentHome(); await Click(Find<Button>("ManageSaves")); await Click(Find<Button>("DeleteSlot1"));
-        Check(_screen.ConfirmationOpen && Find<Button>("Cancel").HasFocus(), "deletion defaults to cancel");
-        var panel = Find<Panel>("ConfirmationPanel");
-        Check(panel.GetThemeStylebox("panel") is StyleBoxTexture, "deletion uses illustrated confirmation");
-        foreach (string name in new[] { "DeleteTitle", "DeleteMessage", "Cancel", "Confirm" })
-            Check(panel.GetGlobalRect().Encloses(Find<Control>(name).GetGlobalRect()), name + " stays inside panel");
+        Check(_save.TryCreateSlot(1, out _) && _save.TryCreateSlot(2, out _), "panel fixture creates two isolated slots");
+        _save.TryLoadSlot(1, out _);
+        _screen.PresentHome(); await Click(Find<Button>("Settings"));
+        var choice = Find<OptionButton>("SaveSlot");
+        Check(choice.ItemCount == SaveService.SlotCount && !choice.IsItemDisabled(0) && !choice.IsItemDisabled(1)
+            && choice.IsItemDisabled(2), "settings lists five slots and blocks empty slots");
+        choice.EmitSignal(OptionButton.SignalName.ItemSelected, 1); await Frames();
+        Check(_save.ActiveSlotId == 2 && _screen.ModalOpen, "settings selector switches slots without opening a manager page");
         await Capture("panel-after");
-        KeyPress(Key.Tab); Check(Find<Button>("Confirm").HasFocus(), "Tab reaches confirmation");
-        KeyPress(Key.Tab); Check(Find<Button>("Cancel").HasFocus(), "Tab wraps in modal");
-        KeyPress(Key.Escape); await Frames();
-        Check(!_screen.ConfirmationOpen && Find<Button>("DeleteSlot1").HasFocus() && File.ReadAllText(_path) == before, "cancel preserves slot and restores focus");
-        await Click(Find<Button>("DeleteSlot1")); await Click(Find<Button>("Cancel"));
-        Check(File.ReadAllText(_path) == before, "mouse cancellation preserves slot");
         _screen.PresentHome();
     }
 

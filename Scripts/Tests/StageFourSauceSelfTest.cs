@@ -125,7 +125,7 @@ public partial class StageFourSelfTest
             PrepareSauce();
             station.Machine.SetSauceCoverage(amount);
             stroke.RefreshVisualState();
-            Check(stroke.SauceMeterVisible && stroke.ResolveSauceAmount!() == amount, "刷子旁指示器读取实际酱量");
+            Check(stroke.SauceMeterVisible && stroke.ResolveSauceAmount!() == amount, "固定酱量指示器读取实际酱量");
             int stock = station.Inventory.GetQuantity(StableIds.Ingredients.Sauce);
             Check(finish.Visible && !finish.Disabled, $"{amount:P0} 可提前收刷");
             if (amount == 1)

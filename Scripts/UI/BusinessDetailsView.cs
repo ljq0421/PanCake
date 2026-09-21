@@ -12,7 +12,6 @@ public partial class BusinessDetailsView : Control
     public event Action? PageChanged;
     public event Action? RetryRequested;
     public event Action? ContinueRequested;
-    private Button _returnButton = null!;
     private bool _continuing;
     private bool CanContinueBusiness => ContinueRequested is not null && _model.Closing && _model.CanClose && !_model.CanRetry && _model.Upgrades?.SupportsContinue == true;
     private Control _canvas = null!, _book = null!, _bookContent = null!, _summary = null!, _details = null!, _metrics = null!, _note = null!, _stamp = null!;
@@ -69,9 +68,6 @@ public partial class BusinessDetailsView : Control
         _rows = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; _rows.AddThemeConstantOverride("separation", 12); _scroll.AddChild(_rows);
         _save = Text(_bookContent, "", new(80, 792, 1120, 65), 20, Muted, wrap: true);
         CloseButton = ButtonAt(_bookContent, "收好账本", new(1320, 798, 240, 72), RequestPrimary); CloseButton.Name = "CloseBusinessDetails";
-        _returnButton = ButtonAt(_bookContent, "返回店铺", new(1225, 786, 220, 42), RequestClose);
-        _returnButton.AddThemeFontSizeOverride("font_size", 20);
-        _returnButton.Name = "ReturnFromSettlement"; _returnButton.Hide();
         _retry = ButtonAt(_bookContent, "重试保存", new(1100, 809, 190, 58), () => { FinishAnimation(); RetryRequested?.Invoke(); });
         _audio = new PancakeAudio(); AddChild(_audio);
         BuildUpgradeTeaching();
@@ -96,7 +92,6 @@ public partial class BusinessDetailsView : Control
         _save.Visible = _save.Text.Length > 0 && !(UsesTravelBook && _save.Text.Contains("已入账", StringComparison.Ordinal));
         _retry.Visible = model.CanRetry; CloseButton.Disabled = !model.CanClose;
         CloseButton.Text = CanContinueBusiness ? $"开始第 {_model.Upgrades!.NextDay} 天" : "收好账本";
-        _returnButton.Visible = CanContinueBusiness;
         BuildSummary(); RefreshRows(); SelectPage(false, false); Show();
         (model.CanClose ? CloseButton : _retry).GrabFocus(); StartAnimation();
         InterfaceTeaching.Offer(this, InterfaceLessons.BookKey, InterfaceLessons.Book,
@@ -168,7 +163,6 @@ public partial class BusinessDetailsView : Control
         {
             SetButtonBounds(CloseButton, details ? new(1145, 776, 280, 70) : new(1225, 703, 220, 64));
             CloseButton.AddThemeFontSizeOverride("font_size", details ? 30 : TravelActionFontSize);
-            _returnButton.Visible = CanContinueBusiness && !details;
             if (CanContinueBusiness) CloseButton.AddThemeFontSizeOverride("font_size", 23);
         }
         if (!changed) return;

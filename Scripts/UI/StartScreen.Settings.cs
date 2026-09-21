@@ -12,44 +12,60 @@ public partial class StartScreen
     private void OpenSettings()
     {
         OpenModal("settings");
-        SettingsGroup("DisplayGroup", new(340, 350, 553, 300));
-        SettingsGroup("AudioGroup", new(1005, 350, 528, 309));
+        SettingsGroup("DisplayGroup", new(340, 280, 553, 300));
+        SettingsGroup("AudioGroup", new(1005, 280, 528, 309));
 
-        SettingsRowLabel("DisplayModeLabel", "显示模式", "04_显示模式", 350, 369, 185);
-        var windowed = SettingsButton("Windowed", "窗口化", new(546, 373, 130, 58),
+        SettingsRowLabel("DisplayModeLabel", "显示模式", "04_显示模式", 350, 299, 185);
+        var windowed = SettingsButton("Windowed", "窗口化", new(546, 303, 130, 58),
             () => PreviewDisplay(false, _settings.WindowedSize));
-        var full = SettingsButton("Fullscreen", "无边框全屏", new(686, 373, 194, 58),
+        var full = SettingsButton("Fullscreen", "无边框全屏", new(686, 303, 194, 58),
             () => PreviewDisplay(true, _settings.WindowedSize));
-        SettingsRule(356, 450, 522);
-        SettingsRowLabel("ResolutionLabel", "分辨率", "05_分辨率", 350, 474, 185);
-        var resolution = SettingsChoice("Resolution", new(546, 474, 334, 58));
+        SettingsRule(356, 380, 522);
+        SettingsRowLabel("ResolutionLabel", "分辨率", "05_分辨率", 350, 394, 185);
+        var resolution = SettingsChoice("Resolution", new(546, 394, 334, 58), RefreshResolutionChoices);
         resolution.ItemSelected += index => PreviewDisplay(false, _resolutionChoices[(int)index]);
-        SettingsRule(356, 555, 522);
-        SettingsRowLabel("VSyncLabel", "垂直同步", "06_垂直同步", 350, 574, 185);
-        SettingsSwitch("VSync", new(546, 574, 124, 56), () => _settings.SetVSync(!_settings.VSyncEnabled));
-        var hint = Text(_modal, "DisplayHint", "切换后 15 秒内确认，超时自动恢复。", new(492, 785, 380, 66), 21);
+        SettingsRule(356, 465, 522);
+        SettingsRowLabel("VSyncLabel", "垂直同步", "06_垂直同步", 350, 484, 185);
+        SettingsSwitch("VSync", new(546, 484, 124, 56), () => _settings.SetVSync(!_settings.VSyncEnabled));
+        var hint = Text(_modal, "DisplayHint", "切换后 15 秒内确认，超时自动恢复。", new(492, 544, 380, 32), 17);
         hint.AddThemeColorOverride("font_color", JournalSettingsTheme.Muted);
 
-        SettingsGroup("LanguageGroup", new(340, 682, 553, 64));
-        SettingsRowLabel("LanguageLabel", "语言", "03_语言", 350, 687, 185);
-        var language = SettingsChoice("Language", new(546, 688, 334, 52));
+        SettingsGroup("LanguageGroup", new(340, 600, 553, 64));
+        SettingsRowLabel("LanguageLabel", "语言", "03_语言", 350, 605, 185);
+        var language = SettingsChoice("Language", new(546, 606, 334, 52));
         language.AddItem("简体中文", 0); language.AddItem("English", 1);
         language.ItemSelected += index => _settings.SetLanguage(index == 1 ? "en" : "zh_CN");
 
-        SettingsVolume("master", "主音量", 359);
-        SettingsVolume("music", "音乐", 434);
-        SettingsVolume("effects", "音效", 509);
-        SettingsRule(1021, 590, 496);
-        SettingsRowLabel("MuteLabel", "全部静音", "02_全部静音", 1020, 597, 305);
-        SettingsSwitch("Mute", new(1374, 596, 124, 52), _settings.ToggleMute);
-        SettingsGroup("MotionGroup", new(1005, 682, 528, 64));
-        var motionLabel = Text(_modal, "ReduceMotionLabel", "减少动态效果", new(1034, 688, 320, 52), 26);
-        FitTextWidth(motionLabel, 26, 20);
-        SettingsSwitch("ReduceMotion", new(1374, 688, 124, 52), () => _settings.SetReduceMotion(!_settings.ReduceMotion));
+        SettingsGroup("SaveSlotGroup", new(340, 674, 553, 64));
+        SettingsRowLabel("SaveSlotLabel", "存档管理", "已有旅程手账封面", 350, 679, 185);
+        AddSaveSlotChoice();
 
-        var done = Button(_modal, "Close", "完成", new(1150, 796, 262, 63), CloseModal, true, bare: true);
-        Art(done, "首页地图按钮底板", new(0, 0, 262, 63)).ShowBehindParent = true;
-        done.AddThemeFontSizeOverride("font_size", 30);
+        SettingsVolume("master", "主音量", 289);
+        SettingsVolume("music", "音乐", 364);
+        SettingsVolume("effects", "音效", 439);
+        SettingsRule(1021, 520, 496);
+        SettingsRowLabel("MuteLabel", "全部静音", "02_全部静音", 1020, 527, 305);
+        SettingsSwitch("Mute", new(1374, 526, 124, 52), _settings.ToggleMute);
+        SettingsGroup("MotionGroup", new(1005, 600, 528, 64));
+        var motionLabel = Text(_modal, "ReduceMotionLabel", "减少动态效果", new(1034, 606, 320, 52), 26);
+        FitTextWidth(motionLabel, 26, 20);
+        SettingsSwitch("ReduceMotion", new(1374, 606, 124, 52), () => _settings.SetReduceMotion(!_settings.ReduceMotion));
+
+        var close = SettingsButton("Close", "完成", new(1150, 750, 262, 63), CloseModal);
+        JournalSettingsTheme.Apply(close, selected: true);
+        var closeTexture = GD.Load<Texture2D>("res://resource/art/TianJin/DialogUI/button-secondary-v1.png");
+        foreach (string state in new[] { "normal", "hover", "pressed", "disabled" })
+            close.AddThemeStyleboxOverride(state, new StyleBoxTexture
+            {
+                Texture = closeTexture,
+                ModulateColor = state switch
+                {
+                    "hover" => new Color(1.06f, 1.04f, 1f),
+                    "pressed" => new Color(.92f, .88f, .80f),
+                    "disabled" => new Color(1f, 1f, 1f, .45f),
+                    _ => Colors.White,
+                },
+            });
         _settingsMessage = Text(_modal, "SettingsMessage", "", new(420, 939, 1080, 62), 23, true);
         _settingsMessage.AddThemeColorOverride("font_color", StartScreenTheme.Cream);
         RefreshSettingsControls();
@@ -109,14 +125,48 @@ public partial class StartScreen
         return button;
     }
 
-    private OptionButton SettingsChoice(string name, Rect2 bounds)
+    private OptionButton SettingsChoice(string name, Rect2 bounds, Action? refreshBeforeOpen = null)
     {
         var choice = new OptionButton { Name = name, Position = bounds.Position, Size = bounds.Size,
             FitToLongestItem = false, MouseDefaultCursorShape = CursorShape.PointingHand };
         JournalSettingsTheme.Apply(choice);
         _modal.AddChild(choice); _modalControls.Add(choice);
-        choice.GetPopup().AboutToPopup += () => RefreshResolutionChoices();
+        if (refreshBeforeOpen is not null) choice.GetPopup().AboutToPopup += refreshBeforeOpen;
         return choice;
+    }
+
+    private void AddSaveSlotChoice()
+    {
+        var choice = SettingsChoice("SaveSlot", new(546, 680, 334, 52));
+        var slots = _save?.GetSlots() ?? Array.Empty<SaveSlotSummary>();
+        foreach (var slot in slots)
+        {
+            string state = slot.Corrupt ? Tr("存档无法读取").ToString()
+                : slot.Exists ? slot.Name : Tr("空白手账").ToString();
+            choice.AddItem(string.Format(Tr("存档位 {0} · {1}").ToString(), slot.Id, state));
+            choice.SetItemDisabled(choice.ItemCount - 1, !slot.Exists || slot.Corrupt);
+        }
+        int active = slots.ToList().FindIndex(slot => slot.Id == _save?.ActiveSlotId);
+        if (slots.Count > 0) choice.Select(active >= 0 ? active : 0);
+        choice.Disabled = !slots.Any(slot => slot.Exists && !slot.Corrupt);
+        choice.ItemSelected += index => SwitchSaveSlot(slots[(int)index].Id);
+    }
+
+    private void SwitchSaveSlot(int id)
+    {
+        if (_save is null || _busy || _save.ActiveSlotId == id) return;
+        _busy = true;
+        if (!_save.TryLoadSlot(id, out string error))
+        {
+            _busy = false;
+            if (_settingsMessage is not null) _settingsMessage.Text = error;
+            return;
+        }
+        _selectedEquipment = null; _equipmentCity = null; _completedCity = null;
+        _mapReturn = null; _cityReturn = null;
+        _busy = false;
+        SetStatus();
+        RefreshSettingsControls();
     }
 
     private void SettingsSwitch(string name, Rect2 bounds, Action action)

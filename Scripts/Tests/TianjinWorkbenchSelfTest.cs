@@ -91,15 +91,15 @@ public partial class StageFourSelfTest
         Check(save.Data.Tianjin.LearnedWorkbenchActions.Contains("fryer:lower"), "下锅按钮成功后独立学习");
         var refill = (StockGesture)station.FindChild("StockGesture_egg", true, false);
         refill.Refill?.Invoke();
-        Check(!save.Data.Tianjin.LearnedWorkbenchActions.Contains("refill:egg"), "满盘补货失败不学习");
+        Check(!save.Data.Tianjin.LearnedWorkbenchActions.Contains(PancakeWorkstation.RefillLessonAction), "满盘补货失败不学习");
         station.Inventory.TryConsume("egg");
         refill.Refill?.Invoke();
-        Check(station.Inventory.IsAnyRefilling && !save.Data.Tianjin.LearnedWorkbenchActions.Contains("refill:egg"),
+        Check(station.Inventory.IsAnyRefilling && !save.Data.Tianjin.LearnedWorkbenchActions.Contains(PancakeWorkstation.RefillLessonAction),
             "启动补货不提前记录完成教学");
         CheckWorkbenchText("制作和补货中");
         station.Tick(station.Inventory.LevelData.RefillSeconds + .01);
-        Check(!station.Inventory.IsAnyRefilling && save.Data.Tianjin.LearnedWorkbenchActions.Contains("refill:egg"),
-            "实际补满后单独记录教学");
+        Check(!station.Inventory.IsAnyRefilling && save.Data.Tianjin.LearnedWorkbenchActions.Contains(PancakeWorkstation.RefillLessonAction),
+            "实际补满后记录一次通用补货教学");
         var coins = (CoinTrayView)station.FindChild("CoinTray", true, false);
         Check(!coins.TryCollect() && !save.Data.Tianjin.LearnedWorkbenchActions.Contains("collect_coins"), "空盘收钱不学习");
         coins.RenderRevenue(20, 1);
@@ -230,7 +230,7 @@ public partial class StageFourSelfTest
             }
         }
         screen.Initialize(catalog, save, controller, 9);
-        Check(station.LearnedWorkbenchActions.Contains("take:batter") && station.LearnedWorkbenchActions.Contains("refill:egg")
+        Check(station.LearnedWorkbenchActions.Contains("take:batter") && station.LearnedWorkbenchActions.Contains(PancakeWorkstation.RefillLessonAction)
             && !station.LearnedWorkbenchActions.Contains("take:ham"), "切换关卡保留已学操作，未成功的新操作继续教学");
         CheckWorkbenchText("切换关卡后");
         screen.Free(); controller.Free(); save.Free(); DeleteIfExists(absolute);

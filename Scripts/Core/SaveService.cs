@@ -22,6 +22,7 @@ public sealed class DayBestRecord
 
 public sealed class CityProgressData
 {
+    public Dictionary<string, int> PendingUpgradeCelebrations { get; set; } = new(StringComparer.Ordinal);
     public Dictionary<int, DailyChallenge> ClaimedChallenges { get; set; } = new();
     public int HighestUnlockedDay { get; set; } = 1;
     public int BestStars { get; set; }
@@ -274,6 +275,8 @@ public partial class SaveService : Node
         var (equipment, target, price, _) = offer;
         CityProgressData city = Data.GetCity(cityId);
         SaveData snapshot = Clone(Data); Data.Coins -= price; city.EquipmentLevels[equipment] = target;
+        if (cityId is StableIds.Cities.Tianjin or StableIds.Cities.Wuhan)
+            city.PendingUpgradeCelebrations[equipment] = target;
         if (!TrySave(out error)) { Data = snapshot; return false; }
         Changed?.Invoke(); return true;
     }
@@ -423,6 +426,7 @@ public partial class SaveService : Node
         foreach ((string id, CityProgressData city) in data.Cities)
         {
             city.LearnedWorkbenchActions ??= new(StringComparer.Ordinal);
+            city.PendingUpgradeCelebrations ??= new(StringComparer.Ordinal);
             city.ClaimedChallenges ??= new();
             if (city.ClaimedChallenges.Any(p => p.Value is null || p.Key < 2 || p.Value.Day != p.Key
                 || p.Value.CityId != id || p.Value.Target < 1 || p.Value.Reward is not (20 or 30 or 40)

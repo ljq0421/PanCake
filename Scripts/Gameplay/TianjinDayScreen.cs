@@ -148,6 +148,9 @@ public partial class TianjinDayScreen : Control
 
     public bool Initialize(DataCatalog catalog, SaveService save, DayController controller, int day)
     {
+        EquipmentUpgradeCelebration.Attach(this, () => controller.CurrentConfig?.CityId == StableIds.Cities.Tianjin
+            && IsVisibleInTree() && _focused && !_manualPaused && !_focusPaused && !_detailsPaused
+            && !_abandonDialog.Visible && !controller.IsPaused && controller.State == DayState.Running);
         BusinessFeedbackAudio.Attach(this, controller.Feedback, () => controller.CurrentConfig?.CityId == StableIds.Cities.Tianjin && (IsVisibleInTree() && _focused && !_manualPaused && !_focusPaused && !_detailsPaused && !_abandonDialog.Visible && !controller.IsPaused && controller.State is DayState.Running or DayState.Closing));
         TeachingFocus.ResetSession();
         CloseBusinessDetails();
@@ -293,6 +296,9 @@ public partial class TianjinDayScreen : Control
         {
             _countdown.Visible = false;
             ShowFeedback("开始营业！做好早餐后，直接拖给对应顾客。", false);
+            if (_controller.CurrentConfig?.CityId == StableIds.Cities.Tianjin
+                && !GetNode<EquipmentUpgradeCelebration>("UpgradeCelebration").Begin(_save, _controller, out string error))
+                ShowFeedback(error, true);
         }
         else if (state == DayState.Closing)
             ShowFeedback("停止接新客，最后 15 秒把手上的订单做完。", false);

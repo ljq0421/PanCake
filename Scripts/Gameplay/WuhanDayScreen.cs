@@ -153,6 +153,8 @@ public partial class WuhanDayScreen : Control
     }
     public bool Initialize(DataCatalog catalog, SaveService save, DayController controller, int day)
     {
+        EquipmentUpgradeCelebration.Attach(this, () => controller.CurrentConfig?.CityId == StableIds.Cities.Wuhan
+            && CanInteract && controller.State == DayState.Running);
         _demoLesson?.Hide(); _demoLessonSkipFrame?.Hide(); _demoLessonFailure = _demoLessonSaveError = ""; _demoLessonComplete = false; _demoPendingResult = null;
         TeachingFocus.ResetSession(); _teachingDoupiLast = false;
         _hudPaused = false; _hudPauseMenu.Hide(); controller.SetPauseReason("wuhan-hud", false); _sceneFeedback.Clear();
@@ -431,7 +433,17 @@ public partial class WuhanDayScreen : Control
         _sceneFeedback.Report(text, error, essential ? GetGlobalTransform() * new Vector2(960, 490) : GetGlobalMousePosition(), essential || text.StartsWith("停止接新客"));
     }
 
-    private void OnStateChanged(DayState state){if(state==DayState.Running)Feedback("开始营业！做好餐品后，直接拖给对应顾客。",false);else if(state==DayState.Closing)Feedback("停止接新客，最后 15 秒完成手中订单。",false);}
+    private void OnStateChanged(DayState state)
+    {
+        if (state == DayState.Running)
+        {
+            Feedback("开始营业！做好餐品后，直接拖给对应顾客。", false);
+            if (_controller.CurrentConfig?.CityId == StableIds.Cities.Wuhan
+                && !GetNode<EquipmentUpgradeCelebration>("UpgradeCelebration").Begin(_save, _controller, out string error))
+                Feedback(error, true);
+        }
+        else if (state == DayState.Closing) Feedback("停止接新客，最后 15 秒完成手中订单。", false);
+    }
     public override void _ExitTree()
     {
         _controller?.SetPauseReason("wuhan-hud", false);

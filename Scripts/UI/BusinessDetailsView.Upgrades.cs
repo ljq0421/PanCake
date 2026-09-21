@@ -79,6 +79,7 @@ public partial class BusinessDetailsView
             RenderUpgradeModal(ok && _model.Upgrades!.SupportsContinue
                 ? $"升级成功：{offer.Name} Lv{offer.TargetLevel} · {BookUpgradeSource.Benefit(offer)}"
                 : ok ? "升级成功，下次营业生效。" : error);
+            if (ok) _upgradeModal?.GetChildren().OfType<StartScreen>().FirstOrDefault()?.ShowUpgradeSuccess(offer.EquipmentId);
         }
         finally { _buying = false; }
     }

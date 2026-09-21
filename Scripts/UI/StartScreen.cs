@@ -9,7 +9,7 @@ public enum JourneyPage { Splash, Home, Opening, NewJourney, Continue, Map, City
 public partial class StartScreen : Control
 {
     public event Action<int>? NewGameRequested;
-    public event Action<int>? NewGameBusinessRequested;
+    public event Action<int>? NewGameCityRequested;
     public event Action? ContinueRequested;
     public event Action? QuitRequested;
     public JourneyPage Page { get; private set; }

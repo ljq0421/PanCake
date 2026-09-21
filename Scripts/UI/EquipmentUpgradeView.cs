@@ -53,9 +53,10 @@ public partial class EquipmentUpgradeView : Control
                 while (size > 24 && equipmentName.GetThemeFont("font").GetStringSize(equipmentName.Tr(item.Name), fontSize: size).X > 240) size--;
                 equipmentName.AddThemeFontSizeOverride("font_size", size);
             }
-            LabelAt(card, "EquipmentLevel", item.Level > 0 ? $"Lv{item.Level}" : "未开放", new(308, 65, 225, 36), 26);
+            LabelAt(card, "EquipmentLevel", item.Presentation?.Fixed == true ? "生面无限供应" : item.Level > 0 ? $"Lv{item.Level}" : "未开放", new(308, 65, 225, 36), 26);
             string state = item.CanBuy ? "可升级" : item.Level >= 3 ? "已满级" : item.Level == 0 ? "未开放"
                 : item.Notice.Contains("金币不足") ? "金币不足" : item.Notice.StartsWith("完成第") ? "待解锁" : item.Notice;
+            state = item.Presentation?.State(item) ?? state;
             var chip = new Panel { Position = new(303, 103), Size = new(214, 52), MouseFilter = MouseFilterEnum.Ignore };
             chip.AddThemeStyleboxOverride("panel", item.CanBuy ? new StyleBoxEmpty() : Box(new("#EDDFCD"), new("#C8A681"), 2)); card.AddChild(chip);
             if (item.CanBuy)
@@ -74,6 +75,7 @@ public partial class EquipmentUpgradeView : Control
 
     private void Select(string id, bool focus)
     {
+        _previewTween?.Kill();
         SelectedId = id; _selection(id);
         foreach (var child in _detail.GetChildren()) { _detail.RemoveChild(child); child.QueueFree(); }
         for (int i = 0; i < _cards.Count; i++)
@@ -83,6 +85,7 @@ public partial class EquipmentUpgradeView : Control
             if (active && focus) _cards[i].GrabFocus();
         }
         var e = _items.Single(i => i.Id == id);
+        if (e.Presentation is not null) { BuildComparison(e); return; }
         LabelAt(_detail, "SelectedEquipmentName", e.Name, new(0, 0, 560, 60), 42);
         bool hasBenefit = _cityId is "city:tianjin" or "city:wuhan" && e.TargetLevel.HasValue && e.Level > 0;
         if (hasBenefit)

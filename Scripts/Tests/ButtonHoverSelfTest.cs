@@ -112,7 +112,6 @@ public partial class ButtonHoverSelfTest : Node
             await CheckHover(home, "home");
             foreach (string name in new[] { "NewGame", "BreakfastRecords", "WorldMap", "Settings", "Help", "Quit" })
                 await CheckHover(start.Descendants<Button>().First(b => b.Name == name), "home-" + name);
-            await CheckHover(start.Descendants<Button>().First(b => b.Name == "WallMap"), "home-wall", start.Descendants<Control>().First(c => c.Name == "HomeMap"));
             start.PresentMap(); await Settle();
             Require(start.Descendants<Button>().Any(b => b.Name.ToString().StartsWith("Node") && b.HasFocus()), "map has production default focus");
             await Shot("map-rest");

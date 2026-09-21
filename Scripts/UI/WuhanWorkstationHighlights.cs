@@ -6,7 +6,7 @@ namespace ProjectCake.UI;
 
 public partial class WuhanWorkstationView
 {
-    private void DrawEquipmentHighlights(bool basketsOnly = false)
+    private void DrawEquipmentHighlights(bool basketsOnly = false, bool bowlOnly = false)
     {
         if (CanInteract?.Invoke() != true) return;
         Vector2 pointer = GetLocalMousePosition();
@@ -72,7 +72,11 @@ public partial class WuhanWorkstationView
             }
             return;
         }
-        SourcePath(WuhanArtworkContours.MixingBowl, State("bowl"), radius: 0);
+        if (bowlOnly)
+        {
+            SourcePath(WuhanArtworkContours.MixingBowl, State("bowl"), radius: 0);
+            return;
+        }
         SourcePath(RawTraySilhouette, State("raw"), radius: 0);
         for (int i = 0; i < IngredientIds.Length; i++)
         {

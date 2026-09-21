@@ -84,6 +84,7 @@ public partial class TianjinDayScreen : Control
         _workstation.WorkbenchActionLearned += RememberWorkbenchAction;
         _workstation.YoutiaoConsumed += quantity => _controller?.Ledger?.RecordYoutiaoUsed(quantity);
         _workstation.YoutiaoBurnt += quantity => _controller?.Ledger?.RecordYoutiaoBurnt(quantity);
+        _workstation.EquipmentUsed += id => GetNodeOrNull<EquipmentUpgradeCelebration>("UpgradeCelebration")?.NotifyUse(id);
         for (int i = 0; i < _customerDropZones.Length; i++)
         {
             int customerSlot = i;
@@ -150,8 +151,9 @@ public partial class TianjinDayScreen : Control
     {
         EquipmentUpgradeCelebration.Attach(this, () => controller.CurrentConfig?.CityId == StableIds.Cities.Tianjin
             && IsVisibleInTree() && _focused && !_manualPaused && !_focusPaused && !_detailsPaused
-            && !_abandonDialog.Visible && !controller.IsPaused && controller.State == DayState.Running);
-        BusinessFeedbackAudio.Attach(this, controller.Feedback, () => controller.CurrentConfig?.CityId == StableIds.Cities.Tianjin && (IsVisibleInTree() && _focused && !_manualPaused && !_focusPaused && !_detailsPaused && !_abandonDialog.Visible && !controller.IsPaused && controller.State is DayState.Running or DayState.Closing));
+            && !_abandonDialog.Visible && !controller.IsPaused && controller.State == DayState.Running
+            && TeachingFocus.CurrentAction is null);
+        BusinessFeedbackAudio.Attach(this, controller.Feedback, () => controller.CurrentConfig?.CityId == StableIds.Cities.Tianjin && (IsVisibleInTree() && _focused && !_manualPaused && !_focusPaused && !_detailsPaused && !_abandonDialog.Visible && !controller.IsPaused && controller.State is DayState.Running or DayState.Closing), useCartoonCoin: true, useCartoonError: true);
         TeachingFocus.ResetSession();
         CloseBusinessDetails();
         ClearCoinFlights();

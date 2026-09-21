@@ -19,7 +19,7 @@ public partial class BusinessHud : Control
     public Button PauseButton { get; } = new() { Name = "HudPause" };
     public Control IncomeTarget => _income;
     private Tween? _incomeTween;
-    private readonly Label _challenge = TianjinUi.Label("", 21, alignment: HorizontalAlignment.Center);
+    private readonly Label _challenge = TianjinUi.Label("", 32, alignment: HorizontalAlignment.Center);
 
     public void EmphasizeIncome()
     {
@@ -73,9 +73,11 @@ public partial class BusinessHud : Control
         AddChild(PauseButton);
         _challenge.Name = "DailyChallengeProgress";
         _challenge.MouseFilter = MouseFilterEnum.Ignore;
-        _challenge.AddThemeColorOverride("font_color", new Color("#513A28"));
-        _challenge.AddThemeColorOverride("font_outline_color", new Color("#FFF3D9"));
-        _challenge.AddThemeConstantOverride("outline_size", 5);
+        _challenge.AddThemeColorOverride("font_color", TianjinUi.BrownText);
+        var challengeStyle = TianjinUi.Box(new Color("#FFF3D9"), radius: 14, border: 2, shadow: false);
+        challengeStyle.ContentMarginLeft = challengeStyle.ContentMarginRight = 20;
+        challengeStyle.ContentMarginTop = challengeStyle.ContentMarginBottom = 1;
+        _challenge.AddThemeStyleboxOverride("normal", challengeStyle);
         AddChild(_challenge); _challenge.Hide();
         Resized += LayoutSigns;
         LayoutSigns();
@@ -85,7 +87,7 @@ public partial class BusinessHud : Control
     {
         _sign.Position = new((Size.X - _sign.Size.X) / 2, 6);
         PauseButton.Position = new(Size.X - 108, 28);
-        _challenge.Position = new((Size.X - 540) / 2, 109); _challenge.Size = new(540, 32);
+        _challenge.Position = new((Size.X - 480) / 2, 109); _challenge.Size = new(480, 44);
     }
 
     public void Render(DayController controller, bool allowPause)
@@ -127,9 +129,11 @@ public partial class BusinessHud : Control
 
     private void OfferInterfaceTeaching(DayController controller, bool allowPause)
     {
+        if (controller.CurrentConfig is not { CityId: "city:tianjin", Day: 1 }) return;
         if (!allowPause || !IsVisibleInTree() || controller.State != DayState.Running || controller.TutorialActive) return;
         var owner = GetParent<Control>();
         bool Eligible() => owner.IsVisibleInTree() && !controller.IsPaused && !controller.TutorialActive
+            && controller.CurrentConfig is { CityId: "city:tianjin", Day: 1 }
             && controller.State == DayState.Running
             && !owner.Descendants<TutorialFocusLayer>().Any(layer => layer.Visible)
             && !owner.Descendants<Control>().Any(control => control.Name == "DemoLesson" && control.IsVisibleInTree());

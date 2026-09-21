@@ -8,6 +8,10 @@ namespace ProjectCake.UI;
 public partial class EquipmentUpgradeCelebration : Control
 {
     private sealed record Target(string Id, string Caption, Rect2 Bounds);
+    private SaveService? _save;
+    private DayController? _controller;
+    private string _city = "";
+    private readonly Dictionary<string, Target> _targets = new();
     private readonly Queue<Target> _queue = new();
     private Target? _current;
     private float _elapsed;
@@ -19,7 +23,7 @@ public partial class EquipmentUpgradeCelebration : Control
     internal string CurrentCaption => _caption.Text;
     internal int PlayedCount { get; private set; }
     internal bool AudioPlaying => _audio.Playing;
-    private const float Duration = 1.35f;
+    private const float Duration = 3f;
 
     public static EquipmentUpgradeCelebration Attach(Control owner, Func<bool> active)
     {
@@ -37,7 +41,7 @@ public partial class EquipmentUpgradeCelebration : Control
 
     public override void _Ready()
     {
-        _caption = new Label { MouseFilter = MouseFilterEnum.Ignore, Size = new(380, 54),
+        _caption = new Label { MouseFilter = MouseFilterEnum.Ignore, Size = new(620, 62),
             HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
         _caption.AddThemeFontSizeOverride("font_size", 30);
         _caption.AddThemeColorOverride("font_color", new Color("fff0bd"));
@@ -51,9 +55,9 @@ public partial class EquipmentUpgradeCelebration : Control
 
     public bool Begin(SaveService save, DayController controller, out string error)
     {
-        Clear(); error = "";
+        Clear(); error = ""; _save = save; _controller = controller; _targets.Clear();
         if (controller.TutorialActive || controller.State != DayState.Running) return true;
-        string city = controller.CurrentConfig!.CityId;
+        string city = controller.CurrentConfig!.CityId; _city = city;
         var targets = new List<Target>();
         if (city == StableIds.Cities.Tianjin)
         {
@@ -69,11 +73,18 @@ public partial class EquipmentUpgradeCelebration : Control
             targets.Add(new("noodle_cooker", "煮面锅", layout.Cooker));
             if (doupi) targets.Add(new("doupi_griddle", "豆皮锅", layout.Pan));
         }
-        if (!save.TryConsumeUpgradeCelebrations(city, targets.Select(t => t.Id), out var upgrades, out error)) return false;
-        foreach (var target in targets)
-            if (upgrades.TryGetValue(target.Id, out int level))
-                _queue.Enqueue(target with { Caption = $"{target.Caption} Lv.{level}" });
+        foreach (var target in targets) _targets[target.Id] = target;
         return true;
+    }
+
+    /// <summary>Called only after an accepted gameplay operation. Opening a shift never consumes a cue.</summary>
+    public void NotifyUse(string equipmentId, Rect2? bounds = null)
+    {
+        if (!_active() || _controller?.TutorialActive != false || _save is null
+            || !_targets.TryGetValue(equipmentId, out var target)
+            || !_save.Data.GetCity(_city).PendingUpgradeCelebrations.ContainsKey(equipmentId)
+            || _current?.Id == equipmentId || _queue.Any(t => t.Id == equipmentId)) return;
+        _queue.Enqueue(target with { Bounds = bounds ?? target.Bounds });
     }
 
     public override void _Process(double delta)
@@ -82,8 +93,11 @@ public partial class EquipmentUpgradeCelebration : Control
         if (!_active()) { Clear(); return; }
         if (_current is null)
         {
-            _current = _queue.Dequeue(); _elapsed = 0;
-            _caption.Text = _current.Caption; Show();
+            var target = _queue.Dequeue();
+            if (_save is null || !_save.TryConsumeUpgradeCelebrations(_city, new[] { target.Id }, out var upgrades, out _)
+                || !upgrades.TryGetValue(target.Id, out int level)) return;
+            _current = target; _elapsed = 0;
+            _caption.Text = EquipmentUpgradePresentation.FirstUse(target.Id, level); Show();
             _audio.Play(); PlayedCount++;
         }
         _elapsed += (float)delta;
@@ -94,15 +108,15 @@ public partial class EquipmentUpgradeCelebration : Control
         float alpha = Mathf.Min(1, _elapsed / .12f) * Mathf.Clamp((Duration - _elapsed) / .35f, 0, 1);
         _caption.Modulate = new(1, 1, 1, alpha);
         var rect = _current.Bounds;
-        _caption.Position = new(Mathf.Clamp(rect.GetCenter().X - 190, 20, 1520),
-            rect.Position.Y - 62 - 18 * (1 - Mathf.Exp(-_elapsed * 4)));
+        _caption.Position = new(Mathf.Clamp(rect.GetCenter().X - 310, 20, 1280),
+            Math.Max(8, rect.Position.Y - 62 - (ProjectSettings.GetSetting("accessibility/reduce_motion", false).AsBool() ? 0 : 18 * (1 - Mathf.Exp(-_elapsed * 4)))));
         QueueRedraw();
     }
 
     public override void _Draw()
     {
         if (_current is null) return;
-        float p = _elapsed / Duration;
+        float p = ProjectSettings.GetSetting("accessibility/reduce_motion", false).AsBool() ? 1 : _elapsed / Duration;
         float alpha = Mathf.Min(1, _elapsed / .12f) * Mathf.Clamp((Duration - _elapsed) / .4f, 0, 1);
         var rect = _current.Bounds;
         Vector2 center = rect.GetCenter();
@@ -112,6 +126,7 @@ public partial class EquipmentUpgradeCelebration : Control
         DrawPolyline(points, new Color(1, .69f, .22f, alpha * .12f), 18, true);
         DrawPolyline(points, new Color(1, .77f, .32f, alpha * .35f), 8, true);
         DrawPolyline(points, new Color(1, .89f, .55f, alpha * .95f), 2.5f, true);
+        if (ProjectSettings.GetSetting("accessibility/reduce_motion", false).AsBool()) return;
         for (int i = 0; i < 9; i++)
         {
             float angle = i * Mathf.Tau / 9 - .3f;

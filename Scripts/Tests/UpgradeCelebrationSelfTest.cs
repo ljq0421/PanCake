@@ -103,50 +103,73 @@ public partial class UpgradeCelebrationSelfTest : Node
         {
             var day = SceneFactory.Instantiate<TianjinDayScreen>("res://Scenes/Gameplay/TianjinDayScreen.tscn"); AddChild(day);
             day.ConnectController(controller); Check(day.Initialize(catalog, save, controller, 8), "Tianjin initialize");
+            day.TeachingFocus.Resolve = () => null; day.TeachingFocus.Refresh();
             screen = day; begin = day.BeginDay;
         }
         else
         {
             var day = SceneFactory.Instantiate<WuhanDayScreen>("res://Scenes/Gameplay/WuhanDayScreen.tscn"); AddChild(day);
             day.ConnectController(controller); Check(day.Initialize(catalog, save, controller, 8), "Wuhan initialize");
+            day.TeachingFocus.Resolve = () => null; day.TeachingFocus.Refresh();
             screen = day; begin = day.BeginDay;
         }
         screen.SetProcess(false);
         var effect = screen.GetNode<EquipmentUpgradeCelebration>("UpgradeCelebration"); effect.SetProcess(false);
         Check(save.Data.GetCity(city).PendingUpgradeCelebrations.Count == Equipment(city).Length, "prepare does not consume");
         begin(); Check(controller.State == DayState.Running, "begin starts business immediately");
-        Check(effect.IsPlaying && save.Data.GetCity(city).PendingUpgradeCelebrations.Count == 0, "opening queues all equipment once");
+        JourneyTransition.For(screen).Finish(); screen._Process(0);
+        Check(!effect.IsPlaying && save.Data.GetCity(city).PendingUpgradeCelebrations.Count == Equipment(city).Length, "opening preserves all first-use cues");
+        var teaching = screen is TianjinDayScreen tianjinScreen ? tianjinScreen.TeachingFocus : ((WuhanDayScreen)screen).TeachingFocus;
+        teaching.Resolve = () => new TutorialFocusStep("upgrade-test-teaching", "制作教学", new[] { TutorialFocusTarget.Control(screen) });
+        teaching.Refresh(); effect.NotifyUse(Equipment(city)[0]);
+        Check(!effect.IsPlaying && save.Data.GetCity(city).PendingUpgradeCelebrations.Count == Equipment(city).Length, "workbench teaching defers the cue without consuming it");
+        teaching.Resolve = () => null; teaching.Refresh();
+        if (screen is WuhanDayScreen wuhan) wuhan.BasketAction(0);
+        else
+        {
+            var station = screen.FindChildren("*", "", true, false).OfType<PancakeWorkstation>().Single();
+            typeof(PancakeWorkstation).GetMethod("ExecuteFryer", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+                .Invoke(station, new object[] { ProjectCake.Fryer.FryerCommand.LoadOne });
+        }
+        Check(effect.IsPlaying && save.Data.GetCity(city).PendingUpgradeCelebrations.Count == Equipment(city).Length,
+            "accepted gameplay operation queues cue without consuming before display");
+        foreach (string id in Equipment(city)) effect.NotifyUse(id);
         int i = 0;
         while (effect.IsPlaying)
         {
             effect._Process(.3);
-            Check(effect.Visible && effect.CurrentCaption.Contains("Lv.2"), "visible level caption");
+            Check(effect.Visible && effect.CurrentCaption.Length > 5 && !effect.CurrentCaption.Contains("Lv."), "visible functional caption");
             if (_capture)
             {
                 await Frames(); await ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
                 Check(GetViewport().GetTexture().GetImage().SavePng(Path.Combine(_dir, $"{city.Replace(':', '-')}-{i}.png")) == Error.Ok, "capture");
             }
-            effect._Process(1.1); i++;
+            effect._Process(2.8); i++;
         }
-        Check(effect.PlayedCount == Equipment(city).Length, "one chime per equipment");
+        var pauseReasons = (HashSet<string>)typeof(DayController).GetField("_pauseReasons", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.GetValue(controller)!;
+        Check(effect.PlayedCount == Equipment(city).Length, $"one chime per equipment: {city}, played={effect.PlayedCount}, pending={save.Data.GetCity(city).PendingUpgradeCelebrations.Count}, paused={controller.IsPaused}, reasons={string.Join(',', pauseReasons)}, teaching={teaching.CurrentAction}");
         Check(effect.Begin(save, controller, out _) && !effect.IsPlaying, "same day does not repeat");
+        foreach (string id in Equipment(city)) effect.NotifyUse(id);
+        Check(!effect.IsPlaying, "consumed first-use cues do not queue again");
         string first = Equipment(city)[0];
         Check(save.TryPurchase(city, $"equipment:{first}_lv3", catalog, out _), "later upgrade creates a fresh cue");
         Check(controller.TryPrepareTutorial(city, 1, catalog, out _), "tutorial prepare");
         controller.TryStartDay(out _); controller.Tick(DayController.OpeningDurationSeconds);
+        effect.NotifyUse(first);
         Check(!effect.IsPlaying && save.Data.GetCity(city).PendingUpgradeCelebrations.Count == 1, "independent tutorial preserves pending cue");
         controller.TryPrepareDay(city, 8, catalog, out _); controller.TryStartDay(out _); controller.Tick(DayController.OpeningDurationSeconds);
-        effect._Process(.1); Check(effect.IsPlaying && effect.CurrentCaption.Contains("Lv.3"), "later opening displays new level");
+        Check(!effect.IsPlaying, "later opening waits for operation");
+        effect.NotifyUse(first); effect._Process(.1); Check(effect.IsPlaying && effect.CurrentCaption == EquipmentUpgradePresentation.FirstUse(first, 3), "later operation displays new benefit");
         controller.SetPauseReason("test", true); effect._Process(.01);
         Check(!effect.IsPlaying && !effect.AudioPlaying, "pause stops animation and sound");
         controller.SetPauseReason("test", false); effect._Process(.1);
         Check(!effect.IsPlaying && !effect.AudioPlaying, "resume does not replay");
         save.Data.GetCity(city).PendingUpgradeCelebrations[first] = 3;
-        effect.Begin(save, controller, out _); effect._Process(.1);
+        effect.Begin(save, controller, out _); effect.NotifyUse(first); effect._Process(.1);
         effect._Notification((int)NotificationApplicationFocusOut);
         Check(!effect.IsPlaying && !effect.AudioPlaying, "focus loss stops the cue");
         save.Data.GetCity(city).PendingUpgradeCelebrations[first] = 3;
-        effect.Begin(save, controller, out _); effect._Process(.1); screen.Hide();
+        effect.Begin(save, controller, out _); effect.NotifyUse(first); effect._Process(.1); screen.Hide();
         Check(!effect.IsPlaying && !effect.AudioPlaying, "leaving the screen stops the cue immediately");
         screen.QueueFree(); controller.QueueFree(); await Frames();
         save.Free();

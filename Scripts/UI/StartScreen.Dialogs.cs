@@ -108,6 +108,8 @@ public partial class StartScreen
     }
     private void SettingsChanged()
     {
+        if (_body?.GetNodeOrNull<TextureRect>("HomeLogo") is { } logo)
+            logo.Texture = HomeTexture(HomeLogoArt);
         if (_body is not null) FitJourneyIntroduction();
         if (_body is not null)
         {

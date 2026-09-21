@@ -10,6 +10,67 @@ namespace ProjectCake.Tests;
 
 public partial class CoinCollectionSelfTest
 {
+    private async Task TestWuhanPaymentMotion(WuhanDayScreen screen, DayController controller, SaveService save,
+        DataCatalog catalog, int width, bool reduced)
+    {
+        async Task Wait(double seconds) => await ToSignal(GetTree().CreateTimer(seconds), SceneTreeTimer.SignalName.Timeout);
+        save.Data.Wuhan.LearnedWorkbenchActions.Add("take:" + StableIds.Ingredients.WuhanBraisedBeef);
+        foreach (int day in new[] { 1, 3, 8 })
+        {
+            if (day < 4) save.Data.Wuhan.EquipmentLevels.Remove("doupi_griddle");
+            else save.Data.Wuhan.EquipmentLevels["doupi_griddle"] = 3;
+            screen.Initialize(catalog, save, controller, day);
+            screen.TeachingFocus.Dismiss();
+            screen._Notification((int)NotificationApplicationFocusIn);
+            foreach (var planned in controller.CurrentPlan!.Customers)
+                planned.Order = new OrderData { OrderId = planned.Order.OrderId, CityId = StableIds.Cities.Wuhan,
+                    CustomerTypeId = planned.CustomerTypeId, BasePrice = 20, PatienceSeconds = 100,
+                    Lines = new[] { new OrderLineData(ProductKind.HotDryNoodles, StableIds.Recipes.HotDryNoodlesClassic, 1) } };
+            screen.BeginDay();
+            controller.CustomerQueue!.Tick(1000, .4, true); screen.RefreshForCapture(); await Frames();
+            var swing = screen.CashPendantArtwork.GetParent<Control>();
+            int payment = 0;
+            foreach (var customer in controller.CustomerQueue.Slots.Take(3).ToArray())
+            {
+                screen.Bowl.Reset(); screen.Bowl.TryAddNoodles(NoodleQuality.Optimal);
+                screen.Bowl.TryAddBaseSeasoning(); screen.Bowl.AddMixDistance(1000);
+                screen.Workstation.CancelAnimations(); screen.RefreshForCapture();
+                int before = controller.Ledger!.Build().TotalRevenue;
+                Check(screen.DeliverToCustomer(customer.Id, ProductKind.HotDryNoodles), "motion fixture completes real order");
+                Check(controller.Ledger.Build().TotalRevenue > before, "motion fixture records positive income");
+                Check(Mathf.IsZeroApprox(swing.RotationDegrees), "pendant waits for coin arrival");
+                for (int i = 0; i < 150 && screen.PaymentCoins.Count > 0; i++) await Wait(.01);
+                await Wait(.06);
+                Check(reduced ? Mathf.IsZeroApprox(swing.RotationDegrees)
+                    : Math.Abs(swing.RotationDegrees) > .01f && Math.Abs(swing.RotationDegrees) <= 4.01f,
+                    "coin arrival drives bounded pendant swing with reduced-motion support");
+                Check(screen.CashPendant.Scale.IsEqualApprox(Vector2.One) && Mathf.IsZeroApprox(screen.CashPendant.Rotation),
+                    "swing preserves click bounds");
+                if (payment == 0)
+                {
+                    if (Capture && !reduced) await Shot($"wuhan-motion-{width}-day{day}-swing");
+                    screen.OpenBusinessDetails();
+                    Check(Mathf.IsZeroApprox(swing.RotationDegrees), "details reset pendant swing");
+                    screen.CloseBusinessDetails(); await Wait(.65);
+                }
+                else if (payment == 1)
+                {
+                    await Wait(.5);
+                    Check(Mathf.IsZeroApprox(swing.RotationDegrees), "pendant naturally settles after payment");
+                    if (Capture && !reduced) await Shot($"wuhan-motion-{width}-day{day}-rest");
+                }
+                else
+                {
+                    screen._Notification((int)NotificationApplicationFocusOut);
+                    Check(Mathf.IsZeroApprox(swing.RotationDegrees), "focus loss resets pendant swing");
+                    screen._Notification((int)NotificationApplicationFocusIn);
+                }
+                payment++;
+            }
+            await TestWuhanPendantHover(screen, controller, width, day, reduced);
+        }
+    }
+
     private async Task TestWuhanCashPendant(WuhanDayScreen screen, DayController controller, SaveService save,
         DataCatalog catalog, int width, bool reduced)
     {
@@ -116,17 +177,31 @@ public partial class CoinCollectionSelfTest
         int income = controller.Ledger!.Build().TotalRevenue;
         Check(controller.BusinessRecords.Sum(r => r.Evaluation?.TotalRevenue ?? 0) == income, "Wuhan record income matches ledger");
         Check(reduced ? screen.PaymentCoins.Count == 0 : screen.PaymentCoins.Count > 0, "Wuhan payment respects reduced motion");
+        var swing = screen.CashPendantArtwork.GetParent<Control>();
+        Check(Mathf.IsZeroApprox(swing.RotationDegrees), "Wuhan pendant waits for the arriving coins");
         screen.OpenBusinessDetails();
         var positions = screen.PaymentCoins.ToDictionary(c => c, c => c.Position);
         await ToSignal(GetTree().CreateTimer(.15), SceneTreeTimer.SignalName.Timeout);
         Check(positions.All(p => p.Key.Position == p.Value), "Wuhan details freeze in-flight payments");
         screen.CloseBusinessDetails();
-        await ToSignal(GetTree().CreateTimer(.65), SceneTreeTimer.SignalName.Timeout);
+        for (int i = 0; i < 150 && screen.PaymentCoins.Count > 0; i++)
+            await ToSignal(GetTree().CreateTimer(.01), SceneTreeTimer.SignalName.Timeout);
+        await ToSignal(GetTree().CreateTimer(.06), SceneTreeTimer.SignalName.Timeout);
+        Check(reduced ? Mathf.IsZeroApprox(swing.RotationDegrees)
+            : Math.Abs(swing.RotationDegrees) > .01f && Math.Abs(swing.RotationDegrees) <= 4.01f,
+            "Wuhan arriving payments swing the pendant within four degrees, except in reduced motion");
+        Check(screen.CashPendant.Scale.IsEqualApprox(Vector2.One) && Mathf.IsZeroApprox(screen.CashPendant.Rotation),
+            "Wuhan payment swing leaves input bounds stable");
+        if (Capture && !reduced) await Shot($"wuhan-pendant-{width}-payment-swing");
+        screen.OpenBusinessDetails();
+        Check(Mathf.IsZeroApprox(swing.RotationDegrees), "Wuhan opening details cancels payment swing");
+        screen.CloseBusinessDetails();
         screen.RefreshForCapture();
         await ToSignal(GetTree().CreateTimer(.5), SceneTreeTimer.SignalName.Timeout);
         if (Capture && !reduced) await Shot($"wuhan-pendant-{width}-payment");
         await ToSignal(GetTree().CreateTimer(.5), SceneTreeTimer.SignalName.Timeout);
         Check(screen.PaymentCoins.Count == 0, "Wuhan flight completes and cleans up");
+        Check(Mathf.IsZeroApprox(swing.RotationDegrees), "Wuhan payment swing stays at rest after interruption");
         for (int i = 0; i < 20; i++)
         {
             foreach (var customer in controller.CustomerQueue.Slots.Where(c => !c.WasServed)) customer.WaitSeconds = customer.LeaveAtSeconds;

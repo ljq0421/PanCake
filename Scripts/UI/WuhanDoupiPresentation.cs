@@ -417,7 +417,10 @@ public partial class WuhanWorkstationView
                 Vector2 target = m.Kind == "flip" ? QuadPoint(FlipQuad(m),.65f,.8f) : PanCenter;
                 center = (m.Origin ?? target).Lerp(target, Phase(p,0,.35f));
                 float alpha = m.Kind == "flip_return" ? 1-Smooth(p) : 1-Phase(p,.8f,1);
-                DrawFlipTool(center, alpha, m.Kind == "flip" ? -Mathf.Sin(Phase(p,.15f,.8f)*Mathf.Pi)*.4f : 0);
+                float angle = m.Kind == "flip" ? -Mathf.Sin(Phase(p,.15f,.8f)*Mathf.Pi)*.4f : 0;
+                if (_showAutomaticFlipTool && m.Kind == "flip")
+                    Sprite("auto_flip_tool", At(center + new Vector2(30,-23), new Vector2(138,91)), alpha, angle);
+                else DrawFlipTool(center, alpha, angle);
                 return;
             }
             Sprite("cut_tool", At(center + new Vector2(30,-23),new Vector2(138,91)),toolAlpha);

@@ -10,6 +10,7 @@ public partial class StartScreen
     private Action<string>? _bookUpgradeSelection;
     private Action<CityEquipmentView>? _bookUpgradePurchase;
     private Action? _bookUpgradeContinue;
+    internal void ShowUpgradeSuccess(string equipmentId) => _body.GetNodeOrNull<EquipmentUpgradeView>("UpgradeView")?.PlayPurchaseSuccess(equipmentId);
 
     internal void PresentBookUpgrades(BookUpgradeSource source, string? selected,
         Action<string> selection, Action<CityEquipmentView> purchase, Action? continueBusiness, string message)

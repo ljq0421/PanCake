@@ -63,6 +63,7 @@ public partial class JourneySettings : Node
             _seenInterfaceLessons.Add(key);
         Language = cfg.GetValue("language", "locale", "zh_CN").AsString() == "en" ? "en" : "zh_CN";
         TranslationServer.SetLocale(Language);
+        GetWindow().Title = Tr("全世界等我开饭！");
         ErrorMessage = load is Error.Ok or Error.FileNotFound ? "" : "设置无法读取，已使用默认值。";
         Master = ReadVolume(cfg, "master"); Music = ReadVolume(cfg, "music"); Effects = ReadVolume(cfg, "effects");
         Muted = cfg.GetValue("audio", "muted", false).AsBool(); ApplyAudio();
@@ -195,7 +196,9 @@ public partial class JourneySettings : Node
     public void SetLanguage(string language)
     {
         if (language is not ("zh_CN" or "en")) return;
-        Language = language; TranslationServer.SetLocale(language); SavePreferences(); Changed?.Invoke();
+        Language = language; TranslationServer.SetLocale(language);
+        GetWindow().Title = Tr("全世界等我开饭！");
+        SavePreferences(); Changed?.Invoke();
     }
     public void SetReduceMotion(bool enabled)
     {

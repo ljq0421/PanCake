@@ -56,7 +56,9 @@ public partial class CoinCollectionSelfTest : Node
                     GC.Collect(); GC.WaitForPendingFinalizers(); await Frames();
                     continue;
                 }
-                await TestWuhanCashPendant((WuhanDayScreen)screen, controller, save, catalog, width, reduced);
+                if (OS.GetCmdlineUserArgs().Contains("--pendant-motion-only"))
+                    await TestWuhanPaymentMotion((WuhanDayScreen)screen, controller, save, catalog, width, reduced);
+                else await TestWuhanCashPendant((WuhanDayScreen)screen, controller, save, catalog, width, reduced);
                 screen.QueueFree(); controller.QueueFree(); save.QueueFree(); await Frames();
                 GC.Collect(); GC.WaitForPendingFinalizers(); await Frames();
             }

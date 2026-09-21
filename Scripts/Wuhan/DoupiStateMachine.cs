@@ -66,6 +66,7 @@ public sealed class DoupiStateMachine
     public const double MinimumIngredientSeconds = 1;
     public bool IsHeating => State is not (DoupiState.Empty or DoupiState.Burnt or DoupiState.Cutting or DoupiState.Cut);
     internal double SideSeconds => _seconds;
+    internal bool AutomaticFlip => _data.AutoFlip;
     internal double IngredientSeconds => _ingredientSeconds;
     internal float SkinCookProgress => !SecondSide && State != DoupiState.Empty
         ? (float)Math.Clamp(_seconds / _data.StageSeconds, 0, 1) : 0;

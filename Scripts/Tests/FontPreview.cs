@@ -117,7 +117,7 @@ public partial class FontPreview : Control
         var titleRow = new HBoxContainer(); titleRow.AddThemeConstantOverride("separation", 18); rows.AddChild(titleRow);
         var caption = new Label { Text = "站酷快乐体 · 标题试样", VerticalAlignment = VerticalAlignment.Center };
         caption.AddThemeFontSizeOverride("font_size", 19); titleRow.AddChild(caption);
-        var sample = new Label { Text = "早餐铺子  今日开张", VerticalAlignment = VerticalAlignment.Center };
+        var sample = new Label { Text = "全世界等我开饭！  今日开张", VerticalAlignment = VerticalAlignment.Center };
         sample.AddThemeFontOverride("font", titleFont); sample.AddThemeFontSizeOverride("font_size", 36); titleRow.AddChild(sample);
         _restore = new Button { Text = "字体对比 · F8", Position = new(1650, 1018), Size = new(235, 44),
             Visible = false, FocusMode = FocusModeEnum.None };

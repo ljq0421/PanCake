@@ -45,7 +45,7 @@ public sealed partial class BookUpgradeSource
     {
         ("pancake_stove", 2) => "不再煎焦，腾出注意力照顾炸锅",
         ("pancake_stove", 3) => "保持防焦，煎饼熟得更快",
-        ("fryer", 2) => "原料库存更大，减少补货中断",
+        ("fryer", 2) => "一锅容量增加，油条更快炸至金黄",
         ("fryer", 3) => "自动提篮，可以安心处理其他订单",
         ("noodle_cooker", 2) => "锁定最佳熟度，仍需手动提篮",
         ("noodle_cooker", 3) => "双篮并行，熟面自动提起",

@@ -25,6 +25,7 @@ public partial class PancakeAudio : Node
 {
     private readonly Dictionary<PancakeSound, AudioStreamWav> _sounds = new();
     private AudioStreamPlayer _player = null!;
+    private bool _paused;
 
     public override void _Ready()
     {
@@ -33,33 +34,35 @@ public partial class PancakeAudio : Node
         _player.Bus = ProjectCake.Core.JourneySettings.EffectsBus;
         _sounds[PancakeSound.BookOpen] = MakeNoise(.18, .10);
         _sounds[PancakeSound.BookStamp] = MakeNoise(.07, .18);
-        _sounds[PancakeSound.SoftDrop] = MakeNoise(.045, .18);
-        _sounds[PancakeSound.CrispDrop] = MakeNoise(.065, .28);
+        _sounds[PancakeSound.SoftDrop] = CartoonActionClips.Load(CartoonActionClips.Drop);
+        _sounds[PancakeSound.CrispDrop] = _sounds[PancakeSound.SoftDrop];
         _sounds[PancakeSound.PaperBag] = MakePaperRustle();
-        _sounds[PancakeSound.PickUp] = MakeTone(720, 0.06, 0.28);
-        _sounds[PancakeSound.Stroke] = MakeTone(320, 0.08, 0.18);
+        _sounds[PancakeSound.PickUp] = CartoonActionClips.Load(CartoonActionClips.PickUp);
+        _sounds[PancakeSound.Stroke] = CartoonActionClips.Load(CartoonActionClips.Mix);
         _sounds[PancakeSound.Sizzle] = MakeNoise(0.12, 0.16);
         _sounds[PancakeSound.Flip] = MakeTone(460, 0.09, 0.30);
         _sounds[PancakeSound.Ready] = MakeChord(new[] { 620.0, 820.0 }, 0.14, 0.22);
         _sounds[PancakeSound.Success] = MakeChord(new[] { 660.0, 880.0 }, 0.18, 0.25);
         _sounds[PancakeSound.Overdone] = MakeTone(230, 0.18, 0.24);
-        _sounds[PancakeSound.Error] = MakeTone(145, 0.12, 0.28);
+        _sounds[PancakeSound.Error] = CartoonActionClips.Load(CartoonActionClips.Error);
         _sounds[PancakeSound.CoinCollect] = MakeCoinChime();
     }
 
     public void Play(PancakeSound sound)
     {
-        if (!_sounds.TryGetValue(sound, out AudioStreamWav? stream))
+        if (_paused || !_sounds.TryGetValue(sound, out AudioStreamWav? stream))
         {
             return;
         }
 
         _player.StreamPaused = false;
+        _player.VolumeDb = sound == PancakeSound.Stroke ? -8 : sound == PancakeSound.Error ? -6
+            : sound is PancakeSound.PickUp or PancakeSound.SoftDrop or PancakeSound.CrispDrop ? -4 : -12;
         _player.Stream = stream;
         _player.Play();
     }
 
-    public void SetPaused(bool paused) => _player.StreamPaused = paused;
+    public void SetPaused(bool paused) { _paused = paused; if (paused) Stop(); }
     public void Stop() => _player?.Stop();
 
     private static AudioStreamWav MakeCoinChime() => MakeWave(.28, sample =>

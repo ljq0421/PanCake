@@ -71,14 +71,15 @@ public partial class StartScreen
             return;
         }
         int index = Array.FindIndex(JourneyModel.Cities, c => c.Id == next.Id);
-        Vector2 at = MapNodePosition(index);
-        var glow = Art(_body, "城市解锁轻光效", new(at + new Vector2(-10, -45), new Vector2(170, 160)));
+        Vector2 center = MapNodePosition(index) + MapMarkerSize / 2;
+        Vector2 glowSize = MapMarkerSize * 1.8f;
+        var glow = Art(_body, "城市解锁轻光效", new(center - glowSize / 2, glowSize));
         glow.Name = "MapUnlockGlow";
         glow.PivotOffset = glow.Size / 2; glow.Scale = Vector2.One * .75f;
         var tween = CreateTween().SetParallel(); _tweens.Add(tween);
         tween.TweenProperty(glow, "scale", Vector2.One * 1.12f, 1.5);
         tween.TweenProperty(glow, "modulate:a", 0f, 1.2).SetDelay(.4);
-        Frames(_body, "城市节点点亮星闪", new(at + new Vector2(85, -25), new Vector2(95, 95)), .4, false);
+        Frames(_body, "城市节点点亮星闪", new(center - MapMarkerSize * .7f, MapMarkerSize * 1.4f), .4, false);
         Art(_body, "城市解锁小飘带", new(730, 850, 460, 95));
         Text(_body, "UnlockCaption", next.Name + "已开放", new(805, 875, 310, 44), 25, true);
     }

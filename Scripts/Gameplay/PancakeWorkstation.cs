@@ -107,6 +107,7 @@ public partial class PancakeWorkstation : Control
     public event Action<string, bool>? Feedback;
     public event Action<int>? YoutiaoConsumed;
     public event Action<int>? YoutiaoBurnt;
+    public event Action<string>? EquipmentUsed;
     public PancakeStateMachine Machine { get; private set; } = null!;
     public IngredientInventory Inventory { get; private set; } = null!;
     public FryerStateMachine? FryerMachine { get; private set; }
@@ -689,6 +690,9 @@ public partial class PancakeWorkstation : Control
         }
 
         LearnPancakeAction(command, id);
+        if (command == PancakeCommand.CompleteSpread) EquipmentUsed?.Invoke("pancake_stove");
+        if (result.ConsumedIngredient is string consumed && !Inventory.IsUnlimited(consumed)
+            && consumed != StableIds.Ingredients.Youtiao) EquipmentUsed?.Invoke("ingredient_station");
         if (IsTianjinWorkbench && command == PancakeCommand.Flip && !ReducedMotion)
         {
             CancelRightFoodPress();
@@ -761,7 +765,7 @@ public partial class PancakeWorkstation : Control
                 FryerCommand.RaiseBasket => "fryer:raise",
                 _ => "discard",
             });
-            if (command == FryerCommand.LoadOne) _audio.Play(PancakeSound.PickUp);
+            if (command == FryerCommand.LoadOne) { EquipmentUsed?.Invoke("fryer"); _audio.Play(PancakeSound.PickUp); }
             else if (command == FryerCommand.LowerBasket) _audio.Play(PancakeSound.Sizzle);
             else if (command == FryerCommand.RaiseBasket) _audio.Play(PancakeSound.Flip);
             if (!IsTianjinWorkbench || command is not (FryerCommand.LoadOne or FryerCommand.LowerBasket or FryerCommand.RaiseBasket))

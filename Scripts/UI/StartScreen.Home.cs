@@ -32,7 +32,9 @@ public partial class StartScreen
             """ }
     };
 
-    private TextureRect HomeArt(Control parent, string name, Rect2 rect, bool stretch = false)
+    private string HomeLogoArt => _settings.Language == "en" ? "World, Breakfast Is Served" : "全世界等我开饭";
+
+    private Texture2D HomeTexture(string name)
     {
         if (!_homeTextures.TryGetValue(name, out var texture))
         {
@@ -53,10 +55,15 @@ public partial class StartScreen
                 : source;
             _homeTextures[name] = texture;
         }
+        return texture;
+    }
+
+    private TextureRect HomeArt(Control parent, string name, Rect2 rect, bool stretch = false)
+    {
         var art = new TextureRect
         {
             ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
-            Texture = texture, Position = rect.Position, Size = rect.Size,
+            Texture = HomeTexture(name), Position = rect.Position, Size = rect.Size,
             StretchMode = stretch ? TextureRect.StretchModeEnum.Scale : TextureRect.StretchModeEnum.KeepAspectCentered,
             MouseFilter = MouseFilterEnum.Ignore
         };

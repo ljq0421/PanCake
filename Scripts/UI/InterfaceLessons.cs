@@ -29,7 +29,6 @@ internal static class InterfaceLessons
     {
         new InterfaceLesson("完成率怎么算", "完成率 = 完成 ÷（完成 + 流失）。\n只统计已结束的客单，错误完成也计入完成。", "BookCompletionRate"),
         new InterfaceLesson("满意度看哪些顾客", "满意度只按已完成订单的顾客计算。\n流失的顾客不计入满意度平均值。", "BookSatisfaction"),
-        new InterfaceLesson("找到今天的热销菜", "热销区域展示本次营业卖得最多的菜品和数量。\n顾客明细页可以查看各笔订单的商品。", "BookBestSeller"),
         new InterfaceLesson("留意解锁与升级", "新解锁的内容可以回店查看。\n收摊后，点击可升级贴片查看设备效果和价格；升级下次营业生效。", "UpgradeSticker")
     };
     internal static InterfaceLesson[] Replay(string city) => Calendar.Concat(city is "city:tianjin" or "city:wuhan" or "city:xian" ? Business : Array.Empty<InterfaceLesson>())

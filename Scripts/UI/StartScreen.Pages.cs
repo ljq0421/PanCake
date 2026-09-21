@@ -59,7 +59,7 @@ public partial class StartScreen
             MouseFilter = MouseFilterEnum.Ignore, Material = HomeMapSoftFocus()
         };
         _body.AddChild(mapArt);
-        HomeArt(_body, "LOGO", new(80, 150, 1120, 516)).Name = "HomeLogo";
+        HomeArt(_body, HomeLogoArt, new(80, 150, 1120, 516)).Name = "HomeLogo";
         if (_save?.DemoMigrationRetryAvailable == true)
             Button(_body, "RetryDemoMigration", "重试读取存档", new(810, 790, 300, 42), () =>
             {
@@ -72,11 +72,9 @@ public partial class StartScreen
         HomeAction("BreakfastRecords", "旅途收藏", "已有旅程手账封面", new(1475, 855, 170, 145), PresentBreakfastCollection, small: true);
         HomeAction("WorldMap", "世界地图", "世界地图入口图标", new(1655, 855, 170, 145), () => PresentMap(), small: true);
         Utilities(); Focus(canContinue ? "Continue" : "NewGame");
-        // The wall remains an additional map entrance, after the main actions in keyboard order.
-        Button(_body, "WallMap", "", new(730, 190, 864, 512), () => PresentMap(), bare: true, hoverVisual: mapArt);
         _status.MoveToFront();
     }
-    private void RequestNewGame(int? requestedSlot = null, bool startBusiness = false)
+    private void RequestNewGame(int? requestedSlot = null, bool showCity = false)
     {
         if (_save is null || _busy) return;
         int? slot = requestedSlot ?? _save.GetSlots().FirstOrDefault(s => !s.Exists)?.Id;
@@ -86,23 +84,19 @@ public partial class StartScreen
             return;
         }
         CloseModal(); _busy = true;
-        if (startBusiness) NewGameBusinessRequested?.Invoke(slot.Value);
+        if (showCity) NewGameCityRequested?.Invoke(slot.Value);
         else NewGameRequested?.Invoke(slot.Value);
     }
-    private void StartMapCity(string cityId)
+    private void OpenMapCity(string cityId)
     {
         if (_save is null || _busy) return;
         if (!_save.CanContinue)
         {
-            if (cityId == StableIds.Cities.Tianjin) RequestNewGame(startBusiness: true);
+            if (cityId == StableIds.Cities.Tianjin) RequestNewGame(showCity: true);
             return;
         }
-        var progress = JourneyModel.Progress(_save, cityId);
-        int days = _save.ChapterLength(cityId);
-        if (days <= 0) return;
-        SelectedDay = Math.Max(1, progress.HighestUnlockedDay);
-        _busy = true;
-        BusinessRequested?.Invoke(cityId, SelectedDay);
+        if (_save.ChapterLength(cityId) <= 0) return;
+        PresentCity(cityId, returnToSource: RenderMap, fromHome: true);
     }
     private void RenderContinue()
     {
@@ -127,78 +121,6 @@ public partial class StartScreen
             if (food.Art is not null) Art(parent, food.Art, new(at + new Vector2((135 - 135 * scale) / 2, 0), new Vector2(135, 155) * scale));
             else parent.AddChild(new BookFoodIcon { Position = at + new Vector2((135 - 135 * scale) / 2, 0), Size = new Vector2(135, 155) * scale, Product = new(food.Visual, food.Name, 1, food.Visual) });
             Text(parent, "Food" + i, food.Name, new(at + new Vector2(-12, 155 * scale + 8), new Vector2(159, 58)), 26, true);
-        }
-    }
-    // Shared by the interactive map and chapter-unlock presentation.
-    private static readonly Vector2[] MapPoints = { new(1450, 270), new(1310, 425), new(1090, 320), new(1130, 565), new(1500, 550) };
-    private static readonly Rect2 MapArtworkBounds = new(235, 225, 1450, 535);
-    private Rect2 _mapArtworkRect;
-    private Vector2 MapArtworkPoint(Vector2 referencePoint) => _mapArtworkRect.Position
-        + (referencePoint - MapArtworkBounds.Position) / MapArtworkBounds.Size * _mapArtworkRect.Size;
-    private Vector2 MapNodePosition(int index) => MapArtworkPoint(MapPoints[index] + new Vector2(65, 40)) - new Vector2(65, 40);
-    private void RenderMap()
-    {
-        Begin(JourneyPage.Map); Chrome(() => (_mapReturn ?? RenderHome)(), showBack: false); DrawMap();
-        Focus("Node" + Math.Max(0, Array.FindIndex(JourneyModel.Cities, c => c.Id == _city)));
-        _status.Position = new(340, 75); _status.Size = new(1240, 40);
-        _status.AddThemeColorOverride("font_color", StartScreenTheme.Ink);
-        _status.MoveToFront();
-    }
-    private void DrawMap(bool reveal = false)
-    {
-        // Keep the chapter-unlock presentation at its existing size.
-        Rect2 frameBounds = reveal ? new(160, 125, 1600, 685) : new(100, 170, 1720, 870);
-        Rect2 artworkBounds = reveal ? MapArtworkBounds : new(175, 297, 1570, 680);
-        HomeArt(_body, "世界地图墙挂底板", frameBounds).Name = "MapFrame";
-        var map = HomeArt(_body, "卡通世界地图母版", artworkBounds);
-        map.Name = "WorldMapArt";
-        Vector2 nativeSize = map.Texture.GetSize();
-        float mapScale = Math.Min(artworkBounds.Size.X / nativeSize.X, artworkBounds.Size.Y / nativeSize.Y);
-        map.Size = nativeSize * mapScale;
-        map.Position = artworkBounds.GetCenter() - map.Size / 2;
-        _mapArtworkRect = new(map.Position, map.Size);
-        Art(_body, "美洲区域装饰", new(MapArtworkPoint(new(380, 417.5f)) - new Vector2(65, 47.5f), new Vector2(130, 95))).Modulate = new Color(1,1,1,.3f);
-        Art(_body, "欧洲区域装饰", new(MapArtworkPoint(new(905, 282.5f)) - new Vector2(55, 37.5f), new Vector2(110, 75))).Modulate = new Color(1,1,1,.3f);
-        if (_save is not null && JourneyModel.Cities.All(c => JourneyModel.Progress(_save, c.Id).Completed))
-            Art(_body, "中国阶段完成纪念章", new(MapArtworkPoint(new(790, 555)) - new Vector2(90, 90), new Vector2(180, 180)));
-        int visibleCities = _save?.IsDemo == true ? 3 : JourneyModel.Cities.Length;
-        for (int i = 1; i < visibleCities; i++)
-        {
-            var from = MapNodePosition(i-1) + new Vector2(65, 40); var to = MapNodePosition(i) + new Vector2(65, 40);
-            var route = Art(_body, "手绘旅行虚线路径1", new(from, new Vector2(from.DistanceTo(to), 20)));
-            route.Name = "MapRoute" + i;
-            route.StretchMode = TextureRect.StretchModeEnum.Scale;
-            route.Rotation = (to-from).Angle(); route.Modulate = new Color(1,1,1,.55f);
-            if (reveal) { var t = CreateTween(); _tweens.Add(t); route.Scale = new(0,1); t.TweenProperty(route,"scale:x",1f,1.2); }
-        }
-        for (int i = 0; i < visibleCities; i++)
-        {
-            var city = JourneyModel.Cities[i]; bool unlocked = JourneyModel.MapCityUnlocked(_save, city);
-            bool completed = _save is not null && JourneyModel.Progress(_save, city.Id).Completed;
-            bool preview = _save?.IsDemo == true && _save.ChapterLength(city.Id) == 0;
-            var node = Button(_body, "Node"+i, "", new(MapNodePosition(i), new Vector2(130,155)), () =>
-            {
-                _city = city.Id;
-                if (!preview && (unlocked || (_save?.CanContinue == true && DeveloperToolsVisible)))
-                {
-                    StartMapCity(city.Id);
-                }
-                else RenderMap();
-            }, bare:true);
-            Art(node, completed ? JourneyModel.Stamp(city) : unlocked ? JourneyModel.NodeArt(city) : "未解锁城市节点", new(20,0,90,78));
-            if (city.Id == ProjectCake.Data.StableIds.Cities.Wuhan && _save?.HasUnseenWuhanUnlock == true)
-            {
-                var fresh = Text(node, "WuhanNewTag", "新", new(91, -12, 42, 38), 22, true);
-                fresh.AddThemeColorOverride("font_color", new Color("#24594F"));
-                fresh.AddThemeColorOverride("font_outline_color", StartScreenTheme.Cream);
-                fresh.AddThemeConstantOverride("outline_size", 5);
-            }
-            var cityLabel = Text(node,"Name",city.Name,new(0,77,130,38),26,true);
-            cityLabel.AddThemeColorOverride("font_outline_color", StartScreenTheme.Cream); cityLabel.AddThemeConstantOverride("outline_size", 4);
-            var stateLabel = Text(node,"State",preview ? "下一站预告" : completed ? "已完成" : !unlocked ? "尚未抵达" : city.Id == (_save?.ContinueCityId ?? JourneyModel.Cities[0].Id) ? "当前城市" : "可前往",new(-15,115,160,32),20,true);
-            FitTextWidth(stateLabel, 20, 18);
-            stateLabel.AddThemeColorOverride("font_outline_color", StartScreenTheme.Cream); stateLabel.AddThemeConstantOverride("outline_size", 4);
-            if (city.Id == _city) { var ring = Art(node,"城市节点悬停高亮环",new(-4,-15,140,105)); ring.ShowBehindParent = true; }
         }
     }
     public void OpenCard(string cityId)

@@ -83,16 +83,14 @@ internal static class HelpPageChecks
                 await Click(previousFocus);
                 Check(Find<Panel>("HelpCityTips").GetMeta("city_id").AsString() == city.Id, "city context " + city.Id);
                 Check(Find<Label>("HelpTitle").Text == "一本早餐旅行手册", "shared guide title");
-                Check(Find<Button>("Close").HasFocus(), "close initially focused");
+                Check(!screen.Descendants<Button>().Any(b => b.Name == "Close" && b.IsVisibleInTree()), "help omits acknowledgement button");
                 Check(!screen.Descendants<Button>().Any(b => b.Name == "MusicCredits" && b.IsVisibleInTree()), "help omits music credits entry");
                 CheckText(english);
                 await capture("help-" + city.Id.Replace(':', '-') + (english ? "-en" : "-zh"));
                 await Click(Find<Panel>("HelpJourneyNew"));
                 Check(screen.ModalOpen && !screen.ConfirmationOpen, "journey card is informational");
-                await KeyPress(Key.Tab);
-                Check(screen.GetNode<Control>("Canvas/Modal").IsAncestorOf(screen.GetViewport().GuiGetFocusOwner()), "Tab stays in modal");
-                Find<Button>("Close").GrabFocus(); await KeyPress(Key.Enter);
-                Check(!screen.ModalOpen && screen.GetViewport().GuiGetFocusOwner() == previousFocus, "Enter closes and restores page focus");
+                await KeyPress(Key.Escape);
+                Check(!screen.ModalOpen && screen.GetViewport().GuiGetFocusOwner() == previousFocus, "Escape closes and restores page focus");
                 Check(JsonSerializer.Serialize(save.Data) == before, "help never mutates save");
             }
         }
@@ -103,7 +101,5 @@ internal static class HelpPageChecks
         Check(Find<Panel>("HelpCityTips").GetMeta("city_id").AsString() == StableIds.Cities.Wuhan, "home follows resume city");
         await KeyPress(Key.Escape);
         Check(!screen.ModalOpen && Find<Button>("Help").HasFocus(), "Escape restores page focus");
-        await Click(Find<Button>("Help")); await Click(Find<Button>("Close"));
-        Check(!screen.ModalOpen, "mouse closes guide");
     }
 }

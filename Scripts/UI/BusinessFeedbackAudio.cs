@@ -11,19 +11,28 @@ public partial class BusinessFeedbackAudio : Node
     private readonly Dictionary<BusinessCue, ulong> _last = new();
     private BusinessFeedback? _source;
     private Func<bool>? _canPlay;
+    private bool _useCartoonCoin;
+    private bool _useCartoonError;
+    internal const string CartoonCoinPath = "res://resource/audio/sfx/coin-credit-c03a.wav";
     internal Func<ulong> Clock { get; set; } = Time.GetTicksMsec;
     internal event Action<BusinessFeedbackEvent>? Played;
 
-    public static BusinessFeedbackAudio Attach(Node owner, BusinessFeedback source, Func<bool> canPlay)
+    public static BusinessFeedbackAudio Attach(Node owner, BusinessFeedback source, Func<bool> canPlay, bool useCartoonCoin = false, bool useCartoonError = false)
     {
         var audio = owner.GetNodeOrNull<BusinessFeedbackAudio>("BusinessFeedbackAudio");
         if (audio is null) { audio = new() { Name = "BusinessFeedbackAudio" }; owner.AddChild(audio); }
-        audio.Bind(source, canPlay);
+        audio.Bind(source, canPlay, useCartoonCoin, useCartoonError);
         return audio;
     }
-    public void Bind(BusinessFeedback source, Func<bool> canPlay)
+    public void Bind(BusinessFeedback source, Func<bool> canPlay, bool useCartoonCoin = false, bool useCartoonError = false)
     {
         Unbind(); _source = source; _canPlay = canPlay;
+        if (_useCartoonCoin != useCartoonCoin && _players.Remove(BusinessCue.CoinCredited, out var coinPlayer))
+            coinPlayer.QueueFree();
+        _useCartoonCoin = useCartoonCoin;
+        if (_useCartoonError != useCartoonError && _players.Remove(BusinessCue.DeliveryError, out var errorPlayer))
+            errorPlayer.QueueFree();
+        _useCartoonError = useCartoonError;
         source.Requested += OnRequested; source.ResetRequested += Reset;
     }
     private void Unbind()
@@ -41,9 +50,15 @@ public partial class BusinessFeedbackAudio : Node
         _last[feedback.Cue] = now;
         if (!_players.TryGetValue(feedback.Cue, out var player))
         {
-            if (!Streams.TryGetValue(feedback.Cue, out var stream)) Streams[feedback.Cue] = stream = Make(feedback.Cue);
+            bool cartoonCoin = _useCartoonCoin && feedback.Cue == BusinessCue.CoinCredited;
+            bool cartoonError = _useCartoonError && feedback.Cue == BusinessCue.DeliveryError;
+            AudioStreamWav stream;
+            if (cartoonCoin) stream = GD.Load<AudioStreamWav>(CartoonCoinPath);
+            else if (cartoonError) stream = CartoonActionClips.Load(CartoonActionClips.Error);
+            else if (!Streams.TryGetValue(feedback.Cue, out stream!)) Streams[feedback.Cue] = stream = Make(feedback.Cue);
             player = new AudioStreamPlayer { Name = feedback.Cue.ToString(), Stream = stream,
-                Bus = ProjectCake.Core.JourneySettings.EffectsBus, VolumeDb = -16, MaxPolyphony = 3 };
+                Bus = ProjectCake.Core.JourneySettings.EffectsBus, VolumeDb = cartoonCoin ? 0 : cartoonError ? -6 : -16,
+                MaxPolyphony = cartoonError ? 1 : 3 };
             AddChild(player); _players.Add(feedback.Cue, player);
         }
         player.Play(); Played?.Invoke(feedback);

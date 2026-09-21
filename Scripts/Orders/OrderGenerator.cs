@@ -144,6 +144,8 @@ public sealed partial class OrderGenerator
             {
                 string desired = string.Empty;
                 if (customerType == "wuhan_regular") desired = orderType == "hot_dry_noodles" ? StableIds.Recipes.HotDryNoodlesClassic : StableIds.Recipes.HotDryNoodlesScallion;
+                // Introduce the newly unlocked topping with the first guest; keep the daily recipe quota.
+                if (config.Day == 3 && index == 0) desired = StableIds.Recipes.HotDryNoodlesBeef;
                 noodleRecipes.Add(TakePreferred(recipeBag, desired, random));
             }
             int doupiQuantity = orderType switch

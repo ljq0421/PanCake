@@ -5,7 +5,7 @@ namespace ProjectCake.UI;
 internal enum WuhanSound
 {
     Drop, Raise, Pour, Season, Topping, Mix, Batter, Egg, Spread, Flip, Cut, Stock,
-    Ready, Overdone, Success, Error, Discard, BookOpen, BookClose, Page,
+    Ready, Overdone, Success, Error, Discard, BookOpen, BookClose, Page, PickUp,
 }
 
 /// <summary>Short, soft game cues. Cached PCM, bounded voices, and per-cue throttling.</summary>
@@ -30,7 +30,10 @@ internal sealed class WuhanActionAudio
         {
             if (!Streams.TryGetValue(sound, out var stream)) Streams[sound] = stream = Make(sound);
             player = new AudioStreamPlayer { Name = $"WuhanCue{sound}", Stream = stream,
-                Bus = ProjectCake.Core.JourneySettings.EffectsBus, VolumeDb = sound is WuhanSound.Mix or WuhanSound.Spread ? -23 : -16,
+                Bus = ProjectCake.Core.JourneySettings.EffectsBus,
+                VolumeDb = CartoonPath(sound) is not null
+                    ? sound is WuhanSound.Mix or WuhanSound.Spread ? -8 : sound == WuhanSound.Error ? -6 : -4
+                    : -16,
                 MaxPolyphony = 1 };
             _owner.AddChild(player);
             _players.Add(sound, player);
@@ -54,6 +57,7 @@ internal sealed class WuhanActionAudio
 
     private static AudioStreamWav Make(WuhanSound sound)
     {
+        if (CartoonPath(sound) is string path) return CartoonActionClips.Load(path);
         (double pitch, double end, double length, double noise) = sound switch
         {
             WuhanSound.Drop => (480, 230, .14, .08),
@@ -98,4 +102,14 @@ internal sealed class WuhanActionAudio
         return new AudioStreamWav { Format = AudioStreamWav.FormatEnum.Format16Bits,
             MixRate = rate, Data = data, LoopMode = AudioStreamWav.LoopModeEnum.Disabled };
     }
+
+    private static string? CartoonPath(WuhanSound sound) => sound switch
+    {
+        WuhanSound.PickUp => CartoonActionClips.PickUp,
+        WuhanSound.Drop or WuhanSound.Pour or WuhanSound.Season or WuhanSound.Topping
+            or WuhanSound.Batter or WuhanSound.Egg or WuhanSound.Stock => CartoonActionClips.Drop,
+        WuhanSound.Mix or WuhanSound.Spread => CartoonActionClips.Mix,
+        WuhanSound.Error => CartoonActionClips.Error,
+        _ => null,
+    };
 }

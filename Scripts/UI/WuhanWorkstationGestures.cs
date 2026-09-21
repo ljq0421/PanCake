@@ -48,6 +48,7 @@ public partial class WuhanWorkstationView
         EndMix(); _gesture = gesture; _gestureStart = _gesturePoint = _gesturePrevious = point;
         _gestureTravel = _maximumExcursion = 0; _cutCommitted = false;
         _cutStroke = gesture == "cut" ? new DoupiCutStroke(SurfacePoint(point)) : null;
+        if (gesture is "raw" or "batter" or "filling") PlaySound(WuhanSound.PickUp);
         QueueRedraw(); return true;
     }
 

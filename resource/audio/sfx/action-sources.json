@@ -1,0 +1,123 @@
+{
+  "clips": [
+    {
+      "id": "K01",
+      "title": "小泡泡 · 啵",
+      "use": "取料／点按",
+      "file": "action-pickup-k01.wav",
+      "sources": [
+        "pop1"
+      ],
+      "processing": "去除近静音首尾、试听增益、5ms 边缘淡入淡出；本轮文件逐字节保留",
+      "group": "天津／武汉动作参照",
+      "duration": 0.06,
+      "peak_dbfs": -10.92,
+      "rms_dbfs": -23.6,
+      "sha256": "8a3252a30f51145c8c98d021a89cacf1e315c2821095eab79f05477277cb06d3",
+      "status": "approved and integrated"
+    },
+    {
+      "id": "K02",
+      "title": "大泡泡 · 啵嗒",
+      "use": "加料／放下成品",
+      "file": "action-drop-k02.wav",
+      "sources": [
+        "pop4"
+      ],
+      "processing": "去除近静音首尾、试听增益、5ms 边缘淡入淡出；本轮文件逐字节保留",
+      "group": "天津／武汉动作参照",
+      "duration": 0.087,
+      "peak_dbfs": -9.47,
+      "rms_dbfs": -23.0,
+      "sha256": "28b42f382910623a2854096a3bc9a217b2196d0a0ec90b0529545e5f2428b4a3",
+      "status": "approved and integrated"
+    },
+    {
+      "id": "K03",
+      "title": "跳动泡泡串",
+      "use": "煮制／搅拌的卡通表达；三次弹跳编排",
+      "file": "action-mix-k03.wav",
+      "sources": [
+        "pop7"
+      ],
+      "processing": "去除近静音首尾、试听增益、5ms 边缘淡入淡出；同一泡泡以递减音量连续播放三次；本轮文件逐字节保留",
+      "group": "天津／武汉动作参照",
+      "duration": 0.4,
+      "peak_dbfs": -6.0,
+      "rms_dbfs": -24.93,
+      "sha256": "732978b640dd4c2a988e7342d4b917eb9a1157b121d79e6e77dbd79e96c9b952",
+      "status": "approved and integrated"
+    },
+    {
+      "id": "K07",
+      "title": "弹簧回弹 · boing",
+      "use": "失败／弹回的喜剧候选",
+      "file": "action-error-k07.wav",
+      "sources": [
+        "boing"
+      ],
+      "processing": "去除近静音首尾、试听增益、5ms 边缘淡入淡出；本轮文件逐字节保留",
+      "group": "天津／武汉动作参照",
+      "duration": 1.443,
+      "peak_dbfs": -6.0,
+      "rms_dbfs": -24.76,
+      "sha256": "40ab03cb79091f8187627fde2bf412af960f754347efc86867430a87e853de4b",
+      "status": "approved and integrated"
+    }
+  ],
+  "sources": [
+    {
+      "id": "pop1",
+      "author": "EZduzziteh",
+      "title": "pop1.wav",
+      "page": "https://opengameart.org/content/pop-sounds-0",
+      "url": "https://opengameart.org/sites/default/files/pop1.wav",
+      "kind": "original",
+      "license": "CC0-1.0",
+      "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "retrieved": "2026-09-16",
+      "sha256": "758416a61890a61f4e1f00a65531e75e7d867cad1e96392d829860b8aa3a66f6",
+      "audition_source_file": "sources\\pop1.wav"
+    },
+    {
+      "id": "pop4",
+      "author": "EZduzziteh",
+      "title": "pop4.wav",
+      "page": "https://opengameart.org/content/pop-sounds-0",
+      "url": "https://opengameart.org/sites/default/files/pop4.wav",
+      "kind": "original",
+      "license": "CC0-1.0",
+      "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "retrieved": "2026-09-16",
+      "sha256": "58f92fff4601ffaf6c789bd636bff03c4a9ead002d0f081834c943968f9072e3",
+      "audition_source_file": "sources\\pop4.wav"
+    },
+    {
+      "id": "pop7",
+      "author": "EZduzziteh",
+      "title": "pop7.wav",
+      "page": "https://opengameart.org/content/pop-sounds-0",
+      "url": "https://opengameart.org/sites/default/files/pop7.wav",
+      "kind": "original",
+      "license": "CC0-1.0",
+      "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "retrieved": "2026-09-16",
+      "sha256": "a40f1291337bec27f39d8c3b205b61a336f04bc0a269b67c14b4ebe1fb1b0474",
+      "audition_source_file": "sources\\pop7.wav"
+    },
+    {
+      "id": "boing",
+      "author": "reelworldstudio",
+      "title": "Cartoon Boing.wav",
+      "page": "https://freesound.org/people/reelworldstudio/sounds/161122/",
+      "kind": "preview",
+      "url": "https://cdn.freesound.org/previews/161/161122_2750714-hq.mp3",
+      "license": "CC0-1.0",
+      "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "retrieved": "2026-09-16",
+      "sha256": "c354584c0d083c13444a8acb6be4726a90b420463e5a66cec58769f7bb98acf3",
+      "audition_source_file": "sources\\boing.mp3"
+    }
+  ],
+  "note": "K07 retains the exact user-approved edit of the CC0 HQ MP3 preview. Not a lossless original recording."
+}

@@ -11,6 +11,7 @@ public sealed record CityEquipmentView(string Id, string Name, int Level, string
 {
     public int? TargetLevel { get; init; }
     public IReadOnlyList<EquipmentEffect> Effects { get; init; } = Array.Empty<EquipmentEffect>();
+    public EquipmentUpgradePresentation? Presentation { get; init; }
 }
 
 /// <summary>Read-only presentation adapter; purchases still use the city's save service.</summary>
@@ -131,7 +132,10 @@ public sealed partial class CityPageModel(DataCatalog? catalog, SaveService save
             : BookUpgradeEffects.Compare(new(city, purchase, id, name, current, level == 0 ? current : target, price), catalog, yangzhou);
         if (city is StableIds.Cities.Tianjin or StableIds.Cities.Wuhan && level > 0 && level < maximum && !fixedStation)
             detail = BookUpgradeSource.Benefit(new(city, purchase, id, name, level, target, price)) + "\n" + detail;
-        return new(id, name, level, art, detail, price, purchase, available, notice)
+        var item = new CityEquipmentView(id, name, level, art, detail, price, purchase, available, notice)
         { TargetLevel = fixedStation || level == 0 || level >= maximum ? null : target, Effects = effects };
+        return city is StableIds.Cities.Tianjin or StableIds.Cities.Wuhan
+            ? item with { Presentation = EquipmentUpgradePresentation.Create(item, city, after,
+                after == 0 || progress.DayBestRecords.ContainsKey(after), save.Data.Coins, fixedStation) } : item;
     }
 }

@@ -44,6 +44,8 @@ public partial class WuhanDayScreen
         if (!CanInteract || _controller.CurrentConfig?.CityId != StableIds.Cities.Wuhan || _cooker is null) return null;
         var learned = _controller.TutorialActive ? new HashSet<string>() : _save.Data.Wuhan.LearnedWorkbenchActions;
         var orders = TutorialOrders.Pending(_controller, _catalog);
+        bool beefLesson = _controller.TutorialActive && _demoTeachingDay == 3;
+        string mixHint = beefLesson ? "牛肉与葱花、辣油不同：先按住左键划动拌匀，再加牛肉。" : "按住左键在碗里划动，直到酱料拌匀。";
         TutorialFocusStep? Step(string action, string text, params string[] targets) => learned.Contains(action) ? null
             : new(action, text, targets.Select(Workstation.TeachingTarget).ToArray());
         TutorialFocusStep? Delivery(ProductKind kind, string source, string name, string? recipe = null)
@@ -76,7 +78,7 @@ public partial class WuhanDayScreen
         if (gesture == "filling") return _doupi?.State == DoupiState.Flipped ? Step("doupi:filling", "把三鲜馅拖入锅内，松手自动铺匀。", "pan") : null;
         if (gesture == "flip") return Step("doupi:flip", "按住锅面向上划动翻面。", "pan");
         if (Workstation.IsKnifeHeld) return Step("doupi:cut", "沿虚线横划一次、竖划一次，切好后自动入盘。", "pan");
-        if (Workstation.IsMixing) return Step("mix:noodles", "按住左键在碗里划动，直到酱料拌匀。", "bowl");
+        if (Workstation.IsMixing) return Step("mix:noodles", mixHint, "bowl");
 
         TutorialFocusStep? Noodles()
         {
@@ -93,11 +95,11 @@ public partial class WuhanDayScreen
                     int i = Array.IndexOf(WuhanWorkstationView.IngredientIds, id);
                     if (i < 0) continue;
                     string name = beef ? "牛肉" : id == StableIds.Ingredients.WuhanScallion ? "葱花" : "辣油";
-                    return Step("take:" + id, $"按订单点击{name}，加入碗中。", $"ingredient{i}");
+                    return Step("take:" + id, beef ? "面已拌匀，点击牛肉加入碗中，无需再次搅拌。" : $"按订单点击{name}，加入碗中。", $"ingredient{i}");
                 }
             }
             if (_bowl.State is NoodleBowlState.Seasoned or NoodleBowlState.Mixing)
-                return Step("mix:noodles", "按住左键在碗里划动，直到酱料拌匀。", "bowl");
+                return Step("mix:noodles", mixHint, "bowl");
             if (_bowl.State == NoodleBowlState.Ready) return Delivery(ProductKind.HotDryNoodles, "bowl", "拌好的热干面", noodlesRecipe);
             for (int i = 0; i < _cooker.Baskets.Count; i++)
             {

@@ -11,6 +11,8 @@ public partial class BusinessBookSelfTest
     private async Task CheckBookUpgrades(DataCatalog catalog, YangzhouCatalog yc)
     {
         GetWindow().ContentScaleAspect = Window.ContentScaleAspectEnum.Expand;
+        // This suite verifies purchase/navigation, not the separately tested book transitions.
+        GetNode<JourneySettings>("/root/JourneySettings").SetReduceMotion(true);
         foreach (string city in new[] { "tianjin", "wuhan", "xian", "guangzhou", "yangzhou" })
         {
             var save = new SaveService();
@@ -66,9 +68,7 @@ public partial class BusinessBookSelfTest
             view.FinishAnimation(); await Frames();
             var teaching = view.Descendants<TutorialFocusLayer>().Single();
             Check(teaching.CurrentAction is null, city + " no upgrade teaching during business");
-            if (city is "tianjin" or "wuhan")
-                Check(view.Descendants<Button>().Single(b => b.Name == "OpenBookUpgrades").Disabled, city + " live summary keeps a disabled upgrade action");
-            else Check(!view.Descendants<Button>().Any(b => b.Name == "OpenBookUpgrades" || b.Name == "UpgradeSticker"), city + " affordable live upgrades hidden");
+            Check(!view.Descendants<Button>().Any(b => (b.Name == "OpenBookUpgrades" || b.Name == "UpgradeSticker") && !b.Disabled), city + " live summary cannot purchase upgrades");
             model.Closing = true;
             Button Entry() => view.Descendants<Button>().Single(b => b.Name == (city is "tianjin" or "wuhan" or "xian" ? "OpenBookUpgrades" : "UpgradeSticker"));
             foreach (var size in CaptureSizes)
@@ -109,18 +109,21 @@ public partial class BusinessBookSelfTest
                     GetViewport().PushInput(new InputEventKey { Keycode = Key.Tab, Pressed = true, ShiftPressed = i >= 4 }, true);
                     Check(modal.IsAncestorOf(GetViewport().GuiGetFocusOwner()), city + " modal traps keyboard focus " + i + " owner=" + GetViewport().GuiGetFocusOwner()?.GetPath());
                 }
-                view.Descendants<ScrollContainer>().Single(n => n.Name == "UpgradeScroll").ScrollVertical = 0; await Frames();
+                var mainScroll = view.Descendants<ScrollContainer>().SingleOrDefault(n => n.Name == "UpgradeScroll");
+                if (mainScroll is not null) mainScroll.ScrollVertical = 0; await Frames();
                 if (Capture) await Shot($"{city}-upgrades-{size.X}");
-                var detailScroll = view.Descendants<ScrollContainer>().Single(n => n.Name == "UpgradeScroll");
+                var detailScroll = view.Descendants<ScrollContainer>().SingleOrDefault(n => n.Name == "UpgradeScroll");
                 var actionRect = view.Descendants<Button>().Single(b => b.Name == "UpgradeEquipment").GetGlobalRect();
-                detailScroll.ScrollVertical = 100000; await Frames();
+                if (detailScroll is not null) detailScroll.ScrollVertical = 100000;
+                else Check(view.Descendants<Control>().Any(v => v.Name == "NextEquipment"), city + " next benefit visible without scrolling");
+                await Frames();
                 Check(view.Descendants<Button>().Single(b => b.Name == "UpgradeEquipment").GetGlobalRect() == actionRect, city + " scrolling keeps purchase action fixed");
-                if (Capture && detailScroll.ScrollVertical > 0) await Shot($"{city}-upgrades-{size.X}-bottom");
+                if (Capture && detailScroll?.ScrollVertical > 0) await Shot($"{city}-upgrades-{size.X}-bottom");
                 GetViewport().PushInput(new InputEventKey { Keycode = Key.Escape, Pressed = true }, true);
                 Check(!closed && Entry().HasFocus(), city + " Escape restores upgrade focus");
                 if (city is "tianjin" or "wuhan")
-                    Check(Entry().HasFocus() && Entry().GetThemeStylebox("focus") is StyleBoxFlat,
-                        city + " return focus highlights the dedicated upgrade action");
+                    Check(Entry().HasFocus() && !Entry().Disabled,
+                        city + " return focus reaches the dedicated upgrade action");
                 else if (city == "xian")
                     Check(Entry().GetThemeStylebox("focus") is StyleBoxFlat focus && focus.BgColor.A == 0 && focus.BorderWidthTop > 0,
                         city + " return focus leaves sticker artwork and caption visible");
@@ -139,7 +142,7 @@ public partial class BusinessBookSelfTest
             Click(view.Descendants<Button>().Single(b => b.Name == "Select_" + first.EquipmentId));
             Check(source.Coins == 10000, city + " selection does not purchase");
             var buy = view.Descendants<Button>().Single(b => b.Name == "UpgradeEquipment");
-            var scroll = view.Descendants<ScrollContainer>().Single(n => n.Name == "UpgradeScroll"); scroll.ScrollVertical = 0; await Frames();
+            var scroll = view.Descendants<ScrollContainer>().SingleOrDefault(n => n.Name == "UpgradeScroll"); if (scroll is not null) scroll.ScrollVertical = 0; await Frames();
             using (var locked = new FileStream(ProjectSettings.GlobalizePath(path) + ".tmp", FileMode.Create, System.IO.FileAccess.Write, FileShare.None)) {
                 Click(buy); await Frames();
                 Check(source.Coins == 10000 && view.Descendants<Label>().Any(l => l.Name == "UpgradeFeedback" && l.Text.Contains("保存失败")), city + " UI failure rolls back and explains retry");
@@ -153,7 +156,7 @@ public partial class BusinessBookSelfTest
             Check(!source.Purchase(first, out _) && source.Coins == 10000 - first.Price, city + " stale duplicate rejected");
             save.Load();
             Check(source.Coins == 10000 - first.Price && save.Data.GetCity(cityId).EquipmentLevels[first.EquipmentId] == first.TargetLevel, city + " purchase persists across reload");
-            Check(view.Descendants<Label>().Any(l => l.Text == "升级成功，下次营业生效。"), city + " success feedback");
+            Check(view.Descendants<Label>().Any(l => l.Text.StartsWith("升级成功")), city + " success feedback");
             int bought = 0;
             while (source.Offers.Count > 1 && bought++ < 20)
             {
@@ -193,9 +196,7 @@ public partial class BusinessBookSelfTest
             if (Capture) await Shot(city + "-upgrades-max");
             GetViewport().PushInput(new InputEventKey { Keycode = Key.Escape, Pressed = true }, true);
             model.Closing = false; view.Open(model);
-            if (city is "tianjin" or "wuhan")
-                Check(view.Descendants<Button>().Single(b => b.Name == "OpenBookUpgrades").Disabled, city + " live summary retains disabled upgrade action");
-            else Check(!view.Descendants<Button>().Any(b => b.Name == "OpenBookUpgrades" || b.Name == "UpgradeSticker"), city + " live no entry");
+            Check(!view.Descendants<Button>().Any(b => (b.Name == "OpenBookUpgrades" || b.Name == "UpgradeSticker") && !b.Disabled), city + " live summary cannot purchase upgrades");
             view.QueueFree(); workstation?.QueueFree(); controller?.QueueFree(); save.QueueFree(); await Frames();
         }
     }

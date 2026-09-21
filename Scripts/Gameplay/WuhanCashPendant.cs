@@ -11,6 +11,8 @@ public partial class WuhanDayScreen
     internal TextureRect CashPendantArtwork { get; private set; } = null!;
     internal BusinessDetailsView BusinessDetails { get; private set; } = null!;
     private readonly CashPendantFeedback _paymentFeedback = new();
+    private Control _pendantSwing = null!;
+    private Tween? _pendantSwingTween;
     internal IReadOnlyCollection<Control> PaymentCoins => _paymentFeedback.Coins;
     private WuhanActionAudio _bookAudio = null!;
     private bool _detailsPaused;
@@ -25,11 +27,16 @@ public partial class WuhanDayScreen
         foreach (string state in new[] { "normal", "hover", "pressed", "disabled", "focus" })
             CashPendant.AddThemeStyleboxOverride(state, new StyleBoxEmpty());
         AddChild(CashPendant);
-        CashPendantArtwork = new TextureRect { Name = "CashPendantArtwork", Position = bounds.Position,
+        // Rotate from the hanging point independently of the centered hover scale.
+        _pendantSwing = new Control { Name = "CashPendantSwing", Position = bounds.Position,
+            Size = bounds.Size, PivotOffset = new Vector2(bounds.Size.X * .5f, 0),
+            MouseFilter = MouseFilterEnum.Ignore, ZIndex = 80 };
+        AddChild(_pendantSwing);
+        CashPendantArtwork = new TextureRect { Name = "CashPendantArtwork",
             Size = bounds.Size, Texture = _art.Texture("cash_pendant"), MouseFilter = MouseFilterEnum.Ignore,
             ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.Scale,
-            ZIndex = 80 };
-        AddChild(CashPendantArtwork);
+            ZIndex = 0 };
+        _pendantSwing.AddChild(CashPendantArtwork);
         ArtContourHighlight.Attach(CashPendantArtwork,
             () => CashPendant.Disabled ? InteractionHighlightState.None
                 : CashPendant.IsHovered() || CashPendant.HasFocus() ? InteractionHighlightState.Hover : InteractionHighlightState.None);
@@ -54,10 +61,34 @@ public partial class WuhanDayScreen
 
     private void UpdatePendantState()
     {
+        if (!CanInteract || WuhanWorkstationView.ReducedMotion) StopPendantSwing();
         _bookAudio?.SetPaused(!_focused || !IsVisibleInTree());
         _paymentFeedback.SetPaused(!_focused || _detailsPaused || _controller?.IsPaused == true || _abandon?.Visible == true);
         if (CashPendant is not null)
             CashPendant.Disabled = !CanInteract || DeliveryDrag.IsDragging || Workstation.HasProductionGesture;
+    }
+
+    private void ReceivePendantPayment()
+    {
+        if (!CanInteract || WuhanWorkstationView.ReducedMotion) return;
+        StopPendantSwing();
+        _pendantSwingTween = CreateTween().SetTrans(Tween.TransitionType.Sine).SetEase(Tween.EaseType.InOut);
+        _pendantSwingTween.TweenProperty(_pendantSwing, "rotation_degrees", 4f, .09);
+        _pendantSwingTween.TweenProperty(_pendantSwing, "rotation_degrees", -2f, .13);
+        _pendantSwingTween.TweenProperty(_pendantSwing, "rotation_degrees", 0f, .18);
+    }
+
+    private void StopPendantSwing()
+    {
+        _pendantSwingTween?.Kill();
+        _pendantSwingTween = null;
+        if (IsInstanceValid(_pendantSwing)) _pendantSwing.RotationDegrees = 0;
+    }
+
+    private void ClearPaymentFeedback()
+    {
+        StopPendantSwing();
+        _paymentFeedback.Clear();
     }
 
     internal void OpenBusinessDetails()
@@ -89,7 +120,7 @@ public partial class WuhanDayScreen
 
     private void ClearPendantOnExit()
     {
-        _paymentFeedback.Clear();
+        ClearPaymentFeedback();
         if (IsInstanceValid(_controller))
         {
             _controller.SetPauseReason("wuhan-details", false);

@@ -37,6 +37,24 @@ public partial class StartScreenSelfTest : Node
             GetNode<JourneySettings>("/root/JourneySettings").UsePathForTests(Path.Combine(directory, "settings.cfg"));
             InterfaceLessons.MarkAllSeen(GetNode<JourneySettings>("/root/JourneySettings"));
             await Launch();
+            if (args.Contains("--branding-only"))
+            {
+                var settings = GetNode<JourneySettings>("/root/JourneySettings");
+                string oldDirectory = Path.Combine(OS.GetDataDir(), "Godot", "app_userdata", "早餐铺子");
+                Check(Path.GetFullPath(OS.GetUserDataDir()) == Path.GetFullPath(oldDirectory), "rename preserves existing Windows save directory");
+                foreach (string locale in new[] { "zh_CN", "en", "zh_CN" })
+                {
+                    settings.SetLanguage(locale); await Frames();
+                    string title = locale == "en" ? "World, Breakfast Is Served!" : "全世界等我开饭！";
+                    string art = locale == "en" ? "World, Breakfast Is Served" : "全世界等我开饭";
+                    Check(GetWindow().Title == title, "window title follows " + locale);
+                    var logo = Find<TextureRect>("HomeLogo");
+                    Check(logo.Texture is AtlasTexture atlas && atlas.Atlas.ResourcePath == JourneyModel.ArtRoot + art + ".png",
+                        "home logo switches immediately to " + locale);
+                    await Capture("branding-" + locale);
+                }
+                GD.Print($"BRANDING_TEST_PASS checks={_passed} demo={ExperienceProfile.IsDemo}"); GetTree().Quit(); return;
+            }
             if (args.Contains("--modal-utilities-only"))
             {
                 await ModalUtilitiesChecks();
@@ -233,7 +251,7 @@ public partial class StartScreenSelfTest : Node
         KeyPress(Key.Escape);
         Check(!_screen.ModalOpen, "settings closes with Escape");
         await Click(Find<Button>("Help")); await Capture("help");
-        KeyPress(Key.Tab); Check(Find<Button>("Close").HasFocus(), "help traps focus"); KeyPress(Key.Escape);
+        Check(!_screen.Descendants<Button>().Any(button => button.Name == "Close" && button.IsVisibleInTree()), "help omits acknowledgement button"); KeyPress(Key.Escape);
         Check(!_screen.ModalOpen, "help restores page");
         _save.ResetProgress(out _);
         Check(settings.Master == 63 && settings.Effects == 41, "new journey retains preferences");
@@ -338,9 +356,7 @@ public partial class StartScreenSelfTest : Node
         await Click(Find<Button>("WorldMap"));
         Check(_screen.Page == JourneyPage.Map, "tabletop map opens existing map flow");
         KeyPress(Key.Escape); await Frames();
-        await Click(Find<Button>("WallMap"));
-        Check(_screen.Page == JourneyPage.Map, "wall map opens existing map flow");
-        KeyPress(Key.Escape); await Frames();
+        Check(_screen.FindChildren("WallMap", "Button", true, false).Count == 0, "home wall map is decorative and has no click target");
         _save.ResetProgress(out _);
         foreach (var city in JourneyModel.Cities)
         {

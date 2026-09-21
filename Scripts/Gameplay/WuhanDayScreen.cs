@@ -104,7 +104,7 @@ public partial class WuhanDayScreen : Control
         _abandon.Confirmed += () => { Workstation.CancelAnimations(); _controller.AbandonDay(); HomeRequested?.Invoke(); };
         VisibilityChanged += () =>
         {
-            if (!IsVisibleInTree()) { CloseBusinessDetails(); _controller?.SetPauseReason("wuhan-focus", false); Workstation.CancelAnimations(); CollectionFeedback.Clear(); _paymentFeedback.Clear(); }
+            if (!IsVisibleInTree()) { CloseBusinessDetails(); _controller?.SetPauseReason("wuhan-focus", false); Workstation.CancelAnimations(); CollectionFeedback.Clear(); ClearPaymentFeedback(); }
         };
     }
     private void ConfigurePresentation()
@@ -155,13 +155,13 @@ public partial class WuhanDayScreen : Control
     public bool Initialize(DataCatalog catalog, SaveService save, DayController controller, int day)
     {
         EquipmentUpgradeCelebration.Attach(this, () => controller.CurrentConfig?.CityId == StableIds.Cities.Wuhan
-            && CanInteract && controller.State == DayState.Running);
+            && CanInteract && controller.State == DayState.Running && TeachingFocus.CurrentAction is null);
         _demoLesson?.Hide(); _demoLessonSkipFrame?.Hide(); _demoLessonFailure = _demoLessonSaveError = ""; _demoLessonComplete = false; _demoPendingResult = null;
         TeachingFocus.ResetSession(); _teachingDoupiLast = false;
         _hudPaused = false; _hudPauseMenu.Hide(); controller.SetPauseReason("wuhan-hud", false); _sceneFeedback.Clear();
-        BusinessFeedbackAudio.Attach(this, controller.Feedback, () => controller.CurrentConfig?.CityId == StableIds.Cities.Wuhan && (CanInteract));
+        BusinessFeedbackAudio.Attach(this, controller.Feedback, () => controller.CurrentConfig?.CityId == StableIds.Cities.Wuhan && (CanInteract), useCartoonCoin: true, useCartoonError: true);
         CloseBusinessDetails();
-        _paymentFeedback.Clear();
+        ClearPaymentFeedback();
         Workstation.CancelAnimations();
         CollectionFeedback.Clear(); CoinTray.RenderRevenue(0);
         _catalog=catalog; _save=save; _controller=controller; _committed=false; _results.Visible=false; _blocker.Visible=false;
@@ -264,6 +264,9 @@ public partial class WuhanDayScreen : Control
         else message="面还在烫，等到最佳窗口再提篮。";
         if(ok)
         {
+            if (before == NoodleBasketState.Empty)
+                GetNode<EquipmentUpgradeCelebration>("UpgradeCelebration").NotifyUse("noodle_cooker",
+                    Workstation.BasketRect(_cooker.Baskets.Count > 1 ? 1 - index : index));
             LearnTeachingAction(before == NoodleBasketState.Empty ? "take:noodles" : before == NoodleBasketState.Drained ? "pour:noodles" : "raise:noodles");
             Workstation.PlayBasket(index,before,quality);
         }
@@ -313,7 +316,7 @@ public partial class WuhanDayScreen : Control
             if (slot >= 0 && !WuhanWorkstationView.ReducedMotion)
             {
                 Vector2 origin = GetGlobalTransform().AffineInverse() * _portraits[slot].GetGlobalRect().GetCenter();
-                for (int i = 0; i < 3; i++) _paymentFeedback.Spawn(this, GD.Load<Texture2D>("res://resource/art/Global/HUDUI/小费飞行金币.png"), origin + new Vector2(i * 13 - 13, 0), WuhanWorkbenchLayout.CashSlot, i * .08);
+                for (int i = 0; i < 3; i++) _paymentFeedback.Spawn(this, GD.Load<Texture2D>("res://resource/art/Global/HUDUI/小费飞行金币.png"), origin + new Vector2(i * 13 - 13, 0), WuhanWorkbenchLayout.CashSlot, i * .08, i == 2 ? ReceivePendantPayment : null);
             }
         }
         if (result.ItemAccepted || result.CompletesOrder)
@@ -346,7 +349,12 @@ public partial class WuhanDayScreen : Control
         if (!ok) Feedback(hint, true);
         Render(); return ok;
     }
-    internal bool PourDoupiBatter() => ApplyDoupi(d => d.TryPourBatter(), "空锅才能倒浆；请先处理锅中豆皮。");
+    internal bool PourDoupiBatter()
+    {
+        bool ok = ApplyDoupi(d => d.TryPourBatter(), "空锅才能倒浆；请先处理锅中豆皮。");
+        if (ok) GetNode<EquipmentUpgradeCelebration>("UpgradeCelebration").NotifyUse("doupi_griddle");
+        return ok;
+    }
     internal bool AddDoupiEgg() => ApplyDoupi(d => d.TryAddEgg(), "先从浆碗拖浆入锅，再点击蛋液容器。");
     internal bool FlipDoupi() => ApplyDoupi(d => d.TryFlip(), "等面皮定型后，按住锅面向上划。");
     internal bool AddDoupiFilling() => ApplyDoupi(d => d.TryAddFilling(), "翻面后拖一份三鲜馅入锅，松手自动铺匀。");
@@ -459,7 +467,7 @@ public partial class WuhanDayScreen : Control
     private void OnFinished(DayResult result)
     {
         if (_committed || _controller.TutorialActive || _controller.CurrentConfig?.CityId != StableIds.Cities.Wuhan) return;
-        _committed = true; CloseBusinessDetails(); _paymentFeedback.Clear(); Workstation.CancelAnimations();
+        _committed = true; CloseBusinessDetails(); ClearPaymentFeedback(); Workstation.CancelAnimations();
         var model = BusinessBookModel.From(StableIds.Cities.Wuhan, result, _controller.BusinessRecords, _catalog);
         _blocker.Hide(); _results.Hide();
         _demoPendingResult = model; RetryWuhanDemoSettlement();

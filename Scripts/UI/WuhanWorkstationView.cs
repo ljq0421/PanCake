@@ -142,6 +142,7 @@ public partial class WuhanWorkstationView : Control
     private NoodleCookerStateMachine _cooker = null!;
     private HotDryNoodlesStateMachine _bowl = null!;
     private DoupiStateMachine? _doupi;
+    private bool _showAutomaticFlipTool;
     private DoupiInventory _stock = null!;
     public int PendingDoupiDemand { get; set; }
     private WuhanIngredientInventory _ingredients = null!;
@@ -239,6 +240,7 @@ public partial class WuhanWorkstationView : Control
     {
         CancelAnimations();
         _art = art; _cooker = cooker; _bowl = bowl; _doupi = doupi; _stock = stock;
+        _showAutomaticFlipTool = doupi?.AutomaticFlip == true;
         _layout = WuhanWorkbenchLayout.ForStage(doupi is not null);
         ConfigureEquipmentProgress();
         PendingDoupiDemand = 0; _ingredients = ingredients;
@@ -487,7 +489,10 @@ public partial class WuhanWorkstationView : Control
         DrawEquipmentHighlights(basketsOnly: true);
         DrawCooker(); DrawMixStation(); DrawDoupi();
         DrawEquipmentHighlights();
-        DrawTransfers(); DrawBowlFront(); DrawGesture();
+        DrawTransfers(); DrawBowlFront();
+        // Restoring the painted front must not erase the bowl's interaction contour.
+        DrawEquipmentHighlights(bowlOnly: true);
+        DrawGesture();
     }
 
     private Rect2 Source(Texture2D texture)

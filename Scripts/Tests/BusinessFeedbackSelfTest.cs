@@ -28,7 +28,7 @@ public partial class BusinessFeedbackSelfTest : Node
         {
             _catalog = GetNode<DataCatalog>("/root/DataCatalog");
             foreach (string city in new[] { StableIds.Cities.Tianjin, StableIds.Cities.Wuhan, StableIds.Cities.Xian, StableIds.Cities.Guangzhou }) TestCity(city);
-            TestBatch(); TestYangzhou(); TestAudio(); TestCoins(); await TestScreens();
+            TestBatch(); TestYangzhou(); TestAudio(); TestApprovedActions(); TestCoins(); await TestScreens();
             GD.Print($"BUSINESS_FEEDBACK_TEST_RESULT passed={_passed} failed=0"); GetTree().Quit();
         }
         catch (Exception e) { GD.PushError(e.ToString()); GD.Print($"BUSINESS_FEEDBACK_TEST_RESULT passed={_passed} failed=1"); GetTree().Quit(1); }
@@ -162,6 +162,39 @@ public partial class BusinessFeedbackSelfTest : Node
             Check(wave.Data.Any(b => b != 0) && wave.GetLength() is > .15 and < .5, cue + " nonempty short PCM"); wave.Dispose();
         }
     }
+    private void TestApprovedActions()
+    {
+        foreach (string path in new[] { CartoonActionClips.PickUp, CartoonActionClips.Drop, CartoonActionClips.Mix, CartoonActionClips.Error })
+        {
+            var imported = CartoonActionClips.Load(path);
+            using var original = Godot.FileAccess.Open(path, Godot.FileAccess.ModeFlags.Read);
+            original.Seek(44);
+            Check(imported.LoopMode == AudioStreamWav.LoopModeEnum.Disabled && imported.MixRate == 44100
+                && imported.Data.SequenceEqual(original.GetBuffer((long)original.GetLength() - 44)), path + " preserves approved PCM");
+        }
+        var pancake = new PancakeAudio(); AddChild(pancake);
+        var voice = pancake.GetChildren().OfType<AudioStreamPlayer>().Single();
+        foreach (var (cue, path) in new[] { (PancakeSound.PickUp, CartoonActionClips.PickUp),
+            (PancakeSound.SoftDrop, CartoonActionClips.Drop), (PancakeSound.CrispDrop, CartoonActionClips.Drop),
+            (PancakeSound.Stroke, CartoonActionClips.Mix), (PancakeSound.Error, CartoonActionClips.Error) })
+        {
+            pancake.Play(cue); Check(voice.Stream.ResourcePath == path && voice.Bus == JourneySettings.EffectsBus, cue + " approved action mapping");
+        }
+        pancake.SetPaused(true); pancake.Play(PancakeSound.PickUp);
+        Check(!voice.Playing, "Tianjin pause stops action tail and suppresses new sounds");
+        pancake.SetPaused(false); Check(!voice.Playing, "Tianjin resume does not replay action tail");
+        pancake.Play(PancakeSound.PickUp); Check(voice.Playing, "Tianjin fresh action plays after resume"); pancake.Free();
+        var owner = new Node(); AddChild(owner); var wuhan = new WuhanActionAudio(owner);
+        foreach (var (cue, path) in new[] { (WuhanSound.PickUp, CartoonActionClips.PickUp),
+            (WuhanSound.Drop, CartoonActionClips.Drop), (WuhanSound.Season, CartoonActionClips.Drop),
+            (WuhanSound.Egg, CartoonActionClips.Drop), (WuhanSound.Stock, CartoonActionClips.Drop),
+            (WuhanSound.Mix, CartoonActionClips.Mix), (WuhanSound.Spread, CartoonActionClips.Mix), (WuhanSound.Error, CartoonActionClips.Error) })
+        {
+            wuhan.Play(cue); Check(owner.GetNode<AudioStreamPlayer>($"WuhanCue{cue}").Stream.ResourcePath == path, cue + " Wuhan approved action mapping");
+        }
+        wuhan.SetPaused(true); Check(!wuhan.Play(WuhanSound.PickUp) && owner.GetChildren().OfType<AudioStreamPlayer>().All(p => !p.Playing), "Wuhan action pause stops and suppresses sounds");
+        wuhan.SetPaused(false); Check(owner.GetChildren().OfType<AudioStreamPlayer>().All(p => !p.Playing), "Wuhan action resume does not replay"); owner.Free();
+    }
     private void TestCoins()
     {
         foreach (bool reduced in new[] { false, true })
@@ -244,7 +277,23 @@ public partial class BusinessFeedbackSelfTest : Node
             }
             source.Delivery("fixture", new(DeliveryGrade.Perfect, 20, 2, 100, "")); source.Credit(22);
             Check(played.Count == 2, city + " actual screen binding allows concurrent customer and cash audio");
+            var cashPlayer = audio.GetChildren().OfType<AudioStreamPlayer>().Single(p => p.Name == nameof(BusinessCue.CoinCredited));
+            bool cartoonCoin = city is "Tianjin" or "Wuhan";
+            Check((cashPlayer.Stream.ResourcePath == BusinessFeedbackAudio.CartoonCoinPath) == cartoonCoin,
+                city + " approved coin asset is scoped to Tianjin and Wuhan");
+            if (cartoonCoin)
+            {
+                var imported = (AudioStreamWav)cashPlayer.Stream;
+                using var original = Godot.FileAccess.Open(BusinessFeedbackAudio.CartoonCoinPath, Godot.FileAccess.ModeFlags.Read);
+                original.Seek(44); // Approved audition is standard PCM WAV with a 44-byte header.
+                Check(imported.MixRate == 44100 && imported.LoopMode == AudioStreamWav.LoopModeEnum.Disabled
+                    && imported.Data.SequenceEqual(original.GetBuffer((long)original.GetLength() - 44)), city + " imported coin preserves approved PCM without looping");
+            }
             played.Clear(); source.Credit(0); source.Credit(-1); Check(played.Count == 0, city + " zero or negative credit silent");
+            source.Reset(); source.Reject();
+            var errorVoice = audio.GetChildren().OfType<AudioStreamPlayer>().Single(p => p.Name == nameof(BusinessCue.DeliveryError));
+            Check((errorVoice.Stream.ResourcePath == CartoonActionClips.Error) == cartoonCoin, city + " K07 failure scoped to approved cities");
+            played.Clear();
             entry.EmitSignal(Button.SignalName.Pressed); await Frames();
             Check(book.Visible, city + " live book opens");
             source.Reject(); source.Credit(22); source.Warn("paused");

@@ -47,7 +47,7 @@ public partial class TutorialFocusSelfTest : Node
         Check(skip.IsVisibleInTree() && skip.Text == "跳过教学" && !skip.HasFocus(), "normal business exposes skip without default focus");
         Check(skip.GetGlobalRect().Position == new Vector2(1620, 28)
             && !skip.GetGlobalRect().Intersects(pause.GetGlobalRect())
-            && !skip.GetGlobalRect().Intersects(focus.CardBounds), "skip stays at right edge clear of pause and teaching card");
+            && !skip.GetGlobalRect().Intersects(focus.CardBounds), $"skip stays at right edge clear of pause and teaching card: skip={skip.GetGlobalRect()}, pause={pause.GetGlobalRect()}, card={focus.CardBounds}");
     }
     private void OneOrder(DayController controller, string city, params OrderLineData[] lines)
     {
@@ -67,7 +67,8 @@ public partial class TutorialFocusSelfTest : Node
             var catalog = GetNode<DataCatalog>("/root/DataCatalog");
             string savePath = Path.Combine(_directory, Guid.NewGuid() + ".json");
             var save = new SaveService(); save.UsePathForTests(savePath); AddChild(save);
-            if (OS.GetCmdlineUserArgs().Contains("--wuhan-only")) await Wuhan(catalog, save, savePath);
+            if (OS.GetCmdlineUserArgs().Contains("--beef-only")) await WuhanBeef(catalog, save);
+            else if (OS.GetCmdlineUserArgs().Contains("--wuhan-only")) await Wuhan(catalog, save, savePath);
             else
             {
                 await TianjinMaintenance(catalog, save);
@@ -177,6 +178,73 @@ public partial class TutorialFocusSelfTest : Node
             controller.AbandonDay();
         }
         screen.Hide(); focus.Refresh(); Check(!focus.Visible, "hidden city has no mask"); screen.QueueFree(); controller.QueueFree(); await Frames();
+    }
+    private async Task WuhanBeef(DataCatalog catalog, SaveService save)
+    {
+        var settings = GetNode<JourneySettings>("/root/JourneySettings");
+        settings.UsePathForTests(Path.Combine(_directory, "beef-settings.cfg"));
+        InterfaceLessons.MarkAllSeen(settings);
+        save.Data.Wuhan.HighestUnlockedDay = 3;
+        save.Data.Wuhan.LearnedWorkbenchActions.UnionWith(new[] { "take:noodles", "pour:noodles", "mix:noodles", "deliver:hot_dry_noodles" });
+        var controller = new DayController(); AddChild(controller);
+        var screen = SceneFactory.Instantiate<WuhanDayScreen>("res://Scenes/Gameplay/WuhanDayScreen.tscn");
+        _viewport.AddChild(screen); screen.ConnectController(controller); screen.SetProcess(false);
+        Check(screen.Initialize(catalog, save, controller, 3), "beef day initializes");
+        screen.BeginDay();
+        void Step(double dt) { screen._Notification((int)NotificationApplicationFocusIn); screen._Process(dt); }
+        Step(.5); await Frames();
+        var focus = screen.TeachingFocus; var view = screen.Workstation;
+        var guest = controller.CustomerQueue!.Slots.Single();
+        Check(controller.TutorialActive && controller.CurrentConfig!.Day == 3, "day three starts an independent beef lesson");
+        Check(guest.Order.Lines.Single().DefinitionId == StableIds.Recipes.HotDryNoodlesBeef, "lesson guest orders one beef noodle bowl");
+        double elapsed = controller.DayElapsedSeconds;
+        double patience = guest.WaitSeconds;
+        Step(120);
+        Check(controller.DayElapsedSeconds == elapsed && guest.WaitSeconds == patience
+            && controller.CustomerQueue.Slots.Count == 1, "lesson freezes clocks and admits no later guests");
+        screen.Bowl.TryAddNoodles(NoodleQuality.Optimal); screen.Bowl.TryAddBaseSeasoning();
+        screen.IngredientAction(StableIds.Ingredients.WuhanBraisedBeef);
+        Check(screen.Bowl.Toppings.Count == 0, "lesson rejects beef before mixing");
+        focus.Refresh(); Check(focus.CurrentAction == "mix:noodles" && focus.CurrentText.Contains("再加牛肉"), "known mixing action is explained again for beef");
+        CheckAdjacent(focus); await Shot("wuhan-beef-before-mix");
+        Move(view, view.BowlCenter); Button(view, view.BowlCenter, true);
+        for (int i = 0; i < 12; i++) Move(view, view.BowlCenter + new Vector2(i % 2 == 0 ? 45 : -45, 0), true);
+        Button(view, view.BowlCenter, false); Step(.01); focus.Refresh();
+        Check(focus.CurrentAction == "take:" + StableIds.Ingredients.WuhanBraisedBeef && focus.CurrentText.Contains("无需再次搅拌"), "mixed bowl highlights beef");
+        CheckAdjacent(focus); await Shot("wuhan-beef-add");
+        Click(view, view.IngredientCenter(3)); Step(.8); focus.Refresh();
+        Check(focus.CurrentAction == "deliver:hot_dry_noodles", "beef goes straight to delivery");
+        Check(screen.DeliverToCustomer(guest.Id, ProductKind.HotDryNoodles), "beef lesson accepts correct meal");
+        Check(controller.Ledger!.SaleRevenue == 0 && controller.Ledger.Tips == 0, "lesson earns no business revenue");
+        await Shot("wuhan-beef-complete");
+        screen.FinishWuhanDemoLesson(); Step(.5);
+        Check(!controller.TutorialActive && controller.CurrentConfig!.Day == 3, "completion starts actual day three");
+        Check(save.Data.Wuhan.LearnedWorkbenchActions.Contains("take:" + StableIds.Ingredients.WuhanBraisedBeef), "successful beef action is saved");
+        Check(controller.CurrentPlan!.Customers.First().Order.Lines.Single().DefinitionId == StableIds.Recipes.HotDryNoodlesBeef, "first business guest also orders beef");
+        controller.AbandonDay(); screen.QueueFree(); await Frames();
+        save.Data.Wuhan.LearnedWorkbenchActions.Remove("take:" + StableIds.Ingredients.WuhanBraisedBeef);
+        screen = SceneFactory.Instantiate<WuhanDayScreen>("res://Scenes/Gameplay/WuhanDayScreen.tscn");
+        _viewport.AddChild(screen); screen.ConnectController(controller); screen.SetProcess(false);
+        Check(screen.Initialize(catalog, save, controller, 3), "retry fixture initializes"); screen.BeginDay(); Step(.5);
+        screen.Bowl.TryAddNoodles(NoodleQuality.Optimal); screen.Bowl.TryAddBaseSeasoning(); screen.Bowl.AddMixDistance(1000);
+        screen.DeliverToCustomer(controller.CustomerQueue!.Slots.Single().Id, ProductKind.HotDryNoodles);
+        Check(screen.DemoLessonFailed, "missing beef fails the lesson");
+        screen.RetryWuhanDemoLesson(); Step(.5);
+        Check(!screen.DemoLessonFailed && controller.TutorialActive && controller.CurrentConfig!.Day == 3
+            && controller.CustomerQueue!.Slots.Single().Order.Lines.Single().DefinitionId == StableIds.Recipes.HotDryNoodlesBeef, "retry stays on the beef lesson");
+        screen.FinishWuhanDemoLesson(); Step(.5);
+        Check(!controller.TutorialActive && !save.Data.Wuhan.LearnedWorkbenchActions.Contains("take:" + StableIds.Ingredients.WuhanBraisedBeef), "skip starts business without falsely learning beef or reopening the lesson");
+        controller.AbandonDay(); screen.ForceDemoTutorial = true; screen.BeginDay(); Step(.5);
+        Check(controller.TutorialActive && controller.CurrentConfig!.Day == 1, "explicit replay still opens the original day-one lesson");
+        var firstLesson = controller.CustomerQueue!.Slots.Single();
+        screen.Bowl.TryAddNoodles(NoodleQuality.Optimal); screen.Bowl.TryAddBaseSeasoning();
+        foreach (string topping in catalog.RecipesById[firstLesson.Order.Lines.Single().DefinitionId].ExtraIngredients)
+            screen.IngredientAction(topping);
+        view = screen.Workstation; view.CancelAnimations(); screen.Bowl.AddMixDistance(1000);
+        Check(screen.DeliverToCustomer(firstLesson.Id, ProductKind.HotDryNoodles) && !screen.DemoLessonFailed, "original lesson still accepts its correct recipe");
+        screen.FinishWuhanDemoLesson(); Step(.5);
+        Check(!controller.TutorialActive && controller.CurrentConfig!.Day == 3, "original lesson replay returns to the requested business day");
+        screen.QueueFree(); controller.QueueFree(); await Frames();
     }
     private void CheckRecipientCrop(TutorialFocusLayer focus)
     {

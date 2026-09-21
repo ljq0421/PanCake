@@ -107,8 +107,10 @@ public partial class BusinessDetailsView : Control
         }
         BuildSummary(); RefreshRows(); SelectPage(false, false); Show();
         (model.CanClose ? CloseButton : _retry).GrabFocus(); StartAnimation();
-        InterfaceTeaching.Offer(this, InterfaceLessons.BookKey, InterfaceLessons.Book,
-            () => Visible && _entrance?.IsRunning() != true && _upgradeModal is null && _model.CanClose);
+        if (model.CityId == "tianjin" && model.Result.Day == 1 && model.Closing)
+            InterfaceTeaching.Offer(this, InterfaceLessons.BookKey, InterfaceLessons.Book,
+                () => Visible && _entrance?.IsRunning() != true && _upgradeModal is null && _model.CanClose
+                    && _model.CityId == "tianjin" && _model.Result.Day == 1 && _model.Closing);
     }
     private void BuildSummary()
     {

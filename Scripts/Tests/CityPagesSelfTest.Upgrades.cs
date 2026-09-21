@@ -24,6 +24,8 @@ public partial class CityPagesSelfTest
                 progress.UnlockedContentIds = catalog.GetDays(city.Id).Values.SelectMany(d => d.StartUnlocks.Concat(d.CompletionUnlocks)).Distinct().ToList();
             _save.Data.Coins = 10000; Check(_save.TrySave(out _), city.Name + " fixture saved");
             Check(_main.OpenCity(city.Id), city.Name + " home city opens");
+            // The home overlay intentionally keeps the home book palette. Exercise the city book here.
+            _screen.PresentCity(city.Id);
             Click("UpgradeTab"); await Frames();
             Check(_screen.Page == JourneyPage.Upgrades && _screen.SelectedCityId == city.Id, city.Name + " home upgrade route");
             CheckBookTheme(city.Id);
@@ -33,9 +35,10 @@ public partial class CityPagesSelfTest
             if (city.Id == StableIds.Cities.Wuhan)
             {
                 var equipment = model.Equipment(city.Id);
-                Check(equipment.Single(e => e.Id == "noodle_cooker").Art?.EndsWith("煮面锅 Lv1 基础锅体_v2.png") == true
-                    && equipment.Single(e => e.Id == "doupi_griddle").Art?.EndsWith("三鲜豆皮锅 Lv1 基础锅体_v2.png") == true,
-                    "Wuhan upgrades retain original equipment art");
+                Check(equipment.Single(e => e.Id == "noodle_cooker").Presentation is { Highlights.Count: > 0 }
+                    && equipment.Single(e => e.Id == "doupi_griddle").Presentation is not null
+                    && equipment.Single(e => e.Id == "ingredient_station").Presentation?.Fixed == true,
+                    "Wuhan upgrades have structured functional comparisons and a fixed station");
             }
             else if (city.Id == StableIds.Cities.Xian)
             {

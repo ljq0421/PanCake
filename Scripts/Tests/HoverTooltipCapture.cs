@@ -77,9 +77,8 @@ public partial class HoverTooltipCapture : Node
             _main = GD.Load<PackedScene>("res://Scenes/Main/Main.tscn").Instantiate<GameController>(); _viewport.AddChild(_main);
             var start = _main.GetNode<StartScreen>("UI/StartScreen"); start.PresentHome(); await Frames(15);
             await Shot("01-continue", "1 · 首页继续旅程", Find(start, "Continue"));
-            await Shot("02-map", "2 · 首页墙面地图入口", Find(start, "WallMap"));
             start.PresentCity(StableIds.Cities.Tianjin); start.PresentLedger(); await Frames();
-            await Shot("03-calendar", "3 · 经营日历日期", Find(start, "Date8"));
+            await Shot("02-calendar", "2 · 经营日历日期", Find(start, "Date8"));
             if (OS.GetCmdlineUserArgs().Contains("--probe")) { GD.Print("HOVER_PROBE_OK"); GetTree().Quit(); return; }
             var controller = _main.GetNode<DayController>("DayController"); controller.SetProcess(false);
             _main.StartCityBusiness(StableIds.Cities.Tianjin, 15);

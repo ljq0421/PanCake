@@ -92,9 +92,10 @@ public partial class GameController : Node
             else ok = city == Data.StableIds.Cities.Yangzhou ? save.PurchaseYangzhou(id, yangzhouCatalog, out error) : save.TryPurchase(city, id, catalog, out error);
             _startScreen.RefreshCityPage();
             _startScreen.ShowError(ok ? "设备已升级，下次营业生效。" : error);
+            if (ok) _startScreen.ShowUpgradeSuccess(id.Replace("equipment:", "").Split("_lv")[0]);
         };
-        _startScreen.NewGameRequested += slotId => CreateJourney(slotId, startBusiness: false);
-        _startScreen.NewGameBusinessRequested += slotId => CreateJourney(slotId, startBusiness: true);
+        _startScreen.NewGameRequested += slotId => CreateJourney(slotId, showCity: false);
+        _startScreen.NewGameCityRequested += slotId => CreateJourney(slotId, showCity: true);
         _startScreen.FirstStationDepartureRequested += () => StartCityBusiness(StableIds.Cities.Tianjin, 1, firstJourneyDeparture: true);
         _startScreen.ContinueRequested += () =>
         {
@@ -141,12 +142,12 @@ public partial class GameController : Node
         _startScreen.Present();
     }
 
-    private void CreateJourney(int slotId, bool startBusiness)
+    private void CreateJourney(int slotId, bool showCity)
     {
         if (!GetNode<DataCatalog>("/root/DataCatalog").IsValid)
         { _startScreen.ShowError("配置无法读取，请检查后重试。"); return; }
         if (!_save.TryCreateSlot(slotId, out string error)) { _startScreen.ShowError(error); return; }
-        if (startBusiness) StartCityBusiness(StableIds.Cities.Tianjin, 1);
+        if (showCity) _startScreen.PresentCity(StableIds.Cities.Tianjin, returnToSource: () => _startScreen.PresentMap(), fromHome: true);
         else _startScreen.PresentNewJourney();
     }
 

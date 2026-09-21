@@ -42,9 +42,10 @@ public partial class GameController
         {
             bool ok = _save.TryPurchase(city, id, catalog, out string error);
             _startScreen.RefreshCityPage(); _startScreen.ShowError(ok ? "设备已升级，下次营业生效。" : error);
+            if (ok) _startScreen.ShowUpgradeSuccess(id.Replace("equipment:", "").Split("_lv")[0]);
         };
-        _startScreen.NewGameRequested += slotId => CreateJourney(slotId, startBusiness: false);
-        _startScreen.NewGameBusinessRequested += slotId => CreateJourney(slotId, startBusiness: true);
+        _startScreen.NewGameRequested += slotId => CreateJourney(slotId, showCity: false);
+        _startScreen.NewGameCityRequested += slotId => CreateJourney(slotId, showCity: true);
         _startScreen.FirstStationDepartureRequested += () => StartCityBusiness(StableIds.Cities.Tianjin, 1, firstJourneyDeparture: true);
         _startScreen.ContinueRequested += () =>
         {

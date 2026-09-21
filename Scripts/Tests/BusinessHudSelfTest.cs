@@ -14,6 +14,7 @@ public partial class BusinessHudSelfTest : Node
         try
         {
             bool capture = OS.GetCmdlineUserArgs().Contains("--capture");
+            bool hudOnly = OS.GetCmdlineUserArgs().Contains("--hud-only");
             var settings = GetNode<JourneySettings>("/root/JourneySettings");
             settings.UsePathForTests("res://.tmp/hud-review/settings.cfg");
             InterfaceLessons.MarkAllSeen(settings);
@@ -58,6 +59,13 @@ public partial class BusinessHudSelfTest : Node
                 var hud = screen.FindChild("BusinessHud", true, false) as BusinessHud ?? throw new Exception("HUD absent");
                 Require(hud.IsVisibleInTree(), "HUD visible");
                 CheckArtwork(hud);
+                if (hudOnly)
+                {
+                    if (capture) await Shot(viewport, $"{city}-{width}-running");
+                    viewport.QueueFree(); controller.QueueFree(); await Frames();
+                    GD.Print($"HUD_PASS {city} {width}");
+                    continue;
+                }
                 Require(hud.PauseButton.Size == new Vector2(84, 84), "pause uses the 1.5x display size");
                 Require(hud.PauseButton.GetGlobalRect().End.X <= 1920, "pause in viewport");
                 Require(hud.PauseButton.GetThemeStylebox("focus") is StyleBoxEmpty, "art pause has no rectangular focus frame");
@@ -138,7 +146,7 @@ public partial class BusinessHudSelfTest : Node
                 viewport.QueueFree(); controller.QueueFree(); await Frames();
                 GD.Print($"HUD_PASS {city} {width}");
             }
-            await CheckRemainingCities(catalog, save, capture, selectedCity);
+            await CheckRemainingCities(catalog, save, capture, selectedCity, hudOnly);
             GD.Print("BUSINESS_HUD_TEST_PASS"); GetTree().Quit();
         }
         catch (Exception e) { GD.PushError(e.ToString()); GetTree().Quit(1); }
@@ -173,7 +181,7 @@ public partial class BusinessHudSelfTest : Node
         Require(!InterfaceLessons.Business.Any(lesson => lesson.Target == "ProgressSign"), "teaching no longer refers to order progress");
     }
 
-    private async Task CheckRemainingCities(DataCatalog catalog, SaveService save, bool capture, string? selectedCity)
+    private async Task CheckRemainingCities(DataCatalog catalog, SaveService save, bool capture, string? selectedCity, bool hudOnly)
     {
         save.Data.Guangzhou.HighestUnlockedDay = save.Data.Yangzhou.HighestUnlockedDay = 12;
         foreach (int width in new[] { 1920, 1280 })
@@ -195,6 +203,12 @@ public partial class BusinessHudSelfTest : Node
             CheckArtwork(hud);
             Require(hud.IsVisibleInTree() && !hud.PauseButton.IsVisibleInTree(), "shared art retains native city pause control");
             if (capture) await Shot(viewport, $"{city}-{width}-running");
+            if (hudOnly)
+            {
+                viewport.QueueFree(); controller.QueueFree(); await Frames();
+                GD.Print($"HUD_PASS {city} {width}");
+                continue;
+            }
             Button pause = screen.FindButton("暂停");
             Click(viewport, pause); Step(0); double before = Remaining(); Step(2);
             Require(Remaining() == before, "city pause freezes time");

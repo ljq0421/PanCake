@@ -44,14 +44,6 @@ public partial class StartScreen
         DrawHelpCityTips(content);
         DrawHelpKeys(content);
 
-        var close = Button(content, "Close", "记住了", new(800, 945, 320, 82), CloseModal, bare: true);
-        var closeArt = HomeArt(close, "首页地图按钮底板", new(0, 0, 320, 82), stretch: true);
-        closeArt.Name = "HelpCloseArt";
-        closeArt.ShowBehindParent = true;
-        close.AddThemeFontSizeOverride("font_size", 41);
-        var teaching = Button(content, "ReplayInterfaceTeaching", "经营教学", new(1370, 948, 290, 68), () =>
-            InterfaceTeaching.Offer(_modal, "replay", InterfaceLessons.Replay(HelpCityId()), replay: true));
-        teaching.AddThemeFontSizeOverride("font_size", 29);
         if (Page == JourneyPage.City && _city is StableIds.Cities.Tianjin or StableIds.Cities.Wuhan)
         {
             var replay = Button(content, "ReplayTutorial", "重看首份教学", new(440, 948, 330, 68), () =>
@@ -61,7 +53,6 @@ public partial class StartScreen
             });
             replay.AddThemeFontSizeOverride("font_size", 29);
         }
-        close.GrabFocus();
     }
 
     private Panel HelpPanel(Control parent, string name, Rect2 rect, string fill, string border, int radius = 30, int line = 2)

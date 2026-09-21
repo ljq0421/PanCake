@@ -269,7 +269,8 @@ public partial class WuhanGestureSelfTest : Node
             Vector2 chili = P(645, 780);
             Vector2 beef = P(944, 780);
             Check(View.HitTarget(sesame) == "ingredient0" && View.HitTarget(scallion) == "ingredient1"
-                && View.HitTarget(chili) == "ingredient2" && View.HitTarget(beef) == "ingredient3", "four visible bowls map to the correct ingredients");
+                && View.HitTarget(chili) == "ingredient2", "three basic ingredient bowls map to the correct ingredients");
+            Check((View.HitTarget(beef) == "ingredient3") == (day >= 3), "beef hit area follows the current day-three unlock");
             Check(View.HitTarget(P(225, 782)) == "raw", "visible raw noodle tray maps to supply");
             Check(View.HitTarget(P(757, 555)) == "bowl", "visible bowl maps to mixing and delivery");
             if (unlocked)

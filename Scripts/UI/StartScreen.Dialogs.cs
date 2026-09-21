@@ -29,6 +29,15 @@ public partial class StartScreen
                 ApplyHomeBookBackground(book);
             }
         }
+        if (!HostedByBook && _homeBookPalette)
+        {
+            // Keep home navigation above every dimmer and book, including collection overlays.
+            var utilities = new Control { Name = "ModalUtilities", Size = new(1920, 160),
+                MouseFilter = MouseFilterEnum.Ignore, ZIndex = 1 };
+            _modal.AddChild(utilities);
+            NavigationUtilities(includeHome: true, parent: utilities);
+            utilities.CallDeferred(Control.MethodName.MoveToFront);
+        }
         foreach (var button in _buttons) button.FocusMode = FocusModeEnum.None;
     }
     private static void ApplyHomeBookBackground(TextureRect book)

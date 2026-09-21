@@ -33,7 +33,11 @@ public static class JourneyModel
     public static string Stamp(JourneyCity city) => city.Name switch
     { "天津" => "天津城市印章", "武汉" => "武汉城市旅行印章", "西安" => "西安城市旅行印章", _ => "已完成城市节点" };
     public static string NodeArt(JourneyCity city) => city.Name switch
-    { "天津" => "第一站天津节点专属素材", "武汉" => "第二站武汉节点专属素材", "西安" => "西安世界地图城市节点专属图标", _ => "世界地图城市节点母版" };
+    {
+        "天津" => "第一站天津节点专属素材", "武汉" => "第二站武汉节点专属素材",
+        "西安" => "第三站西安节点专属素材", "广州" => "第四站广州节点专属素材",
+        "扬州" => "第五站扬州节点专属素材", _ => "世界地图城市节点母版"
+    };
     public static CityProgressData Progress(SaveService save, string id) =>
         save.Data.Cities.TryGetValue(id, out var progress) ? progress : new CityProgressData();
     public static JourneyCity? Next(string id) => Cities.SkipWhile(c => c.Id != id).Skip(1).FirstOrDefault();

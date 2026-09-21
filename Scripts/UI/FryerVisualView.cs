@@ -153,7 +153,7 @@ public partial class FryerVisualView : Control
     public void Tick(double deltaSeconds)
     {
         if (IsInstanceValid(_basketContour)) _basketContour.QueueRedraw();
-        if (_machine?.Runtime.State == FryerState.Frying)
+        if (_machine?.Runtime.State is FryerState.Frying or FryerState.Raised or FryerState.Draining)
         {
             _effectPhase += (float)deltaSeconds;
             QueueRedraw();
@@ -321,10 +321,13 @@ public partial class FryerVisualView : Control
                 _basketAnchor.DrawPolyline(points, new Color(1, .84f, .42f, .16f), 1, true);
             }
         }
-        if (runtime.State is FryerState.Raised or FryerState.Draining)
+        if (!ReducedMotion && runtime.State is (FryerState.Raised or FryerState.Draining))
             for (int i = 0; i < 3; i++)
-                _basketAnchor.DrawCircle(new Vector2(basket.Position.X + basket.Size.X * (.3f + i * .2f), basket.End.Y + 6),
-                    3, new Color(.98f, .67f, .22f, .8f));
+            {
+                float fall = Mathf.PosMod(_effectPhase * 1.8f + i * .29f, 1);
+                Vector2 drop = new(basket.Position.X + basket.Size.X * (.3f + i * .2f), basket.End.Y + 3 + fall * 15);
+                _basketAnchor.DrawLine(drop, drop + new Vector2(0, 3), new Color(.98f, .67f, .22f, .65f * (1 - fall)), 2, true);
+            }
     }
 
     internal static Rect2 EmbeddedFoodRect(Rect2 basket, int columns, int index, Vector2 textureSize)

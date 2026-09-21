@@ -69,7 +69,7 @@ public partial class BusinessHud : Control
         PlaceOnArtwork(IncomeCoin, new(1254, 340, 145, 145));
         if (_city is "天津" or "武汉" or "西安") StyleIconButton(PauseButton, LoadArt("暂停铜扣"));
         else PauseButton.Hide(); // Guangzhou and Yangzhou keep their existing pause/resume controls.
-        PauseButton.Position = new(1840, 28); PauseButton.Size = new(56, 56);
+        PauseButton.Position = new(1812, 28); PauseButton.Size = new(84, 84);
         AddChild(PauseButton);
         _challenge.Name = "DailyChallengeProgress";
         _challenge.MouseFilter = MouseFilterEnum.Ignore;
@@ -84,7 +84,7 @@ public partial class BusinessHud : Control
     private void LayoutSigns()
     {
         _sign.Position = new((Size.X - _sign.Size.X) / 2, 6);
-        PauseButton.Position = new(Size.X - 80, 28);
+        PauseButton.Position = new(Size.X - 108, 28);
         _challenge.Position = new((Size.X - 540) / 2, 109); _challenge.Size = new(540, 32);
     }
 

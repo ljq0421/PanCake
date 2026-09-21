@@ -44,6 +44,11 @@ public partial class BusinessBookSelfTest : Node
                 await CheckTravelHighlightStates();
                 GD.Print($"BUSINESS_BOOK_SUMMARY_TEST_RESULT passed={_checks} failed=0"); GetTree().Quit(); return;
             }
+            if (OS.GetCmdlineUserArgs().Contains("--challenge-captures"))
+            {
+                await CheckTravelChallengeCaptures(catalog);
+                GD.Print($"BUSINESS_BOOK_CHALLENGE_CAPTURE_RESULT passed={_checks} failed=0"); GetTree().Quit(); return;
+            }
             if (OS.GetCmdlineUserArgs().Contains("--reference-only"))
             {
                 await CheckReferencePresentation(catalog);
@@ -205,12 +210,17 @@ public partial class BusinessBookSelfTest : Node
             view.Open(model);view.FinishAnimation();await Frames();
             var text=view.Descendants<Label>().Where(l=>l.IsVisibleInTree()).Select(l=>l.Text).ToArray();
             Check((closing && city is "tianjin" or "wuhan" ? !text.Contains("已收摊") : text.Contains(closing?"已收摊":"营业中 · 已暂停"))&&text.Contains("营业小结"),city+" state and chapter");
-            Check(!text.Any(t=>(t.Contains("今日") && !(city is "tianjin" or "wuhan" && t is "今日接待" or "今日亮点" or "今日收入"))||t.Contains("截至目前")||t=="营业账本"||t=="Esc 返回"),city+" concise summary copy");
+            Check(!text.Any(t=>(t.Contains("今日") && !(city is "tianjin" or "wuhan" && t is "今日接待" or "今日收入" or "今日暂无挑战"))||t.Contains("截至目前")||t=="营业账本"||t=="Esc 返回"),city+" concise summary copy");
             Check(next.IsVisibleInTree()&&!previous.Visible&&next.TooltipText.Length==0&&next.Size.X>=64&&next.Size.Y>=64,city+" forward edge affordance without hover text");
             Check(view.CloseButton.TooltipText.Length==0&&view.CloseButton.HasFocus(),city+" default close focus without hover text");
-            var rate=view.Descendants<Label>().Single(l=>l.Text.StartsWith("完成率"));
             var satisfaction=view.Descendants<Label>().Single(l=>l.Name=="BookSatisfaction");
-            Check((rate.TooltipText.Length>0&&satisfaction.TooltipText.Length>0)==(city is "tianjin" or "wuhan"),city+" approved statistics hover explanation");
+            if (city is "tianjin" or "wuhan")
+                Check(satisfaction.TooltipText.Length>0&&!view.Descendants<Label>().Any(l=>l.Text.StartsWith("完成率")),city+" concise reception keeps only its total");
+            else
+            {
+                var rate=view.Descendants<Label>().Single(l=>l.Text.StartsWith("完成率"));
+                Check(rate.TooltipText.Length==0&&satisfaction.TooltipText.Length==0,city+" plain summary keeps its existing statistics");
+            }
             if(city is "tianjin" or "wuhan" or "xian")CheckArtPage(view,city,"compact summary");
             if(Capture)await Shot($"compact-{city}-{size.X}-{(closing?"closing":"live")}-summary");
             Click(next);await ToSignal(GetTree().CreateTimer(.25),SceneTreeTimer.SignalName.Timeout);await Frames();
@@ -337,10 +347,10 @@ public partial class BusinessBookSelfTest : Node
         var stickerFixture=Fixture(city);stickerFixture.Stickers=new[]{"本次评级 ★★★","章节已点亮","新开放 2 项内容 · 回店查看","可升级：早餐摊等3项"};
         stress.Open(stickerFixture);stress.FinishAnimation();await Frames();CheckArtPage(stress,city,"double stickers");
         var unlock=stress.FindChild("UnlockSticker",true,false) as Control;
-        var upgrade=stress.FindChild("UpgradeSticker",true,false) as Control;
+        var upgrade=stress.FindChild(city is "tianjin" or "wuhan" ? "OpenBookUpgrades" : "UpgradeSticker",true,false) as Control;
         Check(upgrade is not null && (city is "tianjin" or "wuhan"
             ? unlock is null
-            : unlock is not null && !unlock.GetGlobalRect().Intersects(upgrade.GetGlobalRect())),city+" settlement stickers match its navigation layout");
+            : unlock is not null && !unlock.GetGlobalRect().Intersects(upgrade.GetGlobalRect())),city+" settlement upgrade entry matches its navigation layout");
         if(Capture)await Shot(city+"-unlocks-summary");
         stickerFixture.CanClose=false;stickerFixture.CanRetry=true;stickerFixture.Stickers=Array.Empty<string>();
         stickerFixture.SaveMessage="未保存 · 存档暂时无法写入；本次金币与进度已回退。";

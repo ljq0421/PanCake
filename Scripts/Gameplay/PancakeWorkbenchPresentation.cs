@@ -37,6 +37,7 @@ public partial class PancakeWorkstation
         _stroke.SpreadToolOnlyDuringStroke = true;
         _stroke.SpreadToolSize = new Vector2(132, 53);
         _stroke.SpreadToolContactAnchor = new Vector2(66, 45);
+        _stroke.SpreadPainted = point => _canvas.SpreadContact(_canvas.GetGlobalTransformWithCanvas().AffineInverse() * point);
         foreach (Button button in new[] { _flip, _finishSauce, _fold, _bag, _discard })
             button.CustomMinimumSize = new Vector2(0, 48);
         foreach (Button button in new[] { _lowerBasket, _raiseBasket, _discardBatch })

@@ -24,6 +24,10 @@ public partial class WuhanUnlockSelfTest : Node
             _save.Data.UpgradeTeachingCompleted = true; _save.Data.Tianjin.HighestUnlockedDay = 7; _save.TrySave(out _);
             GetWindow().Size = OS.GetCmdlineUserArgs().Contains("--small") ? new(1280, 720) : new(1920, 1080);
             var main = GD.Load<PackedScene>("res://Scenes/Main/Main.tscn").Instantiate<GameController>(); AddChild(main); await Frames();
+            if (OS.GetCmdlineUserArgs().Contains("--record-demo"))
+            {
+                await RecordDemo(main); GetTree().Quit(); return;
+            }
             var home = main.GetNode<StartScreen>("UI/StartScreen");
             var screen = main.GetNode<TianjinDayScreen>("UI/TianjinDayScreen");
             var day = main.GetNode<DayController>("DayController"); var catalog = GetNode<DataCatalog>("/root/DataCatalog");
@@ -79,10 +83,11 @@ public partial class WuhanUnlockSelfTest : Node
             Check(GetViewport().GuiGetFocusOwner() is Button { Text: "前往武汉" }, "Tab focuses postcard action without reaching underlying ledger");
             GetViewport().PushInput(new InputEventKey { Keycode = Key.Enter, Pressed = true }, true);
             await Delay(.38); await Capture("departure"); await Delay(.6);
-            Check(home.Visible && home.Page == JourneyPage.Ledger && home.SelectedCityId == StableIds.Cities.Wuhan && home.SelectedDay == 1, "departure opens Wuhan Day1 ledger");
-            Check(_save.Data.LastVisitedCityId == StableIds.Cities.Wuhan && !main.GetNode<WuhanDayScreen>("UI/WuhanDayScreen").Visible, "visit saved without starting business");
+            Check(!home.Visible && main.GetNode<WuhanDayScreen>("UI/WuhanDayScreen").Visible, "departure opens Wuhan business without the calendar");
+            Check(_save.Data.LastVisitedCityId == StableIds.Cities.Wuhan && day.CurrentConfig?.Day == 1
+                && day.State == DayState.Opening, "visit saved and Wuhan Day1 starts opening");
             Check(_save.Data.Tianjin.HighestUnlockedDay == 8 && _save.Data.Coins == 100, "departure preserves Tianjin progress and earnings");
-            await Capture("wuhan-ledger");
+            await Capture("wuhan-business");
             ProjectSettings.SetSetting("accessibility/reduce_motion", true);
             var reduced = new WuhanUnlockPresentation(); AddChild(reduced); reduced.Begin(_save, _ => ""); await Delay(.25);
             Check(reduced.FinalVisible, "reduced motion reaches full information with short fade"); reduced.QueueFree();
@@ -92,6 +97,35 @@ public partial class WuhanUnlockSelfTest : Node
         catch (Exception error) { GD.PushError(error.ToString()); GetTree().Quit(1); }
     }
     private void Check(bool value, string message) { if (!value) throw new InvalidOperationException(message); _checks++; GD.Print("PASS " + message); }
+    private async Task RecordDemo(GameController main)
+    {
+        var day = main.GetNode<DayController>("DayController");
+        var screen = main.GetNode<TianjinDayScreen>("UI/TianjinDayScreen");
+        var catalog = GetNode<DataCatalog>("/root/DataCatalog");
+        Check(main.StartCityBusiness(StableIds.Cities.Tianjin, 7), "recording fixture starts Day7");
+        day.SetProcess(false); screen.SetProcess(false);
+        var model = BusinessBookModel.From(StableIds.Cities.Tianjin,
+            new DayResult { Day = 7, SaleRevenue = 386, Tips = 57, CompletedCustomers = 28,
+                LostCustomers = 2, CorrectOrders = 28, PerfectOrders = 9, Satisfaction = 92, HighestCorrectStreak = 8 },
+            Array.Empty<BusinessOrderRecord>(), catalog);
+        BusinessBookSettlement.Commit(model, _save, day.CurrentPlan!, day.CurrentConfig!, catalog);
+        day.AbandonDay(); JourneyTransition.For(this).Finish();
+        await Delay(.5);
+        GD.Print("MOVIE_SETTLEMENT_FRAME=" + Engine.GetProcessFrames());
+        screen.BusinessDetails.Open(model);
+        await Delay(6);
+        screen.BusinessDetails.CloseButton.EmitSignal(BaseButton.SignalName.Pressed);
+        var show = main.GetNode<WuhanUnlockPresentation>("WuhanUnlockPresentation");
+        await Delay(7.8);
+        Check(show.FinalVisible, "recording reaches final postcard");
+        show.Descendants<Button>().Single(b => b.Text == "前往武汉").EmitSignal(BaseButton.SignalName.Pressed);
+        day.SetProcess(true);
+        await Delay(8);
+        Check(!main.GetNode<StartScreen>("UI/StartScreen").Visible
+            && main.GetNode<WuhanDayScreen>("UI/WuhanDayScreen").Visible
+            && day.CurrentConfig?.Day == 1 && day.State is DayState.Opening or DayState.Running, "recording starts Wuhan Day1 business");
+        GD.Print("WUHAN_UNLOCK_MOVIE_COMPLETE");
+    }
     private async Task Frames() { for (int i = 0; i < 3; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame); }
     private async Task Delay(double seconds) => await ToSignal(GetTree().CreateTimer(seconds), SceneTreeTimer.SignalName.Timeout);
     private async Task Capture(string name)

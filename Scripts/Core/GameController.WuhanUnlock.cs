@@ -19,6 +19,12 @@ public partial class GameController
         AddChild(presentation);
         presentation.Begin(_save, city =>
         {
+            if (city == StableIds.Cities.Wuhan)
+            {
+                if (!StartCityBusiness(city, 1)) return "武汉开张失败，请检查配置或存档写入权限后重试。";
+                book.Hide();
+                return "";
+            }
             // Prepare the destination behind the opaque paper, then persist the selected city.
             _startScreen.PresentCity(city);
             _startScreen.PresentLedger();

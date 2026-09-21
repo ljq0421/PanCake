@@ -97,34 +97,25 @@ public partial class TianjinLoopMotion : Node
         foreach (var contact in _contacts) contact.Kill();
         _contacts.Clear();
     }
-    public void CrackEgg(Control parent, Texture2D egg, Texture2D shell, Vector2 from, Vector2 to, Action contact)
+    public void PourEgg(Control parent, Texture2D stream, Vector2 from, Vector2 to, Action contact)
     {
         if (!Active()) return;
         if (Reduced) { contact(); return; }
-        var root = new Control { Name = "EggCrack", MouseFilter = Control.MouseFilterEnum.Ignore, ZIndex = 85 };
+        var root = new Control { Name = "EggPour", MouseFilter = Control.MouseFilterEnum.Ignore, ZIndex = 85 };
         parent.AddChild(root);
         Transform2D inverse = parent.GetGlobalTransform().AffineInverse();
         root.Position = inverse * from;
-        TextureRect Art(Texture2D texture, Vector2 size)
-        {
-            var art = new TextureRect { Texture = texture, Position = -size / 2,
-                PivotOffset = size / 2, ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
-                StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered, MouseFilter = Control.MouseFilterEnum.Ignore, Size = size };
-            root.AddChild(art); art.Size = size; return art;
-        }
-        var whole = Art(egg, new(36, 44));
-        var left = Art(shell, new(27, 26)); left.Hide();
-        var right = Art(shell, new(27, 26)); right.FlipH = true; right.Hide();
-        Vector2 above = inverse * to - new Vector2(0, 35);
+        var liquid = new TextureRect { Texture = stream, Size = new(15, 42), Position = new(-7.5f, -42),
+            Modulate = new Color(1, .78f, .25f), ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+            StretchMode = TextureRect.StretchModeEnum.Scale, MouseFilter = Control.MouseFilterEnum.Ignore };
+        root.AddChild(liquid);
+        liquid.Size = new Vector2(15, 42);
+        Vector2 target = inverse * to;
         var tween = CreateTween();
         _flights.Add((root, tween));
-        tween.TweenProperty(root, "position", above, .14).SetTrans(Tween.TransitionType.Quad).SetEase(Tween.EaseType.Out);
-        tween.TweenCallback(Callable.From(() => { whole.Hide(); left.Show(); right.Show(); }));
-        tween.TweenProperty(left, "position", left.Position + new Vector2(-13, -8), .10);
-        tween.Parallel().TweenProperty(right, "position", right.Position + new Vector2(13, -8), .10);
-        tween.Parallel().TweenProperty(left, "rotation_degrees", -15f, .10);
-        tween.Parallel().TweenProperty(right, "rotation_degrees", 15f, .10);
-        tween.TweenProperty(root, "modulate:a", 0f, .08);
+        tween.TweenProperty(root, "position", target, .20).SetTrans(Tween.TransitionType.Quad).SetEase(Tween.EaseType.In);
+        tween.TweenProperty(liquid, "scale", new Vector2(1.6f, .2f), .10);
+        tween.Parallel().TweenProperty(root, "modulate:a", 0f, .10);
         Contact(contact, .20);
         tween.Finished += () => { _flights.RemoveAll(f => f.Art == root); root.QueueFree(); };
     }

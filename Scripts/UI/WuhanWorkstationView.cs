@@ -68,7 +68,7 @@ public partial class WuhanWorkstationView : Control
     {
         IsKnifeHeld = false;
         _draggedProduct = DeliveryProduct(payload);
-        EndMix(); QueueRedraw();
+        EndMix(); ResetFoodMotion(); QueueRedraw();
     }
     private void OnDragEnded(DragResult result)
     {
@@ -76,7 +76,7 @@ public partial class WuhanWorkstationView : Control
         ClearTrashSource();
         RefreshDeliverySources(); QueueRedraw();
     }
-    public void CancelInput() { IsKnifeHeld = false; CancelTrashPress(); _drag?.CancelDrag(); CancelGesture(); EndMix(); _cooker?.CancelPendingPour(); }
+    public void CancelInput() { IsKnifeHeld = false; CancelTrashPress(); _drag?.CancelDrag(); CancelGesture(); EndMix(); ResetFoodMotion(); _cooker?.CancelPendingPour(); }
 
     public void RefreshDeliverySources()
     {
@@ -249,7 +249,7 @@ public partial class WuhanWorkstationView : Control
         _actionAudio?.Stop();
         CancelInput();
         foreach (Motion m in _motions) m.Tween.Kill();
-        _motions.Clear(); EndMix(); _hover = ""; QueueRedraw();
+        _motions.Clear(); EndMix(); ResetFoodMotion(); _hover = ""; QueueRedraw();
     }
     public override void _ExitTree()
     {
@@ -329,13 +329,18 @@ public partial class WuhanWorkstationView : Control
             if ((motion.ButtonMask & MouseButtonMask.Left) == 0) { EndMix(); return; }
             Vector2 point = GetGlobalTransformWithCanvas().AffineInverse() * motion.Position;
             if (_bowl.State != NoodleBowlState.Ready && !Busy("bowl") && InBowl(point) && _mixLast is Vector2 previous && InBowl(previous))
+            {
+                PullNoodles(point, point - previous);
                 MixMoved?.Invoke(previous.DistanceTo(point));
+                if (_bowl.State == NoodleBowlState.Ready) _mixFinish = ReducedMotion ? 0 : .18f;
+            }
             _mixLast = point; QueueRedraw(); GetViewport().SetInputAsHandled();
         }
     }
     public void Tick(double delta)
     {
         if (_cooker is null || delta <= 0) return;
+        TickFoodMotion(delta);
         if (!CanHoldKnife) IsKnifeHeld = false;
         TickTrashPress(delta);
         _cookingAudio?.Update(_cooker, _doupi);
@@ -464,7 +469,7 @@ public partial class WuhanWorkstationView : Control
         DrawEquipmentHighlights(basketsOnly: true);
         DrawCooker(); DrawMixStation(); DrawDoupi();
         DrawEquipmentHighlights();
-        DrawTransfers(); DrawGesture();
+        DrawTransfers(); DrawBowlFront(); DrawGesture();
     }
 
     private Rect2 Source(Texture2D texture)
@@ -622,8 +627,12 @@ public partial class WuhanWorkstationView : Control
                 Rect2 noodles = BasketFoodRect(r);
                 if (m?.Kind == "drop" && !ReducedMotion)
                 {
-                    float p = Ease(m.Progress); noodles = At((m.Origin ?? RawRect.GetCenter()).Lerp(noodles.GetCenter(), p), noodles.Size);
+                    float p = Ease(m.Progress);
+                    float stretch = Mathf.Sin(p * Mathf.Pi) * .06f;
+                    noodles = At((m.Origin ?? RawRect.GetCenter()).Lerp(noodles.GetCenter(), p), noodles.Size * new Vector2(1 - stretch, 1 + stretch));
                 }
+                else if (m?.Kind == "raise" && !ReducedMotion)
+                    noodles = new Rect2(noodles.Position + new Vector2(0, Mathf.Sin(m.Progress * Mathf.Pi) * 3), noodles.Size);
                 Sprite(BasketFoodArt(basket), noodles);
                 BasketFront(r);
                 if (basket.State is NoodleBasketState.Cooking or NoodleBasketState.Ready or NoodleBasketState.Soft or NoodleBasketState.Locked)
@@ -661,7 +670,7 @@ public partial class WuhanWorkstationView : Control
         bool delivering = _draggedProduct == ProductKind.HotDryNoodles;
         if (!delivering)
         {
-            if (_bowl.State != NoodleBowlState.Empty && !(m?.Kind == "pour" && m.Progress < .66f && !ReducedMotion))
+            if (_bowl.State != NoodleBowlState.Empty && !(m?.Kind == "pour" && m.Progress < .82f && !ReducedMotion))
                 DrawBowlContents(BowlFood, _bowl.State, (float)_bowl.MixProgress, _bowl.Quality, _bowl.Toppings,
                     m?.Kind == "ingredient" && m.Progress < .62f ? m.Ingredient : "");
         }
@@ -704,14 +713,31 @@ public partial class WuhanWorkstationView : Control
     private void DrawBowlContents(Rect2 food, NoodleBowlState state, float progress, NoodleQuality quality,
         IEnumerable<string> toppings, string hidden = "", float opacity = 1)
     {
+        Motion? motion = Find("bowl");
         foreach (var layer in BowlLayers(food, state, progress, quality, toppings, hidden))
-            FoodLayer(layer.Id, layer.Rect, layer.Alpha * opacity);
+        {
+            if (layer.Id is "bowl_noodles" or "unmixed" or "half_mixed" or "mixed" or "overcooked")
+            {
+                Rect2 region = layer.Rect;
+                float alpha = layer.Alpha * opacity;
+                if (!ReducedMotion && layer.Id == "unmixed" && motion?.Kind == "ingredient"
+                    && motion.Ingredient == StableIds.Ingredients.WuhanBaseSeasoning)
+                {
+                    float settle = Phase(motion.Progress, .62f, 1);
+                    Vector2 size = region.Size * Mathf.Lerp(.72f, 1, settle);
+                    region = new Rect2(region.GetCenter() - size * .5f, size);
+                    alpha *= Mathf.Clamp(settle * 4, 0, 1);
+                }
+                DrawMovingNoodleLayer(layer.Id, region, alpha);
+            }
+            else DrawSettlingTopping(layer.Id, layer.Rect, layer.Alpha * opacity, motion);
+        }
     }
     private void DrawIngredientMotion(Motion m)
     {
-        if (ReducedMotion) return;
+        if (ReducedMotion || m.Progress >= .62f) return;
         int index = Array.IndexOf(IngredientIds, m.Ingredient);
-        float p = Ease(m.Progress);
+        float p = Ease(m.Progress / .62f);
         Vector2 start = IngredientFoodRect(index).GetCenter(), end = BowlFood.GetCenter();
         Vector2 center = start.Lerp(end, p) - new Vector2(0, Mathf.Sin(p * Mathf.Pi) * 75);
         if (index is 0 or 2)
@@ -743,12 +769,13 @@ public partial class WuhanWorkstationView : Control
                     DrawCookerFront();
                     DrawRawTray();
                 }
-                if(m.Progress<.68f)
+                if(m.Progress<.82f)
                 {
-                    float fall=Segment(m.Progress,.42f,.67f);
                     Rect2 contents = BasketFoodRect(At(center, home.Size));
                     Vector2 start=center+(contents.GetCenter()-center).Rotated(angle);
-                    Sprite(m.Quality==NoodleQuality.Overcooked?"overcooked":"cooked_basket",At(start.Lerp(BowlFood.GetCenter(),fall),contents.Size.Lerp(BowlFood.Size,fall)),1,angle*(1-fall));
+                    float blend = Phase(m.Progress, .62f, .78f);
+                    DrawPouringNoodles(m.Quality == NoodleQuality.Overcooked ? "overcooked" : "cooked_basket", start, contents.Size, angle, m.Progress, 1 - blend);
+                    DrawPouringNoodles(m.Quality == NoodleQuality.Overcooked ? "overcooked" : "bowl_noodles", start, contents.Size, angle, m.Progress, blend);
                 }
             }
 

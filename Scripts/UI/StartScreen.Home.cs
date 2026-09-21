@@ -7,6 +7,31 @@ public partial class StartScreen
     // Home-only atlas cache preserves other pages' existing image framing and source PNGs.
     private readonly Dictionary<string, Texture2D> _homeTextures = new();
 
+    private static ShaderMaterial HomeMapSoftFocus() => new()
+    {
+        Shader = new Shader { Code = """
+            shader_type canvas_item;
+            varying vec4 vertex_modulate;
+            void vertex() { vertex_modulate = COLOR; }
+            void fragment() {
+                vec4 tint = vertex_modulate;
+                vec4 sum = vec4(0.0);
+                float total = 0.0;
+                for (int y = -2; y <= 2; y++) {
+                    for (int x = -2; x <= 2; x++) {
+                        float weight = exp(-float(x*x + y*y) / 4.0);
+                        vec4 sample_color = texture(TEXTURE, UV + vec2(float(x), float(y)) * TEXTURE_PIXEL_SIZE * 3.0);
+                        sum += vec4(sample_color.rgb * sample_color.a, sample_color.a) * weight;
+                        total += weight;
+                    }
+                }
+                vec3 color = sum.rgb / max(sum.a, 0.0001);
+                color = mix(color, vec3(1.0, 0.88, 0.68), 0.18);
+                COLOR = vec4(color, sum.a / total) * tint;
+            }
+            """ }
+    };
+
     private TextureRect HomeArt(Control parent, string name, Rect2 rect, bool stretch = false)
     {
         if (!_homeTextures.TryGetValue(name, out var texture))
@@ -61,9 +86,9 @@ public partial class StartScreen
         return button;
     }
 
-    private void HomeUtility(string name, string caption, string icon, float x, Action action)
+    private void HomeUtility(string name, string caption, string icon, float x, Action action, Control? parent = null)
     {
-        var button = Button(_body, name, "", new(x, 32, 108, 128), action, bare: true);
+        var button = Button(parent ?? _body, name, "", new(x, 32, 108, 128), action, bare: true);
         HomeArt(button, "圆形功能按钮底板", new(6, 0, 96, 96));
         HomeArt(button, icon, new(29, 23, 50, 50));
         var label = Text(button, "Caption", caption, new(0, 96, 108, 32), 26, true);

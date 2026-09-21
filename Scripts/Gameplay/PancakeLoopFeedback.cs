@@ -81,7 +81,7 @@ public partial class PancakeWorkstation
         // DragService owns the moving image on drag drops; clicks need their own portion.
         void Contact() => _audio.Play(id == StableIds.Ingredients.Egg ? PancakeSound.Sizzle
             : crisp ? PancakeSound.CrispDrop : PancakeSound.SoftDrop);
-        if (id == StableIds.Ingredients.Egg) _loopMotion.CrackEgg(this, _art.Ingredient(id), _art.EggShell, from, center, Contact);
+        if (id == StableIds.Ingredients.Egg) _loopMotion.PourEgg(this, _art.BatterStream, from, center, Contact);
         else if (_drag.IsDragging) _loopMotion.Contact(Contact);
         else _loopMotion.Fly(this, _art.Ingredient(id), from, center, crisp ? new(95, 60) : new(58, 48), Contact);
     }

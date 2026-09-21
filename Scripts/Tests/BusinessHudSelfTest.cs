@@ -58,6 +58,7 @@ public partial class BusinessHudSelfTest : Node
                 var hud = screen.FindChild("BusinessHud", true, false) as BusinessHud ?? throw new Exception("HUD absent");
                 Require(hud.IsVisibleInTree(), "HUD visible");
                 CheckArtwork(hud);
+                Require(hud.PauseButton.Size == new Vector2(84, 84), "pause uses the 1.5x display size");
                 Require(hud.PauseButton.GetGlobalRect().End.X <= 1920, "pause in viewport");
                 Require(hud.PauseButton.GetThemeStylebox("focus") is StyleBoxEmpty, "art pause has no rectangular focus frame");
                 hud.PauseButton.GrabFocus(); await Frames();

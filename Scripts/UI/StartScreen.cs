@@ -147,12 +147,13 @@ public partial class StartScreen : Control
         }
         NavigationUtilities(includeHome: true);
     }
-    private void NavigationUtilities(bool includeHome = false)
+    private void NavigationUtilities(bool includeHome = false, Control? parent = null)
     {
-        if (includeHome) HomeUtility("Home", "首页", "首页", 1416, RenderHome);
-        HomeUtility("Settings", "设置", "设置图标", 1540, OpenSettings);
-        HomeUtility("Help", "帮助", "帮助图标", 1664, OpenHelp);
-        HomeUtility("Quit", "退出", "返回主界面图标", 1788, () => { _busy = true; QuitRequested?.Invoke(); });
+        if (_homeOverlayOpen && parent is null) return;
+        if (includeHome) HomeUtility("Home", "首页", "首页", 1416, RenderHome, parent);
+        HomeUtility("Settings", "设置", "设置图标", 1540, OpenSettings, parent);
+        HomeUtility("Help", "帮助", "帮助图标", 1664, OpenHelp, parent);
+        HomeUtility("Quit", "退出", "返回主界面图标", 1788, () => { _busy = true; QuitRequested?.Invoke(); }, parent);
     }
     private void Utilities()
     {

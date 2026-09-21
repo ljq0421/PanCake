@@ -13,8 +13,19 @@ public partial class StartScreen
         // Home composition: breakfast-shop wall, overlapping left logo and four tabletop actions.
         // Art is user supplied; layout and live progress remain independent of the textures.
         Begin(JourneyPage.Home); Ambient();
-        HomeArt(_body, "世界地图墙挂底板", new(445, 100, 1080, 640), stretch: true);
-        var wall = new Control { Name = "HomeMap", Position = new(490, 205), Size = new(990, 470), MouseFilter = MouseFilterEnum.Ignore }; _body.AddChild(wall);
+        // Render only the wall decoration into a soft-focus layer: the original shop,
+        // foreground logo and buttons stay sharp and independently composited.
+        var mapViewport = new SubViewport
+        {
+            Name = "HomeMapViewport", Size = new(1080, 640), TransparentBg = true,
+            Disable3D = true, GuiDisableInput = true,
+            RenderTargetUpdateMode = SubViewport.UpdateMode.Always
+        };
+        _body.AddChild(mapViewport);
+        var mapLayer = new Control { MouseFilter = MouseFilterEnum.Ignore };
+        mapViewport.AddChild(mapLayer);
+        HomeArt(mapLayer, "世界地图墙挂底板", new(0, 0, 1080, 640), stretch: true);
+        var wall = new Control { Name = "HomeMap", Position = new(45, 105), Size = new(990, 470), MouseFilter = MouseFilterEnum.Ignore }; mapLayer.AddChild(wall);
         HomeArt(wall, "卡通世界地图母版", new(0, 0, 990, 470), stretch: true);
         // Schematic callouts around Asia; keep all five names legible when every city is unlocked.
         Vector2[] points = { new(715, 70), new(605, 205), new(475, 80), new(735, 335), new(870, 210) };
@@ -38,7 +49,17 @@ public partial class StartScreen
                 t.TweenProperty(marker, "modulate:a", .78f, 1.3); t.TweenProperty(marker, "modulate:a", 1f, 1.3);
             }
         }
-        HomeArt(_body, "LOGO", new(60, 60, 560, 258));
+        var mapArt = new TextureRect
+        {
+            Name = "HomeMapDecoration", Texture = mapViewport.GetTexture(),
+            ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+            Position = new(730, 190), Size = new(864, 512),
+            StretchMode = TextureRect.StretchModeEnum.Scale,
+            TextureFilter = CanvasItem.TextureFilterEnum.Linear,
+            MouseFilter = MouseFilterEnum.Ignore, Material = HomeMapSoftFocus()
+        };
+        _body.AddChild(mapArt);
+        HomeArt(_body, "LOGO", new(80, 150, 1120, 516)).Name = "HomeLogo";
         if (_save?.DemoMigrationRetryAvailable == true)
             Button(_body, "RetryDemoMigration", "重试读取存档", new(810, 790, 300, 42), () =>
             {
@@ -52,7 +73,7 @@ public partial class StartScreen
         HomeAction("WorldMap", "世界地图", "世界地图入口图标", new(1655, 855, 170, 145), () => PresentMap(), small: true);
         Utilities(); Focus(canContinue ? "Continue" : "NewGame");
         // The wall remains an additional map entrance, after the main actions in keyboard order.
-        Button(_body, "WallMap", "", new(490, 205, 990, 470), () => PresentMap(), bare: true, hoverVisual: wall);
+        Button(_body, "WallMap", "", new(730, 190, 864, 512), () => PresentMap(), bare: true, hoverVisual: mapArt);
         _status.MoveToFront();
     }
     private void RequestNewGame(int? requestedSlot = null, bool startBusiness = false)

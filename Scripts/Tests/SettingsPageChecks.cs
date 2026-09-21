@@ -87,6 +87,9 @@ internal static class SettingsPageChecks
         var saveSlot = Find<OptionButton>(screen, "SaveSlot");
         Check(saveSlot.ItemCount == SaveService.SlotCount && !saveSlot.IsItemDisabled(0) && !saveSlot.IsItemDisabled(1)
             && saveSlot.IsItemDisabled(2), "save selector lists five slots and disables empty ones");
+        Check(!saveSlot.GetItemText(0).Contains("存档位") && saveSlot.GetRect().Position.X >= 340
+            && saveSlot.GetRect().End.X <= 893 && saveSlot.GetPopup().MaxSize.X == (int)saveSlot.Size.X,
+            "save selector omits slot prefix and its menu stays within the left page");
         var close = Find<Button>(screen, "Close");
         Check(close.GetThemeStylebox("normal") is StyleBoxTexture { Texture.ResourcePath: "res://resource/art/TianJin/DialogUI/button-secondary-v1.png" },
             "close uses the specified secondary button texture");

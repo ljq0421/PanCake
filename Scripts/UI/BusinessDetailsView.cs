@@ -174,7 +174,7 @@ public partial class BusinessDetailsView : Control
         _previousPage.Visible = details; _nextPage.Visible = !details;
         if (UsesTravelBook)
         {
-            SetButtonBounds(CloseButton, _model.NewWuhanUnlock ? new(1225, 776, 240, 64) : details ? new(1145, 776, 280, 70) : new(1225, 703, 220, 64));
+            SetButtonBounds(CloseButton, _model.NewWuhanUnlock ? new(1225, 776, 240, 64) : details ? new(1145, 776, 280, 70) : new(1170, 625, 260, 64));
             CloseButton.AddThemeFontSizeOverride("font_size", details ? 30 : TravelActionFontSize);
             if (CanContinueBusiness) CloseButton.AddThemeFontSizeOverride("font_size", 23);
         }
@@ -253,7 +253,11 @@ public partial class BusinessDetailsView : Control
     {
         if (ProjectSettings.GetSetting("accessibility/reduce_motion", false).AsBool()) return;
         _audio.Play(PancakeSound.BookOpen);
-        if (UsesTravelBook && _model.Closing) { StartTravelAnimation(); return; }
+        if (UsesTravelBook)
+        {
+            if (_model.Closing) StartTravelAnimation();
+            return;
+        }
         _entrance = CreateTween();
         // The shared unfold owns the paper; settlement details follow it.
         _book.Modulate = Colors.White;
@@ -276,7 +280,8 @@ public partial class BusinessDetailsView : Control
         if (_book is null) return;
         _book.Modulate = Colors.White;
         if (_income is not null) _income.Text = $"¥{_model.Result.TotalRevenue}";
-        foreach (var c in new[] { _metrics, _stamp, _note }) if (IsInstanceValid(c)) { c.Modulate = Colors.White; c.Scale = Vector2.One; }
+        foreach (var c in new Control?[] { _metrics, _stamp, _note })
+            if (c is not null && IsInstanceValid(c)) { c.Modulate = Colors.White; c.Scale = Vector2.One; }
     }
     public override void _Input(InputEvent input)
     {

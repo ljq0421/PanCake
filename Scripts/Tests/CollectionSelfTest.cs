@@ -64,10 +64,37 @@ public partial class CollectionSelfTest : Node
             Check(screen.Descendants<TextureRect>().Single(t => t.Name == "CollectionBook").GetRect() == StartScreen.BookBounds
                 && screen.Descendants<Control>().Single(c => c.Name == "CollectionContent").Scale == Vector2.One * (1400f / 1860f),
                 "collection uses the shared 1400×800 book frame");
-            Check(screen.Descendants<Button>().Count(b => b.Name.ToString().StartsWith("Breakfast_")) == 3, "Wuhan remains gated before city unlock");
+            Check(screen.Descendants<Button>().Count(b => b.Name.ToString().StartsWith("Breakfast_")) == 1
+                && screen.Descendants<Control>().Any(c => c.Name == "LockedBreakfast_youtiao")
+                && screen.Descendants<Control>().Any(c => c.Name == "LockedBreakfast_soy_milk"), "early Tianjin foods remain anonymous locked placeholders");
             await Capture("locked-cities");
+            save.Data.Tianjin.HighestUnlockedDay = 3;
+            screen.PresentBreakfastCollection(); await Frames();
+            Check(screen.Descendants<Button>().Any(b => b.Name == "Breakfast_youtiao")
+                && !screen.Descendants<Button>().Any(b => b.Name == "Breakfast_soy_milk"), "Day 3 unlocks youtiao but not soy milk");
+            save.Data.Tianjin.HighestUnlockedDay = 5;
             save.Data.UnlockedCityIds.Add(StableIds.Cities.Wuhan);
             screen.PresentBreakfastCollection(); await Frames();
+            Check(screen.Descendants<Button>().Count(b => b.Name.ToString().StartsWith("Breakfast_")) == 4
+                && screen.Descendants<Control>().Any(c => c.Name == "LockedBreakfast_doupi"), "unlocked Wuhan does not reveal doupi");
+            screen.Descendants<Button>().Single(b => b.Name == "CollectionCity2").EmitSignal(Button.SignalName.Pressed); await Frames();
+            save.Data.Wuhan.HighestUnlockedDay = 3;
+            screen.PresentBreakfastCollection(); await Frames();
+            Check(screen.Descendants<Button>().Count(b => b.Name.ToString().StartsWith("Breakfast_")) == 1
+                && !screen.Descendants<Label>().Any(l => l.Text.Contains("豆皮")), "Wuhan filter hides doupi name and detail before Day 4");
+            Check(screen.Descendants<Control>().All(c => string.IsNullOrEmpty(c.TooltipText)), "collection icons have no hover explanations");
+            await Capture("wuhan-doupi-locked");
+            save.Data.Wuhan.HighestUnlockedDay = 4;
+            screen.PresentBreakfastCollection(); await Frames();
+            Check(screen.Descendants<Button>().Any(b => b.Name == "Breakfast_doupi"), "Day 4 reveals uncollected doupi");
+            screen.Descendants<Button>().Single(b => b.Name == "Breakfast_doupi").EmitSignal(Button.SignalName.Pressed); await Frames();
+            Check(screen.Descendants<Label>().Single(l => l.Name == "BreakfastName").Text == "三鲜豆皮", "newly unlocked breakfast opens its detail");
+            await Capture("doupi-unlocked");
+            save.Data.Wuhan.HighestUnlockedDay = 3;
+            screen.PresentBreakfastCollection(); await Frames();
+            Check(screen.Descendants<Label>().Single(l => l.Name == "BreakfastName").Text == "热干面", "stale locked selection falls back to an available breakfast");
+            save.Data.Wuhan.HighestUnlockedDay = 4;
+            screen.Descendants<Button>().Single(b => b.Name == "CollectionCity0").EmitSignal(Button.SignalName.Pressed); await Frames();
             Check(screen.Descendants<Button>().Count(b => b.Name.ToString().StartsWith("Breakfast_")) == 5, "five demo foods and three locked future cities");
             await Capture("earned-stamps");
             screen.Descendants<Button>().Single(b => b.Name == "CollectionCity2").EmitSignal(Button.SignalName.Pressed); await Frames();
@@ -78,8 +105,8 @@ public partial class CollectionSelfTest : Node
             Check(!screen.Descendants<Control>().Any(c => c.Name == "PerfectStamp" || c.Name == "BreakfastPerfect"), "soy milk hides Perfect statistics and stamp");
             Check(File.ReadAllText(path) == earned, "collection browsing does not modify saved progress");
             await Capture("soy-milk");
-            screen.Descendants<Button>().Single(b => b.Name == "CollectionHome").EmitSignal(Button.SignalName.Pressed); await Frames();
-            Check(screen.Page == JourneyPage.Home, "footer returns home");
+            screen.Descendants<Button>().Single(b => b.Name == "Back").EmitSignal(Button.SignalName.Pressed); await Frames();
+            Check(screen.Page == JourneyPage.Home, "back arrow returns home");
             GD.Print($"COLLECTION PASS {_checks}; artifacts: {_dir}"); GetTree().Quit();
         }
         catch (Exception e) { GD.PushError(e.ToString()); GetTree().Quit(1); }

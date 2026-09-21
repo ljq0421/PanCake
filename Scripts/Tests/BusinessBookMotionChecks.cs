@@ -63,11 +63,7 @@ public partial class BusinessBookSelfTest
         {
             Check(Income().Text == $"¥{view.Model.Result.TotalRevenue}" && Income().Modulate.A == 1
                 && Income().Scale == Vector2.One && Note().Modulate.A == 1
-                && Note().Position == new Vector2(923, 378), context + " restores exact final values and transforms");
-            Check(Math.Abs(view.Descendants<ProgressBar>().Single().Value - (view.Model.CompletionRate ?? 0)) < .001,
-                context + " restores completion bar");
-            Check(!view.Descendants<Control>().Any(c => c.Name.ToString().StartsWith("SettlementFallingCoin") && c.Visible),
-                context + " clears temporary coins");
+                && Note().Position == new Vector2(230, 373), context + " restores exact final values and transforms");
         }
         try
         {
@@ -87,32 +83,26 @@ public partial class BusinessBookSelfTest
                     view.Open(model);
                     var tween = PauseMotion(view);
                     var incomePosition = Income().Position;
-                    Check(Income().Modulate.A == 0 && Caption("菜品销售").Modulate.A == 0
-                        && Caption("顾客小费").Modulate.A == 0 && Note().Modulate.A == 0, "income and note hidden before first frame");
+                    Check(Income().Modulate.A == 0 && Note().Modulate.A == 0
+                        && view.Descendants<Label>().Single(l => l.Name == "ChallengeSettlement").Modulate.A == 0, "results hidden before first frame");
                     Check(Caption("今日收入").Modulate.A == 1 && Caption("今日接待").Modulate.A == 1
                         && !view.CloseButton.Disabled, "headings and actions are available from opening");
                     if (Capture) await Shot($"motion-{city}-{size.X}-0-open");
-                    StepMotion(tween, .52 + .51);
-                    Check(Caption("完成").Modulate.A == 1 && Caption("93%").Modulate.A < .1
-                        && Income().Modulate.A == 0, "reception precedes evaluation and income");
+                    StepMotion(tween, .52 + .62);
+                    Check(Caption("今日接待").Modulate.A == 1 && Caption("93%").Modulate.A == 1
+                        && Income().Modulate.A == 0, "reception and satisfaction precede income");
                     if (Capture) await Shot($"motion-{city}-{size.X}-1-reception");
                     StepMotion(tween, .40);
-                    Check(Caption("93%").Modulate.A == 1 && MotionField<Control>(view, "_stamp").Scale == Vector2.One
-                        && Income().Modulate.A == 0, "evaluation settles before income");
+                    Check(Income().Modulate.A == 1 && Income().Text != "¥0", "income follows service reflection");
                     if (Capture) await Shot($"motion-{city}-{size.X}-2-evaluation");
                     StepMotion(tween, .25);
-                    Check(Caption("收获小费").GetParent<Control>().Modulate.A == 1
-                        && Caption("顾客小费").Modulate.A == 0, "review does not disclose tip amount");
+                    Check(view.Descendants<Label>().Single(l => l.Name == "ChallengeSettlement").Modulate.A == 1
+                        && Note().Modulate.A <= 1, "challenge result follows income");
                     if (Capture) await Shot($"motion-{city}-{size.X}-3-review");
                     StepMotion(tween, .59);
-                    Check(Income().Text == "¥40" && Income().Position == incomePosition, "sales counts to subtotal without layout drift");
-                    if (Capture) await Shot($"motion-{city}-{size.X}-4-sales");
-                    StepMotion(tween, .25);
-                    Check(Income().Text == "¥45" && Note().Modulate.A == 0, "tips add only once before quiet note");
-                    if (Capture) await Shot($"motion-{city}-{size.X}-5-coins");
-                    StepMotion(tween, .60);
                     Complete(city + " natural completion");
-                    if (Capture) await Shot($"motion-{city}-{size.X}-6-note");
+                    Check(Income().Position == incomePosition, "income count leaves its layout fixed");
+                    if (Capture) await Shot($"motion-{city}-{size.X}-4-complete");
 
                     if (Capture)
                     {
@@ -125,7 +115,7 @@ public partial class BusinessBookSelfTest
                         CheckMotionInk(Caption("今日接待"));
                     }
                 }
-                foreach (double moment in new[] { .1, .85, 1.2, 1.6, 2.3, 2.9 })
+                foreach (double moment in new[] { .1, .7, 1.1, 1.6, 2.0 })
                 {
                     view.Open(model); var tween = PauseMotion(view); StepMotion(tween, moment);
                     bool closed = false;
@@ -161,12 +151,9 @@ public partial class BusinessBookSelfTest
                 {
                     view.Open(new() { CityId = city, Closing = true, Result = result });
                     var tween = PauseMotion(view);
-                    Check(MotionField<Control>(view, "_stamp").Scale == Vector2.One, "no Perfect does not stamp");
-                    if (result.TotalRevenue == 0)
-                        Check(!view.Descendants<Control>().Any(c => c.Name.ToString().StartsWith("SettlementFallingCoin") && !c.IsQueuedForDeletion()), "zero income has no falling coins");
-                    StepMotion(tween, result.Tips == 0 ? 2.83 : 3.03);
+                    StepMotion(tween, 2.2);
                     Complete("edge revenue " + result.TotalRevenue);
-                    Check(!MotionField<bool>(view, "_travelAnimating"), "no-tip timeline ends 0.2s earlier");
+                    Check(!MotionField<bool>(view, "_travelAnimating"), "result timeline completes");
                     await Frames();
                 }
                 model.Closing = false; view.Open(model); Complete("live summary");
@@ -185,7 +172,7 @@ public partial class BusinessBookSelfTest
                 view.Hide(); save.QueueFree(); await Frames();
             }
             TranslationServer.SetLocale("en");
-            Check(TranslationServer.Translate("今日收入") == "Today's income" && TranslationServer.Translate("收获小费") == "Tips earned", "new captions localized");
+            Check(TranslationServer.Translate("今日收入") == "Today's income" && TranslationServer.Translate("挑战结果") == "Challenge result", "summary captions localized");
         }
         finally
         {

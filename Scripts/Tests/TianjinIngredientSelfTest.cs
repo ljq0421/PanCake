@@ -77,8 +77,8 @@ public partial class TianjinIngredientSelfTest : Node
                 if (Capture) Engine.TimeScale = .2;
                 Click("egg"); Click("egg");
                 Check(_station.Machine.Runtime.HasEgg && _station.Inventory.GetQuantity("egg") == eggStock - 1, "rapid egg clicks commit only once");
-                await Wait(.16); await Shot($"{width}-egg-shells");
-                Check(_station.Descendants<TextureRect>().Where(n => n.GetParent().Name == "EggCrack").All(n => n.Size.X < 50), "shells retain portion scale after entering tree");
+                await Wait(.16); await Shot($"{width}-egg-pour");
+                Check(!_station.Descendants<Control>().Any(n => n.Name == "EggCrack"), "egg liquid never recreates shell splitting");
                 await Wait(.24);
                 Engine.TimeScale = 1;
                 _station.Machine.Runtime.State = PancakeState.SideBReady; _station.RefreshForCapture(); Click("sauce");
@@ -146,14 +146,14 @@ public partial class TianjinIngredientSelfTest : Node
                 stroke.StrokeCompleted?.Invoke(StrokeMode.Spread); Click("egg");
                 _station.Machine.TryExecute(PancakeCommand.Discard); _station.Tick(.01); stove.TryAccept("batter");
                 await Wait(.4);
-                Check(!_station.Machine.Runtime.HasEgg && !_station.Descendants<Control>().Any(n => n.Name == "EggCrack"), "discard cancels old shells and callbacks");
+                Check(!_station.Machine.Runtime.HasEgg && !_station.Descendants<Control>().Any(n => n.Name == "EggPour"), "discard cancels old egg liquid and callbacks");
                 _station.ResetForDay();
                 ProjectSettings.SetSetting("accessibility/reduce_motion", true);
                 stove.TryAccept("batter");
                 Check(canvas.BatterDropProgress == 1, "reduced motion pours straight to static state");
                 _station.Machine.TryExecute(PancakeCommand.BeginSpread); _station.Machine.SetSpreadCoverage(1);
                 stroke.StrokeCompleted?.Invoke(StrokeMode.Spread); Click("egg");
-                Check(_station.Machine.Runtime.HasEgg && !_station.Descendants<Control>().Any(n => n.Name == "EggCrack"), "reduced motion preserves egg without flying shells");
+                Check(_station.Machine.Runtime.HasEgg && !_station.Descendants<Control>().Any(n => n.Name == "EggPour"), "reduced motion preserves egg without a flying liquid effect");
                 ProjectSettings.SetSetting("accessibility/reduce_motion", false);
                 _station = null; screen.QueueFree(); controller.QueueFree(); save.QueueFree(); await Wait();
             }

@@ -58,7 +58,7 @@ public partial class PancakeCanvas : Control
             _ingredientMotion[id] = (-delay, strength);
         QueueRedraw();
     }
-    internal void ResetIngredientMotion() { _ingredientMotion.Clear(); QueueRedraw(); }
+    internal void ResetIngredientMotion() { _ingredientMotion.Clear(); _spreadMarks.Clear(); QueueRedraw(); }
     private void DrawIngredient(string id, Texture2D texture, Vector2 center, Vector2 size, Color? tint = null, CanvasItem? painter = null)
     {
         if (_ingredientMotion.TryGetValue(id, out var motion))
@@ -89,6 +89,7 @@ public partial class PancakeCanvas : Control
     public void TickLivingMotion(double delta, bool active, bool spreading)
     {
         SyncIngredientDetail();
+        TickMakingMotion(delta, active);
         if (!active) _ingredientMotion.Clear();
         else foreach (string id in _ingredientMotion.Keys.ToArray())
         {
@@ -184,6 +185,7 @@ public partial class PancakeCanvas : Control
             reveal.A *= BatterDropProgress;
         }
         DrawPancakeSurface(pancakeRect, reveal);
+        if (runtime.State == PancakeState.Spreading) DrawSpreadContact(pancakeRect);
 
         if (runtime.HasEgg)
             DrawIngredient(StableIds.Ingredients.Egg, _art.PancakeEgg, surface.GetCenter(), surface.Size, qualityTint);
@@ -342,7 +344,7 @@ public partial class PancakeCanvas : Control
         float settle = FlipProgress > .9f ? Mathf.Sin((FlipProgress - .9f) * 10 * Mathf.Pi) : 0;
         Vector2 size = surface.Size * new Vector2(1 + .018f * lift + .008f * settle,
             Math.Max(.055f, Mathf.Abs(Mathf.Cos(flight * Mathf.Pi))) * (1 - .025f * settle));
-        Vector2 center = surface.GetCenter() + new Vector2(0, -44 * lift);
+        Vector2 center = surface.GetCenter() + new Vector2(0, -22 * lift);
         Rect2 food = new(center - size * .5f, size);
         float light = 1 - .16f * lift;
         Color face = new(tint.R * light, tint.G * light, tint.B * light, tint.A);
@@ -361,11 +363,11 @@ public partial class PancakeCanvas : Control
         float x = Mathf.Clamp((point.X - surface.GetCenter().X) / (surface.Size.X * .5f), -1, 1);
         float flight = FlipFlight(FlipProgress);
         float pickup = Mathf.Sin(Mathf.Pi * Mathf.Clamp((FlipProgress - .08f) / .34f, 0, 1));
-        float sag = 46 * Mathf.Sin(flight * Mathf.Pi);
-        float landingCurl = 12 * Mathf.Sin(Mathf.Pi * Mathf.Clamp((FlipProgress - .78f) / .22f, 0, 1));
+        float sag = 14 * Mathf.Sin(flight * Mathf.Pi);
+        float landingCurl = 5 * Mathf.Sin(Mathf.Pi * Mathf.Clamp((FlipProgress - .78f) / .22f, 0, 1));
         // The right edge follows the spatula first. The middle then droops between
         // the edges in flight; on landing the middle rests before the edges relax.
-        point.Y += -28 * pickup * Mathf.Pow((x + 1) * .5f, 2)
+        point.Y += -14 * pickup * Mathf.Pow((x + 1) * .5f, 2)
             + sag * (1 - x * x) - landingCurl * x * x;
         return point;
     }

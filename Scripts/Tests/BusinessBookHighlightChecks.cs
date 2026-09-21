@@ -1,4 +1,5 @@
 using Godot;
+using ProjectCake.Core;
 using ProjectCake.Gameplay;
 using ProjectCake.UI;
 
@@ -27,35 +28,24 @@ public partial class BusinessBookSelfTest
 
     private void CheckTravelHighlightLayout(BusinessDetailsView view)
     {
-        var section = view.Descendants<Control>().Single(c => c.Name == "BookHighlights");
-        var progress = view.Descendants<ProgressBar>().Single(c => c.Name == "BookCompletionProgress");
         var book = view.Descendants<Control>().Single(c => c.Name == "SettlementBook");
         var reception = view.Descendants<Label>().Single(l => l.Text == "今日接待");
         var evaluation = view.Descendants<Label>().Single(l => l.Name == "BookSatisfaction");
-        var income = view.Descendants<Label>().Single(l => l.Text == "收入详情");
+        var income = view.Descendants<Label>().Single(l => l.Text == "今日收入");
+        var challenge = view.Descendants<Label>().Single(l => l.Name == "ChallengeSettlement");
         var note = view.Descendants<Control>().Single(c => c.Name == "DailyNote");
         var title = view.Descendants<Label>().Single(l => l.Text == "营业小结");
-        Check(new Control[] { reception, evaluation, section }.All(c => InLocalSpace(book, c).End.X < book.Size.X / 2),
-            "reception, evaluation and highlights read on the left page");
-        Check(new Control[] { income, note }.All(c => InLocalSpace(book, c).Position.X > book.Size.X / 2),
-            "income and daily note read on the right page");
+        var upgrade = view.Descendants<Button>().Single(b => b.Name == "OpenBookUpgrades");
+        Check(new Control[] { reception, evaluation, note }.All(c => InLocalSpace(book, c).End.X < book.Size.X / 2),
+            "reception, satisfaction and daily note read on the left page");
+        Check(new Control[] { income, challenge, upgrade, view.CloseButton }.All(c => InLocalSpace(book, c).Position.X > book.Size.X / 2),
+            "income, challenge and next-step actions read on the right page");
         Check(!title.GetGlobalRect().Intersects(reception.GetGlobalRect()), "left-page reception clears the book title");
-        Check(!view.Descendants<Label>().Any(l => l.Text == "最受欢迎" || l.Name == "BookBestSeller"),
-            "travel summary removes the entire best-seller section");
-        Check(Math.Abs(progress.Value - (view.Model.CompletionRate ?? 0)) < .001, "completion bar agrees with underlying ratio");
-        var chips = section.GetChildren().OfType<Panel>().Where(c => c.Name.ToString().StartsWith("Highlight")).ToArray();
-        Check(chips.Length == view.Model.Highlights.Count, "only earned highlights are rendered");
-        foreach (var chip in chips)
-        {
-            Check(new Rect2(Vector2.Zero, section.Size).Encloses(chip.GetRect()), "highlight fits section");
-            foreach (var label in chip.GetChildren().OfType<Label>())
-                Check(new Rect2(Vector2.Zero, chip.Size).Encloses(label.GetRect()) && label.GetVisibleLineCount() == label.GetLineCount(), "highlight caption fully visible");
-        }
-        for (int i = 1; i < chips.Length; i++) Check(!chips[i - 1].GetRect().Intersects(chips[i].GetRect()), "highlight chips do not overlap");
-        foreach (var action in view.Descendants<Control>().Where(c => c.IsVisibleInTree() && c.Name.ToString() is "UpgradeSticker" or "UnlockSticker" or "CloseBusinessDetails"))
-            Check(!section.GetGlobalRect().Intersects(action.GetGlobalRect()), "highlights leave navigation and unlocks clear");
-        Check(section.Descendants<Label>().Any(l => l.Text == (view.Model.Closing ? "今日亮点" : "本次亮点")), "highlight heading reflects current stage");
-        if (chips.Length == 0) Check(section.Descendants<Label>().Any(l => l.Text == "慢慢来，把下一份早餐做好。"), "empty highlights have encouragement");
+        Check(!view.Descendants<Control>().Any(c => c.Name == "BookHighlights")
+            && !view.Descendants<Label>().Any(l => l.Text is "收入详情" or "菜品销售" or "顾客小费" or "今日亮点" or "本次亮点"),
+            "travel summary removes secondary income, highlights and rating content");
+        Check(!note.GetGlobalRect().Intersects(upgrade.GetGlobalRect()) && !challenge.GetGlobalRect().Intersects(upgrade.GetGlobalRect())
+            && !upgrade.GetGlobalRect().Intersects(view.CloseButton.GetGlobalRect()), "summary actions remain clear of results");
     }
 
     private async Task CheckTravelHighlightStates()
@@ -65,6 +55,8 @@ public partial class BusinessBookSelfTest
         var cases = new (string Name, DayResult Result)[]
         {
             ("empty", new()),
+            ("challenge-failure", new() { Day = 2, LostCustomers = 4, SaleRevenue = 7, Satisfaction = 0 }),
+            ("challenge-success", new() { Day = 2, CompletedCustomers = 3, CorrectOrders = 2, SaleRevenue = 21, Tips = 4, Satisfaction = 92 }),
             ("all-lost", new() { LostCustomers = 4 }),
             ("ordinary", new() { CompletedCustomers = 1, LostCustomers = 1, SaleRevenue = 7, Satisfaction = 65 }),
             ("streak", new() { CompletedCustomers = 3, LostCustomers = 1, HighestCorrectStreak = 3, SaleRevenue = 21, Satisfaction = 80 }),
@@ -78,7 +70,11 @@ public partial class BusinessBookSelfTest
             foreach (string city in new[] { "tianjin", "wuhan" })
             foreach (var scenario in cases)
             {
-                var model = new BusinessBookModel { CityId = city, Closing = true, Result = scenario.Result };
+                var model = new BusinessBookModel
+                {
+                    CityId = city, Closing = true, Result = scenario.Result,
+                    Challenge = scenario.Name == "empty" ? null : new DailyChallenge(city, scenario.Result.Day, DailyChallengeKind.Service, 2, 20)
+                };
                 if (scenario.Name == "long-amounts")
                     model = new BusinessBookModel
                     {
@@ -87,13 +83,12 @@ public partial class BusinessBookSelfTest
                             new[] { new BookProduct("long-food", "双份加料香葱少酱特别早餐套餐请单独打包", 1, city == "tianjin" ? "Pancake" : "HotDryNoodles") },
                             BookOutcome.Perfect, 1000000000, 1000000000, 100) }
                     };
-                view.Open(model); view.FinishAnimation(); await Frames();
+                view.Open(model); view.FinishAnimation(); JourneyTransition.For(view).Finish(); await Frames();
                 CheckTravelHighlightLayout(view); CheckArtPage(view, city, scenario.Name);
                 if (Capture) await Shot($"highlights-{city}-{scenario.Name}");
             }
             TranslationServer.SetLocale("en");
-            Check(TranslationServer.Translate("完美出餐 ×4") == "Perfect ×4" && TranslationServer.Translate("小费 ¥4") == "Tips ¥4", "parameterized highlight translations");
-            foreach (string caption in new[] { "收入详情", "今日接待", "顾客满意度", "今日亮点", "本次亮点", "零流失", "暂未流失", "错误", "流失", "连续正确 ×3", "好味道，", "让每一天都值得", "感谢每一位顾客", "慢慢来，把下一份早餐做好。", "完成率  —" })
+            foreach (string caption in new[] { "今日接待", "顾客满意度", "营业手记", "今日收入", "挑战结果", "今日暂无挑战", "店铺升级" })
                 Check(!System.Text.RegularExpressions.Regex.IsMatch(TranslationServer.Translate(caption), "[\\u4e00-\\u9fff]"), "summary caption translated: " + caption);
             foreach (string city in new[] { "tianjin", "wuhan" })
             {
@@ -103,5 +98,46 @@ public partial class BusinessBookSelfTest
             }
         }
         finally { TranslationServer.SetLocale(locale); view.QueueFree(); await Frames(); }
+    }
+
+    private async Task CheckTravelChallengeCaptures(DataCatalog catalog)
+    {
+        string locale = TranslationServer.GetLocale();
+        var save = new SaveService(); save.UsePathForTests("res://.tmp/book-tests/challenge-captures.json"); AddChild(save);
+        var cases = new (string Name, DayResult Result, DailyChallenge? Challenge)[]
+        {
+            ("no-challenge", new() { Day = 1 }, null),
+            ("challenge-success", new() { Day = 2, CompletedCustomers = 3, CorrectOrders = 2, SaleRevenue = 21, Tips = 4, Satisfaction = 92 }, null),
+            ("challenge-failure", new() { Day = 2, LostCustomers = 4, SaleRevenue = 7 }, null)
+        };
+        try
+        {
+            TranslationServer.SetLocale("zh_CN");
+            GetWindow().ContentScaleAspect = Window.ContentScaleAspectEnum.Expand;
+            GetWindow().Size = new(1280, 720); await Frames(5);
+            foreach (string city in new[] { "tianjin", "wuhan" })
+            foreach (var scenario in cases)
+            {
+                var view = new BusinessDetailsView(); AddChild(view); view.ContinueRequested += () => { };
+                string cityId = "city:" + city;
+                save.Data.GetCity(cityId).HighestUnlockedDay = scenario.Result.Day + 1;
+                var challenge = scenario.Challenge ?? (scenario.Name == "no-challenge" ? null
+                    : new DailyChallenge(city, scenario.Result.Day, DailyChallengeKind.Service, 2, 20));
+                view.Open(new BusinessBookModel
+                {
+                    CityId = city, Closing = true, Result = scenario.Result,
+                    Challenge = challenge, Upgrades = new BookUpgradeSource(save, catalog, cityId)
+                });
+                view.FinishAnimation(); JourneyTransition.For(view).Finish();
+                await ToSignal(GetTree().CreateTimer(1.5), SceneTreeTimer.SignalName.Timeout);
+                CheckTravelHighlightLayout(view); CheckArtPage(view, city, scenario.Name);
+                await Shot($"challenge-{city}-{scenario.Name}");
+                view.QueueFree(); await Frames();
+            }
+        }
+        finally
+        {
+            TranslationServer.SetLocale(locale); save.QueueFree(); await Frames();
+        }
     }
 }

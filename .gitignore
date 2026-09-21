@@ -13,3 +13,4 @@ obj/
 /artifacts/tianjin-ingredients
 /artifacts/tianjin-loop
 /artifacts
+*.log

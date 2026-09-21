@@ -51,7 +51,7 @@ public partial class BusinessBookSelfTest
                 model.Closing = false;
                 view.Open(model); view.FinishAnimation(); await Frames();
                 CheckTravelHighlightLayout(view);
-                Check(view.Descendants<Label>().Any(l => l.IsVisibleInTree() && l.Text == "暂未流失"), city + " live zero loss is provisional");
+                Check(view.Descendants<Label>().Any(l => l.IsVisibleInTree() && l.Text == "今日暂无挑战"), city + " live summary keeps the challenge result slot");
                 if (Capture) await Shot($"reference-{city}-{size.X}-live-summary");
                 model.Closing = true;
             }

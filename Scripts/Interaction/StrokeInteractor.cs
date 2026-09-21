@@ -36,6 +36,7 @@ public partial class StrokeInteractor : Control
     public Action<StrokeMode>? StrokeCompleted { get; set; }
     public Action? InvalidStroke { get; set; }
     public Action<Vector2>? SaucePainted { get; set; }
+    public Action<Vector2>? SpreadPainted { get; set; }
     public Action? StrokeEnded { get; set; }
     public bool GentleSauceTool { get; set; }
     public Func<EllipseGeometry>? ResolveSpreadGeometry { get; set; }
@@ -200,7 +201,9 @@ public partial class StrokeInteractor : Control
         if (_activeMode == StrokeMode.Spread)
         {
             EllipseGeometry geometry = GetSpreadGeometry();
+            double before = _spread.Progress;
             _spread.AddPoint(position, geometry.Center, geometry.Radii);
+            if (_spread.Progress > before) SpreadPainted?.Invoke(GetGlobalTransformWithCanvas() * position);
             progress = _spread.Progress;
             complete = _spread.IsComplete;
             UpdateTool(position);

@@ -138,6 +138,8 @@ public partial class StartScreen
     private void AddSaveSlotChoice()
     {
         var choice = SettingsChoice("SaveSlot", new(546, 680, 334, 52));
+        // Keep the popup within the left settings page; option text must not grow it wider.
+        choice.GetPopup().MaxSize = new Vector2I((int)choice.Size.X, 0);
         var slots = _save?.GetSlots() ?? Array.Empty<SaveSlotSummary>();
         foreach (var slot in slots)
         {
@@ -146,7 +148,7 @@ public partial class StartScreen
             string progress = slot.Exists && !slot.Corrupt
                 ? string.Format(Tr(" · {0} · 第 {1} 天").ToString(), Tr(JourneyModel.City(slot.CityId).Name), slot.Day)
                 : "";
-            choice.AddItem(string.Format(Tr("存档位 {0} · {1}{2}").ToString(), slot.Id, state, progress));
+            choice.AddItem(state + progress);
             choice.SetItemDisabled(choice.ItemCount - 1, !slot.Exists || slot.Corrupt);
         }
         int active = slots.ToList().FindIndex(slot => slot.Id == _save?.ActiveSlotId);

@@ -66,7 +66,9 @@ public partial class BusinessBookSelfTest
             view.FinishAnimation(); await Frames();
             var teaching = view.Descendants<TutorialFocusLayer>().Single();
             Check(teaching.CurrentAction is null, city + " no upgrade teaching during business");
-            Check(!view.Descendants<Button>().Any(b => b.Name == "OpenBookUpgrades" || b.Name == "UpgradeSticker"), city + " affordable live upgrades hidden");
+            if (city is "tianjin" or "wuhan")
+                Check(view.Descendants<Button>().Single(b => b.Name == "OpenBookUpgrades").Disabled, city + " live summary keeps a disabled upgrade action");
+            else Check(!view.Descendants<Button>().Any(b => b.Name == "OpenBookUpgrades" || b.Name == "UpgradeSticker"), city + " affordable live upgrades hidden");
             model.Closing = true;
             Button Entry() => view.Descendants<Button>().Single(b => b.Name == (city is "tianjin" or "wuhan" or "xian" ? "OpenBookUpgrades" : "UpgradeSticker"));
             foreach (var size in CaptureSizes)
@@ -117,9 +119,8 @@ public partial class BusinessBookSelfTest
                 GetViewport().PushInput(new InputEventKey { Keycode = Key.Escape, Pressed = true }, true);
                 Check(!closed && Entry().HasFocus(), city + " Escape restores upgrade focus");
                 if (city is "tianjin" or "wuhan")
-                    Check(Entry().GetThemeStylebox("focus") is StyleBoxEmpty
-                        && Entry().GetParent().GetChildren().OfType<TextureRect>().Single().SelfModulate != Colors.White,
-                        city + " return focus highlights original sticker without a rectangular frame");
+                    Check(Entry().HasFocus() && Entry().GetThemeStylebox("focus") is StyleBoxFlat,
+                        city + " return focus highlights the dedicated upgrade action");
                 else if (city == "xian")
                     Check(Entry().GetThemeStylebox("focus") is StyleBoxFlat focus && focus.BgColor.A == 0 && focus.BorderWidthTop > 0,
                         city + " return focus leaves sticker artwork and caption visible");
@@ -192,7 +193,9 @@ public partial class BusinessBookSelfTest
             if (Capture) await Shot(city + "-upgrades-max");
             GetViewport().PushInput(new InputEventKey { Keycode = Key.Escape, Pressed = true }, true);
             model.Closing = false; view.Open(model);
-            Check(!view.Descendants<Button>().Any(b => b.Name == "OpenBookUpgrades" || b.Name == "UpgradeSticker"), city + " live no entry");
+            if (city is "tianjin" or "wuhan")
+                Check(view.Descendants<Button>().Single(b => b.Name == "OpenBookUpgrades").Disabled, city + " live summary retains disabled upgrade action");
+            else Check(!view.Descendants<Button>().Any(b => b.Name == "OpenBookUpgrades" || b.Name == "UpgradeSticker"), city + " live no entry");
             view.QueueFree(); workstation?.QueueFree(); controller?.QueueFree(); save.QueueFree(); await Frames();
         }
     }

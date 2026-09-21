@@ -37,6 +37,11 @@ public partial class StartScreenSelfTest : Node
             GetNode<JourneySettings>("/root/JourneySettings").UsePathForTests(Path.Combine(directory, "settings.cfg"));
             InterfaceLessons.MarkAllSeen(GetNode<JourneySettings>("/root/JourneySettings"));
             await Launch();
+            if (args.Contains("--modal-utilities-only"))
+            {
+                await ModalUtilitiesChecks();
+                GD.Print($"MODAL_UTILITIES_TEST_PASS checks={_passed}"); GetTree().Quit(); return;
+            }
             if (args.Contains("--new-journey-only")) { await NewJourneyChecks(directory); GD.Print($"NEW_JOURNEY_TEST_PASS checks={_passed} demo={ExperienceProfile.IsDemo}"); GetTree().Quit(); return; }
             if (args.Contains("--collection-only"))
             {
@@ -332,10 +337,10 @@ public partial class StartScreenSelfTest : Node
         await Capture("home-first-run");
         await Click(Find<Button>("WorldMap"));
         Check(_screen.Page == JourneyPage.Map, "tabletop map opens existing map flow");
-        await Click(Find<Button>("Back"));
+        KeyPress(Key.Escape); await Frames();
         await Click(Find<Button>("WallMap"));
         Check(_screen.Page == JourneyPage.Map, "wall map opens existing map flow");
-        await Click(Find<Button>("Back"));
+        KeyPress(Key.Escape); await Frames();
         _save.ResetProgress(out _);
         foreach (var city in JourneyModel.Cities)
         {
@@ -351,11 +356,14 @@ public partial class StartScreenSelfTest : Node
         Check(markers.All(a => markers.All(b => a == b || !a.GetRect().Intersects(b.GetRect()))), "five city callouts do not overlap");
         Check(_save.ContinueCityId == StableIds.Cities.Wuhan && Find<Button>("Continue").TooltipText.Length == 0, "continue retains saved city without hover text");
         await Capture("home-five-cities");
+        await Click(Find<Button>("WorldMap"));
+        await Capture("home-world-map-five-cities");
+        KeyPress(Key.Escape); await Frames();
         await Click(Find<Button>("Settings"));
         var settings = GetNode<JourneySettings>("/root/JourneySettings");
         await Click(Find<Button>("Mute"));
         Check(settings.Muted && AudioServer.IsBusMute(0), "settings mute controls all sound from home");
-        await Capture("home-settings"); KeyPress(Key.Escape);
+        await Capture("home-settings"); KeyPress(Key.Escape); await Frames();
         await Click(Find<Button>("Help"));
         Check(_screen.ModalOpen, "home help remains available");
         KeyPress(Key.Escape);
@@ -408,10 +416,12 @@ public partial class StartScreenSelfTest : Node
         await Click(Find<Button>("BreakfastRecords"));
         Check(_screen.Page == JourneyPage.Collection && Find<Label>("BreakfastOrigin").Text.Contains("正确送出"), "new players can browse uncollected breakfasts");
         Check(!File.Exists(_path), "browsing does not create a save");
-        await Click(Find<Button>("Breakfast_youtiao"));
+        await Click(Find<Button>("Breakfast_pancake"));
         await Click(Find<Button>("Back"));
         Check(_screen.Page == JourneyPage.Home && Find<Button>("BreakfastRecords").HasFocus(), "back returns home and restores collection focus");
         Check(_save.ResetProgress(out _), "create isolated journey");
+        _save.Data.Tianjin.HighestUnlockedDay = 5;
+        _save.Data.Wuhan.HighestUnlockedDay = 4;
         _save.Data.UnlockedCityIds.Add(StableIds.Cities.Wuhan);
         Check(_save.TrySave(out _), "persist unlocked city fixture");
         string before = File.ReadAllText(_path);
@@ -424,8 +434,8 @@ public partial class StartScreenSelfTest : Node
         await Capture("collection-global");
         KeyPress(Key.Escape); await Frames();
         Check(_screen.Page == JourneyPage.Home && Find<Button>("BreakfastRecords").HasFocus(), "Escape returns home after selecting a different city");
-        await Click(Find<Button>("BreakfastRecords")); await Click(Find<Button>("CollectionHome"));
-        Check(_screen.Page == JourneyPage.Home, "footer returns home");
+        await Click(Find<Button>("BreakfastRecords")); await Click(Find<Button>("Back"));
+        Check(_screen.Page == JourneyPage.Home, "back arrow returns home");
         Check(File.ReadAllText(_path) == before, "collection navigation preserves saved progress and resume city");
         foreach (var city in JourneyModel.Cities.Where(c => !_save.IsDemo || _save.Data.UnlockedCityIds.Contains(c.Id)))
         {
@@ -437,6 +447,37 @@ public partial class StartScreenSelfTest : Node
         Check(_screen.Page == JourneyPage.Home && File.ReadAllText(_path) == "{broken", "corrupt-save browsing returns safely without overwriting data");
     }
 
+    private async Task ModalUtilitiesChecks()
+    {
+        _save.ResetProgress(out _);
+        foreach (string entry in new[] { "Settings", "Help", "Continue", "BreakfastRecords" })
+        {
+            _screen.PresentHome(); await Frames();
+            await Click(Find<Button>(entry));
+            Check(_screen.ModalOpen, entry + " opens a home modal");
+            var utilities = _screen.GetNode<Control>("Canvas/Modal/ModalUtilities");
+            foreach (string name in new[] { "Home", "Settings", "Help", "Quit" })
+                Check(utilities.GetNode<Button>(name).IsVisibleInTree()
+                    && utilities.GetNode<Button>(name).Modulate == Colors.White, entry + " keeps " + name + " visible at full brightness");
+            await Capture("modal-utilities-" + entry);
+            if (entry == "Continue")
+                foreach (string tab in new[] { "LedgerTab", "UpgradeTab" })
+                {
+                    await Click(Find<Button>(tab));
+                    Check(utilities.IsVisibleInTree(), tab + " retains navigation");
+                    await Capture("modal-utilities-" + tab);
+                }
+            await Click(utilities.GetNode<Button>("Home"));
+            Check(!_screen.ModalOpen && _screen.Page == JourneyPage.Home, entry + " home icon returns home");
+        }
+        await Click(Find<Button>("Settings"));
+        await Click(_screen.GetNode<Button>("Canvas/Modal/ModalUtilities/Help"));
+        Check(_screen.FindChildren("HelpTitle", "Label", true, false).Any(n => ((Control)n).IsVisibleInTree()), "header switches settings to help");
+        await Click(_screen.GetNode<Button>("Canvas/Modal/ModalUtilities/Home"));
+        _screen.PresentCity(StableIds.Cities.Wuhan); await Frames();
+        await Click(Find<Button>("Settings"));
+        Check(_screen.GetNodeOrNull<Control>("Canvas/Modal/ModalUtilities") is null, "city settings retain their existing navigation");
+    }
     private async Task Launch()
     {
         if (_main is not null) { RemoveChild(_main); _main.Free(); }

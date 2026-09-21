@@ -144,7 +144,14 @@ public partial class WuhanWorkstationView
         FilledSurface(quad, 1, alpha, PieceRegion(tile), quality, canvas);
         canvas.DrawPolyline(new[] { quad[0], quad[1], quad[2], quad[3], quad[0] }, new Color(.52f, .30f, .10f, .7f * alpha), 1, true);
     }
-    private Vector2[] PanPiece(int tile) => QuadRegion(PanCorners, PieceRegion(tile));
+    private Vector2[] PanPiece(int tile) => SeparatedPanPiece(tile, 1);
+    private Vector2[] SeparatedPanPiece(int tile, float progress)
+    {
+        Vector2[] quad = QuadRegion(PanCorners, PieceRegion(tile));
+        Vector2 center = (quad[0] + quad[2]) * .5f;
+        // Open narrow seams by insetting each piece; no outer edge leaves the pan.
+        return quad.Select(p => p.MoveToward(center, ReducedMotion ? 1.5f : 1.5f * progress)).ToArray();
+    }
     private Rect2 StockItemRect(int index)
     {
         Rect2 tray = _layout.StockFood;
@@ -168,7 +175,8 @@ public partial class WuhanWorkstationView
                 DrawStockPiece(piece.Tile, target, piece.Quality);
                 continue;
             }
-            float t = Smooth(motion.Progress);
+            float delay = ((i - motion.StockStart) / 4) * .07f;
+            float t = Phase(motion.Progress, delay, 1);
             Vector2[] source = PanPiece(piece.Tile);
             if (ReducedMotion)
             {
@@ -196,7 +204,10 @@ public partial class WuhanWorkstationView
         if (state == DoupiState.Cut)
         {
             // Keep the final cutting stroke on the intact surface until it finishes.
-            if (motion?.Kind == "cut") FilledSurface(PanCorners, 1, quality: _doupi.Quality);
+            if (motion?.Kind == "cut" && p < .6f) FilledSurface(PanCorners, 1, quality: _doupi.Quality);
+            else if (motion?.Kind == "cut")
+                for (int i = _doupi.FirstRemainingPiece; i < _doupi.FirstRemainingPiece + _doupi.RemainingPieces; i++)
+                    DrawPiece(i, SeparatedPanPiece(i, Phase(p, .6f, 1)), _doupi.Quality);
             else for (int i = _doupi.FirstRemainingPiece; i < _doupi.FirstRemainingPiece + _doupi.RemainingPieces; i++)
                 DrawPiece(i, PanPiece(i), _doupi.Quality);
         }
@@ -222,7 +233,7 @@ public partial class WuhanWorkstationView
             }
             float alpha = motion?.Kind == "batter" ? deposit : 1;
             if (motion?.Kind == "batter" && !ReducedMotion)
-                quad = quad.Select(v => PanCenter + (v - PanCenter) * (.85f + .15f * deposit)).ToArray();
+                quad = quad.Select(v => PanCenter + (v - PanCenter) * (.25f + .75f * deposit)).ToArray();
             if (state is DoupiState.Batter || motion?.Kind == "egg")
                 SurfaceLayer("doupi_skin", quad, new Color(1, 1, 1, alpha));
             if (state is DoupiState.SkinCooking or DoupiState.ReadyToFlip or DoupiState.Flipped)
@@ -274,7 +285,14 @@ public partial class WuhanWorkstationView
         if (state != DoupiState.Empty)
         {
             foreach (DoupiCutLine line in _doupi.CutLines)
-                if (state != DoupiState.Cut || motion?.Kind == "cut") DrawCut((int)line, 1);
+                if (state != DoupiState.Cut || motion?.Kind == "cut")
+                {
+                    float reveal = 1;
+                    if (!ReducedMotion && motion?.Kind == "cut" && motion.Line != DoupiCutLine.Horizontal
+                        && line != DoupiCutLine.Horizontal && line != motion.Line)
+                        reveal = Phase(p, .08f + (int)line * .08f, .38f + (int)line * .08f);
+                    DrawCut((int)line, reveal);
+                }
             if (IsKnifeHeld && state is (DoupiState.ReadyToCut or DoupiState.Overbrowned or DoupiState.Cutting))
                 foreach (DoupiCutLine line in Enum.GetValues<DoupiCutLine>())
                 {
@@ -315,8 +333,8 @@ public partial class WuhanWorkstationView
     private Vector2[] FlipQuad(float p, float heldLift)
     {
         float turn = Phase(p,.15f,.80f);
-        float lift = Mathf.Sin(Phase(p,0,.88f)*Mathf.Pi)*36;
-        float depth = Math.Max(.18f, Mathf.Abs(Mathf.Cos(turn*Mathf.Pi)));
+        float lift = Mathf.Sin(Phase(p,0,.88f)*Mathf.Pi)*24;
+        float depth = Math.Max(.12f, Mathf.Abs(Mathf.Cos(turn*Mathf.Pi)));
         float settle = Mathf.Sin(Phase(p,.84f,1)*Mathf.Pi)*3;
         Vector2[] quad = PanCorners.Select(v => PanCenter + (v-PanCenter)*new Vector2(1,depth)
             + new Vector2((v.Y-PanCenter.Y)*Mathf.Sin(turn*Mathf.Pi)*.12f, -lift+settle)).ToArray();
@@ -330,7 +348,7 @@ public partial class WuhanWorkstationView
         Vector2[] quad = FlipQuad(progress,heldLift);
         float curl = Mathf.Sin(Phase(progress,.15f,.80f)*Mathf.Pi);
         // Bend equally along both edges: varying curvature across depth can fold a cell over itself.
-        Vector2 Bent(float u,float v) => QuadPoint(quad,u,v)-new Vector2(0,Mathf.Sin(u*Mathf.Pi)*curl*18);
+        Vector2 Bent(float u,float v) => QuadPoint(quad,u,v)-new Vector2(0,Mathf.Sin(u*Mathf.Pi)*curl*6);
         return new[]{Bent(region.Position.X,region.Position.Y),Bent(region.End.X,region.Position.Y),
             Bent(region.End.X,region.End.Y),Bent(region.Position.X,region.End.Y)};
     }

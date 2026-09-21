@@ -156,7 +156,7 @@ public partial class EquipmentUpgradeView
         }
         else if (e.Id == "pancake_stove")
             // Project the top-down pancake onto the stove's elliptical cooking surface.
-            Part("Pancake", "res://resource/art/TianJin/展开煎饼基础层-v2.png", new(61, 23, 110, 62), stretch: true);
+            Part("Pancake", "res://resource/art/TianJin/展开煎饼基础层-v2.png", new(53, 18.5f, 126, 71), stretch: true);
     }
 
     private void ReplayPreview()

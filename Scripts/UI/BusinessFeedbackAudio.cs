@@ -13,18 +13,20 @@ public partial class BusinessFeedbackAudio : Node
     private Func<bool>? _canPlay;
     private bool _useCartoonCoin;
     private bool _useCartoonError;
+    private bool _useCartoonCompletion;
     internal const string CartoonCoinPath = "res://resource/audio/sfx/coin-credit-c03a.wav";
+    internal const string CartoonCompletionPath = "res://resource/audio/sfx/order-complete-k11b.wav";
     internal Func<ulong> Clock { get; set; } = Time.GetTicksMsec;
     internal event Action<BusinessFeedbackEvent>? Played;
 
-    public static BusinessFeedbackAudio Attach(Node owner, BusinessFeedback source, Func<bool> canPlay, bool useCartoonCoin = false, bool useCartoonError = false)
+    public static BusinessFeedbackAudio Attach(Node owner, BusinessFeedback source, Func<bool> canPlay, bool useCartoonCoin = false, bool useCartoonError = false, bool useCartoonCompletion = false)
     {
         var audio = owner.GetNodeOrNull<BusinessFeedbackAudio>("BusinessFeedbackAudio");
         if (audio is null) { audio = new() { Name = "BusinessFeedbackAudio" }; owner.AddChild(audio); }
-        audio.Bind(source, canPlay, useCartoonCoin, useCartoonError);
+        audio.Bind(source, canPlay, useCartoonCoin, useCartoonError, useCartoonCompletion);
         return audio;
     }
-    public void Bind(BusinessFeedback source, Func<bool> canPlay, bool useCartoonCoin = false, bool useCartoonError = false)
+    public void Bind(BusinessFeedback source, Func<bool> canPlay, bool useCartoonCoin = false, bool useCartoonError = false, bool useCartoonCompletion = false)
     {
         Unbind(); _source = source; _canPlay = canPlay;
         if (_useCartoonCoin != useCartoonCoin && _players.Remove(BusinessCue.CoinCredited, out var coinPlayer))
@@ -33,6 +35,9 @@ public partial class BusinessFeedbackAudio : Node
         if (_useCartoonError != useCartoonError && _players.Remove(BusinessCue.DeliveryError, out var errorPlayer))
             errorPlayer.QueueFree();
         _useCartoonError = useCartoonError;
+        if (_useCartoonCompletion != useCartoonCompletion && _players.Remove(BusinessCue.OrderCompleted, out var completionPlayer))
+            completionPlayer.QueueFree();
+        _useCartoonCompletion = useCartoonCompletion;
         source.Requested += OnRequested; source.ResetRequested += Reset;
     }
     private void Unbind()
@@ -52,12 +57,14 @@ public partial class BusinessFeedbackAudio : Node
         {
             bool cartoonCoin = _useCartoonCoin && feedback.Cue == BusinessCue.CoinCredited;
             bool cartoonError = _useCartoonError && feedback.Cue == BusinessCue.DeliveryError;
+            bool cartoonCompletion = _useCartoonCompletion && feedback.Cue == BusinessCue.OrderCompleted;
             AudioStreamWav stream;
             if (cartoonCoin) stream = GD.Load<AudioStreamWav>(CartoonCoinPath);
             else if (cartoonError) stream = CartoonActionClips.Load(CartoonActionClips.Error);
+            else if (cartoonCompletion) stream = GD.Load<AudioStreamWav>(CartoonCompletionPath);
             else if (!Streams.TryGetValue(feedback.Cue, out stream!)) Streams[feedback.Cue] = stream = Make(feedback.Cue);
             player = new AudioStreamPlayer { Name = feedback.Cue.ToString(), Stream = stream,
-                Bus = ProjectCake.Core.JourneySettings.EffectsBus, VolumeDb = cartoonCoin ? 0 : cartoonError ? -6 : -16,
+                Bus = ProjectCake.Core.JourneySettings.EffectsBus, VolumeDb = cartoonCoin ? 0 : cartoonError ? -6 : cartoonCompletion ? -4 : -16,
                 MaxPolyphony = cartoonError ? 1 : 3 };
             AddChild(player); _players.Add(feedback.Cue, player);
         }

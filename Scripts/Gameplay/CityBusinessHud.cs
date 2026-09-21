@@ -14,6 +14,7 @@ public partial class TianjinDayScreen
     {
         GetNode<Control>("@PanelContainer@2").Hide();
         _hud = new BusinessHud("天津"); AddChild(_hud);
+        _hud.ChallengeCoinTarget = () => GetGlobalTransform() * TianjinWorkbenchLayout.CashSlot;
         _hud.PauseButton.Pressed += () => SetManualPaused(true);
         _sceneFeedback = new("天津", () => _focused && !_manualPaused && !_detailsPaused && !_committed && _controller?.IsPaused != true);
         AddChild(_sceneFeedback);
@@ -35,6 +36,7 @@ public partial class WuhanDayScreen
     {
         GetNode<Control>("@PanelContainer@312").Hide();
         _hud = new BusinessHud("武汉"); AddChild(_hud);
+        _hud.ChallengeCoinTarget = () => GetGlobalTransform() * WuhanWorkbenchLayout.CashSlot;
         _hud.PauseButton.Pressed += () => SetHudPaused(true);
         _sceneFeedback = new("武汉", () => _focused && !_detailsPaused && !_committed && _controller?.IsPaused != true);
         AddChild(_sceneFeedback); _feedback.Hide();

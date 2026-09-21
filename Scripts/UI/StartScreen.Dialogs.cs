@@ -150,7 +150,7 @@ public partial class StartScreen
         Text(_modal, "CreditsTitle", "配乐与署名", new(355, 285, 490, 70), 42);
         Text(_modal, "CreditsComposer", "配乐：Kevin MacLeod（incompetech.com）", new(355, 400, 480, 110), 26);
         Text(_modal, "CreditsLicense", "使用 CC BY 4.0；曲目与许可详见随包 MUSIC-CREDITS.md。", new(355, 560, 480, 180), 25);
-        Text(_modal, "CreditsTracks", "Wholesome\nCarefree\nLocal Forecast - Elevator\n\nhttps://creativecommons.org/licenses/by/4.0/\n\nMix: -18 dB; loop and scene fades.", new(1030, 320, 490, 450), 25);
+        Text(_modal, "CreditsTracks", "Wholesome\nCarefree\nMonkeys Spinning Monkeys\n\nhttps://creativecommons.org/licenses/by/4.0/\n\nMix: -18 dB; loop and scene fades.", new(1030, 320, 490, 450), 25);
         Button(_modal, "Close", "记住了", new(1220, 795, 300, 65), CloseModal, true);
     }
 }

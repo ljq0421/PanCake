@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://dqkwxx23yg4v7"
+path="res://.godot/imported/Monkeys Spinning Monkeys.mp3-eb873c2bdabea74ce8c36047fe9a3cf4.mp3str"
+
+[deps]
+
+source_file="res://resource/audio/demo/Monkeys Spinning Monkeys.mp3"
+dest_files=["res://.godot/imported/Monkeys Spinning Monkeys.mp3-eb873c2bdabea74ce8c36047fe9a3cf4.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

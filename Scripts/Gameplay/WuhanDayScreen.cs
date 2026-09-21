@@ -159,7 +159,7 @@ public partial class WuhanDayScreen : Control
         _demoLesson?.Hide(); _demoLessonSkipFrame?.Hide(); _demoLessonFailure = _demoLessonSaveError = ""; _demoLessonComplete = false; _demoPendingResult = null;
         TeachingFocus.ResetSession(); _teachingDoupiLast = false;
         _hudPaused = false; _hudPauseMenu.Hide(); controller.SetPauseReason("wuhan-hud", false); _sceneFeedback.Clear();
-        BusinessFeedbackAudio.Attach(this, controller.Feedback, () => controller.CurrentConfig?.CityId == StableIds.Cities.Wuhan && (CanInteract), useCartoonCoin: true, useCartoonError: true);
+        BusinessFeedbackAudio.Attach(this, controller.Feedback, () => controller.CurrentConfig?.CityId == StableIds.Cities.Wuhan && (CanInteract), useCartoonCoin: true, useCartoonError: true, useCartoonCompletion: true);
         CloseBusinessDetails();
         ClearPaymentFeedback();
         Workstation.CancelAnimations();

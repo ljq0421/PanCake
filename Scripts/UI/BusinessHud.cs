@@ -18,8 +18,9 @@ public partial class BusinessHud : Control
     public Control IncomeCoin { get; } = new() { Name = "IncomeCoin" };
     public Button PauseButton { get; } = new() { Name = "HudPause" };
     public Control IncomeTarget => _income;
+    public Func<Vector2>? ChallengeCoinTarget { set => _challenge.CoinTargetGlobal = value; }
     private Tween? _incomeTween;
-    private readonly Label _challenge = TianjinUi.Label("", 32, alignment: HorizontalAlignment.Center);
+    private readonly DailyChallengePendant _challenge;
 
     public void EmphasizeIncome()
     {
@@ -38,7 +39,7 @@ public partial class BusinessHud : Control
 
     public override void _ExitTree() => ResetIncomeEmphasis();
 
-    public BusinessHud(string city) { _city = city; Name = "BusinessHud"; }
+    public BusinessHud(string city) { _city = city; Name = "BusinessHud"; _challenge = new(city); }
 
     public override void _Ready()
     {
@@ -71,14 +72,7 @@ public partial class BusinessHud : Control
         else PauseButton.Hide(); // Guangzhou and Yangzhou keep their existing pause/resume controls.
         PauseButton.Position = new(1812, 28); PauseButton.Size = new(84, 84);
         AddChild(PauseButton);
-        _challenge.Name = "DailyChallengeProgress";
-        _challenge.MouseFilter = MouseFilterEnum.Ignore;
-        _challenge.AddThemeColorOverride("font_color", TianjinUi.BrownText);
-        var challengeStyle = TianjinUi.Box(new Color("#FFF3D9"), radius: 14, border: 2, shadow: false);
-        challengeStyle.ContentMarginLeft = challengeStyle.ContentMarginRight = 20;
-        challengeStyle.ContentMarginTop = challengeStyle.ContentMarginBottom = 1;
-        _challenge.AddThemeStyleboxOverride("normal", challengeStyle);
-        AddChild(_challenge); _challenge.Hide();
+        AddChild(_challenge);
         Resized += LayoutSigns;
         LayoutSigns();
     }
@@ -87,7 +81,7 @@ public partial class BusinessHud : Control
     {
         _sign.Position = new((Size.X - _sign.Size.X) / 2, 6);
         PauseButton.Position = new(Size.X - 108, 28);
-        _challenge.Position = new((Size.X - 480) / 2, 109); _challenge.Size = new(480, 44);
+        _challenge.Position = new(24, 6);
     }
 
     public void Render(DayController controller, bool allowPause)
@@ -100,12 +94,8 @@ public partial class BusinessHud : Control
             _ => controller.DayRemainingSeconds };
         RenderValues(config.Day, seconds, controller.Ledger?.Build().TotalRevenue ?? 0, controller.State == DayState.Closing);
         PauseButton.Disabled = !allowPause;
-        _challenge.Visible = !controller.TutorialActive && controller.CurrentPlan?.Challenge is not null;
-        if (_challenge.Visible && controller.CurrentPlan?.Challenge is { } challenge && controller.Ledger is { } ledger)
-        {
-            bool claimed = GetNodeOrNull<SaveService>("/root/SaveService")?.Data.GetCity(config.CityId).ClaimedChallenges.ContainsKey(config.Day) == true;
-            _challenge.Text = challenge.Live(ledger.Build(), claimed);
-        }
+        bool claimed = GetNodeOrNull<SaveService>("/root/SaveService")?.Data.GetCity(config.CityId).ClaimedChallenges.ContainsKey(config.Day) == true;
+        _challenge.Render(controller, allowPause, claimed);
         if (_city is "天津" or "武汉" or "西安") OfferInterfaceTeaching(controller, allowPause);
     }
 

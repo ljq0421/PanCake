@@ -26,7 +26,7 @@ public partial class DemoMusicPlayer : Node
             _voices[i] = new AudioStreamPlayer { Name = "Bed" + i, Bus = JourneySettings.MusicBus, VolumeDb = -80, ProcessMode = ProcessModeEnum.Always };
             AddChild(_voices[i]);
         }
-        foreach (var (key, filename) in new[] { ("home", "Wholesome"), (StableIds.Cities.Tianjin, "Carefree"), (StableIds.Cities.Wuhan, "Local Forecast - Elevator") })
+        foreach (var (key, filename) in new[] { ("home", "Wholesome"), (StableIds.Cities.Tianjin, "Carefree"), (StableIds.Cities.Wuhan, "Monkeys Spinning Monkeys") })
         {
             string path = "res://resource/audio/demo/" + filename + ".mp3";
             if (ResourceLoader.Exists(path))

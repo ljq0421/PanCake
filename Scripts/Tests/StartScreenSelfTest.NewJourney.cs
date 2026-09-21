@@ -129,9 +129,18 @@ public partial class StartScreenSelfTest
         settings.SetReduceMotion(false);
         foreach (OpeningCue cue in Enum.GetValues<OpeningCue>())
         {
-            using var sound = OpeningAudio.Make(cue);
+            var sound = OpeningAudio.Make(cue);
             var bytes = sound.Data;
-            Check(bytes.Length > 0 && bytes.Length < 22050 && Enumerable.Range(0, bytes.Length / 2)
+            if (cue != OpeningCue.Locate)
+            {
+                string path = cue == OpeningCue.Click ? OpeningAudio.ClickPath : OpeningAudio.PaperPath;
+                using var original = Godot.FileAccess.Open(path, Godot.FileAccess.ModeFlags.Read);
+                original.Seek(44);
+                Check(sound.ResourcePath == path && sound.MixRate == 44100
+                    && sound.LoopMode == AudioStreamWav.LoopModeEnum.Disabled
+                    && bytes.SequenceEqual(original.GetBuffer((long)original.GetLength() - 44)), cue + " preserves approved PCM without looping");
+            }
+            Check(bytes.Length > 0 && sound.GetLength() <= .60 && Enumerable.Range(0, bytes.Length / 2)
                 .All(i => Math.Abs((int)BitConverter.ToInt16(bytes, i * 2)) < 32760), "sound is bounded and unclipped " + cue);
             if (_capture)
             {
@@ -139,7 +148,16 @@ public partial class StartScreenSelfTest
                 Directory.CreateDirectory(audioRoot);
                 Check(sound.SaveToWav(Path.Combine(audioRoot, cue + ".wav")) == Error.Ok, "export sound preview " + cue);
             }
+            if (cue == OpeningCue.Locate) sound.Dispose();
         }
+        _screen.PresentHome(); await Frames();
+        cues.Clear(); _screen.PresentBreakfastCollection();
+        Check(cues.SequenceEqual(new[] { OpeningCue.Paper }), "home book opens with one unified paper cue");
+        _screen.PresentHome(); await Frames(); cues.Clear();
+        _screen.PresentMap();
+        Check(cues.SequenceEqual(new[] { OpeningCue.Paper }), "home page turn uses one unified paper cue");
+        _screen.Hide();
+        Check(_screen.GetNode<OpeningAudio>("OpeningAudio").GetChildren().OfType<AudioStreamPlayer>().All(p => !p.Playing), "hiding home stops paper tail");
 
         async Task Delay(double seconds) => await ToSignal(GetTree().CreateTimer(seconds), SceneTreeTimer.SignalName.Timeout);
         async Task Until(Func<bool> condition)

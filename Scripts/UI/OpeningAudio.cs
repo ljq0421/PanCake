@@ -5,11 +5,13 @@ namespace ProjectCake.UI;
 
 public enum OpeningCue { Click, Locate, Paper, Postcard }
 
-/// <summary>Short, procedural material sounds; independent of business rewards and progress.</summary>
+/// <summary>Short opening cues; independent of business rewards and progress.</summary>
 public partial class OpeningAudio : Node
 {
     private static readonly Dictionary<OpeningCue, AudioStreamWav> Streams = new();
     private AudioStreamPlayer? _player;
+    internal const string ClickPath = "res://resource/audio/sfx/home-click-h05.wav";
+    internal const string PaperPath = "res://resource/audio/sfx/home-paper-h08c.wav";
     internal event Action<OpeningCue>? Played;
     public void Play(OpeningCue cue)
     {
@@ -22,6 +24,7 @@ public partial class OpeningAudio : Node
             AddChild(_player);
         }
         if (!Streams.TryGetValue(cue, out var stream)) Streams[cue] = stream = Make(cue);
+        _player.VolumeDb = cue == OpeningCue.Locate ? -19 : -4;
         _player.Stream = stream; _player.Play(); Played?.Invoke(cue);
     }
     public void Stop() => _player?.Stop();
@@ -29,6 +32,8 @@ public partial class OpeningAudio : Node
     public override void _ExitTree() => Stop();
     internal static AudioStreamWav Make(OpeningCue cue)
     {
+        if (cue == OpeningCue.Click) return GD.Load<AudioStreamWav>(ClickPath);
+        if (cue is OpeningCue.Paper or OpeningCue.Postcard) return GD.Load<AudioStreamWav>(PaperPath);
         const int rate = 22050;
         double duration = cue == OpeningCue.Paper ? .32 : cue == OpeningCue.Locate ? .18 : .10;
         var data = new byte[(int)(rate * duration) * 2];

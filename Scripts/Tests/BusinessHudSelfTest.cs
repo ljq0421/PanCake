@@ -56,12 +56,19 @@ public partial class BusinessHudSelfTest : Node
                 foreach (var close in screen.Descendants<Button>().Where(b => b.IsVisibleInTree() && b.Text == "本次关闭").ToArray())
                     close.EmitSignal(Button.SignalName.Pressed);
                 Refresh(); await Frames();
+                if (hudOnly && city is "Tianjin" or "Wuhan")
+                {
+                    foreach (var skip in screen.Descendants<Button>().Where(b => b.IsVisibleInTree() && b.Text == "跳过教学").ToArray())
+                        skip.EmitSignal(Button.SignalName.Pressed);
+                    Refresh(); await Frames();
+                }
                 var hud = screen.FindChild("BusinessHud", true, false) as BusinessHud ?? throw new Exception("HUD absent");
                 Require(hud.IsVisibleInTree(), "HUD visible");
                 CheckArtwork(hud);
                 if (hudOnly)
                 {
                     if (capture) await Shot(viewport, $"{city}-{width}-running");
+                    await CheckChallengePendant(screen, hud, controller, viewport, city, width, capture);
                     viewport.QueueFree(); controller.QueueFree(); await Frames();
                     GD.Print($"HUD_PASS {city} {width}");
                     continue;

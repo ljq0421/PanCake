@@ -279,6 +279,17 @@ public partial class BusinessFeedbackSelfTest : Node
             Check(played.Count == 2, city + " actual screen binding allows concurrent customer and cash audio");
             var cashPlayer = audio.GetChildren().OfType<AudioStreamPlayer>().Single(p => p.Name == nameof(BusinessCue.CoinCredited));
             bool cartoonCoin = city is "Tianjin" or "Wuhan";
+            var completionVoice = audio.GetChildren().OfType<AudioStreamPlayer>().Single(p => p.Name == nameof(BusinessCue.OrderCompleted));
+            Check((completionVoice.Stream.ResourcePath == BusinessFeedbackAudio.CartoonCompletionPath) == cartoonCoin,
+                city + " K11B completion scoped to approved cities");
+            if (cartoonCoin)
+            {
+                var completed = (AudioStreamWav)completionVoice.Stream;
+                using var sourceWav = Godot.FileAccess.Open(BusinessFeedbackAudio.CartoonCompletionPath, Godot.FileAccess.ModeFlags.Read);
+                sourceWav.Seek(44);
+                Check(completed.MixRate == 44100 && completed.LoopMode == AudioStreamWav.LoopModeEnum.Disabled
+                    && completed.Data.SequenceEqual(sourceWav.GetBuffer((long)sourceWav.GetLength() - 44)), city + " K11B imported PCM matches approved audition");
+            }
             Check((cashPlayer.Stream.ResourcePath == BusinessFeedbackAudio.CartoonCoinPath) == cartoonCoin,
                 city + " approved coin asset is scoped to Tianjin and Wuhan");
             if (cartoonCoin)

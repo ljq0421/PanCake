@@ -1,4 +1,6 @@
 using Godot;
+using ProjectCake.Core;
+using ProjectCake.Data;
 using ProjectCake.UI;
 using ProjectCake.Gameplay;
 namespace ProjectCake.Tests;
@@ -8,11 +10,29 @@ public partial class DemoMusicAudition : Node
     {
         try
         {
+            var music = new DemoMusicPlayer();
+            AddChild(music);
+            music.SetProcess(false);
+            music._Notification((int)NotificationApplicationFocusIn);
+            music.SetContext(StableIds.Cities.Tianjin, false, 2);
+            music.SetContext(StableIds.Cities.Wuhan, false, 2);
+            var active = music.GetChildren().OfType<AudioStreamPlayer>().Single(p => p.Playing);
+            var expected = File.ReadAllBytes(ProjectSettings.GlobalizePath("res://resource/audio/demo/Monkeys Spinning Monkeys.mp3"));
+            if (active.Stream is not AudioStreamMP3 actual || !actual.Loop || !actual.Data.SequenceEqual(expected))
+                throw new InvalidOperationException("Wuhan must play and loop the approved music after switching from Tianjin.");
+            music.SetContext(StableIds.Cities.Wuhan, true, 2);
+            if (music.DuckGain != .25f) throw new InvalidOperationException("Music attenuation failed.");
+            music._Notification((int)NotificationApplicationFocusOut);
+            if (!active.StreamPaused) throw new InvalidOperationException("Focus loss must pause music.");
+            music._Notification((int)NotificationApplicationFocusIn);
+            if (active.StreamPaused) throw new InvalidOperationException("Focus return must resume music.");
+            GD.Print("MUSIC_PLAYBACK_OK Wuhan: approved stream, loop, city switch, attenuation, focus pause/resume");
+            music.QueueFree();
             string dir = ProjectSettings.GlobalizePath("res://output/music-audition");
             int rate = (int)AudioServer.GetMixRate();
-            foreach (var (name, tag) in new[] { ("Wholesome", "01-home"), ("Carefree", "02-tianjin"), ("Local Forecast - Elevator", "03-wuhan") })
+            foreach (var (name, tag) in new[] { ("Wholesome", "01-home"), ("Carefree", "02-tianjin"), ("Monkeys Spinning Monkeys", "03-wuhan") })
             {
-                using var stream = new AudioStreamMP3 { Data = File.ReadAllBytes(Path.Combine(dir, name + ".mp3")) };
+                using var stream = new AudioStreamMP3 { Data = File.ReadAllBytes(ProjectSettings.GlobalizePath("res://resource/audio/demo/" + name + ".mp3")) };
                 using var playback = stream.InstantiatePlayback(); playback.Start(24);
                 var samples = playback.MixAudio(1, rate * 30);
                 var data = new byte[samples.Length * 4];
@@ -46,4 +66,3 @@ public partial class DemoMusicAudition : Node
         catch (Exception e) { GD.PushError(e.ToString()); GetTree().Quit(1); }
     }
 }
-

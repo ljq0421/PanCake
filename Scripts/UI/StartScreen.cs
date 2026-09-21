@@ -102,9 +102,11 @@ public partial class StartScreen : Control
         // The home journey and collection books live above the intact home page.
         // Other pages still replace the page content as before.
         if (!_homeOverlayOpen) CloseModal();
+        bool paperTransition = false;
         if (animate && _hasPresentedPage && IsVisibleInTree() && (Page != page || _presentedCity != _city))
         {
             bool openingBook = IsBookPage(page), closingBook = IsBookPage(Page);
+            paperTransition = openingBook || !closingBook;
             JourneyTransition.For(this).Play(openingBook ? JourneyTransition.Effect.SpreadOpen
                 : closingBook ? JourneyTransition.Effect.SpreadClose : JourneyTransition.Effect.Page,
                 reverse: page == JourneyPage.Home,
@@ -113,6 +115,7 @@ public partial class StartScreen : Control
         }
         _hasPresentedPage = true; _presentedCity = _city;
         KillAnimations(); Clear(_body); if (!_homeOverlayOpen) _buttons.Clear(); _audioButton = null;
+        if (paperTransition) OpeningSound(OpeningCue.Paper);
         Page = page; _busy = false; _error = "";
         // A result reached from a city hub is an overlay: keep that workbench visible
         // behind the book instead of exposing the start-page artwork.

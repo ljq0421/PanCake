@@ -153,7 +153,7 @@ public partial class TianjinDayScreen : Control
             && IsVisibleInTree() && _focused && !_manualPaused && !_focusPaused && !_detailsPaused
             && !_abandonDialog.Visible && !controller.IsPaused && controller.State == DayState.Running
             && TeachingFocus.CurrentAction is null);
-        BusinessFeedbackAudio.Attach(this, controller.Feedback, () => controller.CurrentConfig?.CityId == StableIds.Cities.Tianjin && (IsVisibleInTree() && _focused && !_manualPaused && !_focusPaused && !_detailsPaused && !_abandonDialog.Visible && !controller.IsPaused && controller.State is DayState.Running or DayState.Closing), useCartoonCoin: true, useCartoonError: true);
+        BusinessFeedbackAudio.Attach(this, controller.Feedback, () => controller.CurrentConfig?.CityId == StableIds.Cities.Tianjin && (IsVisibleInTree() && _focused && !_manualPaused && !_focusPaused && !_detailsPaused && !_abandonDialog.Visible && !controller.IsPaused && controller.State is DayState.Running or DayState.Closing), useCartoonCoin: true, useCartoonError: true, useCartoonCompletion: true);
         TeachingFocus.ResetSession();
         CloseBusinessDetails();
         ClearCoinFlights();

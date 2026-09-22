@@ -281,7 +281,7 @@ public partial class BusinessDetailsView : Control
         RestoreTravelMotion();
         if (_book is null) return;
         _book.Modulate = Colors.White;
-        if (_income is not null) _income.Text = $"¥{_model.Result.TotalRevenue}";
+        if (_income is not null) _income.Text = $"¥{_model.Result.TotalRevenue + _model.ChallengeReward}";
         foreach (var c in new Control?[] { _metrics, _stamp, _note })
             if (c is not null && IsInstanceValid(c)) { c.Modulate = Colors.White; c.Scale = Vector2.One; }
     }

@@ -8,6 +8,54 @@ namespace ProjectCake.Tests;
 
 public partial class CityPagesSelfTest
 {
+    private async Task CheckUpgradeFeedback()
+    {
+        var catalog = GetNode<DataCatalog>("/root/DataCatalog");
+        var model = new CityPageModel(catalog, _save, YangzhouCatalog.Load());
+        var settings = GetNode<JourneySettings>("/root/JourneySettings");
+        foreach (var (city, equipment) in new[] { (StableIds.Cities.Tianjin, "pancake_stove"), (StableIds.Cities.Wuhan, "noodle_cooker") })
+        {
+            if (!_save.Data.UnlockedCityIds.Contains(city)) _save.Data.UnlockedCityIds.Add(city);
+            var progress = _save.Data.GetCity(city);
+            progress.HighestUnlockedDay = 12;
+            progress.UnlockedContentIds = catalog.GetDays(city).Values.SelectMany(d => d.StartUnlocks.Concat(d.CompletionUnlocks)).Distinct().ToList();
+            for (int day = 1; day <= 12; day++) progress.DayBestRecords[day] = new();
+            foreach (bool reduced in new[] { false, true })
+            {
+                settings.SetReduceMotion(reduced);
+                progress.EquipmentLevels[equipment] = 1;
+                _save.Data.Coins = 10000;
+                _screen.PresentCity(city); _screen.PresentUpgrades(); Click("Select_" + equipment);
+                await ToSignal(GetTree().CreateTimer(.7), SceneTreeTimer.SignalName.Timeout);
+                for (int target = 2; target <= 3; target++)
+                {
+                    var previous = model.Equipment(city).Single(e => e.Id == equipment);
+                    Click("UpgradeEquipment"); await Frames();
+                    Check(progress.EquipmentLevels[equipment] == target, "purchase reaches requested level");
+                    Check(Find<Label>("LevelTransition").Text == $"已升至 Lv{target} · 下次营业生效", "feedback reports purchased level");
+                    Check(Find<Label>("Status").Text.Length == 0, "no global success status");
+                    Check(Find<Label>("UpgradeBenefit").Text == previous.Presentation!.Headline, "success headline describes purchased benefit rather than next level");
+                    var level = Find<Label>("LevelTransition");
+                    Check(level.GetThemeFont("font").GetStringSize(level.Text, HorizontalAlignment.Left, -1, level.GetThemeFontSize("font_size")).X <= level.Size.X, "success caption fits beside stamp");
+                    Check(!Find<Control>("UpgradeSuccessPaper").GetGlobalRect().Intersects(Find<Control>("CurrentEquipment").GetGlobalRect()), "success stamp does not cover illustration");
+                    var current = model.Equipment(city).Single(e => e.Id == equipment);
+                    for (int i = 0; i < current.Effects.Count; i++)
+                    {
+                        var old = previous.Effects.FirstOrDefault(e => e.Name == current.Effects[i].Name);
+                        if (old is null || old.Current == current.Effects[i].Current) continue;
+                        var row = Find<Control>("ParameterRow" + i);
+                        Check(row.Descendants<Label>().Single(l => l.Name == "CurrentValue").GetThemeColor("font_color") == new Color("#276631"), "purchased current value highlighted");
+                    }
+                    await Capture($"feedback-{equipment}-lv{target}-{(reduced ? "reduced" : "motion")}");
+                    await ToSignal(GetTree().CreateTimer(2.5), SceneTreeTimer.SignalName.Timeout);
+                    Check(!_screen.Descendants<Control>().Any(n => n.Name == "UpgradeSuccessPaper"), "success feedback clears including reduced motion");
+                    Check(Find<Label>("LevelTransition").Text.Contains(target == 3 ? "已满级" : "Lv3"), "normal comparison restored");
+                }
+                if (!reduced) await Capture($"feedback-{equipment}-settled");
+            }
+        }
+    }
+
     private async Task CaptureFryerPreview()
     {
         var catalog = GetNode<DataCatalog>("/root/DataCatalog");
@@ -26,7 +74,7 @@ public partial class CityPagesSelfTest
             Click("Select_fryer"); await Frames();
             await Capture($"fryer-lv{level}-settled");
             if (level == 3) continue;
-            settings.SetReduceMotion(false); Click("ReplayUpgradePreview");
+            settings.SetReduceMotion(false); Click("NextEquipment");
             await ToSignal(GetTree().CreateTimer(.9), SceneTreeTimer.SignalName.Timeout);
             await Capture($"fryer-lv{level}-lowered");
             await ToSignal(GetTree().CreateTimer(1.6), SceneTreeTimer.SignalName.Timeout);
@@ -52,8 +100,11 @@ public partial class CityPagesSelfTest
                 Click("Select_" + item.Id); await Frames();
                 Check(!_screen.Descendants<ScrollContainer>().Any(v => v.Name == "UpgradeScroll"), "comparison has no main scroll");
                 Check(_screen.Descendants<Label>().Any(v => v.Name == "UpgradeBenefit" && v.Text == item.Presentation!.Headline), "real benefit headline");
-                Check(_screen.Descendants<Control>().Any(v => v.Name == "CurrentEquipment"), "current preview");
-                if (item.TargetLevel.HasValue) Check(_screen.Descendants<Control>().Any(v => v.Name == "NextEquipment"), "next preview");
+                Check(_screen.Descendants<Button>().Any(v => v.Name == "CurrentEquipment"), "current preview is clickable");
+                if (item.TargetLevel.HasValue) Check(_screen.Descendants<Button>().Any(v => v.Name == "NextEquipment"), "next preview is clickable");
+                Check(Find<Button>("CurrentEquipment").TooltipText.Length == 0 && Find<Button>("CurrentEquipment").GetNodeOrNull<ButtonHoverFeedback>("ButtonHoverFeedback") is not null,
+                    "equipment frame uses standard scale feedback without a hover prompt");
+                Check(!_screen.Descendants<Button>().Any(v => v.Name == "ReplayUpgradePreview"), "comparison replays from equipment frames");
                 var parameters = Find<ScrollContainer>("UpgradeParameterScroll");
                 var rows = parameters.GetNode<VBoxContainer>("ParameterRows");
                 Check(rows.GetChildCount() == item.Effects.Count, "all real effects shown inline");
@@ -68,7 +119,11 @@ public partial class CityPagesSelfTest
                         Check(labels[2].GetThemeColor("font_color") == new Color("#276631"), "changed value highlighted");
                 }
                 GetNode<JourneySettings>("/root/JourneySettings").SetReduceMotion(true);
-                if (item.TargetLevel.HasValue) Click("ReplayUpgradePreview");
+                if (item.TargetLevel.HasValue)
+                {
+                    Click("CurrentEquipment");
+                    Click("NextEquipment");
+                }
                 await Capture(city.Replace(':', '-') + "-" + item.Id + "-comparison");
                 if (rows.Size.Y > parameters.Size.Y)
                 {

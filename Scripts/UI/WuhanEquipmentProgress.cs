@@ -1,4 +1,6 @@
 using Godot;
+using ProjectCake.Data;
+using ProjectCake.Wuhan;
 
 namespace ProjectCake.UI;
 
@@ -6,6 +8,10 @@ public partial class WuhanWorkstationView
 {
     private readonly List<EquipmentProgressView> _basketProgress = new();
     private EquipmentProgressView? _doupiProgress;
+    private EquipmentProgressView? _mixProgress;
+    private HotDryNoodlesStateMachine? _progressBowl;
+    private long _progressGeneration = -1;
+    private double _mixReadySeconds;
 
     private void ConfigureEquipmentProgress()
     {
@@ -24,5 +30,37 @@ public partial class WuhanWorkstationView
             () => EquipmentProgressPresentation.Doupi(_doupi), showCaption: false);
         _doupiProgress.Position = new Vector2(_layout.Pan.GetCenter().X - 130, _layout.Pan.End.Y - 53);
         _doupiProgress.Refresh();
+        _mixProgress ??= EquipmentProgressView.Attach(this, "BowlMixProgress", new Rect2(0, 0, 180, 42), ReadMixProgress);
+        _mixProgress.Position = new Vector2(BowlRect.GetCenter().X - 90, BowlRect.End.Y + 2);
+        _mixProgress.Refresh();
+    }
+
+    private EquipmentProgressState ReadMixProgress()
+    {
+        if (_progressBowl != _bowl || _progressGeneration != _bowl.Generation)
+        {
+            _progressBowl = _bowl;
+            _progressGeneration = _bowl.Generation;
+            _mixReadySeconds = 0;
+        }
+        if (_bowl.State != NoodleBowlState.Ready) _mixReadySeconds = 0;
+        if (_mixProgress is not null)
+            _mixProgress.Modulate = new Color(1, 1, 1, (float)Math.Clamp((1.5 - _mixReadySeconds) / .3, 0, 1));
+        if (_draggedProduct == ProductKind.HotDryNoodles) return default;
+        return _bowl.State switch
+        {
+            NoodleBowlState.Seasoned => new(true, 0, "按住左键划动拌面"),
+            NoodleBowlState.Mixing => EquipmentProgressState.Working(_bowl.MixProgress,
+                HotDryNoodlesStateMachine.MixCompletionProgress, "拌面中"),
+            NoodleBowlState.Ready when _mixReadySeconds < 1.5 => EquipmentProgressState.Done("已拌匀"),
+            _ => default,
+        };
+    }
+
+    private void TickMixProgress(double delta)
+    {
+        ReadMixProgress();
+        if (_bowl.State == NoodleBowlState.Ready) _mixReadySeconds += delta;
+        _mixProgress?.Refresh();
     }
 }

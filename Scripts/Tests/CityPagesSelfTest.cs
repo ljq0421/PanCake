@@ -30,6 +30,11 @@ public partial class CityPagesSelfTest : Node
             _main = GD.Load<PackedScene>("res://Scenes/Main/Main.tscn").Instantiate<GameController>(); AddChild(_main);
             _screen = _main.GetNode<StartScreen>("UI/StartScreen");
             await Frames();
+            if (args.Contains("--upgrade-feedback"))
+            {
+                await CheckUpgradeFeedback();
+                GD.Print($"UPGRADE_FEEDBACK_TEST_RESULT passed={_passed} failed=0"); GetTree().Quit(); return;
+            }
             if (args.Contains("--fryer-preview"))
             {
                 await CaptureFryerPreview();

@@ -43,7 +43,6 @@ public partial class EquipmentUpgradeView
         }
         if (comparison)
         {
-            var replay = MakeButton(_detail, "ReplayUpgradePreview", "效果演示 · 重播", new(371, 43, 189, 36));
             var changed = _detail.GetNode<Label>("ChangedEffects");
             changed.Size = new(560, 30); changed.AddThemeFontSizeOverride("font_size", 19);
             changed.Text = (e.Id, e.TargetLevel) switch
@@ -58,7 +57,6 @@ public partial class EquipmentUpgradeView
                 ("fryer", _) => "每锅容量增加 · 更快炸至金黄",
                 _ => "鸡蛋、薄脆、葱花与火腿容量增加",
             };
-            replay.AddThemeFontSizeOverride("font_size", 19); replay.Pressed += ReplayPreview;
             ReplayPreview();
         }
     }
@@ -66,7 +64,13 @@ public partial class EquipmentUpgradeView
     private void AddComparisonSide(CityEquipmentView e, bool next, Rect2 rect)
     {
         var p = e.Presentation!;
-        var side = new Control { Name = next ? "NextEquipment" : "CurrentEquipment", Position = rect.Position, Size = rect.Size, MouseFilter = MouseFilterEnum.Ignore }; _detail.AddChild(side);
+        var side = new Button { Name = next ? "NextEquipment" : "CurrentEquipment", Position = rect.Position, Size = rect.Size,
+            MouseDefaultCursorShape = CursorShape.PointingHand };
+        foreach (string state in new[] { "normal", "hover", "pressed", "disabled" })
+            side.AddThemeStyleboxOverride(state, new StyleBoxEmpty());
+        side.Pressed += ReplayPreview;
+        _detail.AddChild(side);
+        ButtonHoverFeedback.Attach(side);
         PaintedBackground(side, next ? "升级后效果面板底板-v1.png" : "当前效果面板底板-v1.png", 32, 32, next ? "" : _cityId, true);
         LabelAt(side, "Heading", p.Fixed ? "随取随用" : (next ? "升级后" : e.Level == 0 ? "开放后" : "当前") + $"  Lv{(next ? e.TargetLevel : Math.Max(1, e.Level))}", new(10, 2, rect.Size.X - 20, 29), 23, next ? Green : Ink, true);
         float scale = e.Id == "ingredient_station" && !p.Fixed ? .43f : .62f;
@@ -240,15 +244,80 @@ public partial class EquipmentUpgradeView
         return row;
     }
 
-    internal void PlayPurchaseSuccess(string equipmentId)
+    private Tween? _successTween;
+
+    internal void PlayPurchaseSuccess(string equipmentId, CityEquipmentView? previous = null)
     {
-        var item = _items.FirstOrDefault(v => v.Id == equipmentId); if (item?.Presentation is null) return;
-        ReplayPreview();
-        var stamp = LabelAt(_detail, "UpgradeSuccessStamp", "升级成功 · 下次营业体验", new(15, 192, 530, 48), 25, Green, true);
-        stamp.AddThemeColorOverride("font_outline_color", new Color("#FFF5D9")); stamp.AddThemeConstantOverride("outline_size", 9); stamp.ZIndex = 5;
-        if (Reduced) return;
-        stamp.PivotOffset = stamp.Size / 2; stamp.Scale = Vector2.One * 1.18f;
-        var tween = CreateTween(); tween.TweenProperty(stamp, "scale", Vector2.One, .28).SetTrans(Tween.TransitionType.Back).SetEase(Tween.EaseType.Out);
-        tween.TweenInterval(1.7); tween.TweenProperty(stamp, "modulate:a", 0f, .3); tween.TweenCallback(Callable.From(stamp.QueueFree));
+        var item = _items.FirstOrDefault(v => v.Id == equipmentId);
+        if (item is null || SelectedId != equipmentId) return;
+        _successTween?.Kill();
+        var level = _detail.GetNode<Label>("LevelTransition");
+        string originalText = level.Text;
+        Vector2 originalSize = level.Size;
+        int originalFontSize = level.GetThemeFontSize("font_size");
+        level.Text = $"已升至 Lv{item.Level} · 下次营业生效";
+        level.Size = new(418, originalSize.Y);
+        level.AddThemeFontSizeOverride("font_size", 23);
+        level.AddThemeColorOverride("font_color", Green);
+
+        var stamp = new Panel
+        {
+            Name = "UpgradeSuccessPaper", Position = new(428, level.Position.Y + 1), Size = new(132, 33),
+            MouseFilter = MouseFilterEnum.Ignore,
+        };
+        stamp.AddThemeStyleboxOverride("panel", Box(new("#E8EFD9"), new("#8FA16C"), 1));
+        _detail.AddChild(stamp);
+        var check = new Line2D { Width = 2.2f, DefaultColor = Green, Antialiased = true };
+        check.Points = new[] { new Vector2(12, 17), new Vector2(17, 22), new Vector2(26, 11) };
+        stamp.AddChild(check);
+        LabelAt(stamp, "UpgradeSuccessStamp", "已升级", new(33, 0, 92, 33), 22, Green, true);
+
+        // Compare with the purchased offer, never with the next available upgrade.
+        var highlighted = new List<Label>();
+        var benefit = _detail.GetNodeOrNull<Label>("BenefitPaper/UpgradeBenefit");
+        string? originalBenefit = benefit?.Text;
+        if (benefit is not null && previous?.Id == equipmentId && previous.Presentation is not null)
+            benefit.Text = previous.Presentation.Headline;
+        var changes = _detail.GetNodeOrNull<Label>("ChangedEffects");
+        string? originalChanges = changes?.Text;
+        if (changes is not null) changes.Text = "本次提升已标注在下方「当前」参数中";
+        if (previous?.Id == equipmentId)
+        {
+            for (int i = 0; i < item.Effects.Count; i++)
+            {
+                var effect = item.Effects[i];
+                var old = previous.Effects.FirstOrDefault(e => e.Name == effect.Name);
+                if (old is null || old.Current == effect.Current) continue;
+                var row = _detail.GetNodeOrNull<Control>($"UpgradeParameterScroll/ParameterRows/ParameterRow{i}");
+                var value = row?.Descendants<Label>().FirstOrDefault(l => l.Name == "CurrentValue");
+                if (value is null) continue;
+                value.AddThemeColorOverride("font_color", Green);
+                highlighted.Add(value);
+            }
+        }
+        var current = _detail.GetNodeOrNull<Control>("CurrentEquipment");
+        var tween = _successTween = CreateTween();
+        if (!Reduced)
+        {
+            stamp.Position -= new Vector2(0, 5);
+            tween.TweenProperty(stamp, "position:y", level.Position.Y + 1, .2).SetTrans(Tween.TransitionType.Cubic).SetEase(Tween.EaseType.Out);
+            if (current is not null)
+            {
+                current.Modulate = new Color(1.07f, 1.07f, 1.02f);
+                tween.Parallel().TweenProperty(current, "modulate", Colors.White, .6);
+            }
+        }
+        tween.TweenInterval(1.5);
+        if (!Reduced) tween.TweenProperty(stamp, "modulate:a", 0f, .25);
+        tween.TweenCallback(Callable.From(() =>
+        {
+            stamp.QueueFree();
+            level.Text = originalText; level.Size = originalSize;
+            level.AddThemeFontSizeOverride("font_size", originalFontSize);
+            level.AddThemeColorOverride("font_color", Muted);
+            if (benefit is not null && originalBenefit is not null) benefit.Text = originalBenefit;
+            if (changes is not null && originalChanges is not null) changes.Text = originalChanges;
+            foreach (var value in highlighted) value.AddThemeColorOverride("font_color", Muted);
+        }));
     }
 }

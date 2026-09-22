@@ -79,7 +79,7 @@ public partial class XianSelfTest : Node
             Check(session.Oven.TryCollect(session.Buns) && session.Buns.Count == 4, $"Day{day}烙制补足熟馍");
         }
         foreach (string type in new[] { "normal", "office_worker", "regular", "tourist" })
-            Check(CustomerAppearanceCatalog.CandidatesFor("xian_" + type).SequenceEqual(CustomerAppearanceCatalog.CandidatesFor("wuhan_" + type)),
+            Check(CustomerAppearanceCatalog.CandidatesFor("xian_" + type).SequenceEqual(type == "tourist" ? new[] { "tourist" } : CustomerAppearanceCatalog.CandidatesFor(type)),
                 $"西安{type}复用共享人物池");
         var stock = new BunInventory(6, 0); var oven = new BunOvenStateMachine(Eq(XianRules.Oven, 1));
         Check(!oven.TryStart(0) && !oven.TryStart(5) && oven.TryStart(4), "炉子校验整批数量");

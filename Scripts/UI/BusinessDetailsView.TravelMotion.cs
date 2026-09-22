@@ -38,7 +38,8 @@ public partial class BusinessDetailsView
             item.Modulate = new Color(item.Modulate, 0);
         }
         _income.Text = "¥0";
-        _income.PivotOffset = new(0, _income.Size.Y / 2);
+        _income.PivotOffset = _income.Size / 2;
+        _income.Scale = Vector2.One * .84f;
         _note.Position += new Vector2(0, 8);
         _entrance = CreateTween().SetParallel();
 
@@ -62,16 +63,43 @@ public partial class BusinessDetailsView
 
         Group(TravelMotionGroup.Reception, .15, .25);
         Group(TravelMotionGroup.Evaluation, .40, .20);
-        Group(TravelMotionGroup.Income, .65, .16);
-        var result = _model.Result;
-        Count(0, result.TotalRevenue, .65, .45);
-        Group(TravelMotionGroup.Challenge, .86, .18);
-        Group(TravelMotionGroup.Note, 1.04, .25);
+        Group(TravelMotionGroup.Challenge, .65, .18);
+        const double incomeStart = .86;
+        Group(TravelMotionGroup.Income, incomeStart, .18);
+        int totalIncome = _model.Result.TotalRevenue + _model.ChallengeReward;
+        if (_model.ChallengeReward > 0)
+        {
+            Count(0, _model.Result.TotalRevenue, incomeStart, .46);
+            Count(_model.Result.TotalRevenue, totalIncome, incomeStart + .50, .30);
+            var bonus = _summary.GetNode<Label>("ChallengeRewardAmount");
+            bonus.PivotOffset = bonus.Size / 2;
+            _entrance.TweenProperty(bonus, "scale", Vector2.One * 1.18f, .16).SetDelay(opening + incomeStart + .30);
+            _entrance.TweenProperty(bonus, "position", _income.Position + new Vector2(0, 40), .30)
+                .SetDelay(opening + incomeStart + .50).SetTrans(Tween.TransitionType.Cubic).SetEase(Tween.EaseType.In);
+            _entrance.TweenProperty(bonus, "modulate:a", 0f, .12).SetDelay(opening + incomeStart + .68);
+            At(incomeStart + .81, () =>
+            {
+                bonus.Position = _travelRest[bonus].Position;
+                bonus.Scale = _travelRest[bonus].Scale;
+                bonus.Modulate = _travelRest[bonus].Color;
+            });
+        }
+        else Count(0, totalIncome, incomeStart, .80);
+        _entrance.TweenProperty(_income, "scale", Vector2.One, .22)
+            .SetDelay(opening + incomeStart).SetTrans(Tween.TransitionType.Expo).SetEase(Tween.EaseType.Out);
+        // Emphasize the settled amount, after the counter has reached its exact total.
+        const double incomeComplete = incomeStart + .80;
+        _entrance.TweenProperty(_income, "scale", Vector2.One * 1.18f, .20)
+            .SetDelay(opening + incomeComplete).SetTrans(Tween.TransitionType.Cubic).SetEase(Tween.EaseType.Out);
+        _entrance.TweenProperty(_income, "scale", Vector2.One, .28)
+            .SetDelay(opening + incomeComplete + .32).SetTrans(Tween.TransitionType.Sine).SetEase(Tween.EaseType.InOut);
+        const double noteStart = incomeComplete + .60;
+        Group(TravelMotionGroup.Note, noteStart, .25);
         _entrance.TweenProperty(_note, "position", _travelRest[_note].Position, .25)
-            .SetDelay(opening + 1.04).SetTrans(Tween.TransitionType.Cubic).SetEase(Tween.EaseType.Out);
+            .SetDelay(opening + noteStart).SetTrans(Tween.TransitionType.Cubic).SetEase(Tween.EaseType.Out);
         _entrance.Chain().TweenCallback(Callable.From(() =>
         {
-            _income.Text = $"¥{_model.Result.TotalRevenue}";
+            _income.Text = $"¥{totalIncome}";
             RestoreTravelMotion();
         }));
     }

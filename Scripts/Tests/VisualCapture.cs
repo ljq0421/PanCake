@@ -764,7 +764,7 @@ public partial class VisualCapture : Node
             grid.AddChild(Header(expressionName, 365));
 
         var art = new TianjinArtCatalog();
-        CustomerAppearanceDefinition[] customers = CustomerAppearanceCatalog.All.Skip((page - 1) * 4).Take(4).ToArray();
+        CustomerAppearanceDefinition[] customers = CustomerAppearanceCatalog.Tianjin.Skip((page - 1) * 4).Take(4).ToArray();
         CustomerExpression[] expressions = Enum.GetValues<CustomerExpression>();
         foreach (CustomerAppearanceDefinition appearance in customers)
         {

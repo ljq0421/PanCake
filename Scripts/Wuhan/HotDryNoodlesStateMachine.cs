@@ -8,6 +8,7 @@ public sealed record PreparedHotDryNoodles(string RecipeId, NoodleQuality Noodle
 
 public sealed class HotDryNoodlesStateMachine
 {
+    public const double MixCompletionProgress = 85;
     private readonly HashSet<string> _toppings = new(StringComparer.Ordinal);
     private NoodleQuality _quality;
     public NoodleBowlState State { get; private set; }
@@ -42,7 +43,7 @@ public sealed class HotDryNoodlesStateMachine
         if (State is not (NoodleBowlState.Seasoned or NoodleBowlState.Mixing) || pixels <= 0) return false;
         State = NoodleBowlState.Mixing;
         MixProgress = Math.Min(100, MixProgress + pixels / 5.0);
-        if (MixProgress >= 85) { MixProgress = 100; State = NoodleBowlState.Ready; }
+        if (MixProgress >= MixCompletionProgress) { MixProgress = 100; State = NoodleBowlState.Ready; }
         return true;
     }
     public bool TryPrepare(IReadOnlyDictionary<string, RecipeData> recipes, out PreparedHotDryNoodles prepared)

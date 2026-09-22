@@ -28,6 +28,7 @@ public partial class CityPagesSelfTest
             _screen.PresentCity(city.Id);
             Click("UpgradeTab"); await Frames();
             Check(_screen.Page == JourneyPage.Upgrades && _screen.SelectedCityId == city.Id, city.Name + " home upgrade route");
+            Check(Find<TextureRect>("SharedBook").GetGlobalRect().Encloses(Find<Control>("UpgradeWallet").GetGlobalRect()), city.Name + " wallet stays inside the book page");
             CheckBookTheme(city.Id);
             Check(Find<Button>("Home").IsVisibleInTree() && !_screen.Descendants<Button>().Any(b => b.Name == "MapTab"), city.Name + " upgrade page retains home without map bookmark");
             Check(!_screen.Descendants<Button>().Any(b => b.Name == "CloseUpgrades"), city.Name + " home has no settlement return");

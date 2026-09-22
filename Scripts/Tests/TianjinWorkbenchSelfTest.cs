@@ -130,7 +130,7 @@ public partial class StageFourSelfTest
             && customerSpacing >= 340 && customerSpacing <= 360,
             "五名顾客槽位等距，最右侧不再额外隔开");
         var portrait = screen.Descendants<CustomerPortraitView>().First();
-        foreach (var appearance in CustomerAppearanceCatalog.All)
+        foreach (var appearance in CustomerAppearanceCatalog.Tianjin)
         {
             portrait.SetVisual(art.CustomerPortrait(appearance.Id, CustomerExpression.Normal));
             CustomerPortraitLayout layout = art.CustomerLayout(appearance.Id);

@@ -8,6 +8,7 @@ public enum DoupiCutLine { Left, Center, Right, Horizontal }
 public static class DoupiInteraction
 {
     public const float CutBand = .18f, CutTarget = .70f;
+    public const float VerticalCutDistance = .40f, VerticalDirectionRatio = 1.15f;
     public const float FlipDistance = 40, FlipSideTolerance = 150;
     public static bool Inside(Vector2 p) => p.IsFinite() && p.X >= 0 && p.X <= 1 && p.Y >= 0 && p.Y <= 1;
     public static float Position(DoupiCutLine line) => line switch
@@ -30,7 +31,7 @@ public static class DoupiInteraction
     }
 }
 
-/// <summary>One press, one template line; coverage counts distinct intervals, never travel distance.</summary>
+/// <summary>One press, one direction. Horizontal cuts trace a line; vertical cuts use deliberate displacement.</summary>
 public sealed class DoupiCutStroke
 {
     private const int Samples = 100;
@@ -50,7 +51,8 @@ public sealed class DoupiCutStroke
         {
             Vector2 delta = point - _start;
             float x = Math.Abs(delta.X), y = Math.Abs(delta.Y);
-            if (Math.Max(x, y) < .04f || Math.Max(x, y) < Math.Min(x, y) * 1.5f) return false;
+            if (Math.Max(x, y) < .04f) return false;
+            if (x > y ? x < y * 1.5f : y < x * DoupiInteraction.VerticalDirectionRatio) return false;
             Line = x > y ? DoupiCutLine.Horizontal
                 : (DoupiCutLine)Math.Clamp((int)MathF.Round(_start.X * 4) - 1, 0, 2);
             from = _start;
@@ -60,7 +62,8 @@ public sealed class DoupiCutStroke
         float crossA = horizontal ? from.Y : from.X, crossB = horizontal ? point.Y : point.X;
         float position = DoupiInteraction.Position(Line.Value);
         // Direction is locked once. Small sideways jitters must not drop valid progress.
-        // Still clip every sample to the food and the selected line's forgiving band.
+        // Vertical previews snap to the template regardless of the stroke's starting column.
+        // Horizontal cuts retain their existing line-band coverage requirement.
         if (Math.Abs(axisB - axisA) < .00001f) return false;
         for (int i = 0; i < Samples; i++)
         {
@@ -68,8 +71,13 @@ public sealed class DoupiCutStroke
             float t = (axis - axisA) / (axisB - axisA);
             if (t < 0 || t > 1) continue;
             float cross = Mathf.Lerp(crossA, crossB, t);
-            if (cross >= 0 && cross <= 1 && Math.Abs(cross - position) <= DoupiInteraction.CutBand) _covered[i] = true;
+            if (cross >= 0 && cross <= 1 && (!horizontal || Math.Abs(cross - position) <= DoupiInteraction.CutBand)) _covered[i] = true;
         }
-        return Coverage >= DoupiInteraction.CutTarget;
+        if (horizontal) return Coverage >= DoupiInteraction.CutTarget;
+        Vector2 displacement = point - _start;
+        float verticalDistance = Math.Abs(Math.Clamp(point.Y, 0, 1) - Math.Clamp(_start.Y, 0, 1));
+        return verticalDistance + .00001f >= DoupiInteraction.VerticalCutDistance
+            && Math.Abs(displacement.Y) >= Math.Abs(displacement.X) * DoupiInteraction.VerticalDirectionRatio
+            && Coverage >= DoupiInteraction.VerticalCutDistance;
     }
 }

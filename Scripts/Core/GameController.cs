@@ -91,7 +91,7 @@ public partial class GameController : Node
             if (!ok) error = "存档或城市状态不允许升级。";
             else ok = city == Data.StableIds.Cities.Yangzhou ? save.PurchaseYangzhou(id, yangzhouCatalog, out error) : save.TryPurchase(city, id, catalog, out error);
             _startScreen.RefreshCityPage();
-            _startScreen.ShowError(ok ? "设备已升级，下次营业生效。" : error);
+            if (!ok) _startScreen.ShowError(error);
             if (ok) _startScreen.ShowUpgradeSuccess(id.Replace("equipment:", "").Split("_lv")[0]);
         };
         _startScreen.NewGameRequested += slotId => CreateJourney(slotId, showCity: false);
@@ -114,7 +114,6 @@ public partial class GameController : Node
         wuhanHub.DayRequested += day => { wuhanDay.Initialize(catalog, save, dayController, day); ShowOnly(wuhanDay); wuhanDay.BeginDay(); };
         wuhanHub.MapRequested += () => { mapOriginCity = Data.StableIds.Cities.Wuhan; ShowOnly(mapScreen); };
         wuhanDay.HubRequested += () => ShowOnly(wuhanHub);
-        wuhanDay.HomeRequested += () => { ShowOnly(_startScreen); _startScreen.PresentHome(); };
         _xianHub.DayRequested += day => { if (_xianDay.Initialize(catalog, save, dayController, day)) { ShowOnly(_xianDay); _xianDay.BeginDay(); } };
         _xianHub.MapRequested += () => { mapOriginCity = Data.StableIds.Cities.Xian; ShowOnly(mapScreen); };
         _xianDay.HubRequested += () => { _xianHub.Render(); ShowOnly(_xianHub); };

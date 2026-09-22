@@ -54,7 +54,7 @@ public partial class BusinessBookSelfTest
             // Keep a real workstation behind the book in captures, so an opaque page backdrop is visible as a regression.
             Control? workstation = null;
             DayController? controller = null;
-            if (Capture && city == "tianjin")
+            if ((Capture || OS.GetCmdlineUserArgs().Contains("--feedback-capture")) && city == "tianjin")
             {
                 controller = new DayController(); AddChild(controller); controller.SetProcess(false);
                 var screen = GD.Load<PackedScene>("res://Scenes/Gameplay/TianjinDayScreen.tscn").Instantiate<TianjinDayScreen>();
@@ -156,7 +156,10 @@ public partial class BusinessBookSelfTest
             Check(!source.Purchase(first, out _) && source.Coins == 10000 - first.Price, city + " stale duplicate rejected");
             save.Load();
             Check(source.Coins == 10000 - first.Price && save.Data.GetCity(cityId).EquipmentLevels[first.EquipmentId] == first.TargetLevel, city + " purchase persists across reload");
-            Check(view.Descendants<Label>().Any(l => l.Text.StartsWith("升级成功")), city + " success feedback");
+            Check(view.Descendants<Label>().Any(l => l.Name == "UpgradeSuccessStamp" && l.Text == "已升级"), city + " local success feedback");
+            Check(!view.Descendants<Label>().Any(l => l.Name == "UpgradeFeedback" && l.Text.Length > 0), city + " no duplicate success feedback below book");
+            if (OS.GetCmdlineUserArgs().Contains("--feedback-capture") && city == "tianjin")
+                await Shot("tianjin-upgrade-success");
             int bought = 0;
             while (source.Offers.Count > 1 && bought++ < 20)
             {

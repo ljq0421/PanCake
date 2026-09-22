@@ -1,0 +1,187 @@
+{
+  "canvasWidth": 1086,
+  "canvasHeight": 1448,
+  "referenceVisibleArea": 233760.5,
+  "appearances": {
+    "wuhan_cyclist": {
+      "scale": 0.89163434,
+      "headAnchor": [
+        0.4907919,
+        0.28142265
+      ],
+      "normalVisibleBounds": [
+        270,
+        128,
+        526,
+        559
+      ],
+      "counterWaist": [
+        533,
+        930
+      ],
+      "counterHeight": 802
+    },
+    "wuhan_engineer": {
+      "scale": 1.0028365,
+      "headAnchor": [
+        0.50644567,
+        0.25587017
+      ],
+      "normalVisibleBounds": [
+        290,
+        147,
+        520,
+        447
+      ],
+      "counterWaist": [
+        550,
+        930
+      ],
+      "counterHeight": 783
+    },
+    "wuhan_opera_actress": {
+      "scale": 1.00726635,
+      "headAnchor": [
+        0.48802947,
+        0.21754144
+      ],
+      "normalVisibleBounds": [
+        274,
+        90,
+        512,
+        450
+      ],
+      "counterWaist": [
+        530,
+        930
+      ],
+      "counterHeight": 840
+    },
+    "wuhan_embroidery_artisan": {
+      "scale": 0.99718744,
+      "headAnchor": [
+        0.52532228,
+        0.23860497
+      ],
+      "normalVisibleBounds": [
+        322,
+        109,
+        497,
+        473
+      ],
+      "counterWaist": [
+        570,
+        930
+      ],
+      "counterHeight": 821
+    },
+    "wuhan_clothing_owner": {
+      "scale": 0.98564314,
+      "headAnchor": [
+        0.49907919,
+        0.2769337
+      ],
+      "normalVisibleBounds": [
+        277,
+        174,
+        530,
+        454
+      ],
+      "counterWaist": [
+        542,
+        930
+      ],
+      "counterHeight": 756
+    },
+    "wuhan_grandma": {
+      "scale": 0.91378774,
+      "headAnchor": [
+        0.49263352,
+        0.24620166
+      ],
+      "normalVisibleBounds": [
+        260,
+        102,
+        550,
+        509
+      ],
+      "counterWaist": [
+        535,
+        930
+      ],
+      "counterHeight": 828
+    },
+    "wuhan_industry_worker": {
+      "scale": 1.05998984,
+      "headAnchor": [
+        0.53637201,
+        0.24447514
+      ],
+      "normalVisibleBounds": [
+        345,
+        135,
+        475,
+        438
+      ],
+      "counterWaist": [
+        582,
+        930
+      ],
+      "counterHeight": 795
+    },
+    "wuhan_cultural_owner": {
+      "scale": 1.00811994,
+      "headAnchor": [
+        0.48434622,
+        0.23860497
+      ],
+      "normalVisibleBounds": [
+        271,
+        120,
+        510,
+        451
+      ],
+      "counterWaist": [
+        526,
+        930
+      ],
+      "counterHeight": 810
+    },
+    "wuhan_student": {
+      "scale": 0.95746926,
+      "headAnchor": [
+        0.50690608,
+        0.22479282
+      ],
+      "normalVisibleBounds": [
+        295,
+        76,
+        511,
+        499
+      ],
+      "counterWaist": [
+        550,
+        930
+      ],
+      "counterHeight": 854
+    },
+    "wuhan_ferry_worker": {
+      "scale": 1.05086191,
+      "headAnchor": [
+        0.52394107,
+        0.25138122
+      ],
+      "normalVisibleBounds": [
+        324,
+        148,
+        490,
+        432
+      ],
+      "counterWaist": [
+        569,
+        930
+      ],
+      "counterHeight": 782
+    }
+  }
+}

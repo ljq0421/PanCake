@@ -155,7 +155,7 @@ public partial class WuhanWorkstationView
         if (!accepted) GestureRejected?.Invoke(gesture switch {
             "raw" => "把生面拖进空漏勺。", "basket" => "向上提篮后拖到空碗；也可先放下等待沥干。",
             "batter" => "从浆碗拖一勺浆到空锅再松手。", "filling" => "翻面后拖一份馅到锅内，松手自动铺匀。",
-            "flip" => "按住锅面向上划动翻面。", "cut" => "沿虚线横划一次、竖划一次；一竖自动切三条。", _ => "请在对应食物区域完成操作。" });
+            "flip" => "按住锅面向上划动翻面。", "cut" => "沿横线划一刀，再在锅内向上或向下划一刀。", _ => "请在对应食物区域完成操作。" });
     }
 
     private void DrawGesture()

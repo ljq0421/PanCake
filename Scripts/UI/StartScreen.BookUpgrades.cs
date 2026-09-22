@@ -10,7 +10,12 @@ public partial class StartScreen
     private Action<string>? _bookUpgradeSelection;
     private Action<CityEquipmentView>? _bookUpgradePurchase;
     private Action? _bookUpgradeContinue;
-    internal void ShowUpgradeSuccess(string equipmentId) => _body.GetNodeOrNull<EquipmentUpgradeView>("UpgradeView")?.PlayPurchaseSuccess(equipmentId);
+    private CityEquipmentView? _purchasedEquipment;
+    internal void ShowUpgradeSuccess(string equipmentId, CityEquipmentView? previous = null)
+    {
+        _body.GetNodeOrNull<EquipmentUpgradeView>("UpgradeView")?.PlayPurchaseSuccess(equipmentId, previous ?? _purchasedEquipment);
+        _purchasedEquipment = null;
+    }
 
     internal void PresentBookUpgrades(BookUpgradeSource source, string? selected,
         Action<string> selection, Action<CityEquipmentView> purchase, Action? continueBusiness, string message)
@@ -25,6 +30,7 @@ public partial class StartScreen
             var paper = new StyleBoxFlat { BgColor = new("#FFF4D8"), BorderColor = new("#A98559"), CornerRadiusTopLeft = 10, CornerRadiusTopRight = 10, CornerRadiusBottomLeft = 10, CornerRadiusBottomRight = 10 };
             paper.SetBorderWidthAll(1); plate.AddThemeStyleboxOverride("panel", paper); _body.AddChild(plate);
         }
+        if (message.Length == 0) return;
         var feedback = Text(_body, "UpgradeFeedback", message, new(356, 872, 1188, 62), 23, true);
         feedback.AutowrapMode = TextServer.AutowrapMode.WordSmart;
         feedback.MaxLinesVisible = 2;

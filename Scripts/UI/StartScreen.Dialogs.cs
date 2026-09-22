@@ -5,12 +5,21 @@ namespace ProjectCake.UI;
 
 public partial class StartScreen
 {
+    private bool _preserveModalBackdrop;
+
     private void OpenModal(string kind)
     {
+        bool switchingUtilityBook = _modal.Visible
+            && (_modalKind is "settings" or "help") && (kind is "settings" or "help");
         // A utility dialog opened from a home-book overlay returns to the unchanged
         // home backdrop first; utility dialogs are not nested inside journey books.
         CloseModal(); _previousFocus = GetViewport().GuiGetFocusOwner(); _modalKind = kind;
-        Clear(_modal); _modalControls.Clear(); _modal.Show();
+        Clear(_modal); _modalControls.Clear();
+        // The captured settings/help frame already includes the modal dimmer.
+        // VisibilityChanged starts the spread synchronously; keep that backdrop unchanged.
+        _preserveModalBackdrop = switchingUtilityBook;
+        try { _modal.Show(); }
+        finally { _preserveModalBackdrop = false; }
         _modal.AddChild(new ColorRect { Size = new(1920, 1080), Color = new Color(.15f, .1f, .06f, .65f) });
         if (kind == "confirm")
             AddConfirmationPanel(_modal, "Confirmation");

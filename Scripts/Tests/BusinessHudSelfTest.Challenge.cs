@@ -44,6 +44,7 @@ public partial class BusinessHudSelfTest
         controller.SetPauseReason("challenge-check", false);
         for (int i = 1; i < challenge.Target - 1; i++) Advance();
         pendant.Render(controller, false, false);
+        Require(requirement.Text.Contains("1 单"), "last order reminder is explicit");
         if (capture) await Shot(viewport, $"{city}-{width}-challenge-nearly");
         screen._Notification((int)NotificationApplicationFocusIn);
         pendant._Notification((int)NotificationApplicationFocusIn);
@@ -57,13 +58,20 @@ public partial class BusinessHudSelfTest
         if (capture) await Shot(viewport, $"{city}-{width}-challenge-flight");
         await ToSignal(GetTree().CreateTimer(.7), SceneTreeTimer.SignalName.Timeout);
         Require(pendant.CompletionCoins.Count == 0, "coins finish and clean up");
-        Require(stamp.Visible && stamp.Text == "挑战达成", "completion uses concise stamp");
+        Require(!stamp.Visible, "completion does not show a pending-reward status box");
+        var banner = pendant.GetNode<Control>("ChallengeCompletionBanner");
+        Require(banner.Visible, "celebration remains readable for two seconds");
+        foreach (var order in screen.Descendants<OrderBubbleView>().Where(o => o.IsVisibleInTree()))
+            Require(!order.GetGlobalRect().Intersects(banner.GetGlobalRect()), "completion banner does not cover orders");
         Require(stars.All(s => s.Modulate == Colors.White), "completion lights all stars");
         Require(controller.Ledger!.Build().TotalRevenue == 0, "completion does not add challenge reward to business revenue");
         foreach (var label in pendant.Descendants<Label>().Where(l => l.Visible))
             Require(label.GetThemeFont("font").GetStringSize(label.Text, fontSize: label.GetThemeFontSize("font_size")).X <= label.Size.X,
                 $"challenge text fits: {label.Name}");
         if (capture) await Shot(viewport, $"{city}-{width}-challenge-complete");
+        await ToSignal(GetTree().CreateTimer(1.2), SceneTreeTimer.SignalName.Timeout);
+        Require(!banner.Visible, "banner retires automatically without a click");
+        if (capture) await Shot(viewport, $"{city}-{width}-challenge-resting");
         pendant.Render(controller, false, true);
         Require(stamp.Text == "奖励已领取", "claimed reward state");
         if (capture && width == 1280) await Shot(viewport, $"{city}-{width}-challenge-claimed");
@@ -82,6 +90,14 @@ public partial class BusinessHudSelfTest
             int expected = variant.Kind == DailyChallengeKind.Perfect ? 0 : 1;
             Require(pendant.GetChildren().OfType<TextureRect>().Count(s => s.Name.ToString().StartsWith("ChallengeStar") && s.Modulate == Colors.White) == expected,
                 "each challenge uses its own progress rule");
+            if (variant.Kind == DailyChallengeKind.Streak)
+            {
+                for (int i = 1; i < variant.Target - 1; i++) Advance();
+                pendant.Render(controller, true, false);
+                Require(requirement.Text == "再完成 1 单！", "current streak approaching target prompts once");
+                controller.Ledger.RecordLost(); pendant.Render(controller, true, false);
+                Require(requirement.Text == variant.Requirement, "broken streak clears last-order reminder despite best streak");
+            }
         }
         ProjectSettings.SetSetting("accessibility/reduce_motion", true);
         try
@@ -93,6 +109,7 @@ public partial class BusinessHudSelfTest
             pendant.Render(controller, true, false);
             Require(pendant.CompletionCoins.Count == 0 && pendant.GetNode<AudioStreamPlayer>("ChallengeCompletedSound").Playing,
                 "reduced motion retains completion sound without flying coins");
+            Require(banner.Visible && banner.Scale == Vector2.One, "reduced motion retains a static readable banner");
         }
         finally { ProjectSettings.SetSetting("accessibility/reduce_motion", false); }
         Require(controller.TryPrepareDay(cityId, 4, GetNode<DataCatalog>("/root/DataCatalog"), out _), "feedback cancellation run prepares");
@@ -105,8 +122,14 @@ public partial class BusinessHudSelfTest
         controller.SetPauseReason("challenge-check", true); await Frames();
         Require(pendant.CompletionCoins.Count == 0 && !pendant.GetNode<AudioStreamPlayer>("ChallengeCompletedSound").Playing,
             "pause clears flights and stops completion sound");
+        Require(!banner.Visible, "pause cancels completion banner");
         controller.SetPauseReason("challenge-check", false); pendant.Render(controller, true, false);
         Require(celebrations == beforePause && pendant.CompletionCoins.Count == 0, "resume does not replay completion");
+        Require(controller.TryPrepareDay(cityId, 4, GetNode<DataCatalog>("/root/DataCatalog"), out _), "claimed replay prepares");
+        pendant.Render(controller, true, true);
+        while (!controller.CurrentPlan!.Challenge!.Achieved(controller.Ledger!.Build())) Advance();
+        pendant.Render(controller, true, true);
+        Require(celebrations == beforePause && !banner.Visible && stamp.Text == "奖励已领取", "claimed replay never promises or celebrates another reward");
         GD.Print($"CHALLENGE_PENDANT_PASS {city} {width}");
     }
 }

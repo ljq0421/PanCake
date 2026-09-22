@@ -42,7 +42,7 @@ public partial class CustomerPortraitView : Control
         _interactionOutline = ArtContourHighlight.Attach(_body, state, _head);
     }
 
-    /// <summary>Tianjin-only fitting with equal head footprint and a stable counter crop.</summary>
+    /// <summary>Shared counter fitting with equal head footprint and a stable crop.</summary>
     public void SetCounterCalibration(CustomerPortraitLayout layout)
     {
         _counterLayout = layout;

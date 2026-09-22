@@ -45,6 +45,7 @@ public sealed class DayLedger
     public int CorrectOrders { get; private set; }
     public int IncorrectOrders { get; private set; }
     public int HighestCorrectStreak { get; private set; }
+    public int CurrentCorrectStreak => _currentStreak;
     public int YoutiaoUsed { get; private set; }
     public int YoutiaoBurnt { get; private set; }
 

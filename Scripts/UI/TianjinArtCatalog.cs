@@ -221,7 +221,7 @@ public sealed class TianjinArtCatalog
 
     public Texture2D RawYoutiao => Get("raw_youtiao");
 
-    public string CustomerAppearance(string appearanceId) => CustomerAppearanceCatalog.IsKnown(appearanceId)
+    public string CustomerAppearance(string appearanceId) => _portraitLayouts.ContainsKey(appearanceId)
         ? appearanceId
         : CustomerAppearanceCatalog.DefaultAppearanceId;
 
@@ -279,7 +279,7 @@ public sealed class TianjinArtCatalog
             "workbench_finished_tray",
         };
         var missing = required.Where(key => !_textures.ContainsKey(key)).ToList();
-        foreach (CustomerAppearanceDefinition appearance in CustomerAppearanceCatalog.All)
+        foreach (CustomerAppearanceDefinition appearance in CustomerAppearanceCatalog.Tianjin)
         {
             string folder = $"Customers/{appearance.Id}/";
             foreach (string fileName in new[] { "body.png", "head_happy.png", "head_normal.png", "head_impatient.png", "head_angry.png" })
@@ -307,7 +307,7 @@ public sealed class TianjinArtCatalog
 
             JsonElement appearances = root.GetProperty("appearances");
             var layouts = new Dictionary<string, CustomerPortraitLayout>(StringComparer.Ordinal);
-            foreach (CustomerAppearanceDefinition appearance in CustomerAppearanceCatalog.All)
+            foreach (CustomerAppearanceDefinition appearance in CustomerAppearanceCatalog.Tianjin)
             {
                 if (!appearances.TryGetProperty(appearance.Id, out JsonElement entry))
                     throw new InvalidOperationException($"天津顾客头像布局缺少人物：{appearance.Id}");

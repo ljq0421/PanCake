@@ -48,7 +48,8 @@ public partial class StartScreen : Control
         _modal = GetNode<Control>("Canvas/Modal");
         JourneyTransition.Watch(_modal, bounds: () => new Rect2(
             _canvas.GetGlobalTransformWithCanvas() * BookBounds.Position, BookBounds.Size * _canvas.Scale),
-            book: () => _modalKind is not ("confirm" or "developer"));
+            book: () => _modalKind is not ("confirm" or "developer"),
+            dimBackdrop: () => !_preserveModalBackdrop);
         if (HostedByBook)
         {
             SetProcessInput(false);

@@ -359,6 +359,7 @@ public partial class WuhanWorkstationView : Control
     public void Tick(double delta)
     {
         if (_cooker is null || delta <= 0) return;
+        TickMixProgress(delta);
         TickLoopFeedback(delta);
         TickFoodMotion(delta);
         if (!CanHoldKnife) IsKnifeHeld = false;

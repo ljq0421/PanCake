@@ -73,9 +73,10 @@ public partial class DailyChallengePendant : Control
         _starTexture = CroppedArt("res://resource/art/Global/StartPage/小星星.png");
         _coinTexture = CroppedArt("res://resource/art/Global/HUDUI/小费飞行金币.png");
         _completionSound = new AudioStreamPlayer { Name = "ChallengeCompletedSound",
-            Stream = BusinessFeedbackAudio.Make(BusinessCue.CoinCredited), Bus = JourneySettings.EffectsBus,
-            VolumeDb = -12, MaxPolyphony = 1 };
+            Stream = MakeCompletionSound(), Bus = JourneySettings.EffectsBus,
+            VolumeDb = -6, MaxPolyphony = 1 };
         AddChild(_completionSound);
+        BuildCelebration();
         Hide();
     }
 
@@ -97,16 +98,20 @@ public partial class DailyChallengePendant : Control
         _name.Text = Tr(challenge.Name);
         _reward.Text = $"+{challenge.Reward}";
         _requirement.Text = Tr(challenge.Requirement);
-        _stamp.Text = claimed ? Tr("奖励已领取") : Tr("挑战达成");
-        _stamp.Visible = achieved || claimed;
+        bool nearly = !claimed && !achieved && (challenge.Kind == DailyChallengeKind.Streak
+            ? ledger.CurrentCorrectStreak : progress) == challenge.Target - 1;
+        _stamp.Text = Tr("奖励已领取");
+        _stamp.Visible = claimed;
+        if (nearly) _requirement.Text = challenge.Kind == DailyChallengeKind.Perfect ? Tr("再完美完成 1 单！") : Tr("再完成 1 单！");
+        UpdateNearly(nearly);
         for (int i = 0; i < _stars.Count; i++)
             _stars[i].Modulate = i < progress ? Colors.White : new Color(.65f, .48f, .33f, .35f);
         Fit(_name, 26); Fit(_requirement, 21); Fit(_stamp, 21);
         if (!CanPresent()) StopAllFeedback();
         else if (!CanAnimate()) StopFeedback();
-        else if (!newRun && progress > _lastProgress) AnimateProgress(achieved && _lastProgress < challenge.Target, progress);
+        else if (!newRun && progress > _lastProgress) AnimateProgress(progress);
         if (!newRun && achieved && _lastProgress < challenge.Target && !claimed && CanPresent())
-            CelebrateCompletion();
+            CelebrateCompletion(challenge);
         _lastProgress = progress;
     }
 
@@ -128,10 +133,11 @@ public partial class DailyChallengePendant : Control
     private bool CanPresent() => _focused && _allowMotion && IsVisibleInTree() && _controller?.IsPaused == false;
     private bool CanAnimate() => CanPresent() && !ProjectSettings.GetSetting("accessibility/reduce_motion", false).AsBool();
 
-    private void CelebrateCompletion()
+    private void CelebrateCompletion(DailyChallenge challenge)
     {
         // Cosmetic only: no ledger credit, save mutation or business-income pulse.
         _completionSound.Play();
+        ShowCelebration(challenge);
         if (CanAnimate() && CoinTargetGlobal is not null)
         {
             var inverse = GetGlobalTransform().AffineInverse();
@@ -143,7 +149,7 @@ public partial class DailyChallengePendant : Control
         CompletionPresented?.Invoke();
     }
 
-    private void AnimateProgress(bool complete, int progress)
+    private void AnimateProgress(int progress)
     {
         StopFeedback();
         _feedback = CreateTween().SetParallel();
@@ -152,13 +158,6 @@ public partial class DailyChallengePendant : Control
             var star = _stars[progress - 1];
             _feedback.TweenProperty(star, "scale", Vector2.One * 1.2f, .14);
             _feedback.TweenProperty(star, "scale", Vector2.One, .3).SetDelay(.14);
-        }
-        if (complete)
-        {
-            _stamp.Scale = Vector2.One * 1.12f;
-            _stamp.Rotation = -.045f;
-            _feedback.TweenProperty(_stamp, "scale", Vector2.One, .32).SetTrans(Tween.TransitionType.Back).SetEase(Tween.EaseType.Out);
-            _feedback.TweenProperty(_stamp, "rotation", 0f, .32);
         }
     }
 
@@ -169,11 +168,12 @@ public partial class DailyChallengePendant : Control
         _stamp.Scale = Vector2.One; _stamp.Rotation = 0;
         foreach (var star in _stars) star.Scale = Vector2.One;
     }
-    private void StopAllFeedback() { StopFeedback(); _completionSound?.Stop(); }
+    private void StopAllFeedback() { StopFeedback(); StopCelebration(); _completionSound?.Stop(); }
     public override void _Process(double delta)
     {
         if (!CanPresent()) StopAllFeedback();
         else if (!CanAnimate()) StopFeedback();
+        TickCelebration(delta);
     }
     public override void _Notification(int what)
     {

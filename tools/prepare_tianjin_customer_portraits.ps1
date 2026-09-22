@@ -1,7 +1,9 @@
 param(
     [string]$ArtRoot = (Join-Path $PSScriptRoot '..\resource\art\TianJin'),
     [string]$PreviewPath = (Join-Path $PSScriptRoot '..\.tmp\customer_portraits_preview.png'),
-    [string]$LayoutPath = (Join-Path $PSScriptRoot '..\resource\art\TianJin\Customers\portrait_layout.json')
+    [string]$LayoutPath = (Join-Path $PSScriptRoot '..\resource\art\TianJin\Customers\portrait_layout.json'),
+    [string]$CharacterConfigPath = '',
+    [string]$CalibrationPath = (Join-Path $PSScriptRoot 'tianjin_portrait_calibration.json')
 )
 
 $ErrorActionPreference = 'Stop'
@@ -280,7 +282,10 @@ function Save-Png {
 
 
 $processed = @()
-$calibrations = Get-Content (Join-Path $PSScriptRoot 'tianjin_portrait_calibration.json') -Raw | ConvertFrom-Json -AsHashtable
+if ($CharacterConfigPath) {
+    $characters = @(Get-Content -LiteralPath $CharacterConfigPath -Raw | ConvertFrom-Json -AsHashtable)
+}
+$calibrations = Get-Content -LiteralPath $CalibrationPath -Raw | ConvertFrom-Json -AsHashtable
 foreach ($character in $characters) {
     $calibration = $calibrations[$character.Id]
     $portraitPath = Join-Path $ArtRoot $character.Portrait

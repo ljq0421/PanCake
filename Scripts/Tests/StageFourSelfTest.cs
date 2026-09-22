@@ -23,6 +23,12 @@ public partial class StageFourSelfTest : Node
         try
         {
             DataCatalog catalog = GetNode<DataCatalog>("/root/DataCatalog");
+            if (OS.GetCmdlineUserArgs().Contains("--customer-art-only"))
+            {
+                TestArtCatalog();
+                GD.Print($"TIANJIN_CUSTOMER_ART_RESULT passed={_passed} failed={_failed}");
+                GetTree().Quit(_failed == 0 ? 0 : 1); return;
+            }
             if (OS.GetCmdlineUserArgs().Contains("--save-only"))
             {
                 TestAllDaysCompletable(catalog); TestFullChapterController(catalog); TestStarsAndSave(catalog);
@@ -175,7 +181,7 @@ public partial class StageFourSelfTest : Node
         Check(art.ServingTray.GetWidth() > 0 && art.YoutiaoRack.GetWidth() > 0 && art.Trash.GetWidth() > 0, "出餐、沥油和垃圾桶功能素材可加载");
         Check(art.MapBackground.GetWidth() == 1672 && art.MapBackground.GetHeight() == 941
             && art.TianjinMapNode.GetWidth() > 0 && art.LockedMapNode.GetWidth() > 0, "地图背景与城市节点素材可加载");
-        Check(CustomerAppearanceCatalog.All.Count == 24 && CustomerAppearanceCatalog.All.Select(item => item.Id).Distinct().Count() == 24,
+        Check(CustomerAppearanceCatalog.Tianjin.Count == 24 && CustomerAppearanceCatalog.Tianjin.Select(item => item.Id).Distinct().Count() == 24,
             "天津顾客目录包含 24 套唯一外观");
         Check(CustomerAppearanceCatalog.CandidatesFor("normal").Count == 24
             && CustomerAppearanceCatalog.CandidatesFor("office_worker").Count == 9
@@ -183,7 +189,7 @@ public partial class StageFourSelfTest : Node
             && CustomerAppearanceCatalog.CandidatesFor("big_order").Count == 6, "普通与三类特殊顾客外观池数量准确");
         var normalizedNormalAreas = new List<float>();
         var normalizedExpressionAreas = new List<(string Name, float Area)>();
-        foreach (CustomerAppearanceDefinition appearance in CustomerAppearanceCatalog.All)
+        foreach (CustomerAppearanceDefinition appearance in CustomerAppearanceCatalog.Tianjin)
         {
             CustomerPortraitVisual[] portraits = Enum.GetValues<CustomerExpression>().Select(expression => art.CustomerPortrait(appearance.Id, expression)).ToArray();
             Check(portraits.All(portrait => ReferenceEquals(portrait.Body, portraits[0].Body))

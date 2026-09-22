@@ -56,11 +56,14 @@ public partial class BusinessDetailsView
         _rows.AddThemeConstantOverride("separation", 12);
     }
 
-    private void TravelPanel(Control parent, Rect2 bounds, bool inset = false)
+    private void TravelPanel(Control parent, Rect2 bounds, bool inset = false, bool emphasize = false)
     {
         var panel = new Panel { MouseFilter = MouseFilterEnum.Ignore };
-        var box = TianjinUi.Box(inset ? new Color("#F5E5C4") with { A = .57f } : new Color("#FFF8E5") with { A = .18f }, 18, inset ? 0 : 2, false);
-        box.BorderColor = CityTheme.Secondary with { A = .46f };
+        Color fill = inset ? new Color("#F5E5C4") with { A = .57f }
+            : emphasize ? CitySettlementTheme.Paper.Lerp(CityTheme.Primary, .14f) with { A = .34f }
+            : new Color("#FFF8E5") with { A = .18f };
+        var box = TianjinUi.Box(fill, 18, inset ? 0 : 2, false);
+        box.BorderColor = (emphasize ? CityTheme.Primary : CityTheme.Secondary) with { A = emphasize ? .72f : .46f };
         panel.AddThemeStyleboxOverride("panel", box);
         Place(parent, panel, bounds);
     }
@@ -76,19 +79,23 @@ public partial class BusinessDetailsView
         BuildTravelSatisfaction();
         BuildTravelNote();
 
-        TravelPanel(_summary, new(890, 0, 560, 240));
+        TravelPanel(_summary, new(890, 0, 560, 240), emphasize: true);
         TravelHeading(_summary, "今日收入", new(905, -18, 245, 51));
         CaptureTravelMotion(TravelMotionGroup.Income, _summary, () =>
         {
-            Art(_summary, "总收入图标", new(906, 85, 116, 116));
-            _income = TravelValue(_summary, $"¥{r.TotalRevenue}", new(1026, 85, 174, 112), 96);
-            TravelPanel(_summary, new(1210, 62, 220, 150), true);
-            TravelValue(_summary, "菜品销售", new(1222, 72, 120, 28), 22, color: Muted);
-            TravelValue(_summary, $"¥{r.SaleRevenue}", new(1222, 103, 194, 32), 28, HorizontalAlignment.Right);
-            TravelRule(_summary, new(1222, 140, 194, 1));
-            Art(_summary, "小费图标", new(1222, 150, 28, 28));
-            TravelValue(_summary, "顾客小费", new(1258, 149, 158, 28), 22, color: Muted);
-            TravelValue(_summary, $"+¥{r.Tips}", new(1222, 177, 194, 30), 28, HorizontalAlignment.Right);
+            Art(_summary, "总收入图标", new(906, 93, 100, 100));
+            _income = TravelValue(_summary, $"¥{r.TotalRevenue + _model.ChallengeReward}", new(1026, 85, 174, 112), 96);
+            TravelPanel(_summary, new(1210, 46, 220, 182), true);
+            TravelValue(_summary, "菜品销售", new(1222, 57, 120, 28), 22, color: Muted);
+            TravelValue(_summary, $"¥{r.SaleRevenue}", new(1222, 56, 194, 32), 28, HorizontalAlignment.Right);
+            TravelRule(_summary, new(1222, 94, 194, 1));
+            Art(_summary, "小费图标", new(1222, 103, 28, 28));
+            TravelValue(_summary, "顾客小费", new(1258, 102, 158, 28), 22, color: Muted);
+            TravelValue(_summary, $"+¥{r.Tips}", new(1222, 130, 194, 30), 28, HorizontalAlignment.Right);
+            TravelRule(_summary, new(1222, 164, 194, 1));
+            TravelValue(_summary, "挑战奖金", new(1222, 172, 120, 28), 22, color: Muted);
+            var bonus = TravelValue(_summary, $"+¥{_model.ChallengeReward}", new(1222, 194, 194, 30), 28, HorizontalAlignment.Right);
+            bonus.Name = "ChallengeRewardAmount";
         });
 
         TravelPanel(_summary, new(890, 276, 560, 160));

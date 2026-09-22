@@ -171,8 +171,10 @@ public partial class WuhanLedger : Control
             baseLayer.Visible = false;
             baseLayer.Texture = null;
             overlay.Texture = _art.Texture(id == "noodles" ? "noodles_finished" : id);
-            overlay.Position = Vector2.Zero;
-            overlay.Size = new Vector2(width, 212);
+            Vector2 slotSize = new(width, 212);
+            float scale = id == "doupi_single" ? .9f : 1f;
+            overlay.Size = slotSize * scale;
+            overlay.Position = (slotSize - overlay.Size) * .5f;
             slot.Visible = true;
         }
     }

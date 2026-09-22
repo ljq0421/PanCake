@@ -27,6 +27,7 @@ public partial class UpgradeCelebrationSelfTest : Node
             foreach (bool demo in new[] { false, true }) CheckPersistence(catalog, demo);
             foreach (string city in new[] { StableIds.Cities.Tianjin, StableIds.Cities.Wuhan })
                 await CheckScreen(catalog, city);
+            await CheckDayUnlocks(catalog);
             // Let the audio server retire stopped voices before the test process exits.
             await ToSignal(GetTree().CreateTimer(.2), SceneTreeTimer.SignalName.Timeout);
             using var sound = EquipmentUpgradeCelebration.MakeChime();
@@ -161,13 +162,14 @@ public partial class UpgradeCelebrationSelfTest : Node
         Check(!effect.IsPlaying, "later opening waits for operation");
         effect.NotifyUse(first); effect._Process(.1); Check(effect.IsPlaying && effect.CurrentCaption == EquipmentUpgradePresentation.FirstUse(first, 3), "later operation displays new benefit");
         controller.SetPauseReason("test", true); effect._Process(.01);
-        Check(!effect.IsPlaying && !effect.AudioPlaying, "pause stops animation and sound");
+        Check(effect.IsPlaying && !effect.Visible && !effect.AudioPlaying, "pause preserves cue and stops sound");
         controller.SetPauseReason("test", false); effect._Process(.1);
-        Check(!effect.IsPlaying && !effect.AudioPlaying, "resume does not replay");
+        Check(effect.IsPlaying && effect.Visible && !effect.AudioPlaying, "resume continues without replaying sound");
         save.Data.GetCity(city).PendingUpgradeCelebrations[first] = 3;
         effect.Begin(save, controller, out _); effect.NotifyUse(first); effect._Process(.1);
         effect._Notification((int)NotificationApplicationFocusOut);
-        Check(!effect.IsPlaying && !effect.AudioPlaying, "focus loss stops the cue");
+        Check(effect.IsPlaying && !effect.Visible && !effect.AudioPlaying, "focus loss suspends the cue");
+        effect._Notification((int)NotificationApplicationFocusIn);
         save.Data.GetCity(city).PendingUpgradeCelebrations[first] = 3;
         effect.Begin(save, controller, out _); effect.NotifyUse(first); effect._Process(.1); screen.Hide();
         Check(!effect.IsPlaying && !effect.AudioPlaying, "leaving the screen stops the cue immediately");

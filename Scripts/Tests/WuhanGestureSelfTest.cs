@@ -53,6 +53,7 @@ public partial class WuhanGestureSelfTest : Node
     public override async void _Ready()
     {
         try {
+            VerifyCutTolerance();
             bool small=OS.GetCmdlineUserArgs().Contains("--capture-720");
             bool capture=OS.GetCmdlineUserArgs().Contains("--capture");
             ProjectSettings.SetSetting("accessibility/reduce_motion",OS.GetCmdlineUserArgs().Contains("--reduced-motion"));
@@ -203,7 +204,13 @@ public partial class WuhanGestureSelfTest : Node
                 Check(_screen.Doupi.CompletedCuts==1&&_screen.Doupi.Quality==DoupiQuality.Normal,"same press cannot cut another line or burn");Button(View.PanCenter,false);
                 Cut(DoupiCutLine.Horizontal);
                 Check(_screen.Doupi.CompletedCuts==1,"duplicate line does not advance");
-                Cut(DoupiCutLine.Center);
+                // Reproduce ordinary short cuts after releasing the horizontal stroke.
+                // Include edge columns, both directions, and a diagonal outside the old line band.
+                Vector2 cutStart = level == 1 ? View.PanPoint(.03f,.5f) : level == 2 ? View.PanPoint(.97f,.5f) : View.PanPoint(.48f,.5f);
+                Vector2 cutEnd = level == 1 ? View.PanPoint(.03f,.91f) : level == 2 ? View.PanPoint(.97f,.09f) : View.PanPoint(.81f,.91f);
+                Move(cutStart); Button(cutStart,true); Move(cutEnd,true);
+                Check(_screen.Doupi.CompletedCuts==4,"short vertical cut from mid-pan commits before release at every equipment level");
+                await Shot("03a-short-vertical-cut"); Button(cutEnd,false);
                 Check(!View.IsKnifeHeld && _screen.Doupi.State==DoupiState.Cut&&_screen.Doupi.CompletedCuts==4,"two gestures finish all four marks and eight pieces");Step(.4);
                 Check(_screen.DoupiStock.Count==8&&_screen.Doupi.RemainingPieces==5,"three free slots receive three pieces with five left in pan");Step(.5);
                 await Shot("04-partial-stock");
@@ -234,6 +241,29 @@ public partial class WuhanGestureSelfTest : Node
             GD.Print($"WUHAN_GESTURE_TEST_RESULT passed={_passed} failed=0");GetTree().Quit();
         } catch(Exception e) {GD.PushError(e.ToString());GD.Print($"WUHAN_GESTURE_TEST_RESULT passed={_passed} failed=1");GetTree().Quit(1);}
     }
+    private void VerifyCutTolerance()
+    {
+        foreach (float x in new[] { .01f, .25f, .5f, .75f, .99f })
+        foreach (float direction in new[] { -1f, 1f })
+        {
+            var stroke = new DoupiCutStroke(new(x,.5f));
+            Check(!stroke.Move(new(x,.5f + direction * .39f)), "vertical stroke below threshold does not cut");
+            Check(stroke.Move(new(x,.5f + direction * .4f)), "vertical stroke accepts forty percent from any column in either direction");
+        }
+        var slanted = new DoupiCutStroke(new(.2f,.3f));
+        Check(slanted.Move(new(.53f,.7f)), "deliberate slanted vertical cut snaps without tracing a template line");
+        var jitter = new DoupiCutStroke(new(.5f,.5f));
+        Check(!jitter.Move(new(.5f,.5f)), "click alone cannot cut");
+        for (int i=0;i<20;i++)
+            Check(!jitter.Move(new(.5f + (i%2)*.01f,.5f + (i%2==0?.21f:-.21f))), "back-and-forth motion cannot accumulate vertical completion");
+        var diagonal = new DoupiCutStroke(new(.2f,.2f));
+        Check(!diagonal.Move(new(.6f,.6f)), "ambiguous diagonal does not cut");
+        var horizontal = new DoupiCutStroke(new(.05f,.5f));
+        Check(!horizontal.Move(new(.46f,.5f)) && horizontal.Move(new(.95f,.5f)), "horizontal cut retains original long coverage requirement");
+        var offLine = new DoupiCutStroke(new(.05f,.1f));
+        Check(!offLine.Move(new(.95f,.1f)), "horizontal cut retains original template band");
+    }
+
     private async Task VerifyStageSwitching()
     {
         var catalog = GetNode<DataCatalog>("/root/DataCatalog");

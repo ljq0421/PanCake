@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Tests/WuhanCustomersSelfTest.cs" id="1"]
+
+[node name="WuhanCustomersSelfTest" type="Node"]
+script = ExtResource("1")

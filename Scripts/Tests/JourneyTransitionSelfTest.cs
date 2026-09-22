@@ -54,6 +54,11 @@ public partial class JourneyTransitionSelfTest : Node
                 await SettingsFoldPreview();
                 GD.Print($"SETTINGS_FOLD_PREVIEW_PASS checks={_checks}"); GetTree().Quit(); return;
             }
+            if (OS.GetCmdlineUserArgs().Contains("--utility-backdrop-only"))
+            {
+                await UtilityBackdropChecks();
+                GD.Print($"UTILITY_BACKDROP_TEST_PASS checks={_checks}"); GetTree().Quit(); return;
+            }
             await Capture("home");
             string before = File.ReadAllText(Path.Combine(fixture, "save.json"));
             _home.PresentMap();

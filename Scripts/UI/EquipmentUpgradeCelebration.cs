@@ -7,7 +7,8 @@ namespace ProjectCake.UI;
 /// <summary>A short, non-blocking opening cue, shared by the two supported cities.</summary>
 public partial class EquipmentUpgradeCelebration : Control
 {
-    private sealed record Target(string Id, string Caption, Rect2 Bounds);
+    private sealed record Target(string Id, string Caption, Rect2 Bounds, bool Unlock = false);
+    private bool _focused = true;
     private SaveService? _save;
     private DayController? _controller;
     private string _city = "";
@@ -74,6 +75,8 @@ public partial class EquipmentUpgradeCelebration : Control
             if (doupi) targets.Add(new("doupi_griddle", "豆皮锅", layout.Pan));
         }
         foreach (var target in targets) _targets[target.Id] = target;
+        foreach (var item in DayUnlockPresentation.ForDay(GetNode<DataCatalog>("/root/DataCatalog"), controller.CurrentConfig!))
+            _queue.Enqueue(new(item.Id, "新解锁：" + item.Name, item.Bounds, true));
         return true;
     }
 
@@ -83,21 +86,29 @@ public partial class EquipmentUpgradeCelebration : Control
         if (!_active() || _controller?.TutorialActive != false || _save is null
             || !_targets.TryGetValue(equipmentId, out var target)
             || !_save.Data.GetCity(_city).PendingUpgradeCelebrations.ContainsKey(equipmentId)
-            || _current?.Id == equipmentId || _queue.Any(t => t.Id == equipmentId)) return;
+            || (_current is { Unlock: false } && _current.Id == equipmentId)
+            || _queue.Any(t => !t.Unlock && t.Id == equipmentId)) return;
         _queue.Enqueue(target with { Bounds = bounds ?? target.Bounds });
     }
 
     public override void _Process(double delta)
     {
         if (!IsPlaying) return;
-        if (!_active()) { Clear(); return; }
+        if (_controller?.CurrentConfig?.CityId != _city || _controller.State != DayState.Running) { Clear(); return; }
+        if (!_focused || !_active()) { _audio.Stop(); Hide(); return; }
+        if (_current is not null) Show();
         if (_current is null)
         {
             var target = _queue.Dequeue();
-            if (_save is null || !_save.TryConsumeUpgradeCelebrations(_city, new[] { target.Id }, out var upgrades, out _)
-                || !upgrades.TryGetValue(target.Id, out int level)) return;
+            string caption = target.Caption;
+            if (!target.Unlock)
+            {
+                if (_save is null || !_save.TryConsumeUpgradeCelebrations(_city, new[] { target.Id }, out var upgrades, out _)
+                    || !upgrades.TryGetValue(target.Id, out int level)) return;
+                caption = EquipmentUpgradePresentation.FirstUse(target.Id, level);
+            }
             _current = target; _elapsed = 0;
-            _caption.Text = EquipmentUpgradePresentation.FirstUse(target.Id, level); Show();
+            _caption.Text = caption; Show();
             _audio.Play(); PlayedCount++;
         }
         _elapsed += (float)delta;
@@ -145,7 +156,8 @@ public partial class EquipmentUpgradeCelebration : Control
     }
     public override void _Notification(int what)
     {
-        if (what == NotificationApplicationFocusOut) Clear();
+        if (what == NotificationApplicationFocusOut) { _focused = false; _audio?.Stop(); Hide(); }
+        if (what == NotificationApplicationFocusIn) _focused = true;
     }
     public override void _ExitTree() => _audio?.Stop();
 

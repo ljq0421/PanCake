@@ -268,7 +268,7 @@ public partial class StartScreen
     private void RenderUpgradePage()
     {
         CityFrame(JourneyPage.Upgrades, "");
-        var wallet = EquipmentUpgradeView.AddWallet(_body, _bookUpgradeSource?.Coins ?? _save!.Data.Coins, new(1220, 158, 360, 64));
+        var wallet = EquipmentUpgradeView.AddWallet(_body, _bookUpgradeSource?.Coins ?? _save!.Data.Coins, new(1220, 220, 360, 64));
         wallet.PivotOffset = wallet.Size;
         wallet.Scale = Vector2.One * .49f;
         if (_equipmentCity != _city) { _selectedEquipment = null; _equipmentCity = _city; }
@@ -282,6 +282,7 @@ public partial class StartScreen
                 var current = _cityModel?.Equipment(_city).FirstOrDefault(i => i.Id == e.Id);
                 if (current is null || !current.CanBuy || current.Level != e.Level || current.Price != e.Price)
                 { RefreshCityPage(); ShowError("设备状态已变化，请查看最新升级信息。"); return; }
+                _purchasedEquipment = e;
                 _busy = true; UpgradeRequested?.Invoke(_city, e.PurchaseId);
             }, HostedByBook && _bookUpgradeSource?.SupportsContinue == true ? $"开始第 {_bookUpgradeSource.NextDay} 天" : null,
             HostedByBook && _bookUpgradeSource?.SupportsContinue == true ? _bookUpgradeContinue : null);

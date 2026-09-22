@@ -415,6 +415,25 @@ public partial class OrderBubbleView : PanelContainer
 
     private Control ProductIcon(ProductKind kind, Vector2 size)
     {
+        // Keep Wuhan's compact-card column width stable while reducing only the
+        // comparatively large doupi artwork.
+        if (_compactLayout && _wuhan is not null && kind == ProductKind.Doupi)
+        {
+            var slot = new Control { Name = "OrderProductIcon", CustomMinimumSize = size,
+                MouseFilter = MouseFilterEnum.Ignore, SizeFlagsVertical = SizeFlags.ShrinkCenter };
+            Vector2 imageSize = size * .9f;
+            Control image = ProductIconCore(kind, imageSize);
+            image.Name = "DoupiImage";
+            image.Position = (size - imageSize) * .5f;
+            image.Size = imageSize;
+            slot.AddChild(image);
+            return slot;
+        }
+        return ProductIconCore(kind, size);
+    }
+
+    private Control ProductIconCore(ProductKind kind, Vector2 size)
+    {
         if (_xian is not null && kind is ProductKind.Roujiamo or ProductKind.Hulatang)
             return Icon(_xian.Texture(kind == ProductKind.Roujiamo ? "通用卡通腊汁肉夹馍成品" : "成品肉丸胡辣汤"), size, "OrderProductIcon");
         if (kind != ProductKind.HotDryNoodles || _wuhan is null)

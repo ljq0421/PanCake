@@ -75,6 +75,7 @@ public partial class EquipmentUpgradeView : Control
 
     private void Select(string id, bool focus)
     {
+        _successTween?.Kill();
         _previewTween?.Kill();
         SelectedId = id; _selection(id);
         foreach (var child in _detail.GetChildren()) { _detail.RemoveChild(child); child.QueueFree(); }

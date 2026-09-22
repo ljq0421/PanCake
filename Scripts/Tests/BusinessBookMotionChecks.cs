@@ -61,7 +61,7 @@ public partial class BusinessBookSelfTest
         Label Caption(string text) => view.Descendants<Label>().Single(l => l.Text == text);
         void Complete(string context)
         {
-            Check(Income().Text == $"¥{view.Model.Result.TotalRevenue}" && Income().Modulate.A == 1
+            Check(Income().Text == $"¥{view.Model.Result.TotalRevenue + view.Model.ChallengeReward}" && Income().Modulate.A == 1
                 && Income().Scale == Vector2.One && Note().Modulate.A == 1
                 && Note().Position == new Vector2(230, 424), context + " restores exact final values and transforms");
         }
@@ -74,7 +74,9 @@ public partial class BusinessBookSelfTest
                 {
                     CityId = city, Closing = true, Orders = fixture.Orders,
                     Result = new() { Day = 3, SaleRevenue = 40, Tips = 5, CompletedCustomers = 4,
-                        LostCustomers = 1, PerfectOrders = 2, Satisfaction = 93 }
+                        LostCustomers = 1, PerfectOrders = 2, Satisfaction = 93 },
+                    Challenge = new DailyChallenge(city, 3, DailyChallengeKind.Perfect, 1, 20),
+                    ChallengeReward = 20
                 };
                 foreach (var size in Capture ? CaptureSizes : CaptureSizes.Take(1))
                 {
@@ -87,19 +89,26 @@ public partial class BusinessBookSelfTest
                         && view.Descendants<Label>().Single(l => l.Name == "ChallengeSettlement").Modulate.A == 0, "results hidden before first frame");
                     Check(Caption("今日收入").Modulate.A == 1 && Caption("今日接待").Modulate.A == 1
                         && !view.CloseButton.Disabled, "headings and actions are available from opening");
+                    Check(view.Descendants<Label>().Any(l => l.Text == "挑战奖金")
+                        && view.Descendants<Label>().Any(l => l.Text == "+¥20"), "income detail includes challenge reward");
                     if (Capture) await Shot($"motion-{city}-{size.X}-0-open");
                     StepMotion(tween, .52 + .62);
                     Check(Caption("今日接待").Modulate.A == 1 && Caption("93%").Modulate.A == 1
                         && Income().Modulate.A == 0, "reception and satisfaction precede income");
                     if (Capture) await Shot($"motion-{city}-{size.X}-1-reception");
-                    StepMotion(tween, .40);
+                    StepMotion(tween, .45);
                     Check(Income().Modulate.A == 1 && Income().Text != "¥0", "income follows service reflection");
                     if (Capture) await Shot($"motion-{city}-{size.X}-2-evaluation");
                     StepMotion(tween, .25);
                     Check(view.Descendants<Label>().Single(l => l.Name == "ChallengeSettlement").Modulate.A == 1
                         && Note().Modulate.A <= 1, "challenge result follows income");
                     if (Capture) await Shot($"motion-{city}-{size.X}-3-review");
-                    StepMotion(tween, .59);
+                    Check(Income().Scale == Vector2.One, "counting amount stays at resting scale");
+                    StepMotion(tween, .62);
+                    Check(Income().Text == "¥65" && Income().Scale.X > 1.17f
+                        && Note().Modulate.A == 0, "exact final income is enlarged before the note appears");
+                    if (Capture) await Shot($"motion-{city}-{size.X}-income-emphasis");
+                    StepMotion(tween, .70);
                     Complete(city + " natural completion");
                     Check(Income().Position == incomePosition, "income count leaves its layout fixed");
                     if (Capture) await Shot($"motion-{city}-{size.X}-4-complete");
@@ -115,8 +124,8 @@ public partial class BusinessBookSelfTest
                         CheckMotionInk(Caption("今日接待"));
                     }
                 }
-                // The current reveal ends at .52 + 1.04 + .25 = 1.81 seconds.
-                foreach (double moment in new[] { .1, .7, 1.1, 1.6, 1.75 })
+                // Include interruption during the final-income emphasis and its return.
+                foreach (double moment in new[] { .1, .7, 1.1, 1.6, 2.3, 2.6 })
                 {
                     view.Open(model); var tween = PauseMotion(view); StepMotion(tween, moment);
                     Check(MotionField<bool>(view, "_travelAnimating"), "skip input occurs during reveal");
@@ -153,7 +162,7 @@ public partial class BusinessBookSelfTest
                 {
                     view.Open(new() { CityId = city, Closing = true, Result = result });
                     var tween = PauseMotion(view);
-                    StepMotion(tween, 2.2);
+                    StepMotion(tween, 3.1);
                     Complete("edge revenue " + result.TotalRevenue);
                     Check(!MotionField<bool>(view, "_travelAnimating"), "result timeline completes");
                     await Frames();
@@ -187,7 +196,7 @@ public partial class BusinessBookSelfTest
     private void CheckMotionInk(Label label)
     {
         using var frame = GetViewport().GetTexture().GetImage();
-        Rect2 rect = label.GetGlobalRect();
+        Rect2 rect = label.GetViewportTransform() * label.GetGlobalRect();
         int ink = 0;
         for (int y = Math.Max(0, (int)rect.Position.Y); y < Math.Min(frame.GetHeight(), (int)rect.End.Y); y++)
         for (int x = Math.Max(0, (int)rect.Position.X); x < Math.Min(frame.GetWidth(), (int)rect.End.X); x++)

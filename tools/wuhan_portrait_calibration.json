@@ -1,0 +1,92 @@
+{
+  "wuhan_cyclist": {
+    "waistY": 930,
+    "cutY": 555,
+    "headWidth": 525,
+    "neck": [
+      590,
+      590
+    ]
+  },
+  "wuhan_engineer": {
+    "waistY": 930,
+    "cutY": 525,
+    "headWidth": 520,
+    "neck": [
+      572,
+      568
+    ]
+  },
+  "wuhan_opera_actress": {
+    "waistY": 930,
+    "cutY": 470,
+    "headWidth": 510,
+    "neck": [
+      558,
+      510
+    ]
+  },
+  "wuhan_embroidery_artisan": {
+    "waistY": 930,
+    "cutY": 525,
+    "headWidth": 495,
+    "neck": [
+      580,
+      565
+    ]
+  },
+  "wuhan_clothing_owner": {
+    "waistY": 930,
+    "cutY": 554,
+    "headWidth": 530,
+    "neck": [
+      566,
+      600
+    ]
+  },
+  "wuhan_grandma": {
+    "waistY": 930,
+    "cutY": 562,
+    "headWidth": 550,
+    "neck": [
+      585,
+      607
+    ]
+  },
+  "wuhan_industry_worker": {
+    "waistY": 930,
+    "cutY": 518,
+    "headWidth": 475,
+    "neck": [
+      574,
+      560
+    ]
+  },
+  "wuhan_cultural_owner": {
+    "waistY": 930,
+    "cutY": 524,
+    "headWidth": 510,
+    "neck": [
+      568,
+      567
+    ]
+  },
+  "wuhan_student": {
+    "waistY": 930,
+    "cutY": 528,
+    "headWidth": 510,
+    "neck": [
+      585,
+      571
+    ]
+  },
+  "wuhan_ferry_worker": {
+    "waistY": 930,
+    "cutY": 523,
+    "headWidth": 490,
+    "neck": [
+      565,
+      566
+    ]
+  }
+}

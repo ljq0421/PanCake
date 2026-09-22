@@ -155,7 +155,7 @@ public partial class JourneyTransition : CanvasLayer
     private void ViewportChanged() { if (!_paperDeparture) Finish(); }
 
     /// <summary>Visibility belongs to the host; the previous rendered frame supplies the closing sheet.</summary>
-    public static void Watch(Control panel, Func<bool>? enabled = null, Func<Rect2>? bounds = null, Func<bool>? book = null, bool ledger = false)
+    public static void Watch(Control panel, Func<bool>? enabled = null, Func<Rect2>? bounds = null, Func<bool>? book = null, bool ledger = false, Func<bool>? dimBackdrop = null)
     {
         if (panel.HasMeta("journey_motion")) return;
         panel.SetMeta("journey_motion", true);
@@ -170,7 +170,7 @@ public partial class JourneyTransition : CanvasLayer
             Effect effect = book?.Invoke() == true
                 ? (visible ? Effect.SpreadOpen : Effect.SpreadClose)
                 : (visible ? Effect.OpenBook : Effect.CloseBook);
-            For(panel).Play(effect, bounds: bounds?.Invoke(), ledger: ledger);
+            For(panel).Play(effect, bounds: bounds?.Invoke(), ledger: ledger, dimBackdrop: dimBackdrop?.Invoke() ?? true);
         };
     }
 }

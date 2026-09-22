@@ -54,19 +54,53 @@ public static class CustomerAppearanceCatalog
         "culture_street_owner",
     };
 
-    private static readonly HashSet<string> KnownIds = Definitions.Select(item => item.Id).ToHashSet(StringComparer.Ordinal);
+    public static IReadOnlyList<CustomerAppearanceDefinition> Wuhan { get; } = new CustomerAppearanceDefinition[]
+    {
+        new("wuhan_cyclist", "东湖骑行女青年"),
+        new("wuhan_engineer", "光谷青年女工程师"),
+        new("wuhan_opera_actress", "汉剧演员女"),
+        new("wuhan_embroidery_artisan", "汉绣年轻手艺人男"),
+        new("wuhan_clothing_owner", "汉正街服装店女老板"),
+        new("wuhan_grandma", "老汉口街坊婆婆"),
+        new("wuhan_industry_worker", "青山产业工人男"),
+        new("wuhan_cultural_owner", "昙华林文创小店女店主"),
+        new("wuhan_student", "武汉高校男学生"),
+        new("wuhan_ferry_worker", "武汉轮渡工作人员男"),
+    };
 
-    public static IReadOnlyList<CustomerAppearanceDefinition> All => Definitions;
+    // Generic identities remain available; Tianjin-local identities stay in their existing city pools.
+    public static IReadOnlyList<string> Generic { get; } = new[]
+    {
+        "young_woman", "male_office", "female_office", "elder_regular", "morning_elder",
+        "morning_aunt", "student", "delivery_rider", "taxi_driver", "tourist",
+    };
+    private static readonly IReadOnlyList<string> WuhanNormalPool = Generic.Concat(Wuhan.Select(item => item.Id)).ToArray();
+    private static readonly IReadOnlyList<string> WuhanOfficePool = new[]
+        { "male_office", "female_office", "student", "delivery_rider", "taxi_driver",
+          "wuhan_engineer", "wuhan_student", "wuhan_ferry_worker", "wuhan_industry_worker" };
+    private static readonly IReadOnlyList<string> WuhanRegularPool = new[]
+        { "elder_regular", "morning_elder", "morning_aunt", "wuhan_grandma", "wuhan_cyclist",
+          "wuhan_embroidery_artisan", "wuhan_opera_actress" };
+    private static readonly IReadOnlyList<string> WuhanBigOrderPool = new[]
+        { "female_office", "tourist", "wuhan_clothing_owner", "wuhan_cultural_owner" };
+
+    public static IReadOnlyList<CustomerAppearanceDefinition> Tianjin => Definitions;
+    public static IReadOnlyList<CustomerAppearanceDefinition> All { get; } = Definitions.Concat(Wuhan).ToArray();
+    private static readonly HashSet<string> KnownIds = All.Select(item => item.Id).ToHashSet(StringComparer.Ordinal);
 
     public static bool IsKnown(string appearanceId) => KnownIds.Contains(appearanceId);
 
     public static IReadOnlyList<string> CandidatesFor(string customerTypeId) => customerTypeId switch
     {
-        "normal" or "wuhan_normal" or "xian_normal" => NormalPool,
-        "office_worker" or "wuhan_office_worker" or "xian_office_worker" => OfficeWorkerPool,
-        "regular" or "wuhan_regular" or "xian_regular" => RegularPool,
+        "wuhan_normal" => WuhanNormalPool,
+        "wuhan_office_worker" => WuhanOfficePool,
+        "wuhan_regular" => WuhanRegularPool,
+        "wuhan_big_order" => WuhanBigOrderPool,
+        "normal" or "xian_normal" => NormalPool,
+        "office_worker" or "xian_office_worker" => OfficeWorkerPool,
+        "regular" or "xian_regular" => RegularPool,
         "wuhan_tourist" or "xian_tourist" => new[] { "tourist" },
-        "big_order" or "wuhan_big_order" => BigOrderPool,
+        "big_order" => BigOrderPool,
         _ => new[] { DefaultAppearanceId },
     };
 

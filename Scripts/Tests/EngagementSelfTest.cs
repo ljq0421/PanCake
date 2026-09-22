@@ -33,7 +33,7 @@ public partial class EngagementSelfTest : Node
             settings.UsePathForTests(Path.Combine(_dir, "settings.cfg")); settings.SetLanguage(locale); InterfaceLessons.MarkAllSeen(settings);
             var c = GetNode<DataCatalog>("/root/DataCatalog"); Check(c.IsValid, "catalog valid");
             CheckPlans(c); CheckChallenges(c); CheckMigration(c); CheckEconomy(c);
-            await CheckUi(c);
+            if (!args.Contains("--logic-only")) await CheckUi(c);
             GD.Print($"ENGAGEMENT_SELF_TEST_OK checks={_checks} locale={locale} demo={ExperienceProfile.IsDemo}");
             GetTree().Quit();
         }

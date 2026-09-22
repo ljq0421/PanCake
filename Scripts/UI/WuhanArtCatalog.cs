@@ -1,5 +1,7 @@
 using Godot;
 using ProjectCake.Data;
+using ProjectCake.Customers;
+using System.Text.Json;
 
 namespace ProjectCake.UI;
 
@@ -9,9 +11,11 @@ public sealed class WuhanArtCatalog
     private readonly Dictionary<string, Texture2D> _textures = new(StringComparer.Ordinal);
     private readonly List<string> _missing = new();
     private readonly TianjinArtCatalog _shared = new();
+    private readonly Dictionary<string, CustomerPortraitLayout> _customerLayouts = new(StringComparer.Ordinal);
 
     public WuhanArtCatalog()
     {
+        LoadCustomerPortraits();
         Load("background", "武汉早餐铺主界面背景＋空工作台_v4.png");
         Load("workbench_basic", "武汉-热干面-基础小料.png");
         Load("workbench_noodles", "武汉-热干面-v1-无挂件.png");
@@ -55,6 +59,40 @@ public sealed class WuhanArtCatalog
     public Texture2D Ingredient(string id) => id switch { StableIds.Ingredients.WuhanBaseSeasoning => Get("base_seasoning"), StableIds.Ingredients.WuhanScallion => Get("scallion"), StableIds.Ingredients.WuhanChiliOil => Get("chili"), StableIds.Ingredients.WuhanBraisedBeef => Get("beef"), _ => Get("raw_noodles") };
     public Texture2D Product(ProductKind kind) => kind switch { ProductKind.HotDryNoodles => Get("mixed"), ProductKind.Doupi => Get("doupi_single"), ProductKind.EggRiceWine => Get("egg_finished"), _ => _shared.Product(kind) };
     public TianjinArtCatalog Shared => _shared;
+    public CustomerPortraitLayout CustomerLayout(string appearanceId) =>
+        _customerLayouts.TryGetValue(appearanceId, out var layout) ? layout : _shared.CustomerLayout(appearanceId);
+
+    public CustomerPortraitVisual CustomerPortrait(string appearanceId, CustomerExpression expression)
+    {
+        if (!_customerLayouts.TryGetValue(appearanceId, out var layout))
+            return _shared.CustomerPortrait(appearanceId, expression);
+        string key = expression.ToString().ToLowerInvariant();
+        return new CustomerPortraitVisual(Get(appearanceId + "/body"), Get(appearanceId + "/head_" + key),
+            new Vector2(220, 154), layout.Scale, layout.HeadAnchor);
+    }
+
+    private void LoadCustomerPortraits()
+    {
+        const string path = Root + "Customers/portrait_layout.json";
+        using var document = JsonDocument.Parse(Godot.FileAccess.GetFileAsString(path));
+        var root = document.RootElement;
+        if (root.GetProperty("canvasWidth").GetInt32() != 1086 || root.GetProperty("canvasHeight").GetInt32() != 1448)
+            throw new InvalidOperationException("武汉顾客画布必须为 1086×1448。");
+        var entries = root.GetProperty("appearances");
+        foreach (var appearance in CustomerAppearanceCatalog.Wuhan)
+        {
+            var entry = entries.GetProperty(appearance.Id);
+            var anchor = entry.GetProperty("headAnchor");
+            var bounds = entry.GetProperty("normalVisibleBounds");
+            var waist = entry.GetProperty("counterWaist");
+            _customerLayouts.Add(appearance.Id, new CustomerPortraitLayout(entry.GetProperty("scale").GetSingle(),
+                new Vector2(anchor[0].GetSingle(), anchor[1].GetSingle()),
+                new Rect2I(bounds[0].GetInt32(), bounds[1].GetInt32(), bounds[2].GetInt32(), bounds[3].GetInt32()),
+                new Vector2(waist[0].GetSingle(), waist[1].GetSingle()), entry.GetProperty("counterHeight").GetSingle()));
+            foreach (string layer in new[] { "body", "head_happy", "head_normal", "head_impatient", "head_angry" })
+                Load(appearance.Id + "/" + layer, $"Customers/{appearance.Id}/{layer}.png");
+        }
+    }
     public IReadOnlyList<string> MissingRequiredAssets() => _missing.ToArray();
     private Texture2D Get(string id) => _textures.TryGetValue(id, out Texture2D? value) ? value : throw new InvalidOperationException($"武汉美术资源未加载：{id}");
     private void Load(string id, string file) { Texture2D? texture = ResourceLoader.Load<Texture2D>(Root + file); if (texture is not null) _textures[id] = texture; else _missing.Add($"{id}: {Root + file}"); }

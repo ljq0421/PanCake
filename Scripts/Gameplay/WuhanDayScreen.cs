@@ -13,7 +13,6 @@ public partial class WuhanDayScreen : Control
 {
     private const float OrderCardWidth = OrderBubbleView.CompactWidth;
     public event Action? HubRequested;
-    public event Action? HomeRequested;
     private readonly Control[] _customers = new Control[5];
     private readonly DropZone[] _customerDropZones = new DropZone[5];
     private readonly string?[] _deliveryCustomerIds = new string?[5];
@@ -101,7 +100,7 @@ public partial class WuhanDayScreen : Control
         GetNode<Button>("@PanelContainer@312/@HBoxContainer@313/@Button@319").Pressed += () => { Workstation.CancelInput(); _abandon.PopupCentered(); };
         this.FindButton("收好收入 · 返回武汉经营首页").Pressed += () => HubRequested?.Invoke();
         ButtonHoverFeedback.Attach(this.FindButton("收好收入 · 返回武汉经营首页"));
-        _abandon.Confirmed += () => { Workstation.CancelAnimations(); _controller.AbandonDay(); HomeRequested?.Invoke(); };
+        _abandon.Confirmed += () => { Workstation.CancelAnimations(); _controller.AbandonDay(); HubRequested?.Invoke(); };
         VisibilityChanged += () =>
         {
             if (!IsVisibleInTree()) { CloseBusinessDetails(); _controller?.SetPauseReason("wuhan-focus", false); Workstation.CancelAnimations(); CollectionFeedback.Clear(); ClearPaymentFeedback(); }
@@ -423,7 +422,8 @@ public partial class WuhanDayScreen : Control
                 (_customers[i].Size.X - _orders[i].Size.X * _orders[i].Scale.X) * .5f,
                 155 - _orders[i].Size.Y * _orders[i].Scale.Y);
             PatienceBarPresentation.Render(_patience[i], 1 - customer.PatienceProgress);
-            _portraits[i].SetVisual(_art.Shared.CustomerPortrait(customer.AppearanceId,TianjinArtCatalog.ResolveCustomerExpression(customer.State,customer.WasServed)));
+            _portraits[i].SetVisual(_art.CustomerPortrait(customer.AppearanceId,TianjinArtCatalog.ResolveCustomerExpression(customer.State,customer.WasServed)));
+            _portraits[i].SetCounterCalibration(_art.CustomerLayout(customer.AppearanceId));
             CustomerArrivalMotion.Apply(_portraits[i], _orders[i], customer);
         }
     }

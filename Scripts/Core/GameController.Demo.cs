@@ -28,7 +28,6 @@ public partial class GameController
         }
         screen.HubRequested += () => ReturnFromBusiness(StableIds.Cities.Tianjin);
         wuhan.HubRequested += () => ReturnFromBusiness(StableIds.Cities.Wuhan);
-        wuhan.HomeRequested += () => { ShowOnly(_startScreen); _startScreen.PresentHome(); };
         _startScreen.Initialize(_save);
         _startScreen.ConfigureCities(catalog, null);
         _startScreen.BusinessRequested += (city, day) => StartCityBusiness(city, day);
@@ -41,7 +40,8 @@ public partial class GameController
         _startScreen.UpgradeRequested += (city, id) =>
         {
             bool ok = _save.TryPurchase(city, id, catalog, out string error);
-            _startScreen.RefreshCityPage(); _startScreen.ShowError(ok ? "设备已升级，下次营业生效。" : error);
+            _startScreen.RefreshCityPage();
+            if (!ok) _startScreen.ShowError(error);
             if (ok) _startScreen.ShowUpgradeSuccess(id.Replace("equipment:", "").Split("_lv")[0]);
         };
         _startScreen.NewGameRequested += slotId => CreateJourney(slotId, showCity: false);

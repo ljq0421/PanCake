@@ -74,12 +74,11 @@ public partial class BusinessDetailsView
         _buying = true;
         try
         {
-            bool ok = _model.Upgrades!.Purchase(offer, out string error);
+            var previous = _model.Upgrades!.Equipment.FirstOrDefault(e => e.Id == offer.EquipmentId);
+            bool ok = _model.Upgrades.Purchase(offer, out string error);
             RefreshUpgradeCaptions(); BuildSummary(); RefreshRows();
-            RenderUpgradeModal(ok && _model.Upgrades!.SupportsContinue
-                ? $"升级成功：{offer.Name} Lv{offer.TargetLevel} · {BookUpgradeSource.Benefit(offer)}"
-                : ok ? "升级成功，下次营业生效。" : error);
-            if (ok) _upgradeModal?.GetChildren().OfType<StartScreen>().FirstOrDefault()?.ShowUpgradeSuccess(offer.EquipmentId);
+            RenderUpgradeModal(ok ? "" : error);
+            if (ok) _upgradeModal?.GetChildren().OfType<StartScreen>().FirstOrDefault()?.ShowUpgradeSuccess(offer.EquipmentId, previous);
         }
         finally { _buying = false; }
     }

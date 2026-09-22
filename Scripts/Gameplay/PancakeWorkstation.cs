@@ -148,11 +148,19 @@ public partial class PancakeWorkstation : Control
         if (!ProductionShortcutsEnabled || !_initialized || !IsVisibleInTree()
             || !CanInteract || _drag.IsDragging) return false;
 
-        // Resolve exactly one visible action before invoking it. Never include cleanup.
+        if (key == Key.G)
+        {
+            FryerCommand? command = FryerMachine?.Runtime.State == FryerState.Loaded
+                ? FryerCommand.LowerBasket : CanRaiseFryer() ? FryerCommand.RaiseBasket : null;
+            if (command is null) return false;
+            ExecuteFryer(command.Value);
+            return true;
+        }
+
+        // Resolve exactly one visible pancake action. Never include cleanup.
         Button? action = key switch
         {
             Key.F => _flip.Visible ? _flip : _finishSauce.Visible ? _finishSauce : _fold.Visible ? _fold : _bag.Visible ? _bag : null,
-            Key.G => _lowerBasket.Visible ? _lowerBasket : _raiseBasket.Visible ? _raiseBasket : null,
             _ => null,
         };
         if (action is null || !action.IsVisibleInTree() || action.Disabled) return false;
@@ -741,6 +749,9 @@ public partial class PancakeWorkstation : Control
         && FryerMachine.Runtime.State is FryerState.Empty or FryerState.Loaded
         && FryerMachine.Runtime.Quantity < FryerMachine.Level.Capacity;
 
+    private bool CanRaiseFryer() => _initialized && CanInteract && !_drag.IsDragging && IsVisibleInTree()
+        && FryerMachine is { Level.AutoRaise: false, Runtime.State: FryerState.Frying };
+
     private Control CreateYoutiaoDragPreview() => new TextureRect
     {
         Name = "YoutiaoQualityPreview",
@@ -758,6 +769,8 @@ public partial class PancakeWorkstation : Control
         if (!result.Success) Reject(result.Message);
         else
         {
+            if (IsTianjinWorkbench && command is FryerCommand.LowerBasket or FryerCommand.RaiseBasket)
+                _rawYoutiaoInput.Cancel();
             LearnWorkbenchAction(command switch
             {
                 FryerCommand.LoadOne => "fryer:load",
@@ -960,7 +973,9 @@ public partial class PancakeWorkstation : Control
                     ? WorkstationSlotAttentionState.Required
                     : WorkstationSlotAttentionState.Normal);
             SetContextAction(_lowerBasket, fryer.State == FryerState.Loaded);
-            SetContextAction(_raiseBasket, fryer.State == FryerState.Frying && !FryerMachine.Level.AutoRaise);
+            SetContextAction(_raiseBasket, !IsTianjinWorkbench && fryer.State == FryerState.Frying && !FryerMachine.Level.AutoRaise);
+            if (_fryerBodyInput is not null)
+                _fryerBodyInput.Visible = fryer.State == FryerState.Frying && !FryerMachine.Level.AutoRaise;
             SetContextAction(_discardBatch, !IsTianjinWorkbench && fryer.State == FryerState.Burnt);
             _fryerActions.Visible = _lowerBasket.Visible || _raiseBasket.Visible || _discardBatch.Visible;
             if (IsTianjinWorkbench) _fryerActions.Size = new Vector2(150, 44);

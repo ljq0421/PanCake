@@ -32,6 +32,7 @@ public sealed class BusinessBookModel
     public bool CanRetry { get; set; }
     public string SaveMessage { get; set; } = "";
     public string[] Stickers { get; set; } = Array.Empty<string>();
+    public string[] CustomerMilestones { get; set; } = Array.Empty<string>();
     public BookUpgradeSource? Upgrades { get; set; }
     public DailyChallenge? Challenge { get; set; }
     public int ChallengeReward { get; set; }
@@ -60,7 +61,8 @@ public sealed class BusinessBookModel
     public BookProduct? BestSeller => Orders.Where(o => !o.Lost).SelectMany(o => o.Products)
         .GroupBy(p => p.Id, StringComparer.Ordinal).Select(g => g.First() with { Quantity = g.Sum(p => p.Quantity), Preference = "" })
         .OrderByDescending(p => p.Quantity).ThenBy(p => p.Id, StringComparer.Ordinal).FirstOrDefault();
-    public string DailyNote => Resolved == 0 ? "第一份客单还没记下，慢慢来。"
+    public string DailyNote => CustomerMilestones.Length > 0 ? string.Join("；", CustomerMilestones)
+        : Resolved == 0 ? "第一份客单还没记下，慢慢来。"
         : Result.CompletedCustomers == 0 ? "先照顾等得最久的客人，让大家吃上早餐。"
         : (CompletionRate >= 80, Satisfaction >= 80) switch
         {

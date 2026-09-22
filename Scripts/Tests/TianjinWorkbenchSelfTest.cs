@@ -110,7 +110,7 @@ public partial class StageFourSelfTest
         Directory.CreateDirectory(absolute);
         raw.Activate?.Invoke(); // Lowered basket rejects loading; no save attempt.
         Check(!station.LearnedWorkbenchActions.Contains("fryer:raise"), "炸篮未成功升起前不学习");
-        ((Button)station.FindChild("FryerRaiseAction", true, false)).EmitSignal(Button.SignalName.Pressed);
+        ClickFryerBody();
         await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
         Check(station.LearnedWorkbenchActions.Contains("fryer:raise")
             && save.Data.Tianjin.LearnedWorkbenchActions.Contains("fryer:raise"),
@@ -135,7 +135,7 @@ public partial class StageFourSelfTest
             portrait.SetVisual(art.CustomerPortrait(appearance.Id, CustomerExpression.Normal));
             CustomerPortraitLayout layout = art.CustomerLayout(appearance.Id);
             portrait.SetCounterCalibration(layout);
-            TextureRect head = portrait.GetChildren().OfType<TextureRect>().Single(node => node.Texture == portrait.HeadTexture);
+            TextureRect head = portrait.Descendants<TextureRect>().Single(node => node.Texture == portrait.HeadTexture);
             float scale = head.Size.Y / portrait.HeadTexture!.GetHeight();
             float headWidth = layout.NormalVisibleBounds.Size.X * scale;
             float headHeight = layout.NormalVisibleBounds.Size.Y * scale;
@@ -204,6 +204,44 @@ public partial class StageFourSelfTest
         for (int level = 1; level <= 3; level++)
         {
             station.Initialize(catalog, level, level, level, catalog.DaysByNumber[15]);
+            var machine = station.FryerMachine!;
+            var body = (Control)station.FindChild("FryerBodyInput", true, false);
+            var raise = (Button)station.FindChild("FryerRaiseAction", true, false);
+            Check(body.GetGlobalRect() == raw.GetGlobalRect(), $"Lv{level} 提篮与装料命中区对齐锅体");
+            ClickFryerBody();
+            Check(machine.Runtime.State == FryerState.Empty, $"Lv{level} 空锅短按不装料");
+            Vector2 bodyPoint = body.GetGlobalRect().GetCenter();
+            using (var press = new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true, Position = bodyPoint })
+                GetViewport().PushInput(press, true);
+            station.Tick(PressRepeatGesture.HoldSeconds + PressRepeatGesture.RepeatSeconds);
+            using (var release = new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = false, Position = bodyPoint })
+                GetViewport().PushInput(release, true);
+            Check(machine.Runtime.Quantity == Math.Min(2, machine.Level.Capacity), $"Lv{level} 锅体长按仍连续装料");
+            var lower = (Button)station.FindChild("FryerLowerAction", true, false);
+            Check(lower.IsVisibleInTree() && !raise.IsVisibleInTree(), $"Lv{level} 保留下锅按钮且隐藏独立抬篮按钮");
+            lower.EmitSignal(Button.SignalName.Pressed);
+            Check(!raise.IsVisibleInTree() && body.Visible == !machine.Level.AutoRaise,
+                $"Lv{level} 炸制中仅手动等级启用锅体提篮");
+            station.Paused = true; ClickFryerBody(); station.Paused = false;
+            Check(machine.Runtime.State == FryerState.Frying, $"Lv{level} 暂停不允许锅体提篮");
+            drag.BeginDrag(station, "stored_youtiao", "熟油条", Colors.White);
+            ClickFryerBody(); drag.CancelDrag();
+            Check(machine.Runtime.State == FryerState.Frying, $"Lv{level} 拖拽不允许锅体提篮");
+            if (machine.Level.AutoRaise)
+            {
+                ClickFryerBody();
+                Check(machine.Runtime.State == FryerState.Frying, "Lv3 点击锅体不会提前抬篮");
+                machine.Tick(machine.Level.AutoRaiseAtSeconds);
+                Check(machine.Runtime.State == FryerState.Draining, "Lv3 仍按原定时刻自动提篮");
+            }
+            else
+            {
+                machine.Tick(machine.Level.GoldenStartSeconds);
+                ClickFryerBody(); ClickFryerBody();
+                Check(machine.Runtime.State == FryerState.Draining && machine.Runtime.Quality == YoutiaoQuality.Golden
+                    && machine.Inventory.Count == 0, $"Lv{level} 锅体点击只提篮一次，保留品质与沥油等待");
+            }
+            station.ResetForDay();
             var canvas = (PancakeCanvas)station.FindChild("PancakeCanvas", true, false);
             var fryer = (FryerVisualView)station.FindChild("FryerVisual", true, false);
             stoveCenter ??= canvas.GetSurfaceRect().GetCenter();
@@ -246,6 +284,19 @@ public partial class StageFourSelfTest
         Check(sharedEgg.GetNode<Control>("HoldRefillHint").Visible && sharedEgg.StockBar.Visible,
             "非天津长按教学文字与进度条保留");
         shared.Free();
+
+        void ClickFryerBody()
+        {
+            var body = (Control)station.FindChild("FryerBodyInput", true, false);
+            Vector2 point = body.GetGlobalRect().GetCenter();
+            using var motion = new InputEventMouseMotion { Position = point };
+            GetViewport().PushInput(motion, true);
+            foreach (bool pressed in new[] { true, false })
+            {
+                using var input = new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = pressed, Position = point };
+                GetViewport().PushInput(input, true);
+            }
+        }
     }
 
     private void TestEmbeddedStockContainment(DataCatalog catalog)

@@ -47,14 +47,13 @@ public partial class OrderBubbleSelfTest : Node
                 save.Data.Wuhan.EquipmentLevels["noodle_cooker"] = 3;
                 save.Data.Wuhan.EquipmentLevels["ingredient_station"] = 3;
                 save.Data.Wuhan.EquipmentLevels["doupi_griddle"] = 3;
-                save.Data.Wuhan.EquipmentLevels["egg_rice_wine_station"] = 1;
                 var controller = new DayController(); AddChild(controller);
                 Control screen = wuhan ? ProjectCake.Core.SceneFactory.Instantiate<WuhanDayScreen>("res://Scenes/Gameplay/WuhanDayScreen.tscn") : ProjectCake.Core.SceneFactory.Instantiate<TianjinDayScreen>("res://Scenes/Gameplay/TianjinDayScreen.tscn"); AddChild(screen); screen.SetProcess(false);
                 if (screen is WuhanDayScreen ws) { ws.ConnectController(controller); ws.Initialize(catalog, save, controller, 12); }
                 else { var ts = (TianjinDayScreen)screen; ts.ConnectController(controller); ts.Initialize(catalog, save, controller, 15); }
                 OrderLineData Main(string recipe, int quantity = 1, SaucePreference sauce = SaucePreference.Normal) =>
                     new(wuhan ? ProductKind.HotDryNoodles : ProductKind.Pancake, recipe, quantity, sauce);
-                OrderLineData sideA = wuhan ? new(ProductKind.EggRiceWine, "egg_rice_wine", 1) : new(ProductKind.SoyMilk, "soy_milk", 1);
+                OrderLineData sideA = wuhan ? new(ProductKind.Doupi, "doupi", 1) : new(ProductKind.SoyMilk, "soy_milk", 1);
                 OrderLineData sideB = wuhan ? new(ProductKind.Doupi, "doupi", 2) : new(ProductKind.Youtiao, "youtiao", 2);
                 string firstRecipe = wuhan ? "hot_dry_noodles_scallion_chili" : "pancake_scallion_crispy";
                 string secondRecipe = wuhan ? "hot_dry_noodles_beef_chili" : "pancake_ham";

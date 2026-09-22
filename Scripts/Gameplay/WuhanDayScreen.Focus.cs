@@ -84,8 +84,7 @@ public partial class WuhanDayScreen
         {
             if (Workstation.Busy("bowl")) return null;
             var order = orders.FirstOrDefault(o => o.Kind == ProductKind.HotDryNoodles && _bowl.Toppings.All(o.Toppings.Contains));
-            if (_bowl.State == NoodleBowlState.Noodles) return Step("take:" + StableIds.Ingredients.WuhanBaseSeasoning, "点击基础调味，加入碗中。", "ingredient0");
-            if (_bowl.State is NoodleBowlState.Seasoned or NoodleBowlState.Ready)
+            if (_bowl.State is NoodleBowlState.Noodles or NoodleBowlState.Seasoned or NoodleBowlState.Ready)
             {
                 foreach (string id in order?.Toppings ?? Array.Empty<string>())
                 {
@@ -97,8 +96,10 @@ public partial class WuhanDayScreen
                     string name = beef ? "牛肉" : id == StableIds.Ingredients.WuhanScallion ? "葱花" : "辣油";
                     return Step("take:" + id, beef ? "面已拌匀，点击牛肉加入碗中，无需再次搅拌。" : $"按订单点击{name}，加入碗中。", $"ingredient{i}");
                 }
+                if (!_bowl.HasBaseSeasoning && (_bowl.State is NoodleBowlState.Noodles or NoodleBowlState.Seasoned))
+                    return Step("take:" + StableIds.Ingredients.WuhanBaseSeasoning, "芝麻酱、辣油和葱花可按任意顺序加入；别漏掉芝麻酱。", "ingredient0");
             }
-            if (_bowl.State is NoodleBowlState.Seasoned or NoodleBowlState.Mixing)
+            if (_bowl.HasBaseSeasoning && (_bowl.State is NoodleBowlState.Seasoned or NoodleBowlState.Mixing))
                 return Step("mix:noodles", mixHint, "bowl");
             if (_bowl.State == NoodleBowlState.Ready) return Delivery(ProductKind.HotDryNoodles, "bowl", "拌好的热干面", noodlesRecipe);
             for (int i = 0; i < _cooker.Baskets.Count; i++)

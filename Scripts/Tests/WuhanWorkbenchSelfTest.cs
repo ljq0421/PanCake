@@ -75,14 +75,12 @@ public partial class WuhanWorkbenchSelfTest : Node
                 screen.Workstation.CancelAnimations(); screen.Bowl.Reset();
                 Check((screen.Doupi is not null) == (day >= 4), $"Day {day}: original doupi unlock");
                 Check(screen.Workstation.Descendants<EquipmentProgressView>().All(view => !view.ShowCaption), $"Day {day}: progress bars have no text captions");
-                Check(!screen.EggUnlocked, $"Day {day}: egg retired");
                 if (day < 4)
                 {
                     screen.PourDoupiBatter();
                     Check(screen.Doupi is null && screen.DoupiStock.Count == 0 && !screen.Workstation.CanDeliver(ProductKind.Doupi),
                         "locked stage cannot make or deliver doupi");
                 }
-                Check(!screen.Workstation.CanDeliver(ProductKind.EggRiceWine), "locked egg UI cannot deliver");
                 int iterations = 0;
                 while (controller.State is DayState.Running or DayState.Closing && iterations++ < 5000)
                 {

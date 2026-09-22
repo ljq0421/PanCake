@@ -39,7 +39,7 @@ public partial class WuhanDayScreen
         _cooker = new(_catalog.NoodleCookersByLevel[1]) { ProtectTeachingHeat = true };
         _bowl = new(); _ingredients = new(_catalog.WuhanIngredientStationsByLevel[1]); _doupiStock = new();
         _doupi = _demoTeachingDay >= 4 ? new(_catalog.DoupiGriddlesByLevel[1]) { ProtectTeachingHeat = true } : null;
-        Workstation.Bind(_art, _cooker, _bowl, _doupi, _doupiStock, false, _ingredients, 1, _doupi is null ? 0 : 1);
+        Workstation.Bind(_art, _cooker, _bowl, _doupi, _doupiStock, _ingredients, 1, _doupi is null ? 0 : 1);
         _demoLessonFailure = _demoLessonSaveError = "";
         _demoLessonComplete = false; _demoLearned.Clear(); TeachingFocus.ResetSession();
         if (_demoLesson is null)
@@ -53,6 +53,7 @@ public partial class WuhanDayScreen
             _demoLessonHint.AddThemeFontSizeOverride("font_size", 21);
             _demoLessonHint.AddThemeColorOverride("font_color", WuhanUi.Text);
             _demoLesson.AddChild(_demoLessonHint);
+            TeachingEmphasis.Attach(_demoLessonHint);
             _demoLessonAction = new Button { Name = "LessonAction", Text = "开始营业" };
             _demoLesson.AddChild(WuhanTeachingUi.ActionFrame(_demoLessonAction, new(160, 98), new(200, 52)));
             _demoLessonAction.Pressed += () =>

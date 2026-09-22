@@ -75,6 +75,7 @@ public partial class TianjinDayScreen
         _demoLessonHint.AddThemeFontSizeOverride("font_size", 21);
         _demoLessonHint.AddThemeColorOverride("font_color", TianjinUi.BrownText);
         _demoLesson.AddChild(_demoLessonHint);
+        TeachingEmphasis.Attach(_demoLessonHint);
         _demoLessonAction = new Button { Name = "LessonAction", Text = "开始营业", FocusMode = Control.FocusModeEnum.All };
         _demoLessonActionFrame = TianjinTeachingUi.ActionFrame(_demoLessonAction, new(285, 46), new(160, 58));
         _demoLesson.AddChild(_demoLessonActionFrame);

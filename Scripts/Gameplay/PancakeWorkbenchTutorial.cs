@@ -104,9 +104,11 @@ public partial class PancakeWorkstation
             hint.Text = id is "egg" or "scallion" ? "点击添加" : id == "sauce" ? "点击拿刷" : "拖入炉面";
             hint.AddThemeColorOverride("font_color", TianjinUi.BrownText);
             _firstUseHints[id] = hint;
+            if (IsTianjinWorkbench) TeachingEmphasis.Attach(hint);
         }
         _trashHint = _trashZone.FindChild("TrashLabel", true, false) as Label;
         if (IsTianjinWorkbench && _trashHint is not null) _trashHint.Text = "长按右键拖入丢弃";
+        if (IsTianjinWorkbench && _trashHint is not null) TeachingEmphasis.Attach(_trashHint);
     }
 
     private void RenderTutorial()
@@ -159,7 +161,7 @@ public partial class PancakeWorkstation
             if (FryerMachine.Runtime.State == FryerState.Loaded)
                 _fryerStatus.Text = NeedsTeaching("fryer:lower") ? "装料完成 · 点击下锅" : "装料完成";
             if (FryerMachine.Runtime.State == FryerState.Frying && !FryerMachine.Level.AutoRaise
-                && NeedsTeaching("fryer:raise")) _fryerStatus.Text += " · 金黄后升篮";
+                && NeedsTeaching("fryer:raise")) _fryerStatus.Text += " · 金黄后点击锅体提篮";
         }
         _directDeliveryHint.Visible = HasFinishedPancake && NeedsTeaching("deliver:finished_pancake");
         if (runtime.State is PancakeState.Sauced or PancakeState.Toppings && NeedsTeaching("fold"))

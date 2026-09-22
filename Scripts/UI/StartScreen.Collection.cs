@@ -15,7 +15,11 @@ public partial class StartScreen
         parent.AddChild(paper); return paper;
     }
     private void CollectionFood(Control parent, BreakfastCard card, Rect2 rect)
-        => parent.AddChild(new BookFoodIcon { Position = rect.Position, Size = rect.Size, CropTransparentMargins = true, Product = new(card.Id, card.Name, 1, card.Visual) });
+    {
+        if (card.Id == "doupi") rect = new(rect.Position + rect.Size * .095f, rect.Size * .81f);
+        if (card.Id == "soy_milk") rect = new(rect.Position - rect.Size * .1f, rect.Size * 1.2f);
+        parent.AddChild(new BookFoodIcon { Position = rect.Position, Size = rect.Size, CropTransparentMargins = true, Product = new(card.Id, card.Name, 1, card.Visual) });
+    }
 
     private bool CollectionBreakfastUnlocked(BreakfastCard card)
     {
@@ -34,7 +38,7 @@ public partial class StartScreen
     public void PresentBreakfastCollection()
     {
         if (_save is null) return;
-        if (Page == JourneyPage.Home) OpenHomeOverlay();
+        if (Page == JourneyPage.Home) { _showCustomerCollection = false; OpenHomeOverlay(); }
         Begin(JourneyPage.Collection);
         var book = HomeArt(_body, "旅行手账双页母版", BookBounds); book.Name = "CollectionBook";
         _collectionContent = new Control
@@ -49,11 +53,8 @@ public partial class StartScreen
         var back = Button(_collectionContent, "Back", "", new(80, 105, 44, 55), ReturnFromBreakfastCollection, bare: true);
         Art(back, "账本翻页箭头｜左", new(0, 6, 40, 42));
         Text(_collectionContent, "CollectionTitle", "旅途收藏", new(143, 104, 390, 86), 62);
-        Text(_collectionContent, "CollectionMotto", "收集各地的美味，\n也收集一段段旅途的回忆。", new(151, 190, 510, 62), 23);
-        CollectionPaper(_collectionContent, new(705, 116, 165, 126));
-        Text(_collectionContent, "CollectedCaption", "已收集", new(713, 132, 149, 36), 25, true);
-        Text(_collectionContent, "CollectedCount", $"{_save.CollectedBreakfastIds.Count()} / 5", new(713, 173, 149, 51), 37, true);
-
+        CollectionSectionTabs();
+        if (_showCustomerCollection) { RenderCustomerCollection(); return; }
         bool wuhan = _save.Data.UnlockedCityIds.Contains(StableIds.Cities.Wuhan);
         if (_collectionCity == StableIds.Cities.Wuhan && !wuhan) _collectionCity = "";
         var available = DemoBreakfastCollection.Cards.Where(c => c.CityId == StableIds.Cities.Tianjin || wuhan).ToArray();

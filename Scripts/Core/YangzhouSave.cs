@@ -73,6 +73,15 @@ public partial class SaveService
         if (result.Stars == 3)
             foreach (string id in new[] { "collectible:yangzhou_crab_soup_bun", "badge:yangzhou_three_stars" })
                 if (!city.UnlockedCollectibleIds.Contains(id)) city.UnlockedCollectibleIds.Add(id);
+        var visitors = new ProjectCake.Orders.DayPlan();
+        foreach (var order in session.BusinessRecords)
+        {
+            if (order.Unreceived || order.Lost || order.Mistakes > 0) continue;
+            CustomerCollection.Observe(visitors, visitors.RunId, YangzhouCatalog.CityId, order.Id.ToString(),
+                CustomerCollection.YangzhouAppearance(order.CustomerType),
+                new ProjectCake.Orders.DeliveryEvaluation(ProjectCake.Orders.DeliveryGrade.Correct, 0, 0, 0, ""), false);
+        }
+        CustomerCollection.Merge(Data.CustomerRecords, visitors, YangzhouCatalog.CityId, result.Day);
         if (!TrySave(out string error)) { Data = snapshot; throw new IOException(error); }
         _settledRuns.Add(session, new object());
         Changed?.Invoke(); return new(gain, newBest, result.Stars, complete);

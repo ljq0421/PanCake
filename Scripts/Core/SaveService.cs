@@ -40,6 +40,7 @@ public sealed class SaveData
     public bool UpgradeTeachingCompleted { get; set; }
     public bool WuhanUnlockPresentationSeen { get; set; }
     public Dictionary<string, BreakfastStatistics> BreakfastStats { get; set; } = new(StringComparer.Ordinal);
+    public Dictionary<string, CustomerStatistics> CustomerRecords { get; set; } = new(StringComparer.Ordinal);
     public Dictionary<string, int> BreakfastRecords { get; set; } = new(StringComparer.Ordinal);
     public int Version { get; set; } = SaveService.CurrentVersion;
     public string LastVisitedCityId { get; set; } = StableIds.Cities.Tianjin;
@@ -181,7 +182,7 @@ public partial class SaveService : Node
             if (legacy is not null) { MigrateLegacy(legacy); Changed?.Invoke(); return; }
             Data = new SaveData(); Changed?.Invoke(); return;
         }
-        try { string json = File.ReadAllText(absolute); if (IsDemo && TryResetLegacyDemo(absolute, json)) { Changed?.Invoke(); return; } SaveData? loaded = JsonSerializer.Deserialize<SaveData>(json, JsonOptions); Validate(loaded); ValidateProfile(loaded!); Data = loaded!; EnsureWuhanUnlocked(); EnsureXianUnlocked(); EnsureGuangzhouUnlocked(); EnsureYangzhouUnlocked(); Data.LastVisitedCityId = ContinueCityId; HasSavedGame = true; }
+        try { string json = File.ReadAllText(absolute); if (IsDemo && TryResetLegacyDemo(absolute, json)) { Changed?.Invoke(); return; } SaveData? loaded = JsonSerializer.Deserialize<SaveData>(json, JsonOptions); Validate(loaded); ValidateProfile(loaded!); Data = loaded!; bool retiredEggWine = RetireWuhanEggRiceWine(Data); EnsureWuhanUnlocked(); EnsureXianUnlocked(); EnsureGuangzhouUnlocked(); EnsureYangzhouUnlocked(); Data.LastVisitedCityId = ContinueCityId; HasSavedGame = true; if (retiredEggWine && !TrySave(out string cleanupError)) throw new IOException(cleanupError); }
         catch (Exception exception) { SetCorruptError(absolute, exception); Data = new SaveData(); }
         Changed?.Invoke();
     }
@@ -200,7 +201,6 @@ public partial class SaveService : Node
             if (!city.UnlockedContentIds.Contains(unlock, StringComparer.Ordinal)) { city.UnlockedContentIds.Add(unlock); changed = true; }
             if (unlock == "equipment:fryer_lv1" && config.CityId == StableIds.Cities.Tianjin && Data.PurchasedFryerLevel < 1) { Data.PurchasedFryerLevel = 1; changed = true; }
             if (unlock == "equipment:doupi_griddle_lv1" && city.EquipmentLevels.GetValueOrDefault("doupi_griddle") < 1) { city.EquipmentLevels["doupi_griddle"] = 1; changed = true; }
-            if (unlock == "equipment:egg_rice_wine_station" && city.EquipmentLevels.GetValueOrDefault("egg_rice_wine_station") < 1) { city.EquipmentLevels["egg_rice_wine_station"] = 1; changed = true; }
         }
         if (config.CityId == StableIds.Cities.Xian)
         {
@@ -260,6 +260,7 @@ public partial class SaveService : Node
         foreach (var card in DemoBreakfastCollection.Cards.Where(c => c.CityId == config.CityId && plan.PendingBreakfastRecords.Contains(c.Id)))
             Data.BreakfastRecords.TryAdd(card.Id, result.Day);
         BreakfastStatistics.Merge(Data.BreakfastStats, plan.PendingBreakfastStats, config.CityId);
+        CustomerCollection.Merge(Data.CustomerRecords, plan, config.CityId, result.Day);
         if (!TrySave(out string error)) { Data = snapshot; throw new IOException(error); }
         _settledRuns.Add(plan, new object());
         Changed?.Invoke(); return new DayCommitResult(gain, newBest, stars, newlyCompleted, challengeGain);
@@ -371,7 +372,16 @@ public partial class SaveService : Node
     }
 
     public static CityProgressData NewTianjinProgress() => new() { EquipmentLevels = new(StringComparer.Ordinal) { ["pancake_stove"] = 1, ["ingredient_station"] = 1, ["fryer"] = 0 } };
-    public static CityProgressData NewWuhanProgress() => new() { EquipmentLevels = new(StringComparer.Ordinal) { ["noodle_cooker"] = 1, ["ingredient_station"] = 1, ["doupi_griddle"] = 0, ["egg_rice_wine_station"] = 0 } };
+    public static CityProgressData NewWuhanProgress() => new() { EquipmentLevels = new(StringComparer.Ordinal) { ["noodle_cooker"] = 1, ["ingredient_station"] = 1, ["doupi_griddle"] = 0 } };
+
+    private static bool RetireWuhanEggRiceWine(SaveData data)
+    {
+        if (!data.Cities.TryGetValue(StableIds.Cities.Wuhan, out CityProgressData? city)) return false;
+        bool changed = city.EquipmentLevels.Remove("egg_rice_wine_station");
+        changed |= city.UnlockedContentIds.RemoveAll(id => id is "product:egg_rice_wine" or "equipment:egg_rice_wine_station") > 0;
+        changed |= city.UnlockedCollectibleIds.Remove("collectible:wuhan_egg_rice_wine");
+        return changed;
+    }
 
     private string? FindLegacyAbsolute()
     {
@@ -430,6 +440,7 @@ public partial class SaveService : Node
             || p.Value < 1))
             throw new InvalidDataException("早餐收藏记录无效。");
         BreakfastStatistics.Validate(data.BreakfastStats);
+        CustomerCollection.Validate(data.CustomerRecords);
         foreach ((string id, CityProgressData city) in data.Cities)
         {
             city.LearnedWorkbenchActions ??= new(StringComparer.Ordinal);

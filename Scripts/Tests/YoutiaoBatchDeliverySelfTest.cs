@@ -53,8 +53,8 @@ public partial class YoutiaoBatchDeliverySelfTest : Node
         controller.CustomerQueue!.ResolveBeforeArrival = (planned, _) => new OrderData
         {
             OrderId = planned.Order.OrderId, CustomerTypeId = planned.CustomerTypeId, CityId = city, BasePrice = 10,
-            Lines = combo ? new[] { new OrderLineData(kind, product, 2), new OrderLineData(doupi ? ProductKind.EggRiceWine : ProductKind.Youtiao,
-                doupi ? StableIds.Products.EggRiceWine : StableIds.Products.Youtiao, 1) } : new[] { new OrderLineData(kind, product, 2) }
+            Lines = combo ? new[] { new OrderLineData(kind, product, 2), new OrderLineData(doupi ? ProductKind.HotDryNoodles : ProductKind.Youtiao,
+                doupi ? StableIds.Recipes.HotDryNoodlesClassic : StableIds.Products.Youtiao, 1) } : new[] { new OrderLineData(kind, product, 2) }
         };
         controller.TryStartDay(out _); controller.Tick(DayController.OpeningDurationSeconds);
         for (int i = 0; i < 1000 && !controller.CustomerQueue.Slots.Any(c => c.State == CustomerState.Happy); i++) controller.Tick(.1);

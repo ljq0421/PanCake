@@ -89,6 +89,10 @@ public partial class WuhanLedgerSelfTest : Node
             _save.Data.Wuhan.DayBestRecords[8] = new DayBestRecord { TotalRevenue = 386, Satisfaction = 96, PerfectOrders = 18 };
             _hub.ShowLedger();
             Check(_ledger.SelectedDay == 9, "open always selects highest unlocked day");
+            var doupi = Find<Control>("Illustration2").GetNode<TextureRect>("Overlay");
+            Check(doupi.Texture?.ResourcePath.EndsWith("DoupiPieces_v1/piece-01.png") == true
+                && Mathf.IsEqualApprox(doupi.Size.X, 147) && Mathf.IsEqualApprox(doupi.Size.Y, 148.4f),
+                "daily ledger keeps the reduced doupi illustration and omits egg rice wine");
             if (_capture)
             {
                 _ledger.SelectDay(7);

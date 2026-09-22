@@ -59,6 +59,10 @@ public partial class StartScreen
             MouseFilter = MouseFilterEnum.Ignore, Material = HomeMapSoftFocus()
         };
         _body.AddChild(mapArt);
+        // Ambient() creates the swinging sign before this composited map. Keep the
+        // sign in front of the map while leaving the logo and action controls above it.
+        var hangingSign = _body.GetNodeOrNull<TextureRect>("HomeHangingSign");
+        if (hangingSign is not null) _body.MoveChild(hangingSign, mapArt.GetIndex() + 1);
         HomeArt(_body, HomeLogoArt, new(80, 150, 1120, 516)).Name = "HomeLogo";
         if (_save?.DemoMigrationRetryAvailable == true)
             Button(_body, "RetryDemoMigration", "重试读取存档", new(810, 790, 300, 42), () =>
@@ -68,10 +72,11 @@ public partial class StartScreen
             }, bare: true);
         var card = HomeAction("Continue", "继续旅程", "小火车", new(400, 835, 500, 150), RenderContinue);
         card.Disabled = !canContinue; card.Modulate = new Color(1, 1, 1, canContinue ? 1 : .68f);
-        HomeAction("NewGame", "新的旅程", "闭合旅行手账封面｜新旅程入口", new(940, 835, 500, 150), () => RequestNewGame());
-        HomeAction("BreakfastRecords", "旅途收藏", "已有旅程手账封面", new(1475, 855, 170, 145), PresentBreakfastCollection, small: true);
-        HomeAction("WorldMap", "世界地图", "世界地图入口图标", new(1655, 855, 170, 145), () => PresentMap(), small: true);
+        HomeAction("NewGame", "新的旅程", "首页新旅程图标-粗描边-v2", new(940, 835, 500, 150), () => RequestNewGame());
+        HomeAction("BreakfastRecords", "旅途收藏", "首页旅途收藏图标-粗描边-v2", new(1475, 855, 170, 145), PresentBreakfastCollection, small: true);
+        HomeAction("WorldMap", "世界地图", "首页世界地图图标-粗描边-v2", new(1655, 855, 170, 145), () => PresentMap(), small: true);
         Utilities(); Focus(canContinue ? "Continue" : "NewGame");
+        HomeEntrance();
         _status.MoveToFront();
     }
     private void RequestNewGame(int? requestedSlot = null, bool showCity = false)
@@ -80,7 +85,7 @@ public partial class StartScreen
         int? slot = requestedSlot ?? _save.GetSlots().FirstOrDefault(s => !s.Exists)?.Id;
         if (slot is null)
         {
-            ShowError("五个槽位已满，无法新建旅程。");
+            ShowError("五个槽位已满，无法新建旅程。请前往设置页面选择或删除存档。");
             return;
         }
         CloseModal(); _busy = true;

@@ -65,18 +65,8 @@ public partial class BusinessDetailsView
         _status.AddThemeColorOverride("font_color", Muted);
         _save.AddThemeColorOverride("font_color", Muted);
         if (UsesBookArt) ApplyArtLayout();
-        foreach (var arrow in new[] { _previousPage, _nextPage })
-        {
-            var focus = TianjinUi.Box(Colors.Transparent, 28, 3, false);
-            focus.BorderColor = Accent;
-            arrow.AddThemeStyleboxOverride("focus", focus);
-            foreach (string state in new[] { "normal", "hover", "pressed" })
-            {
-                var paper = TianjinUi.Box(state == "normal" ? new Color("#F5E8CF") : new Color("#EFDDBD"), UsesTravelBook ? 36 : 28, 2, false);
-                paper.BorderColor = Accent;
-                arrow.AddThemeStyleboxOverride(state, paper);
-            }
-        }
+        PageArrowArt.Apply(_previousPage, false, _model.CityId, "");
+        PageArrowArt.Apply(_nextPage, true, _model.CityId, "");
     }
 
     private static void SetButtonBounds(Button button, Rect2 bounds)

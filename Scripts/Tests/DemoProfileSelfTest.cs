@@ -34,12 +34,11 @@ public partial class DemoProfileSelfTest : Node
             save.Data.Wuhan.HighestUnlockedDay = 13; save.Data.Wuhan.BestStars = 2; save.Data.Wuhan.Completed = true;
             save.Data.Wuhan.EquipmentLevels["noodle_cooker"] = 3;
             save.Data.Wuhan.EquipmentLevels["doupi_griddle"] = 3;
-            save.Data.Wuhan.EquipmentLevels["egg_rice_wine_station"] = 1;
             save.Data.Wuhan.DayBestRecords[12] = new() { TotalRevenue = 400, CompletedCustomers = 24, Satisfaction = 95 };
             save.Data.BreakfastRecords["doupi"] = 4;
             save.Data.BreakfastStats["doupi"] = new() { Delivered = 25, Perfect = 15 };
             string snapshot = JsonSerializer.Serialize(save.Data);
-            Check(save.TrySave(out _), "Lv3, egg wine and full city fields save");
+            Check(save.TrySave(out _), "Lv3 and full city fields save");
             save.Load();
             Check(!save.HasLoadError && JsonSerializer.Serialize(save.Data) == snapshot, "all shared city data round trips without loss");
             Check(save.ContinueCityId == StableIds.Cities.Wuhan && save.ContinueDay == 13, "continue uses extended city progress");

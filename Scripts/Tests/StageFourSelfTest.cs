@@ -136,8 +136,7 @@ public partial class StageFourSelfTest : Node
         Check(catalog.DaysByNumber.Count == 15, "Day 1～15 连续加载");
         Check(catalog.ProductsById[StableIds.Products.Youtiao].UnitPrice == 2
             && catalog.ProductsById[StableIds.Products.SoyMilk].UnitPrice == 3
-            && catalog.ProductsById[StableIds.Products.Doupi].UnitPrice == 5
-            && catalog.ProductsById[StableIds.Products.EggRiceWine].UnitPrice == 4, "天津与武汉独立商品价格准确");
+            && catalog.ProductsById[StableIds.Products.Doupi].UnitPrice == 5, "天津与武汉独立商品价格准确");
         Check(catalog.FryersByLevel.Count == 3 && catalog.FryersByLevel[1].Capacity == 6
             && catalog.FryersByLevel[2].Capacity == 8 && catalog.FryersByLevel[3].AutoRaise, "三级油条锅资源准确");
         Check(new[] { "normal", "office_worker", "regular", "big_order", "wuhan_normal", "wuhan_office_worker",

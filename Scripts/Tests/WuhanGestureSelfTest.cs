@@ -63,7 +63,7 @@ public partial class WuhanGestureSelfTest : Node
                 var save=new SaveService();save.UsePathForTests($"res://.tmp/wuhan-gesture-{level}.json");AddChild(save);
                 var city=save.Data.Wuhan;city.HighestUnlockedDay=12;
                 city.EquipmentLevels["noodle_cooker"]=level;city.EquipmentLevels["ingredient_station"]=3;
-                city.EquipmentLevels["doupi_griddle"]=level;city.EquipmentLevels["egg_rice_wine_station"]=1;
+                city.EquipmentLevels["doupi_griddle"]=level;
                 var controller=new DayController();AddChild(controller);_screen=ProjectCake.Core.SceneFactory.Instantiate<WuhanDayScreen>("res://Scenes/Gameplay/WuhanDayScreen.tscn");AddChild(_screen);
                 _screen.ConnectController(controller);_screen.Initialize(catalog,save,controller,8);_screen.SetProcess(false);_screen.BeginDay();Step(6);await Frames();
                 async Task Shot(string name) {
@@ -129,8 +129,6 @@ public partial class WuhanGestureSelfTest : Node
                 Move(View.RawCenter);Button(View.RawCenter,true);Move(View.RawCenter+new Vector2(12,0),true);
                 Check(View.HasProductionGesture,"unlimited raw noodles remain draggable");
                 View.CancelInput();Button(View.RawCenter,false);
-                Drag(View.CupCenter,new Vector2(1400,20));
-                Check(!_screen.EggUnlocked && !_screen.DeliveryDrag.IsDragging && !View.CanDeliver(ProductKind.EggRiceWine),"retired cup area never begins delivery");
                 await Shot("02-noodles-ready");
                 Click(View.PanCenter); Click(View.PanCenter); Click(View.DoupiEggCenter);
                 Check(_screen.Doupi!.State == DoupiState.Empty, "pan and early egg clicks cannot bypass batter drag");
@@ -392,10 +390,6 @@ public partial class WuhanGestureSelfTest : Node
         await shot("06-mixed-ready");
 
         Step(.001);await Frames();
-        Move(View.CupCenter);Button(View.CupCenter,true);Move(View.CupCenter+new Vector2(15,0),true);Move(View.CupCenter,true);Button(View.CupCenter,false);
-        Check(!View.CanDeliver(ProductKind.EggRiceWine),"retired cup area does not enable delivery");
-        Click(View.CupCenter);Click(View.CupCenter);
-        Check(!View.CanDeliver(ProductKind.EggRiceWine),"repeated clicks do not restore retired stock");
         await shot("07-finished-stock");
         _screen.DeliveryDrag.CancelDrag();Step(.001);
         foreach(var button in View.GetChildren().OfType<Button>().Where(b=>b.HasMeta("ingredient_id")))
@@ -425,7 +419,7 @@ public partial class WuhanGestureSelfTest : Node
         var catalog=GetNode<DataCatalog>("/root/DataCatalog");
         var save=new SaveService();save.UsePathForTests("res://.tmp/wuhan-operation-budget.json");AddChild(save);
         save.Data.Wuhan.HighestUnlockedDay=12;
-        foreach(string id in new[]{"noodle_cooker","ingredient_station","doupi_griddle","egg_rice_wine_station"})save.Data.Wuhan.EquipmentLevels[id]=1;
+        foreach(string id in new[]{"noodle_cooker","ingredient_station","doupi_griddle"})save.Data.Wuhan.EquipmentLevels[id]=1;
         var controller=new DayController();AddChild(controller);_screen=ProjectCake.Core.SceneFactory.Instantiate<WuhanDayScreen>("res://Scenes/Gameplay/WuhanDayScreen.tscn");AddChild(_screen);
         _screen.ConnectController(controller);_screen.Initialize(catalog,save,controller,8);_screen.SetProcess(false);
         foreach(var planned in controller.CurrentPlan!.Customers)

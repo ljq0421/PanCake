@@ -50,9 +50,11 @@ public static class BusinessBookSettlement
     public static BusinessBookModel Commit(BusinessBookModel model, SaveService save, DayPlan plan, DayConfig config, DataCatalog catalog, bool allowFailedReturn = false)
     {
         model.Closing = true; model.Stickers = Array.Empty<string>(); model.Upgrades = null; model.CanClose = true; model.CanRetry = false;
+        model.CustomerMilestones = Array.Empty<string>();
         model.Challenge = plan.Challenge; model.ChallengeReward = 0; model.ChallengeClaimed = false;
         var before = save.Data.GetCity(config.CityId).UnlockedContentIds.ToHashSet(StringComparer.Ordinal);
         var collected = save.CollectedBreakfastIds.ToHashSet();
+        var customersBefore = save.Data.CustomerRecords.ToDictionary(p => p.Key, p => p.Value.Served);
         bool wuhanWasLocked = !save.Data.UnlockedCityIds.Contains(StableIds.Cities.Wuhan);
         try
         {
@@ -70,6 +72,7 @@ public static class BusinessBookSettlement
             if (upgrades.Length > 0) stickers.Add($"可升级：{upgrades[0]}" + (upgrades.Length > 1 ? $"等{upgrades.Length}项" : ""));
             foreach (var card in DemoBreakfastCollection.Cards.Where(c => !collected.Contains(c.Id) && save.BreakfastRecordDay(c.Id).HasValue))
                 stickers.Add("早餐新记录：" + card.Name);
+            model.CustomerMilestones = CustomerCollection.MilestoneMessages(customersBefore, save.Data.CustomerRecords).ToArray();
             model.Stickers = stickers.ToArray();
             model.Upgrades = new BookUpgradeSource(save, catalog, config.CityId);
         }

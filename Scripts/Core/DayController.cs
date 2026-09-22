@@ -322,7 +322,7 @@ public partial class DayController : Node
     private DeliveryEvaluation TryDeliverWuhanToCore(string? customerId, DeliveredItem item, Func<bool> consume)
     {
         if (IsPaused || CurrentConfig?.CityId != StableIds.Cities.Wuhan
-            || item.ProductKind is not (ProductKind.HotDryNoodles or ProductKind.Doupi or ProductKind.EggRiceWine))
+            || item.ProductKind is not (ProductKind.HotDryNoodles or ProductKind.Doupi))
             return Rejected("当前不能交付武汉商品。");
         CustomerRuntime? customer = FindDeliveryCustomer(customerId);
         return customer is null ? Rejected("请把成品拖给仍在等待的顾客。") : TryDeliverItem(customer, item, consume, null);
@@ -480,6 +480,8 @@ public partial class DayController : Node
         if (!Tutorial.SuppressRevenue && CurrentConfig?.CityId is StableIds.Cities.Tianjin or StableIds.Cities.Wuhan or StableIds.Cities.Guangzhou)
             Feedback.Credit(evaluation.TotalRevenue, customer.Id);
         RecordOutcome(customer, evaluation);
+        CustomerCollection.Observe(CurrentPlan!, CurrentPlan!.RunId, CurrentConfig!.CityId,
+            customer.Order.OrderId, customer.AppearanceId, evaluation, TutorialActive);
         PublishItem(item, matchesRequestedItem);
         if (notify) DeliveryCompleted?.Invoke(evaluation);
         return evaluation;

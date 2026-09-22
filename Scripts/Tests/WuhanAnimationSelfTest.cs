@@ -32,7 +32,7 @@ public partial class WuhanAnimationSelfTest : Node
             TestBasketReadySound();
             if (!OS.GetCmdlineUserArgs().Contains("--basket-ready-sound"))
             {
-                TestActionSounds(); TestTransfer(); TestClickFlow(); TestBeefTiming(); TestAutomatic(); TestDoupi(); TestEgg(); TestSupply(); TestLifecycle(); TestCookingPresentation(); TestImmediateLoop();
+                TestActionSounds(); TestTransfer(); TestClickFlow(); TestBeefTiming(); TestAutomatic(); TestDoupi(); TestSupply(); TestLifecycle(); TestCookingPresentation(); TestImmediateLoop();
             }
         }
         catch (Exception e) { _failed++; GD.PushError(e.ToString()); }
@@ -47,7 +47,6 @@ public partial class WuhanAnimationSelfTest : Node
         save.Data.Wuhan.EquipmentLevels["noodle_cooker"]=level;
         save.Data.Wuhan.EquipmentLevels["ingredient_station"]=3;
         save.Data.Wuhan.EquipmentLevels["doupi_griddle"]=level;
-        if (day >= 6) save.Data.Wuhan.EquipmentLevels["egg_rice_wine_station"]=1;
         var controller=new DayController();AddChild(controller);
         var screen=ProjectCake.Core.SceneFactory.Instantiate<WuhanDayScreen>("res://Scenes/Gameplay/WuhanDayScreen.tscn");AddChild(screen);screen.ConnectController(controller);screen.Initialize(_catalog,save,controller,day);
         screen.SetProcess(false);screen.BeginDay();screen._Process(3.1);
@@ -81,7 +80,6 @@ public partial class WuhanAnimationSelfTest : Node
         s._Process(.25);s.BasketAction(0);
         s.IngredientAction(StableIds.Ingredients.WuhanBaseSeasoning);
         Check(!v.Busy("basket0")&&!v.Busy("bowl")&&s.Bowl.State==NoodleBowlState.Seasoned,"倒面后立即接受调味，旧倒面表现落定");
-        Check(!s.Workstation.CanDeliver(ProductKind.EggRiceWine),"蛋酒已下架");
         s._Process(.7);Click(v,v.IngredientCenter(0));s.IngredientAction(StableIds.Ingredients.WuhanBaseSeasoning);
         Check(s.Bowl.State==NoodleBowlState.Seasoned && s.Ingredients.CanUse(StableIds.Ingredients.WuhanBaseSeasoning),"基础调味加入一次后仍持续供应");
         s._Process(.5);Click(v,v.IngredientCenter(1));s._Process(.5);
@@ -175,19 +173,6 @@ public partial class WuhanAnimationSelfTest : Node
         Check(s.Doupi!.State==DoupiState.Burnt,"豆皮仍遵守焦糊时限");s.DiscardDoupi();s._Process(.4);
         Check(s.Doupi.State==DoupiState.Empty&&!s.Workstation.Busy("pan"),"丢弃焦糊豆皮后清空锅面与动画");DisposeDay(f);
     }
-    private void TestEgg()
-    {
-        var f=NewDay();var s=f.Screen;
-        Check(!s.EggUnlocked && !s.Workstation.CanDeliver(ProductKind.EggRiceWine), "旧存档解锁蛋酒也不可再交付");
-        Check(!s.Workstation.GetNode<Control>("WuhanDrag_EggRiceWine").Visible, "旧蛋酒拖拽入口隐藏");
-        DisposeDay(f);
-        f=NewDay(1,1);s=f.Screen;Check(!s.EggUnlocked && !s.Workstation.CanDeliver(ProductKind.EggRiceWine), "Day 1 不可提前交付蛋酒");s.Bowl.TryAddNoodles(NoodleQuality.Optimal);s.Bowl.TryAddBaseSeasoning();s.Bowl.AddMixDistance(425);
-        for(int i=0;i<80 && f.Controller.CustomerQueue!.Slots.Count==0;i++)s._Process(.25);
-        for(int i=0;i<10;i++)s._Process(.25);
-        var customer=f.Controller.CustomerQueue!.Slots[0];
-        s.DeliverToCustomer(customer.Id,ProductKind.HotDryNoodles);s.DeliverToCustomer(customer.Id,ProductKind.HotDryNoodles);
-        Check(s.Bowl.State==NoodleBowlState.Empty&&!s.Workstation.Busy("bowl")&&customer.Progress.IsComplete,"接受交付后清空食品，重复点击不重复交付");DisposeDay(f);
-    }
     private void TestSupply()
     {
         foreach (int level in new[] { 1, 2, 3 })
@@ -213,7 +198,7 @@ public partial class WuhanAnimationSelfTest : Node
     {
         var f=NewDay();var s=f.Screen;s.BasketAction(0);s._Process(.1);float progress=s.Workstation.MotionProgress("basket0");double cook=s.Cooker.Baskets[0].CookSeconds;
         f.Controller.IsPaused=true;s._Process(2);
-        Check(s.Workstation.ActiveMotionCount==0&&s.Cooker.Baskets[0].CookSeconds==cook&&!s.Workstation.CanDeliver(ProductKind.EggRiceWine),"暂停复位表现，冻结制作和输入");
+        Check(s.Workstation.ActiveMotionCount==0&&s.Cooker.Baskets[0].CookSeconds==cook,"暂停复位表现，冻结制作和输入");
         f.Controller.IsPaused=false;s._Notification((int)NotificationApplicationFocusOut);s._Process(2);
         Check(s.Workstation.ActiveMotionCount==0,"失焦不恢复旧动画");s._Notification((int)NotificationApplicationFocusIn);s._Process(.2);
         Check(!s.Workstation.Busy("basket0")&&s.Workstation.ActiveMotionCount==0,"恢复后不补播原动画");s.Hide();

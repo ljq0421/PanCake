@@ -31,7 +31,7 @@ public partial class WuhanWorkstationView : Control
     };
     private static string DeliveryChannel(ProductKind kind) => kind switch
     {
-        ProductKind.HotDryNoodles => "bowl", ProductKind.Doupi => "stock", _ => "egg",
+        ProductKind.HotDryNoodles => "bowl", _ => "stock",
     };
 
     public bool CanDeliver(ProductKind kind) => _cooker is not null && CanInteract?.Invoke() == true
@@ -39,14 +39,12 @@ public partial class WuhanWorkstationView : Control
         {
             ProductKind.HotDryNoodles => _bowl.State == NoodleBowlState.Ready,
             ProductKind.Doupi => _doupi is not null && _stock.Count > 0,
-            ProductKind.EggRiceWine => false,
             _ => false,
         };
 
     public void ConfigureDelivery(DragService drag)
     {
         if (_drag == drag && _deliverySources.Count == 2) return;
-        GetNode<Control>("WuhanDrag_EggRiceWine").Hide();
         _drag = drag;
         drag.ImmediateAcceptance = true;
         ConfigureTrash(drag);
@@ -86,7 +84,7 @@ public partial class WuhanWorkstationView : Control
         foreach (var (kind, source) in _deliverySources)
         {
             Rect2 bounds = kind switch { ProductKind.HotDryNoodles => BowlRect,
-                ProductKind.Doupi => StockRect, _ => EggStockRect };
+                _ => StockRect };
             if (kind == ProductKind.HotDryNoodles) source.DragDisplaySize = BowlRect.Size;
             source.Position = bounds.Position;
             source.Size = bounds.Size;
@@ -191,7 +189,6 @@ public partial class WuhanWorkstationView : Control
     private Rect2 BowlFood => _layout.BowlFood;
     private Rect2 PanRect => _layout.Pan;
     private Rect2 StockRect => _layout.Stock;
-    private static readonly Rect2 EggStockRect = WuhanWorkbenchLayout.EggUi;
     private Rect2 RawTrayRect => _layout.Raw;
     private Rect2 RawRect => _layout.RawFood;
     private Rect2 IngredientRect(int index) => _layout.Ingredient(index);
@@ -206,7 +203,6 @@ public partial class WuhanWorkstationView : Control
         / ((PanCorners[3] - PanCorners[0]).Length() + (PanCorners[2] - PanCorners[1]).Length());
     public Vector2 BowlStatusPosition => new(BowlRect.Position.X, BowlRect.End.Y + 10);
     public Vector2 DoupiStatusPosition => new(PanRect.Position.X, PanRect.End.Y + 10);
-    public Vector2 EggStatusPosition => EggStockRect.Position;
     public Vector2 BasketStatusPosition(int index) => BasketHome(index) + new Vector2(-50, -100);
     private Rect2 IngredientFoodRect(int index) => RelativeRect(IngredientRect(index), new Rect2(.12f, .15f, .76f, .45f));
     public Vector2 BowlCenter => BowlFood.GetCenter();
@@ -214,7 +210,6 @@ public partial class WuhanWorkstationView : Control
     public Vector2 KnifeCenter => _layout.Knife.GetCenter();
     public Vector2 StockCenter => StockRect.GetCenter();
     public Vector2 PanCenter => (PanCorners[0] + PanCorners[2]) / 2;
-    public Vector2 CupCenter => EggStockRect.GetCenter();
 
     public override void _Ready()
     {
@@ -235,7 +230,7 @@ public partial class WuhanWorkstationView : Control
     }
 
     public void Bind(WuhanArtCatalog art, NoodleCookerStateMachine cooker, HotDryNoodlesStateMachine bowl,
-        DoupiStateMachine? doupi, DoupiInventory stock, bool eggUnlocked,
+        DoupiStateMachine? doupi, DoupiInventory stock,
         WuhanIngredientInventory ingredients, int cookerLevel, int doupiLevel)
     {
         CancelAnimations();
@@ -508,9 +503,6 @@ public partial class WuhanWorkstationView : Control
             int left=width,top=height,right=-1,bottom=-1;
             for(int y=0;y<height;y++)for(int x=0;x<width;x++)
                 if(pixels[(y*width+x)*4+3]>=32){left=Math.Min(left,x);right=Math.Max(right,x);top=Math.Min(top,y);bottom=Math.Max(bottom,y);}
-            // Steam is already painted above the finished cup. Align the ceramic
-            // body independently of the decorative steam above it.
-            if(texture==_art.Texture("egg_finished"))top=Math.Max(top,(int)(height*.222f));
             bounds=right>=left?new Rect2(left,top,right-left+1,bottom-top+1):new Rect2(Vector2.Zero,texture.GetSize());
             _bounds[texture] = bounds;
         }

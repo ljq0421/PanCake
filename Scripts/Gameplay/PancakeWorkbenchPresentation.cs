@@ -1,5 +1,6 @@
 using Godot;
 using ProjectCake.Data;
+using ProjectCake.Fryer;
 using ProjectCake.Interaction;
 using ProjectCake.UI;
 
@@ -7,6 +8,8 @@ namespace ProjectCake.Gameplay;
 
 public partial class PancakeWorkstation
 {
+    private Control? _fryerBodyInput;
+
     private static void PositionEmbedded(Control control, Rect2 rect)
     {
         control.SetAnchorsPreset(LayoutPreset.TopLeft);
@@ -98,6 +101,23 @@ public partial class PancakeWorkstation
         _rawYoutiaoInput.ActivateOnTap = false;
         _rawYoutiaoInput.TooltipText = string.Empty;
         _rawYoutiaoInput.CanActivate = () => CanLoadRawYoutiao() && !_drag.IsDragging;
+        // A drawing-free hit area replaces the separate raise button while frying.
+        // Loading retains its existing hold gesture underneath this area.
+        _fryerBodyInput = new Control {
+            Name = "FryerBodyInput", ZIndex = 2, Visible = false,
+            MouseDefaultCursorShape = CursorShape.PointingHand };
+        _fryerPanel.AddChild(_fryerBodyInput);
+        PositionEmbedded(_fryerBodyInput, TianjinWorkbenchLayout.EmbeddedFryer);
+        _fryerBodyInput.GuiInput += input =>
+        {
+            if (input is not InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: true }) return;
+            _fryerBodyInput.AcceptEvent();
+            if (CanRaiseFryer() && !_rightPressed)
+            {
+                _rawYoutiaoInput.Cancel();
+                ExecuteFryer(FryerCommand.RaiseBasket);
+            }
+        };
         PositionEmbedded(_fryerStatus.GetParent<Control>(), new Rect2(108, 955, 266, 44));
         PositionEmbedded(_fryerActions, new Rect2(383, 955, 150, 44));
         _finishedYoutiaoSlot.Reparent(_fryerPanel, false);

@@ -37,6 +37,11 @@ public partial class StartScreenSelfTest : Node
             GetNode<JourneySettings>("/root/JourneySettings").UsePathForTests(Path.Combine(directory, "settings.cfg"));
             InterfaceLessons.MarkAllSeen(GetNode<JourneySettings>("/root/JourneySettings"));
             await Launch();
+            if (args.Contains("--home-motion-only"))
+            {
+                await HomeMotionChecks();
+                GD.Print($"HOME_MOTION_TEST_PASS checks={_passed}"); GetTree().Quit(); return;
+            }
             if (args.Contains("--branding-only"))
             {
                 var settings = GetNode<JourneySettings>("/root/JourneySettings");
@@ -507,7 +512,8 @@ public partial class StartScreenSelfTest : Node
         foreach (string name in new[] { "Continue", "NewGame", "BreakfastRecords", "WorldMap" })
             Check(Find<Button>(name).Visible, "home action visible " + name);
         Check(!_screen.FindChildren("Skip", "Button", true, false).Any(), "splash prompt removed");
-        if (_capture) await ToSignal(GetTree().CreateTimer(0.3), SceneTreeTimer.SignalName.Timeout);
+        if (_capture && !OS.GetCmdlineUserArgs().Contains("--home-motion-only"))
+            await ToSignal(GetTree().CreateTimer(0.3), SceneTreeTimer.SignalName.Timeout);
     }
 
     private T Find<T>(string name) where T : Node => (T)_screen.FindChildren(name, typeof(T).Name, true, false).First(n => n is not Control c || c.IsVisibleInTree());
@@ -533,10 +539,13 @@ public partial class StartScreenSelfTest : Node
         GetViewport().PushInput(new InputEventKey { Keycode = key, Pressed = false }, true);
     }
     private async Task Capture(string state)
+        => await Capture(state, .3);
+
+    private async Task Capture(string state, double settle)
     {
         if (!_capture) return;
         await Frames(3);
-        await ToSignal(GetTree().CreateTimer(.3), SceneTreeTimer.SignalName.Timeout);
+        if (settle > 0) await ToSignal(GetTree().CreateTimer(settle), SceneTreeTimer.SignalName.Timeout);
         await ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
         string directory = ProjectSettings.GlobalizePath($"res://.tmp/start-review/{_width}");
         Directory.CreateDirectory(directory);

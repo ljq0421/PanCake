@@ -25,7 +25,6 @@ public partial class WuhanMainDeliverySelfTest : Node
             save.Data.Wuhan.EquipmentLevels["noodle_cooker"] = 3;
             save.Data.Wuhan.EquipmentLevels["ingredient_station"] = 3;
             save.Data.Wuhan.EquipmentLevels["doupi_griddle"] = 3;
-            save.Data.Wuhan.EquipmentLevels["egg_rice_wine_station"] = 1;
             Check(save.TrySave(out _), "isolated progress is saved before continuing from title");
             _main = GD.Load<PackedScene>("res://Scenes/Main/Main.tscn").Instantiate(); AddChild(_main);
             await Frames(4);

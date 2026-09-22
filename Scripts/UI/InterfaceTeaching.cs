@@ -50,6 +50,7 @@ public partial class InterfaceTeaching : CanvasLayer
         _title = LabelAt("TeachingTitle", new(64, 30, 700, 52), 34);
         _progress = LabelAt("TeachingProgress", new(733, 37, 98, 40), 23);
         _body = LabelAt("TeachingText", new(64, 103, 772, 137), 27);
+        TeachingEmphasis.Attach(_body);
         _skip = Action("SkipTeaching", "跳过教学", new(60, 267, 190, 62), () => Close(true));
         _previous = Action("PreviousTeaching", "上一步", new(336, 267, 180, 62), () => { _index--; Refresh(); });
         _next = Action("NextTeaching", "下一步", new(592, 267, 244, 62), Next);

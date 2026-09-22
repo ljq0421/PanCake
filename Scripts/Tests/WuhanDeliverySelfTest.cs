@@ -194,7 +194,7 @@ public partial class WuhanDeliverySelfTest : Node
                 Check(customer.Progress.GetDeliveredQuantity(0)==cup+1
                     && _screen.Ingredients.CanUse(StableIds.Ingredients.WuhanNoodles), "valid noodle drop advances order and raw supply stays available");
             }
-            Check(!_screen.DeliverToCustomer(customer.Id, ProductKind.EggRiceWine)
+            Check(!_screen.DeliverToCustomer(customer.Id, ProductKind.HotDryNoodles)
                 && customer.Progress.GetDeliveredQuantity(0)==2, "unlimited supply still rejects fulfilled order lines");
         }
         Check(delivered == 8, "eight bowls delivered with continuously available raw supply");
@@ -212,7 +212,7 @@ public partial class WuhanDeliverySelfTest : Node
         _save.Data.Coins = 3000;
         var city = _save.Data.Wuhan; city.HighestUnlockedDay = 12;
         city.EquipmentLevels["noodle_cooker"] = 3; city.EquipmentLevels["ingredient_station"] = 3;
-        city.EquipmentLevels["doupi_griddle"] = 3; city.EquipmentLevels["egg_rice_wine_station"] = 1;
+        city.EquipmentLevels["doupi_griddle"] = 3;
         _controller = new DayController(); AddChild(_controller);
         _screen = ProjectCake.Core.SceneFactory.Instantiate<WuhanDayScreen>("res://Scenes/Gameplay/WuhanDayScreen.tscn"); AddChild(_screen); _screen.ConnectController(_controller);
         _screen.Initialize(_catalog, _save, _controller, 8); _screen.SetProcess(false);
@@ -257,8 +257,7 @@ public partial class WuhanDeliverySelfTest : Node
     private Vector2 Source(ProductKind kind)
     {
         var view = _screen.Workstation;
-        return view.GetGlobalTransformWithCanvas() * (kind == ProductKind.HotDryNoodles ? view.BowlCenter
-            : kind == ProductKind.Doupi ? view.StockCenter : view.CupCenter);
+        return view.GetGlobalTransformWithCanvas() * (kind == ProductKind.HotDryNoodles ? view.BowlCenter : view.StockCenter);
     }
     private DropZone Zone(int slot) => (DropZone)_screen.FindChild($"WuhanCustomerDropZone{slot+1}", true, false);
     private Vector2 Target(int slot) => Zone(slot).GetGlobalTransformWithCanvas() * (Zone(slot).Size * .5f);
@@ -306,7 +305,6 @@ public partial class WuhanDeliverySelfTest : Node
         queue.TrySelect(first.Id); await Drop(ProductKind.Doupi, 1);
         Check(second.Progress.GetDeliveredQuantity(1) == 2 && first.Progress.GetDeliveredQuantity(1) == 0
             && _screen.DoupiStock.Count == 6, "drop target wins over selection and receives its two missing pieces");
-        Check(!_screen.DeliverToCustomer(second.Id, ProductKind.EggRiceWine) && !_screen.Workstation.GetNode<Control>("WuhanDrag_EggRiceWine").Visible, "retired egg cannot be delivered even from old save");
         Move(Source(ProductKind.HotDryNoodles)); Button(Source(ProductKind.HotDryNoodles), true); Button(Source(ProductKind.HotDryNoodles), false);
         Check(!_screen.DeliveryDrag.IsDragging, "empty bowl cannot start a delivery");
         _screen.Bowl.TryAddNoodles(NoodleQuality.Optimal); _screen.Bowl.TryAddBaseSeasoning(); Step(.001);

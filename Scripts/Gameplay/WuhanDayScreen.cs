@@ -24,9 +24,9 @@ public partial class WuhanDayScreen : Control
     private readonly Label[] _basketLabels = new Label[2];
     private DataCatalog _catalog = null!; private SaveService _save = null!; private DayController _controller = null!; private WuhanArtCatalog _art = null!;
     private NoodleCookerStateMachine _cooker = null!; private HotDryNoodlesStateMachine _bowl = null!; private DoupiStateMachine? _doupi;
-    private DoupiInventory _doupiStock = null!; private WuhanIngredientInventory _ingredients = null!; private bool _eggUnlocked;
+    private DoupiInventory _doupiStock = null!; private WuhanIngredientInventory _ingredients = null!;
     private int _stationLevel; private int _cookerLevel; private int _doupiLevel;
-    private Label _day = null!, _clock = null!, _income = null!, _door = null!, _feedback = null!, _bowlStatus = null!, _doupiStatus = null!, _eggStatus = null!;
+    private Label _day = null!, _clock = null!, _income = null!, _door = null!, _feedback = null!, _bowlStatus = null!, _doupiStatus = null!;
     internal WuhanWorkstationView Workstation { get; private set; } = null!;
     internal CoinTrayView CoinTray { get; private set; } = null!;
     internal CoinCollectionFeedback CollectionFeedback { get; private set; } = null!;
@@ -35,7 +35,6 @@ public partial class WuhanDayScreen : Control
     internal HotDryNoodlesStateMachine Bowl => _bowl;
     internal DoupiStateMachine? Doupi => _doupi;
     internal DoupiInventory DoupiStock => _doupiStock;
-    internal bool EggUnlocked => _eggUnlocked;
     internal WuhanIngredientInventory Ingredients => _ingredients;
     private PanelContainer _results = null!; private ColorRect _blocker = null!; private RichTextLabel _resultText = null!; private Label _unlock = null!;
     private ConfirmationDialog _abandon = null!; private bool _committed; private bool _focused = true; private double _feedbackSeconds;
@@ -143,7 +142,7 @@ public partial class WuhanDayScreen : Control
         }
         _door.Visible = false;
         foreach (Label label in _basketLabels) label.Visible = false;
-        _bowlStatus.Visible = _doupiStatus.Visible = _eggStatus.Visible = false;
+        _bowlStatus.Visible = _doupiStatus.Visible = false;
         GetNode<Control>("@PanelContainer@312").Hide();
 
     }
@@ -167,11 +166,11 @@ public partial class WuhanDayScreen : Control
         if (!controller.TryPrepareDay(StableIds.Cities.Wuhan,day,catalog,out string error) || !save.ApplyStartUnlocks(controller.CurrentConfig!,out error)) { Feedback(error,true); return false; }
         CityProgressData city=save.Data.Wuhan; _cookerLevel=city.EquipmentLevels.GetValueOrDefault("noodle_cooker",1); _stationLevel=city.EquipmentLevels.GetValueOrDefault("ingredient_station",1); _doupiLevel=city.EquipmentLevels.GetValueOrDefault("doupi_griddle");
         _cooker=new NoodleCookerStateMachine(catalog.NoodleCookersByLevel[_cookerLevel]); _bowl=new HotDryNoodlesStateMachine(); _ingredients=new WuhanIngredientInventory(catalog.WuhanIngredientStationsByLevel[_stationLevel]); _doupiStock=new DoupiInventory();
-        _doupi=_doupiLevel>0?new DoupiStateMachine(catalog.DoupiGriddlesByLevel[_doupiLevel]):null; _eggUnlocked=false;
+        _doupi=_doupiLevel>0?new DoupiStateMachine(catalog.DoupiGriddlesByLevel[_doupiLevel]):null;
         _basketLabels[1].Visible=false;
         Workstation.AllowedIngredients = controller.CurrentConfig!.AvailableRecipeIds.SelectMany(id => catalog.RecipesById[id].ExtraIngredients).Append(StableIds.Ingredients.WuhanBaseSeasoning).ToHashSet();
         RefreshWorkbenchBackground();
-        Workstation.Bind(_art,_cooker,_bowl,_doupi,_doupiStock,_eggUnlocked,_ingredients,_cookerLevel,_doupiLevel);
+        Workstation.Bind(_art,_cooker,_bowl,_doupi,_doupiStock,_ingredients,_cookerLevel,_doupiLevel);
         Render();
         return true;
     }
@@ -281,9 +280,9 @@ public partial class WuhanDayScreen : Control
         {
             string message = _bowl.Toppings.Contains(id) ? "这份配料已经加入了。"
                 : id == StableIds.Ingredients.WuhanBraisedBeef ? "先把热干面搅拌完成，再加入牛肉。"
-                : id == StableIds.Ingredients.WuhanBaseSeasoning && _bowl.State is not (NoodleBowlState.Empty or NoodleBowlState.Noodles) ? "基础调味已经加入了。"
+                : id == StableIds.Ingredients.WuhanBaseSeasoning && _bowl.HasBaseSeasoning ? "芝麻酱已经加入了。"
                 : _bowl.State is NoodleBowlState.Mixing or NoodleBowlState.Ready ? "辣油和葱花需要在开始拌面前加入。"
-                : "先把熟面和基础调味放进碗里。";
+                : "先把熟面放进碗里；芝麻酱、辣油和葱花可按任意顺序加入。";
             Feedback(message,true);
         }
         Render();

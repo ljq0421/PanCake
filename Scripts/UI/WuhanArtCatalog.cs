@@ -35,7 +35,6 @@ public sealed class WuhanArtCatalog
         Load("doupi_batter", "豆皮豆米浆容器_v2.png"); Load("doupi_skin", "豆皮基础层-透明-v1.png"); Load("doupi_egg", "豆皮-鸡蛋覆盖层.png"); Load("doupi_filling", "三鲜糯米馅容器_v2.png"); Load("doupi_finished", "整张三鲜豆皮完成状态.png"); Load("doupi_cut", "切块后的整锅豆皮 .png"); Load("doupi_single", "DoupiPieces_v1/piece-01.png"); Load("doupi_stock", "Trays_v2/stock.png"); Load("doupi_burnt", "豆皮焦糊覆盖层.png");
         for (int piece = 1; piece <= 4; piece++)
             Load($"doupi_piece_{piece}", $"DoupiPieces_v1/piece-{piece:00}.png");
-        Load("egg_finished", "成品蛋酒杯_v2.png");
         Load("base_sauce", "基础酱汁瓶_v2.png"); Load("chili_overlay", "辣油覆盖层.png"); Load("beef_overlay", "牛肉覆盖层.png");
         Load("doupi_filling_overlay", "未成熟豆皮三鲜馅.png");
         Load("doupi_filling_cooked", "成熟豆皮三鲜馅.png"); Load("flip_tool", "豆皮手动翻面铲.png");
@@ -57,7 +56,7 @@ public sealed class WuhanArtCatalog
     // Keep each piece's variant stable through refill, delivery and discard.
     public Texture2D DoupiPiece(int tile) => Get($"doupi_piece_{(tile + tile / 4) % 4 + 1}");
     public Texture2D Ingredient(string id) => id switch { StableIds.Ingredients.WuhanBaseSeasoning => Get("base_seasoning"), StableIds.Ingredients.WuhanScallion => Get("scallion"), StableIds.Ingredients.WuhanChiliOil => Get("chili"), StableIds.Ingredients.WuhanBraisedBeef => Get("beef"), _ => Get("raw_noodles") };
-    public Texture2D Product(ProductKind kind) => kind switch { ProductKind.HotDryNoodles => Get("mixed"), ProductKind.Doupi => Get("doupi_single"), ProductKind.EggRiceWine => Get("egg_finished"), _ => _shared.Product(kind) };
+    public Texture2D Product(ProductKind kind) => kind switch { ProductKind.HotDryNoodles => Get("mixed"), ProductKind.Doupi => Get("doupi_single"), _ => _shared.Product(kind) };
     public TianjinArtCatalog Shared => _shared;
     public CustomerPortraitLayout CustomerLayout(string appearanceId) =>
         _customerLayouts.TryGetValue(appearanceId, out var layout) ? layout : _shared.CustomerLayout(appearanceId);

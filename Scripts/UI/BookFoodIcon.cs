@@ -37,7 +37,6 @@ public partial class BookFoodIcon : Control
             "Youtiao" => "TianJin/熟油条.png",
             "HotDryNoodles" => "Wuhan/热干面完整成品.png",
             "Doupi" => "Wuhan/DoupiPieces_v1/piece-01.png",
-            "EggRiceWine" => "Wuhan/成品蛋酒杯_v2.png",
             "Roujiamo" => "XiAn/通用卡通腊汁肉夹馍成品.png", _ => null,
         };
         if (path is not null && ResourceLoader.Exists("res://resource/art/" + path))

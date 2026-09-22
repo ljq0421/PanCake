@@ -65,7 +65,7 @@ public partial class DemoRouteSelfTest : Node
             }
             Check(days == 27 && save.Data.Tianjin.Completed && save.Data.Wuhan.Completed, "both full chapters completed");
             Check(save.Data.Tianjin.EquipmentLevels["pancake_stove"] == 3 && save.Data.Wuhan.EquipmentLevels["noodle_cooker"] == 3
-                && save.Data.Wuhan.EquipmentLevels["egg_rice_wine_station"] == formal.Data.Wuhan.EquipmentLevels["egg_rice_wine_station"], "full equipment and current formal product availability match");
+                && save.Data.Wuhan.EquipmentLevels["doupi_griddle"] == formal.Data.Wuhan.EquipmentLevels["doupi_griddle"], "full equipment and current formal product availability match");
             foreach (var city in new[] { StableIds.Cities.Xian, StableIds.Cities.Guangzhou, StableIds.Cities.Yangzhou })
                 Check(!save.CanEnter(city, 1) && !save.Data.UnlockedCityIds.Contains(city) && !controller.TryPrepareDay(city, 1, catalog, out _), "future city blocked " + city);
             catalog.TryGetDay(1, out var first);

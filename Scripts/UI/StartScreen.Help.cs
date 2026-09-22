@@ -175,7 +175,8 @@ public partial class StartScreen
         {
             var number = HelpPanel(panel, "HelpTipNumber" + i, new(346, 51 + i * 51, 32, 32), colors[i], colors[i], 16, 0);
             HelpText(number, "Number", (i + 1).ToString(), new(0, 0, 32, 32), 24, true).AddThemeColorOverride("font_color", Colors.White);
-            HelpText(panel, "HelpTip" + i, tips[i], new(390, 44 + i * 51, 360, 48), 26);
+            var tip = HelpText(panel, "HelpTip" + i, tips[i], new(390, 44 + i * 51, 360, 48), 26);
+            if (city.Id is StableIds.Cities.Tianjin or StableIds.Cities.Wuhan) TeachingEmphasis.Attach(tip);
         }
     }
 

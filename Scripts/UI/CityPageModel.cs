@@ -48,7 +48,7 @@ public sealed partial class CityPageModel(DataCatalog? catalog, SaveService save
                 6 => new[] { "热干面完整成品", "DoupiPieces_v1/piece-01" },
                 7 => new[] { "热干面完整成品", "卤牛肉片" },
                 10 => new[] { "DoupiPieces_v1/piece-01", "三鲜豆皮锅 Lv3 自动翻面快热版锅体_v2" },
-                >= 8 => new[] { "热干面完整成品", "DoupiPieces_v1/piece-01", "成品蛋酒杯_v2" },
+                >= 8 => new[] { "热干面完整成品", "DoupiPieces_v1/piece-01" },
                 _ => new[] { "热干面完整成品" },
             };
             return names.Select(n => "res://resource/art/Wuhan/" + n + ".png").ToArray();

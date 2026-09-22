@@ -29,7 +29,6 @@ public partial class WuhanRepairCapture : Node
             save.Data.Wuhan.HighestUnlockedDay = 12;
             save.Data.Wuhan.EquipmentLevels["doupi_griddle"] = level;
             save.Data.Wuhan.EquipmentLevels["noodle_cooker"] = level;
-            save.Data.Wuhan.EquipmentLevels["egg_rice_wine_station"] = 1;
             var controller = new DayController(); AddChild(controller);
             _day = SceneFactory.Instantiate<WuhanDayScreen>("res://Scenes/Gameplay/WuhanDayScreen.tscn"); AddChild(_day);
             _day.ConnectController(controller); _day.Initialize(catalog, save, controller, 8); _day.SetProcess(false);
@@ -51,7 +50,7 @@ public partial class WuhanRepairCapture : Node
             await Advance(.18); await Shot("11-vertical-cut"); await Advance(.22);
             foreach(float x in new[]{.25f,.75f}){Drag(view.PanPoint(x,.05f),view.PanPoint(x,.95f));await Advance(.4);}
             await Advance(.18); await Shot("12-transfer"); await Advance(.36); await Shot("13-stocked");
-            if (_day.DoupiStock.Count != 8 || _day.EggUnlocked) throw new InvalidOperationException("Repair capture ended with wrong supply state.");
+            if (_day.DoupiStock.Count != 8) throw new InvalidOperationException("Repair capture ended with wrong supply state.");
             _day.PourDoupiBatter(); await Advance(.1); float paused = view.MotionProgress("pan");
             controller.IsPaused = true; await Advance(.5);
             if (view.MotionProgress("pan") != paused) throw new InvalidOperationException("Pause advanced the pan animation.");

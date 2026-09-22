@@ -38,7 +38,6 @@ public partial class CoinCollectionSelfTest : Node
                 save.Data.Wuhan.EquipmentLevels["noodle_cooker"] = 3;
                 save.Data.Wuhan.EquipmentLevels["doupi_griddle"] = 3;
                 save.Data.Wuhan.EquipmentLevels["ingredient_station"] = 3;
-                save.Data.Wuhan.EquipmentLevels["egg_rice_wine_station"] = 1;
                 var controller = new DayController(); AddChild(controller);
                 Control screen = wuhan ? ProjectCake.Core.SceneFactory.Instantiate<WuhanDayScreen>("res://Scenes/Gameplay/WuhanDayScreen.tscn") : ProjectCake.Core.SceneFactory.Instantiate<TianjinDayScreen>("res://Scenes/Gameplay/TianjinDayScreen.tscn"); AddChild(screen); screen.SetProcess(false);
                 void Init()

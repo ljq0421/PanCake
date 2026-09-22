@@ -1428,21 +1428,6 @@ DisplayName = "三鲜豆皮"
 DragColor = Color(0.96862745, 0.9529412, 0.9098039, 1)
 DragDisplaySize = Vector2(100, 75)
 
-[node name="WuhanDrag_EggRiceWine" type="PanelContainer" parent="WuhanWorkstation" unique_id=773993104]
-visible = false
-layout_mode = 0
-offset_left = 1690.0
-offset_top = 223.0
-offset_right = 1754.0
-offset_bottom = 292.0
-mouse_default_cursor_shape = 2
-theme_override_styles/panel = SubResource("StyleBoxEmpty_0swnx")
-script = ExtResource("11_jo6ni")
-PayloadId = "wuhan:EggRiceWine"
-DisplayName = "蛋酒"
-DragColor = Color(0.96862745, 0.9529412, 0.9098039, 1)
-DragDisplaySize = Vector2(56, 60)
-
 [node name="RefillNoodles" type="Button" parent="WuhanWorkstation" unique_id=1251300914]
 layout_mode = 0
 offset_left = 16.0
@@ -1801,21 +1786,6 @@ theme_override_font_sizes/font_size = 18
 horizontal_alignment = 1
 vertical_alignment = 1
 metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_doupiStatus")
-
-[node name="@Label@355" type="Label" parent="." unique_id=662358138]
-z_index = 46
-layout_mode = 0
-offset_left = 1450.0
-offset_top = 990.0
-offset_right = 1855.0
-offset_bottom = 1048.0
-theme_override_colors/font_color = Color(0.14117648, 0.34901962, 0.30980393, 1)
-theme_override_colors/font_outline_color = Color(0.96862745, 0.9529412, 0.9098039, 1)
-theme_override_constants/outline_size = 3
-theme_override_font_sizes/font_size = 18
-horizontal_alignment = 1
-vertical_alignment = 1
-metadata/_scene_bindings = PackedStringArray("ProjectCake.Gameplay.WuhanDayScreen|_eggStatus")
 
 [node name="@ColorRect@356" type="ColorRect" parent="." unique_id=881084473]
 visible = false

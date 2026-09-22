@@ -21,7 +21,7 @@ public static class JourneyModel
         new(StableIds.Cities.Tianjin, "天津", ArtRoot + "天津旅行明信片.png", new[] {
             new JourneyFood("煎饼果子", "Pancake"), new JourneyFood("油条", "Youtiao"), new JourneyFood("豆浆", "SoyMilk") }),
         new(StableIds.Cities.Wuhan, "武汉", ArtRoot + "武汉旅行明信片.png", new[] {
-            new JourneyFood("热干面", "HotDryNoodles"), new JourneyFood("三鲜豆皮", "Doupi"), new JourneyFood("蛋酒", "EggRiceWine") }),
+            new JourneyFood("热干面", "HotDryNoodles"), new JourneyFood("三鲜豆皮", "Doupi") }),
         new(StableIds.Cities.Xian, "西安", ArtRoot + "西安旅行明信片.png", new[] {
             new JourneyFood("肉夹馍", "Roujiamo"), new JourneyFood("肉丸胡辣汤", "Hulatang", "res://resource/art/XiAn/成品肉丸胡辣汤.png") }),
         new(StableIds.Cities.Guangzhou, "广州", null, new[] {

@@ -29,7 +29,7 @@ public sealed class OrderData
 
     public string PancakeRecipeId => Lines.FirstOrDefault(line => line.ProductKind == ProductKind.Pancake)?.DefinitionId ?? string.Empty;
     public string NoodleRecipeId => Lines.FirstOrDefault(line => line.ProductKind == ProductKind.HotDryNoodles)?.DefinitionId ?? string.Empty;
-    public bool IsComplex => OrderTypeId is "noodles_doupi" or "noodles_egg_rice_wine" or "wuhan_full_combo"
+    public bool IsComplex => OrderTypeId is "noodles_doupi"
         || ProjectCake.Guangzhou.GuangzhouRules.IsComplex(OrderTypeId);
 }
 

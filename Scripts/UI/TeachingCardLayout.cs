@@ -5,17 +5,22 @@ namespace ProjectCake.UI;
 /// <summary>Measure translated text with Godot's shaper before placing teaching controls.</summary>
 internal static class TeachingCardLayout
 {
-    internal static float NaturalWidth(Label label) => label.Tr(label.Text).ToString().Split('\n')
-        .Max(line => label.GetThemeFont("font").GetStringSize(line, fontSize: label.GetThemeFontSize("font_size")).X);
+    internal static float NaturalWidth(Label label)
+    {
+        using var paragraph = new TextParagraph();
+        TeachingEmphasis.Shape(paragraph, label, label.Tr(label.Text));
+        return paragraph.GetSize().X;
+    }
 
     internal static float Height(Label label, float width)
     {
+        if (label.GetNodeOrNull<TeachingEmphasis>("TeachingEmphasis") is { } ink) return ink.MeasureHeight(width);
         using var paragraph = new TextParagraph
         {
             Width = width,
             BreakFlags = TextServer.LineBreakFlag.Mandatory | TextServer.LineBreakFlag.WordBound | TextServer.LineBreakFlag.Adaptive,
         };
-        paragraph.AddString(label.Tr(label.Text), label.GetThemeFont("font"), label.GetThemeFontSize("font_size"), label.GetLanguage());
+        TeachingEmphasis.Shape(paragraph, label, label.Tr(label.Text));
         return Mathf.Ceil(paragraph.GetSize().Y + Math.Max(0, paragraph.GetLineCount() - 1) * label.GetThemeConstant("line_spacing"));
     }
 

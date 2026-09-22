@@ -6,6 +6,19 @@ public partial class StartScreen
 {
     // Home-only atlas cache preserves other pages' existing image framing and source PNGs.
     private readonly Dictionary<string, Texture2D> _homeTextures = new();
+    private static bool _homeEntranceShown;
+
+    private void HomeEntrance()
+    {
+        if (_homeEntranceShown) return;
+        _homeEntranceShown = true;
+        _body.AddChild(new HomeEntranceMotion
+        {
+            Screen = this, Logo = _body.GetNode<Control>("HomeLogo"),
+            Actions = new[] { "Continue", "NewGame", "BreakfastRecords", "WorldMap" }
+                .Select(name => (Control)_body.GetNode<Button>(name)).ToArray()
+        });
+    }
 
     private static ShaderMaterial HomeMapSoftFocus() => new()
     {
@@ -84,7 +97,9 @@ public partial class StartScreen
             PatchMarginLeft = texture.GetHeight() / 2, PatchMarginRight = texture.GetHeight() / 2,
             MouseFilter = MouseFilterEnum.Ignore
         });
-        HomeArt(button, icon, small ? new(35, -12, 100, 100) : new(18, -34, 180, 178));
+        var picture = HomeArt(button, icon, small ? new(35, -12, 100, 100) : new(18, -34, 180, 178));
+        picture.Name = "ActionIcon";
+        button.AddChild(new HomeActionMotion { Screen = this, Icon = picture, Train = name == "Continue" });
         var label = Text(button, "Caption", caption,
             small ? new(7, 83, 156, 45) : new(200, 30, 275, 88), small ? 30 : 48, true);
         FitTextWidth(label, small ? 30 : 48, small ? 25 : 32);

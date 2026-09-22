@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dnl6an6lxgvks"
-path="res://.godot/imported/成品蛋酒杯_v2.png-b7923e8e715f60241ca39c594575f47a.ctex"
+uid="uid://cakvy4avyu4ed"
+path="res://.godot/imported/开始页面早餐铺背景-无木牌-v1.png-952ad054ddf581a099977e6606d76ac8.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://resource/art/Wuhan/成品蛋酒杯_v2.png"
-dest_files=["res://.godot/imported/成品蛋酒杯_v2.png-b7923e8e715f60241ca39c594575f47a.ctex"]
+source_file="res://resource/art/Global/StartPage/开始页面早餐铺背景-无木牌-v1.png"
+dest_files=["res://.godot/imported/开始页面早餐铺背景-无木牌-v1.png-952ad054ddf581a099977e6606d76ac8.ctex"]
 
 [params]
 

@@ -101,6 +101,7 @@ public partial class TutorialFocusLayer : Control
             VerticalAlignment = VerticalAlignment.Center, MouseFilter = MouseFilterEnum.Ignore };
         _hint.AddThemeFontSizeOverride("font_size", 24);
         _hint.AddThemeColorOverride("font_color", wuhan ? WuhanUi.Text : TianjinUi.BrownText); _card.AddChild(_hint);
+        TeachingEmphasis.Attach(_hint);
         _close = new Button { Name = "SkipGuidance", Text = DismissAtScreenEdge ? "跳过教学" : "本次关闭", FocusMode = FocusModeEnum.All };
         _close.Pressed += Dismiss;
         Vector2 position = DismissAtScreenEdge ? new(1620, 28) : Vector2.Zero;

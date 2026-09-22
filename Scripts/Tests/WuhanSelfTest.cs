@@ -144,12 +144,10 @@ public partial class WuhanSelfTest : Node
         var save = new SaveService(); save.UsePathForTests(path); AddChild(save);
         save.Data.Coins = 777;
         save.Data.Wuhan.EquipmentLevels["ingredient_station"] = 3;
-        save.Data.Wuhan.EquipmentLevels["egg_rice_wine_station"] = 1;
-        save.Data.Wuhan.UnlockedCollectibleIds.Add("collectible:wuhan_egg_rice_wine");
-        Check(save.TrySave(out _), "旧设备与蛋酒收藏存档可写入");
+        Check(save.TrySave(out _), "武汉设备与收藏存档可写入");
         var loaded = new SaveService(); loaded.UsePathForTests(path); AddChild(loaded);
-        Check(!loaded.HasLoadError && loaded.Data.Coins == 777 && loaded.Data.Wuhan.EquipmentLevels["ingredient_station"] == 3
-            && loaded.Data.Wuhan.UnlockedCollectibleIds.Contains("collectible:wuhan_egg_rice_wine"), "读取旧存档保留等级收藏且不退款");
+        Check(!loaded.HasLoadError && loaded.Data.Coins == 777 && loaded.Data.Wuhan.EquipmentLevels["ingredient_station"] == 3,
+            "读取武汉存档保留等级与金币");
         var hub = SceneFactory.Instantiate<ProjectCake.UI.WuhanHub>("res://Scenes/UI/WuhanHub.tscn"); AddChild(hub); hub.Initialize(catalog, loaded);
         Check(!hub.GetNode<Button>("%WuhanStationUpgrade").Visible && hub.GetNode<Label>("%WuhanStationNote").Text == "生面无限供应", "旧满级备料台显示无限供应且无升级入口");
         hub.Free(); loaded.Free(); save.Free(); File.Delete(ProjectSettings.GlobalizePath(path));
@@ -174,7 +172,7 @@ public partial class WuhanSelfTest : Node
             planned.Order = new OrderData { OrderId = planned.Order.OrderId, CityId = StableIds.Cities.Wuhan,
                 CustomerTypeId = planned.CustomerTypeId, BasePrice = 15,
                 Lines = new[] { new OrderLineData(ProductKind.Doupi, StableIds.Products.Doupi, 1),
-                    new OrderLineData(ProductKind.EggRiceWine, StableIds.Products.EggRiceWine, 1) } };
+                    new OrderLineData(ProductKind.HotDryNoodles, StableIds.Recipes.HotDryNoodlesClassic, 1) } };
         controller.TryStartDay(out _); controller.Tick(3.01);
         var queue = controller.CustomerQueue!;
         queue.Tick(60, 0, true); queue.Tick(60, .4, true);
@@ -191,8 +189,8 @@ public partial class WuhanSelfTest : Node
         Check(!controller.TryDeliverWuhanTo(customer.Id, doupi, () => true).ItemAccepted
             && Math.Abs(customer.PatienceProgress - .55) < .001, "重复交付不恢复耐心");
         customer.WaitSeconds = 1;
-        Check(controller.TryDeliverWuhanTo(customer.Id, new DeliveredItem(ProductKind.EggRiceWine,
-            StableIds.Products.EggRiceWine), () => true).CompletesOrder && customer.WaitSeconds == 0,
+        Check(controller.TryDeliverWuhanTo(customer.Id, new DeliveredItem(ProductKind.HotDryNoodles,
+            StableIds.Recipes.HotDryNoodlesClassic), () => true).CompletesOrder && customer.WaitSeconds == 0,
             "耐心恢复不超过满值且整单正常完成");
         controller.Free();
     }
@@ -247,6 +245,25 @@ public partial class WuhanSelfTest : Node
         Check(!timing.TryAddTopping(beef) && timing.Toppings.Count == 2, "牛肉只添加一份");
         Check(timing.TryPrepare(c.RecipesById, out var beefChili) && beefChili.RecipeId == StableIds.Recipes.HotDryNoodlesBeefChili,
             "后加牛肉正确匹配牛肉辣油配方");
+        foreach (string[] order in new[]
+        {
+            new[] { StableIds.Ingredients.WuhanBaseSeasoning, chili, scallion },
+            new[] { StableIds.Ingredients.WuhanBaseSeasoning, scallion, chili },
+            new[] { chili, scallion, StableIds.Ingredients.WuhanBaseSeasoning },
+            new[] { chili, StableIds.Ingredients.WuhanBaseSeasoning, scallion },
+            new[] { scallion, StableIds.Ingredients.WuhanBaseSeasoning, chili },
+            new[] { scallion, chili, StableIds.Ingredients.WuhanBaseSeasoning },
+        })
+        {
+            timing.Reset(); timing.TryAddNoodles(NoodleQuality.Optimal);
+            foreach (string ingredient in order)
+                Check(ingredient == StableIds.Ingredients.WuhanBaseSeasoning ? timing.TryAddBaseSeasoning() : timing.TryAddTopping(ingredient),
+                    $"芝麻酱、辣油和葱花可按任意顺序加入：{string.Join('、', order)}");
+            Check(timing.HasBaseSeasoning && timing.Toppings.SetEquals(new[] { chili, scallion }), "任意加料顺序保留正确小料");
+            timing.AddMixDistance(425);
+            Check(timing.TryPrepare(c.RecipesById, out var mixed) && mixed.RecipeId == StableIds.Recipes.HotDryNoodlesScallionChili,
+                "任意小料顺序仍正确匹配双加热干面");
+        }
         foreach (var recipe in c.RecipesById.Values.Where(r => r.Id.StartsWith("hot_dry_noodles_", StringComparison.Ordinal)))
         {
             timing.Reset(); timing.TryAddNoodles(NoodleQuality.Optimal); timing.TryAddBaseSeasoning();

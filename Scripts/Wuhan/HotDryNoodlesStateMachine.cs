@@ -16,6 +16,7 @@ public sealed class HotDryNoodlesStateMachine
     public double MixProgress { get; private set; }
     public NoodleQuality Quality => _quality;
     public IReadOnlySet<string> Toppings => _toppings;
+    public bool HasBaseSeasoning { get; private set; }
 
     public bool TryAddNoodles(NoodleQuality quality)
     {
@@ -24,7 +25,8 @@ public sealed class HotDryNoodlesStateMachine
     }
     public bool TryAddBaseSeasoning()
     {
-        if (State != NoodleBowlState.Noodles) return false;
+        if (HasBaseSeasoning || State is not (NoodleBowlState.Noodles or NoodleBowlState.Seasoned)) return false;
+        HasBaseSeasoning = true;
         State = NoodleBowlState.Seasoned; return true;
     }
     public bool TryAddTopping(string ingredientId)
@@ -32,15 +34,17 @@ public sealed class HotDryNoodlesStateMachine
         bool allowed = ingredientId switch
         {
             StableIds.Ingredients.WuhanBraisedBeef => State == NoodleBowlState.Ready,
-            StableIds.Ingredients.WuhanScallion or StableIds.Ingredients.WuhanChiliOil => State == NoodleBowlState.Seasoned,
+            StableIds.Ingredients.WuhanScallion or StableIds.Ingredients.WuhanChiliOil => State is NoodleBowlState.Noodles or NoodleBowlState.Seasoned,
             _ => false,
         };
         if (!allowed) return false;
-        return _toppings.Add(ingredientId);
+        if (!_toppings.Add(ingredientId)) return false;
+        if (State == NoodleBowlState.Noodles) State = NoodleBowlState.Seasoned;
+        return true;
     }
     public bool AddMixDistance(double pixels)
     {
-        if (State is not (NoodleBowlState.Seasoned or NoodleBowlState.Mixing) || pixels <= 0) return false;
+        if (!HasBaseSeasoning || State is not (NoodleBowlState.Seasoned or NoodleBowlState.Mixing) || pixels <= 0) return false;
         State = NoodleBowlState.Mixing;
         MixProgress = Math.Min(100, MixProgress + pixels / 5.0);
         if (MixProgress >= MixCompletionProgress) { MixProgress = 100; State = NoodleBowlState.Ready; }
@@ -55,7 +59,7 @@ public sealed class HotDryNoodlesStateMachine
         prepared = new PreparedHotDryNoodles(id, _quality, true);
         return true;
     }
-    public void Reset() { Generation++; State = NoodleBowlState.Empty; MixProgress = 0; _toppings.Clear(); }
+    public void Reset() { Generation++; State = NoodleBowlState.Empty; MixProgress = 0; HasBaseSeasoning = false; _toppings.Clear(); }
     public static WuhanFoodQuality ToQuality(PreparedHotDryNoodles item) => WuhanFoodQuality.MixedComplete | item.NoodleQuality switch
     {
         NoodleQuality.Soft => WuhanFoodQuality.NoodlesSoft,

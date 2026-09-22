@@ -11,7 +11,7 @@ public sealed class DemoSaveFile
     public string ProfileId { get; set; } = ExperienceProfile.DemoId;
     public int SchemaVersion { get; set; } = 2;
     public int ContentRevision { get; set; } = 1;
-    public Dictionary<string, int> WuhanEquipment { get; set; } = new() { ["noodle_cooker"] = 1, ["ingredient_station"] = 1, ["doupi_griddle"] = 0, ["egg_rice_wine_station"] = 0 };
+    public Dictionary<string, int> WuhanEquipment { get; set; } = new() { ["noodle_cooker"] = 1, ["ingredient_station"] = 1, ["doupi_griddle"] = 0 };
     public HashSet<string> WuhanLearnedActions { get; set; } = new(StringComparer.Ordinal);
     public Dictionary<string, BreakfastStatistics> BreakfastStats { get; set; } = new(StringComparer.Ordinal);
     public Dictionary<string, string> BreakfastRecords { get; set; } = new(StringComparer.Ordinal);
@@ -50,6 +50,7 @@ public partial class SaveService
             if (!document.RootElement.TryGetProperty(field, out _)) throw new InvalidDataException("Incomplete legacy Demo save.");
         var file = JsonSerializer.Deserialize<DemoSaveFile>(json, DemoCatalog.JsonOptions)
             ?? throw new InvalidDataException("Demo save is empty.");
+        file.WuhanEquipment.Remove("egg_rice_wine_station");
         if (file.SchemaVersion is not (1 or 2) || file.ContentRevision is < 1 or > 3)
             throw new InvalidDataException("Unsupported Demo save version.");
         if (file.SchemaVersion == 1 && (file.ContentRevision != 1 || file.CompletedStages is null
@@ -90,10 +91,9 @@ public partial class SaveService
             throw new InvalidDataException("Incompatible or invalid Demo save. The original file has been preserved.");
         if (file.Equipment.Count != 3 || file.Equipment.GetValueOrDefault("pancake_stove") is < 1 or > 2
             || file.Equipment.GetValueOrDefault("ingredient_station") is < 1 or > 2 || file.Equipment.GetValueOrDefault("fryer", -1) is < 0 or > 2
-            || file.WuhanEquipment.Count != 4 || file.WuhanEquipment.GetValueOrDefault("noodle_cooker") is < 1 or > 2
+            || file.WuhanEquipment.Count != 3 || file.WuhanEquipment.GetValueOrDefault("noodle_cooker") is < 1 or > 2
             || file.WuhanEquipment.GetValueOrDefault("ingredient_station") != 1
             || file.WuhanEquipment.GetValueOrDefault("doupi_griddle", -1) is < 0 or > 2
-            || file.WuhanEquipment.GetValueOrDefault("egg_rice_wine_station", -1) != 0
             || file.BestRecords.Any(pair => content.Stage(pair.Key) is null || pair.Value is null || pair.Value.TotalRevenue < 0 || pair.Value.CompletedCustomers < 0)
             || file.CompletedStages.Any(id => content.Stage(id) is null)
             || file.CompletedTutorials.Concat(file.SkippedTutorials).Any(id => content.Stage(id) is null))

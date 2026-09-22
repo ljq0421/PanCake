@@ -154,10 +154,10 @@ public partial class WuhanLedger : Control
             2 => new[] { "noodles", "scallion", "chili" },
             3 => new[] { "noodles", "beef" },
             4 or 5 => new[] { "noodles", "doupi_single" },
-            6 => new[] { "noodles", "egg_finished" },
+            6 => new[] { "noodles", "doupi_single" },
             7 => new[] { "noodles", "beef" },
             10 => new[] { "doupi_single", "griddle_3" },
-            >= 8 => new[] { "noodles", "doupi_single", "egg_finished" },
+            >= 8 => new[] { "noodles", "doupi_single" },
             _ => new[] { "noodles" },
         };
         for (int index = 0; index < images.Length; index++)
@@ -172,7 +172,7 @@ public partial class WuhanLedger : Control
             baseLayer.Texture = null;
             overlay.Texture = _art.Texture(id == "noodles" ? "noodles_finished" : id);
             Vector2 slotSize = new(width, 212);
-            float scale = id == "doupi_single" ? .9f : 1f;
+            float scale = id == "doupi_single" ? .7f : 1f;
             overlay.Size = slotSize * scale;
             overlay.Position = (slotSize - overlay.Size) * .5f;
             slot.Visible = true;

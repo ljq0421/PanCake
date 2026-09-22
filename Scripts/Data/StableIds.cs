@@ -16,14 +16,12 @@ public static class StableIds
         public const string Youtiao = "youtiao";
         public const string SoyMilk = "soy_milk";
         public const string Doupi = "doupi";
-        public const string EggRiceWine = "egg_rice_wine";
 
         public static readonly IReadOnlySet<string> All = new HashSet<string>(StringComparer.Ordinal)
         {
             Youtiao,
             SoyMilk,
             Doupi,
-            EggRiceWine,
         };
     }
 
@@ -119,10 +117,7 @@ public static class StableIds
         "full_combo",
         "hot_dry_noodles",
         "doupi",
-        "egg_rice_wine",
         "noodles_doupi",
-        "noodles_egg_rice_wine",
-        "wuhan_full_combo",
         "xian_a", "xian_b", "xian_c", "xian_d", "xian_e",
     };
 
@@ -154,7 +149,6 @@ public static class StableIds
         values.Add("product:soy_milk");
         values.Add("product:youtiao");
         values.Add("product:doupi");
-        values.Add("product:egg_rice_wine");
         values.Add("equipment:wuhan_ingredient_station_lv2");
         values.Add("equipment:wuhan_ingredient_station_lv3");
         values.Add("equipment:noodle_cooker_lv2");
@@ -162,7 +156,6 @@ public static class StableIds
         values.Add("equipment:doupi_griddle_lv1");
         values.Add("equipment:doupi_griddle_lv2");
         values.Add("equipment:doupi_griddle_lv3");
-        values.Add("equipment:egg_rice_wine_station");
 
         foreach (string recipe in ProjectCake.Xian.XianRules.Recipes) values.Add(RecipeUnlock(recipe));
         foreach (string eq in new[] { "xian_oven", "xian_board", "xian_soup" })

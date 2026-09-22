@@ -381,7 +381,8 @@ public partial class BusinessBookSelfTest : Node
         var start=inverse*rect.Position;
         return new Rect2(start,inverse*rect.End-start);
     }
-    private static bool IsPageArrow(Control c) => c.Name == "NextBookPage" || c.Name == "PreviousBookPage";
+    private static bool IsPageArrow(Control c) => c.Name == "NextBookPage" || c.Name == "PreviousBookPage"
+        || c is PageArrowArt && c.GetParent() is Control parent && IsPageArrow(parent);
     private static bool InArrowRegion(Rect2 r, string city) => city is "tianjin" or "wuhan"
         ? r.Size.X>=59f && r.Size.Y>=59f && ((r.Position.X>=60&&r.End.X<=140&&r.Position.Y>=350&&r.End.Y<=455)||(r.Position.X>=1250&&r.End.X<=1370&&r.Position.Y>=410&&r.End.Y<=525))
         : r.Size.X>=53f && r.Size.Y>=53f && r.Position.Y>=420&&r.End.Y<=510
@@ -399,7 +400,7 @@ public partial class BusinessBookSelfTest : Node
     }
     private static BusinessBookModel Fixture(string city)
     {
-        (string food,string visual,string drink,string dv)=city switch {"wuhan"=>("牛肉热干面","HotDryNoodles","蛋酒","EggRiceWine"),"xian"=>("多肉加汁肉夹馍","Roujiamo","胡辣汤","Hulatang"),"guangzhou"=>("鲜虾肠粉","RiceRoll","早茶","MorningTea"),"yangzhou"=>("扬州烫干丝","G01","龙井茶","T01"),_=>("火腿薄脆煎饼","Pancake","豆浆","SoyMilk")};
+        (string food,string visual,string drink,string dv)=city switch {"wuhan"=>("牛肉热干面","HotDryNoodles","三鲜豆皮","Doupi"),"xian"=>("多肉加汁肉夹馍","Roujiamo","胡辣汤","Hulatang"),"guangzhou"=>("鲜虾肠粉","RiceRoll","早茶","MorningTea"),"yangzhou"=>("扬州烫干丝","G01","龙井茶","T01"),_=>("火腿薄脆煎饼","Pancake","豆浆","SoyMilk")};
         var rows=Enumerable.Range(1,13).Select(i=>new BookOrder(i,"order-"+i,i%2==0?"赶时间上班族":"街坊老熟客",i%2==0?"male_office":"elder_regular",
             new[]{new BookProduct("a",food,1,visual),new BookProduct("b",drink,1,dv)},i>4?BookOutcome.Lost:i<=2?BookOutcome.Perfect:i==4?BookOutcome.Incorrect:BookOutcome.Correct,i<=4?i==4?10:13:0,i==1?3:0,i<=4?85:null,i==4?"配料与客人的点单不符":"")).ToArray();
         return new(){CityId=city,Closing=true,Result=new(){Day=2,CompletedCustomers=4,LostCustomers=9,SaleRevenue=49,Tips=3,Satisfaction=85,PerfectOrders=2},Orders=rows,

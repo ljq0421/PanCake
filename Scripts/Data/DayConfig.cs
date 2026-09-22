@@ -10,7 +10,6 @@ public enum ProductKind
     SoyMilk,
     HotDryNoodles,
     Doupi,
-    EggRiceWine,
     Roujiamo,
     Hulatang,
     RiceRoll,

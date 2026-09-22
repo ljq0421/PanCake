@@ -421,7 +421,7 @@ public partial class OrderBubbleView : PanelContainer
         {
             var slot = new Control { Name = "OrderProductIcon", CustomMinimumSize = size,
                 MouseFilter = MouseFilterEnum.Ignore, SizeFlagsVertical = SizeFlags.ShrinkCenter };
-            Vector2 imageSize = size * .9f;
+            Vector2 imageSize = size * .8f;
             Control image = ProductIconCore(kind, imageSize);
             image.Name = "DoupiImage";
             image.Position = (size - imageSize) * .5f;

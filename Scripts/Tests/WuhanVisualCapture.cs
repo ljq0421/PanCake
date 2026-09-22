@@ -71,7 +71,7 @@ public partial class WuhanVisualCapture : Node
         }
         DataCatalog catalog=GetNode<DataCatalog>("/root/DataCatalog");
         string savePath=$"user://wuhan-capture-{Guid.NewGuid():N}.json";var save=new SaveService();AddChild(save);save.UsePathForTests(savePath);save.Data.Coins=3000;
-        CityProgressData progress=save.Data.Wuhan;progress.HighestUnlockedDay=12;progress.EquipmentLevels["noodle_cooker"]=3;progress.EquipmentLevels["ingredient_station"]=3;progress.EquipmentLevels["doupi_griddle"]=3;progress.EquipmentLevels["egg_rice_wine_station"]=1;
+        CityProgressData progress=save.Data.Wuhan;progress.HighestUnlockedDay=12;progress.EquipmentLevels["noodle_cooker"]=3;progress.EquipmentLevels["ingredient_station"]=3;progress.EquipmentLevels["doupi_griddle"]=3;
         var hub=ProjectCake.Core.SceneFactory.Instantiate<WuhanHub>("res://Scenes/UI/WuhanHub.tscn");AddChild(hub);hub.Initialize(catalog,save);await Frames(3);Save("res://.tmp/wuhan_hub.png");hub.QueueFree();await Frames(2);
         var controller=new DayController();AddChild(controller);var day=ProjectCake.Core.SceneFactory.Instantiate<WuhanDayScreen>("res://Scenes/Gameplay/WuhanDayScreen.tscn");AddChild(day);day.ConnectController(controller);day.Initialize(catalog,save,controller,8);day.BeginDay();controller.Tick(3.1);controller.Tick(32);await Frames(3);Save("res://.tmp/wuhan_day8.png");
         string absolute=ProjectSettings.GlobalizePath(savePath);if(File.Exists(absolute))File.Delete(absolute);GD.Print("WUHAN_CAPTURE_DONE");GetTree().Quit();
@@ -216,7 +216,7 @@ public partial class WuhanVisualCapture : Node
             day.ConnectController(controller); day.Initialize(catalog, save, controller, number); day.SetProcess(false);
             day.BeginDay(); day._Notification((int)NotificationApplicationFocusIn); day._Process(3.1);
             day.TeachingFocus.Dismiss();
-            if ((day.Doupi is not null) != (number >= 4) || day.EggUnlocked)
+            if ((day.Doupi is not null) != (number >= 4))
                 throw new InvalidOperationException($"Incorrect unlock stage: {number}");
             await Frames(3); await ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
             Save($"res://.tmp/wuhan-integrated-stages/{(small ? 720 : 1080)}/day-{number:00}.png");
@@ -238,7 +238,7 @@ public partial class WuhanVisualCapture : Node
             var save=new SaveService();save.UsePathForTests($"res://.tmp/wuhan-capture-layout-{level}.json");AddChild(save);
             CityProgressData progress=save.Data.Wuhan;progress.HighestUnlockedDay=12;
             progress.EquipmentLevels["noodle_cooker"]=level;progress.EquipmentLevels["ingredient_station"]=3;
-            progress.EquipmentLevels["doupi_griddle"]=level;progress.EquipmentLevels["egg_rice_wine_station"]=1;
+            progress.EquipmentLevels["doupi_griddle"]=level;
             var controller=new DayController();AddChild(controller);var day=ProjectCake.Core.SceneFactory.Instantiate<WuhanDayScreen>("res://Scenes/Gameplay/WuhanDayScreen.tscn");AddChild(day);
             day.ConnectController(controller);day.Initialize(catalog,save,controller,8);day.SetProcess(false);
             foreach (var planned in controller.CurrentPlan!.Customers)
@@ -352,7 +352,6 @@ public partial class WuhanVisualCapture : Node
                 Step(.5);
             }
             Move(view.BatterCenter);Button(view.BatterCenter,true);Move(view.PanCenter,true);Button(view.PanCenter,false);Require(day.Doupi!.State==DoupiState.Batter,"viewport pan accepts dragged batter");
-            Require(!day.EggUnlocked && !view.CanDeliver(ProductKind.EggRiceWine), "egg UI is retired");
             Step(.18);await Shot("02-preparing");Step(.5);
 
             Vector2 center=view.BowlCenter;
@@ -372,12 +371,10 @@ public partial class WuhanVisualCapture : Node
             day.Doupi.Tick(griddle.SecondStageReadySeconds/Math.Max(.01,griddle.SpeedMultiplier)+.001);
             foreach(var cut in new[]{DoupiCutLine.Horizontal,DoupiCutLine.Center})Require(day.Doupi.TryCut(cut),$"doupi fixture cut {cut}");
             view.CancelAnimations();Step(2.5);
-            Require(!day.EggUnlocked,"retired egg stays hidden");
             await Shot("03-ready");
 
             Require(day.DoupiStock.TryAddBatch(DoupiInventory.Capacity-day.DoupiStock.Count),"stock fixture fills all 8 portions");
             Step(.001); Click(view.StockCenter); day.DeliveryDrag.CancelDrag(); Require(day.DoupiStock.Count==8,"stock click without customer drop retains food");
-            Click(view.CupCenter); day.DeliveryDrag.CancelDrag(); Require(!day.EggUnlocked,"retired cup cannot be reactivated by clicking");
             Click(view.BowlCenter); day.DeliveryDrag.CancelDrag(); Require(day.Bowl.State==NoodleBowlState.Ready,"bowl click without customer drop retains food");
             Step(2.5);await Shot("04-stock-full");
             // Fixed-count fixtures expose both rows and the empty slots after delivery.
@@ -454,7 +451,7 @@ public partial class WuhanVisualCapture : Node
             var save=new SaveService();save.UsePathForTests($"res://.tmp/wuhan-capture-animation-{level}.json");AddChild(save);
             CityProgressData progress=save.Data.Wuhan;progress.HighestUnlockedDay=12;
             progress.EquipmentLevels["noodle_cooker"]=level;progress.EquipmentLevels["ingredient_station"]=3;
-            progress.EquipmentLevels["doupi_griddle"]=level;progress.EquipmentLevels["egg_rice_wine_station"]=1;
+            progress.EquipmentLevels["doupi_griddle"]=level;
             var controller=new DayController();AddChild(controller);var day=ProjectCake.Core.SceneFactory.Instantiate<WuhanDayScreen>("res://Scenes/Gameplay/WuhanDayScreen.tscn");AddChild(day);
             day.ConnectController(controller);day.Initialize(catalog,save,controller,8);day.SetProcess(false);
             foreach (var planned in controller.CurrentPlan!.Customers)
@@ -496,7 +493,7 @@ public partial class WuhanVisualCapture : Node
                 if(customer is null)throw new InvalidOperationException($"Capture: no customer for {kind}");
                 int slot=customer.SlotIndex;
                 int delivered=customer.Progress.DeliveredItems.Count;
-                Vector2 source=kind==ProductKind.HotDryNoodles?day.Workstation.BowlCenter:kind==ProductKind.Doupi?day.Workstation.StockCenter:day.Workstation.CupCenter;
+                Vector2 source=kind==ProductKind.HotDryNoodles?day.Workstation.BowlCenter:day.Workstation.StockCenter;
                 Click(source,true);
                 var zone=(Control)day.FindChild($"WuhanCustomerDropZone{slot+1}",true,false);
                 Vector2 target=zone.GetGlobalTransformWithCanvas()*(zone.Size*.5f);
@@ -547,7 +544,6 @@ public partial class WuhanVisualCapture : Node
             Step(.20);await Shot("20-stocking");Step(.3);await Shot("21-stocked-eight");
             if(day.DoupiStock.Count!=8)throw new InvalidOperationException("Capture: doupi batch was not stocked");
             await Deliver(ProductKind.Doupi,"22-doupi-delivery");
-            if(day.EggUnlocked)throw new InvalidOperationException("Capture: retired egg is enabled");
             for(int i=0;i<100;i++)if(!day.Ingredients.TryConsume(StableIds.Ingredients.WuhanNoodles))throw new InvalidOperationException("Capture: raw supply exhausted");
             await Shot("27-unlimited-noodles");
             day.BasketAction(0);Step(.1);controller.IsPaused=true;day._Process(1);await Shot("28-paused");controller.IsPaused=false;

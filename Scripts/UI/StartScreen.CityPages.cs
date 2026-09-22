@@ -178,9 +178,11 @@ public partial class StartScreen
         int lastDay = Math.Max(_save!.ChapterLength(_city), p.HighestUnlockedDay);
         if (lastDay > 15)
         {
-            var previous = Button(_body, "PreviousDays", "上一页", new(320, 844, 150, 48), () => { SelectedDay = Math.Max(1, pageStart - 15); RenderLedgerPage(); });
+            var previous = Button(_body, "PreviousDays", "", new(320, 844, 150, 48), () => { SelectedDay = Math.Max(1, pageStart - 15); RenderLedgerPage(); }, bare: true);
+            PageArrowArt.Apply(previous, false, _city);
             previous.Disabled = pageStart == 1;
-            var next = Button(_body, "NextDays", "下一页", new(690, 844, 150, 48), () => { SelectedDay = Math.Min(lastDay, pageStart + 15); RenderLedgerPage(); });
+            var next = Button(_body, "NextDays", "", new(690, 844, 150, 48), () => { SelectedDay = Math.Min(lastDay, pageStart + 15); RenderLedgerPage(); }, bare: true);
+            PageArrowArt.Apply(next, true, _city);
             next.Disabled = pageStart + 14 >= lastDay;
         }
         for (int d = pageStart; d <= Math.Min(lastDay, pageStart + 14); d++)
@@ -278,7 +280,8 @@ public partial class StartScreen
             id => { _selectedEquipment = id; _bookUpgradeSelection?.Invoke(id); }, e =>
             {
                 if (HostedByBook) { _bookUpgradePurchase?.Invoke(e); return; }
-                if (_busy || ModalOpen) return;
+                // The home book is itself a modal; purchases inside it remain interactive.
+                if (_busy || (ModalOpen && !_modal.IsAncestorOf(view))) return;
                 var current = _cityModel?.Equipment(_city).FirstOrDefault(i => i.Id == e.Id);
                 if (current is null || !current.CanBuy || current.Level != e.Level || current.Price != e.Price)
                 { RefreshCityPage(); ShowError("设备状态已变化，请查看最新升级信息。"); return; }

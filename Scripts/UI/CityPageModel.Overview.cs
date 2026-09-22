@@ -86,7 +86,7 @@ public sealed partial class CityPageModel
             "Pancake" => "TianJin/装袋后的通用煎饼果子",
             "Youtiao" => "TianJin/熟油条", "SoyMilk" => "TianJin/成品豆浆杯",
             "HotDryNoodles" => "Wuhan/热干面完整成品", "Doupi" => "Wuhan/DoupiPieces_v1/piece-01",
-            "EggRiceWine" => "Wuhan/成品蛋酒杯_v2", "Roujiamo" => "XiAn/通用卡通腊汁肉夹馍成品",
+            "Roujiamo" => "XiAn/通用卡通腊汁肉夹馍成品",
             "Hulatang" => "XiAn/成品肉丸胡辣汤", _ => null,
         };
         return relative is null ? null : "res://resource/art/" + relative + ".png";

@@ -75,5 +75,24 @@ public partial class CityPagesSelfTest
             Click("UpgradeTab"); await Frames();
             Check(_screen.Page == JourneyPage.Upgrades && _screen.SelectedCityId == city.Id, city.Name + " bookmarks retain city navigation");
         }
+        foreach (var city in JourneyModel.Cities)
+        {
+            // Repeat through the real homepage overlay, which must not block its own purchase.
+            string overlayEquipment = city.Id == StableIds.Cities.Wuhan ? "doupi_griddle" : model.Equipment(city.Id).First().Id;
+            var progress = _save.Data.GetCity(city.Id);
+            progress.EquipmentLevels[overlayEquipment] = 1;
+            _save.Data.Coins = 757;
+            var overlayOffer = model.Equipment(city.Id).Single(e => e.Id == overlayEquipment);
+            _screen.Present();
+            _screen.PresentCity(city.Id, fromHome: true);
+            Click("UpgradeTab"); Click("Select_" + overlayEquipment); await Frames();
+            Check(_screen.ModalOpen && !Find<Button>("UpgradeEquipment").Disabled, city.Name + " home overlay upgrade available");
+            Click("UpgradeEquipment"); await Frames();
+            Check(_save.Data.Coins == 757 - overlayOffer.Price && progress.EquipmentLevels[overlayEquipment] == 2,
+                city.Name + " home overlay purchases and refreshes level");
+            Check(_screen.Descendants<Label>().Any(l => l.Name == "Coins" && l.Text == _save.Data.Coins.ToString()),
+                city.Name + " home overlay refreshes wallet");
+            _screen.Present();
+        }
     }
 }

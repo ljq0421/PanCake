@@ -13,7 +13,7 @@ public static class YangzhouBusinessBook
             CityId = "yangzhou", Result = new DayResult { Day = r.Day, PlannedCustomers = r.Planned, CompletedCustomers = r.Completed,
                 LostCustomers = r.Lost, SaleRevenue = r.Sales, Tips = r.Tips, Satisfaction = r.Satisfaction, PerfectOrders = r.PerfectOrders },
             Orders = session.BusinessRecords.Select((o, i) => new BookOrder(i + 1, o.Id.ToString(), o.Customer,
-                o.CustomerType switch { "regular" => "elder_regular", "office" => "male_office", _ => "young_woman" },
+                CustomerCollection.YangzhouAppearance(o.CustomerType),
                 catalog.Template(o.TemplateId).Items.Select(p => new BookProduct(p.Key, catalog.Product(p.Key).Name, p.Value, p.Key)).ToArray(),
                 o.Unreceived ? BookOutcome.Unreceived : o.Lost ? BookOutcome.Lost : o.Mistakes > 0 ? BookOutcome.Incorrect : o.Perfect ? BookOutcome.Perfect : BookOutcome.Correct,
                 o.Sales, o.Tips, o.Satisfaction, !o.Lost && o.Mistakes > 0 ? $"备餐失误 {o.Mistakes} 次" : "")).ToArray(),
@@ -24,6 +24,7 @@ public static class YangzhouBusinessBook
     {
         var model = Snapshot(session, catalog); model.Closing = true;
         var before = save.Data.Yangzhou.UnlockedCollectibleIds.ToHashSet();
+        var customersBefore = save.Data.CustomerRecords.ToDictionary(p => p.Key, p => p.Value.Served);
         int previousDay = save.Data.Yangzhou.HighestUnlockedDay;
         var previousEquipment = new Dictionary<string, int>(save.Data.Yangzhou.EquipmentLevels);
         try
@@ -39,6 +40,7 @@ public static class YangzhouBusinessBook
             if (save.Data.Yangzhou.UnlockedCollectibleIds.Any(id => !before.Contains(id))) stickers.Add("获得新收藏 · 回店查看");
             var upgrades = save.AvailableYangzhouBookUpgrades(catalog);
             if (upgrades.Length > 0) stickers.Add("可升级：" + string.Join("、", upgrades));
+            model.CustomerMilestones = CustomerCollection.MilestoneMessages(customersBefore, save.Data.CustomerRecords).ToArray();
             model.Stickers = stickers.ToArray();
             model.Upgrades = new BookUpgradeSource(save, catalog);
         }

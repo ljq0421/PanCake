@@ -23,6 +23,8 @@ public partial class UpgradeCelebrationSelfTest
                 Check(items.Select(i => i.Id).Distinct().Count() == items.Count, "unique unlock entities");
                 if (expected == 0) continue;
                 var save = Fixture(ExperienceProfile.IsDemo, $"unlock-{city.Replace(':', '-')}-{day}");
+                if (TutorialOrders.UnlockFor(config) is { } lesson)
+                    save.Data.GetCity(city).LearnedWorkbenchActions.UnionWith(lesson.Actions);
                 save.Data.Wuhan.LearnedWorkbenchActions.Add("take:" + StableIds.Ingredients.WuhanBraisedBeef);
                 if (city == StableIds.Cities.Wuhan && day < 4) save.Data.Wuhan.EquipmentLevels["doupi_griddle"] = 0;
                 var controller = new DayController(); AddChild(controller);
@@ -43,12 +45,12 @@ public partial class UpgradeCelebrationSelfTest
                 }
                 teaching.Resolve = () => null; teaching.Refresh(); screen.SetProcess(false);
                 var effect = screen.GetNode<EquipmentUpgradeCelebration>("UpgradeCelebration"); effect.SetProcess(false);
-                begin(); JourneyTransition.For(screen).Finish(); screen._Process(0);
-                effect._Notification((int)NotificationApplicationFocusIn);
-                Check(effect.IsPlaying, $"opening queues unlocks {city} {day}: state={controller.State}, tutorial={controller.TutorialActive}");
                 string upgraded = city == StableIds.Cities.Tianjin ? "pancake_stove" : "noodle_cooker";
                 save.Data.GetCity(city).PendingUpgradeCelebrations[upgraded] = 2;
                 save.Data.GetCity(city).EquipmentLevels[upgraded] = 2;
+                begin(); JourneyTransition.For(screen).Finish(); screen._Process(0);
+                effect._Notification((int)NotificationApplicationFocusIn);
+                Check(effect.IsPlaying, $"opening queues unlocks {city} {day}: state={controller.State}, tutorial={controller.TutorialActive}");
                 effect.NotifyUse(upgraded); effect.NotifyUse(upgraded);
                 for (int i = 0; i < expected; i++)
                 {
@@ -77,7 +79,8 @@ public partial class UpgradeCelebrationSelfTest
                 effect._Process(.2);
                 Check(effect.CurrentCaption == EquipmentUpgradePresentation.FirstUse(upgraded, 2), $"upgrade follows unlocks {city} {day}: {effect.CurrentCaption}, pending={save.Data.GetCity(city).PendingUpgradeCelebrations.Count}, paused={controller.IsPaused}, playing={effect.IsPlaying}");
                 effect._Process(3); Check(!effect.IsPlaying, "duplicate use does not duplicate upgrade");
-                effect.Begin(save, controller, out _); Check(effect.IsPlaying, "same day reentry repeats unlocks");
+                Check(controller.TryPrepareDay(city, day, catalog, out _), "prepare same day reentry");
+                effect.BeforeTeaching(controller, () => controller.TryStartDay(out _)); Check(effect.IsPlaying, "same day reentry repeats unlocks");
                 ProjectSettings.SetSetting("accessibility/reduce_motion", true);
                 effect._Process(.5); Check(effect.Visible, "reduced motion keeps unlock caption");
                 ProjectSettings.SetSetting("accessibility/reduce_motion", false);

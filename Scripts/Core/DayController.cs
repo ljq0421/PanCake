@@ -102,7 +102,7 @@ public partial class DayController : Node
                 Day = CurrentPlan.Day, RandomSeed = CurrentPlan.RandomSeed,
                 StageId = CurrentPlan.StageId, RunId = CurrentPlan.RunId,
                 Customers = new[] { new PlannedCustomer { CustomerId = example.CustomerId,
-                    CustomerTypeId = example.CustomerTypeId, ArrivalTime = 0, Order = example.Order } },
+                    CustomerTypeId = example.CustomerTypeId, ArrivalTime = 0, Order = TutorialOrders.ExampleOrder(config, example.Order, catalog) } },
             };
         if (IsInsideTree()) GetNodeOrNull<SaveService>("/root/SaveService")?.BindRun(CurrentPlan);
         CustomerQueue = new CustomerQueue(CurrentPlan, catalog.CustomersById, config.PatienceMultiplier, config.MaxWaitingCustomers,

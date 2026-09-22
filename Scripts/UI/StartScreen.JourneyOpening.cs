@@ -59,7 +59,8 @@ public partial class StartScreen
         }
         ApplyOpeningTime(0);
         _openingTween = CreateTween();
-        _openingTween.TweenMethod(Callable.From<float>(ApplyOpeningTime), 0f, 2.8f, 2.8);
+        // Stretch the shared timeline so visuals, cues and input unlock stay synchronized.
+        _openingTween.TweenMethod(Callable.From<float>(ApplyOpeningTime), 0f, 2.8f, 4.2);
         _openingTween.TweenCallback(Callable.From(() => CompleteJourneyOpening(false)));
         Focus("SkipOpening");
     }

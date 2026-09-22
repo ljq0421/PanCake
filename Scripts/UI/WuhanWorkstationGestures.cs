@@ -11,7 +11,9 @@ public partial class WuhanWorkstationView
     public Func<DoupiCutLine, bool>? CutRequested;
     private string _gesture = "";
     public bool IsKnifeHeld { get; private set; }
-    private bool CanHoldKnife => _doupi?.State is DoupiState.ReadyToCut or DoupiState.Overbrowned or DoupiState.Cutting;
+    private bool CanHoldKnife => _doupi?.State is DoupiState.Batter or DoupiState.SkinCooking
+        or DoupiState.ReadyToFlip or DoupiState.Flipped or DoupiState.SecondCooking
+        or DoupiState.ReadyToCut or DoupiState.Overbrowned or DoupiState.Cutting;
     private Vector2 _gestureStart, _gesturePoint, _gesturePrevious;
     private DoupiCutStroke? _cutStroke;
     private Vector2 _basketGrabOffset;

@@ -28,7 +28,8 @@ public partial class SharedTeachingSelfTest : Node
             var main = GD.Load<PackedScene>("res://Scenes/Main/Main.tscn").Instantiate<GameController>(); AddChild(main);
             await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
             main.ProcessMode = ProcessModeEnum.Disabled;
-            var controller = main.GetNode<DayController>("DayController");
+            // Controller-only checks must not notify business screens before Initialize binds their save.
+            var controller = new DayController(); AddChild(controller);
             // Yangzhou uses its own controller and is covered by YangzhouSelfTest.
             foreach (string city in new[] { StableIds.Cities.Tianjin, StableIds.Cities.Wuhan, StableIds.Cities.Xian, StableIds.Cities.Guangzhou }.Where(save.IsCityAvailable))
             {
@@ -42,7 +43,23 @@ public partial class SharedTeachingSelfTest : Node
                 && controller.CustomerQueue!.Slots.Single().WaitSeconds == 0, "full-game example isolates one customer and freezes business clocks");
             controller.AbandonDay(); Check(!controller.TutorialActive, "abandon clears shared tutorial context");
 
+            foreach (var lesson in new[] { (StableIds.Cities.Tianjin, 1), (StableIds.Cities.Wuhan, 1), (StableIds.Cities.Wuhan, 3) })
+            {
+                Check(controller.TryPrepareTutorial(lesson.Item1, lesson.Item2, catalog, out _), $"{lesson} prepares isolated lesson");
+                controller.TryStartDay(out _);
+                for (int tick = 0; tick < 10; tick++) controller.Tick(100);
+                Check(controller.CurrentPlan!.Customers.Count == 1 && controller.CustomerQueue!.Slots.Count == 1,
+                    $"{lesson} never adds business customers while practicing");
+                Check(controller.CustomerQueue!.TryMarkServed(controller.CustomerQueue.Slots.Single().Id), $"{lesson} serves practice customer");
+                for (int tick = 0; tick < 10; tick++) controller.Tick(100);
+                Check(controller.CustomerQueue.IsResolved && controller.CustomerQueue.Slots.Count == 0,
+                    $"{lesson} has no replacement or queued customers after practice");
+                controller.AbandonDay();
+            }
+
             catalog.TryGetDay(StableIds.Cities.Tianjin, 1, out config!); original = config.Tutorial;
+            controller.QueueFree();
+            controller = main.GetNode<DayController>("DayController");
             config.Tutorial = TutorialProtection.GuidedExample;
             Check(main.StartCityBusiness(StableIds.Cities.Tianjin, 1), "full-game scene accepts explicit tutorial configuration");
             var station = main.GetNode<PancakeWorkstation>("UI/TianjinDayScreen/PancakeWorkstation");

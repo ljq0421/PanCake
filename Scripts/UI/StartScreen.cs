@@ -13,7 +13,7 @@ public partial class StartScreen : Control
     public event Action? ContinueRequested;
     public event Action? QuitRequested;
     public JourneyPage Page { get; private set; }
-    public bool ConfirmationOpen => ModalOpen && _modalKind == "confirm";
+    public bool ConfirmationOpen => ModalOpen && (_modalKind == "confirm" || _saveDeleteOverlay is not null);
     public bool ModalOpen => _modal is not null && _modal.Visible;
     public bool DeveloperToolsVisible => !ExperienceProfile.IsDemo && OS.GetCmdlineUserArgs().Contains("--dev-ui");
     private SaveService? _save;
@@ -36,6 +36,18 @@ public partial class StartScreen : Control
     private bool _hasPresentedPage;
     private string _presentedCity = "";
     private bool _completionOverWorkbench;
+    private bool _cityOverWorkbench;
+    private string? _backdropCity;
+    public event Action? CityBackdropReleased;
+
+    public void RetainCityBackdrop(string city) { _cityOverWorkbench = true; _backdropCity = city; }
+    public void ReleaseCityBackdrop()
+    {
+        if (!_cityOverWorkbench) return;
+        _cityOverWorkbench = false;
+        _backdropCity = null;
+        CityBackdropReleased?.Invoke();
+    }
     private bool _homeOverlayOpen;
 
     public override void _Ready()
@@ -100,6 +112,8 @@ public partial class StartScreen : Control
     }
     private void Begin(JourneyPage page, bool animate = true)
     {
+        if (page is not (JourneyPage.City or JourneyPage.Ledger or JourneyPage.Upgrades or JourneyPage.Completion))
+            ReleaseCityBackdrop();
         // The home journey and collection books live above the intact home page.
         // Other pages still replace the page content as before.
         if (!_homeOverlayOpen) CloseModal();
@@ -120,7 +134,7 @@ public partial class StartScreen : Control
         Page = page; _busy = false; _error = "";
         // A result reached from a city hub is an overlay: keep that workbench visible
         // behind the book instead of exposing the start-page artwork.
-        bool showStartBackdrop = !HostedByBook && (page != JourneyPage.Completion || !_completionOverWorkbench);
+        bool showStartBackdrop = !HostedByBook && !_cityOverWorkbench && (page != JourneyPage.Completion || !_completionOverWorkbench);
         GetNode<Control>("Letterbox").Visible = showStartBackdrop;
         GetNode<Control>("Canvas/Background").Visible = showStartBackdrop;
         _body.Modulate = Colors.White;
@@ -210,6 +224,13 @@ public partial class StartScreen : Control
     {
         if (!IsVisibleInTree() || _busy) return;
         if (input is not InputEventKey { Pressed: true, Echo: false } key) return;
+        if (_modalKind == "settings" && _modal.GetNodeOrNull<SaveSlotChoice>("SaveSlot") is { } slots && slots.GetPopup().Visible)
+        {
+            if (slots.HandleKey(key)) GetViewport().SetInputAsHandled();
+            return;
+        }
+        if (key.Keycode == Key.Escape && _saveDeleteOverlay is not null)
+        { CloseSaveDeleteConfirmation(); GetViewport().SetInputAsHandled(); return; }
         if (SettingsPopupOpen()) return;
         if (key.Keycode == Key.Escape)
         {
@@ -237,6 +258,7 @@ public partial class StartScreen : Control
         Control[] candidates = ModalOpen ? _modalControls.Where(c => c.IsVisibleInTree() && (c is not BaseButton b || !b.Disabled)).ToArray()
             : _body.Descendants<Button>().Where(b => !b.Disabled && b.IsVisibleInTree()).Cast<Control>().ToArray();
         if (_settings.DisplayPending && _displayConfirmation is not null) candidates = candidates.Where(c => _displayConfirmation.IsAncestorOf(c)).ToArray();
+        if (_saveDeleteOverlay is not null) candidates = candidates.Where(c => _saveDeleteOverlay.IsAncestorOf(c)).ToArray();
         if (candidates.Length == 0) return;
         int current = Array.IndexOf(candidates, GetViewport().GuiGetFocusOwner());
         int direction = key.Keycode is Key.Up or Key.Left || key.Keycode == Key.Tab && key.ShiftPressed ? -1 : 1;

@@ -257,7 +257,7 @@ public partial class BusinessDetailsView : Control
         _audio.Play(PancakeSound.BookOpen);
         if (UsesTravelBook)
         {
-            if (_model.Closing) StartTravelAnimation();
+            StartTravelAnimation();
             return;
         }
         _entrance = CreateTween();

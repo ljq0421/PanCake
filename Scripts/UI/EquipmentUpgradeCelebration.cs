@@ -17,6 +17,7 @@ public partial class EquipmentUpgradeCelebration : Control
     private Target? _current;
     private float _elapsed;
     private Func<bool> _active = () => false;
+    private Action? _afterUnlocks;
     private Label _caption = null!;
     private AudioStreamPlayer _audio = null!;
     private static AudioStreamWav? _chime;
@@ -75,12 +76,26 @@ public partial class EquipmentUpgradeCelebration : Control
             if (doupi) targets.Add(new("doupi_griddle", "豆皮锅", layout.Pan));
         }
         foreach (var target in targets) _targets[target.Id] = target;
-        foreach (var item in DayUnlockPresentation.ForDay(GetNode<DataCatalog>("/root/DataCatalog"), controller.CurrentConfig!))
-            _queue.Enqueue(new(item.Id, "新解锁：" + item.Name, item.Bounds, true));
+        // Queue at opening; persistence is consumed only when each cue is actually shown.
+        foreach (var target in targets)
+            if (save.Data.GetCity(city).PendingUpgradeCelebrations.ContainsKey(target.Id))
+                _queue.Enqueue(target);
         return true;
     }
 
-    /// <summary>Called only after an accepted gameplay operation. Opening a shift never consumes a cue.</summary>
+    public void BeforeTeaching(DayController controller, Action continueDay)
+    {
+        if (_afterUnlocks is not null) return;
+        Clear();
+        _controller = controller;
+        _city = controller.CurrentConfig!.CityId;
+        foreach (var item in DayUnlockPresentation.ForDay(GetNode<DataCatalog>("/root/DataCatalog"), controller.CurrentConfig))
+            _queue.Enqueue(new(item.Id, "新解锁：" + item.Name, item.Bounds, true));
+        if (_queue.Count == 0) { continueDay(); return; }
+        _afterUnlocks = continueDay;
+    }
+
+    /// <summary>Accepted operations must not duplicate an opening cue that is already queued or shown.</summary>
     public void NotifyUse(string equipmentId, Rect2? bounds = null)
     {
         if (!_active() || _controller?.TutorialActive != false || _save is null
@@ -94,7 +109,8 @@ public partial class EquipmentUpgradeCelebration : Control
     public override void _Process(double delta)
     {
         if (!IsPlaying) return;
-        if (_controller?.CurrentConfig?.CityId != _city || _controller.State != DayState.Running) { Clear(); return; }
+        if (_controller?.CurrentConfig?.CityId != _city
+            || _controller.State != (_afterUnlocks is null ? DayState.Running : DayState.Preparing)) { Clear(); return; }
         if (!_focused || !_active()) { _audio.Stop(); Hide(); return; }
         if (_current is not null) Show();
         if (_current is null)
@@ -114,7 +130,13 @@ public partial class EquipmentUpgradeCelebration : Control
         _elapsed += (float)delta;
         if (_elapsed >= Duration)
         {
-            _current = null; Hide(); QueueRedraw(); return;
+            _current = null; Hide(); QueueRedraw();
+            if (_queue.Count == 0 && _afterUnlocks is { } continueDay)
+            {
+                _afterUnlocks = null;
+                continueDay();
+            }
+            return;
         }
         float alpha = Mathf.Min(1, _elapsed / .12f) * Mathf.Clamp((Duration - _elapsed) / .35f, 0, 1);
         _caption.Modulate = new(1, 1, 1, alpha);
@@ -152,7 +174,7 @@ public partial class EquipmentUpgradeCelebration : Control
 
     public void Clear()
     {
-        _queue.Clear(); _current = null; _audio?.Stop(); Hide(); QueueRedraw();
+        _afterUnlocks = null; _queue.Clear(); _current = null; _audio?.Stop(); Hide(); QueueRedraw();
     }
     public override void _Notification(int what)
     {

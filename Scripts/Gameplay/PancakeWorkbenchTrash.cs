@@ -83,7 +83,7 @@ public partial class PancakeWorkstation
     internal bool TryBeginTrashDrag(Vector2 globalPoint, bool prepareOnly = false)
     {
         if (!IsTianjinWorkbench || !_initialized || !IsVisibleInTree() || !CanInteract
-            || IsTransferringBag || _drag.IsDragging) return false;
+            || IsTransferringBag || _drag.IsDragging || _foldHeld || DirectBusy) return false;
 
         Control source;
         Texture2D texture;

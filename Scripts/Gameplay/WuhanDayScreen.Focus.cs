@@ -45,7 +45,7 @@ public partial class WuhanDayScreen
         var learned = _controller.TutorialActive ? new HashSet<string>() : _save.Data.Wuhan.LearnedWorkbenchActions;
         var orders = TutorialOrders.Pending(_controller, _catalog);
         bool beefLesson = _controller.TutorialActive && _demoTeachingDay == 3;
-        string mixHint = beefLesson ? "牛肉与葱花、辣油不同：先按住左键划动拌匀，再加牛肉。" : "按住左键在碗里划动，直到酱料拌匀。";
+        string mixHint = beefLesson ? "按住左键在碗里划动，碗口进度环填满变绿后，再加牛肉。" : "按住左键在碗里划动，碗口进度环填满变绿即拌匀。";
         TutorialFocusStep? Step(string action, string text, params string[] targets) => learned.Contains(action) ? null
             : new(action, text, targets.Select(Workstation.TeachingTarget).ToArray());
         TutorialFocusStep? Delivery(ProductKind kind, string source, string name, string? recipe = null)
@@ -77,7 +77,8 @@ public partial class WuhanDayScreen
         if (gesture == "batter") return _doupi?.State == DoupiState.Empty ? Step("doupi:batter", "把面浆拖入空锅后松手。", "pan") : null;
         if (gesture == "filling") return _doupi?.State == DoupiState.Flipped ? Step("doupi:filling", "把三鲜馅拖入锅内，松手自动铺匀。", "pan") : null;
         if (gesture == "flip") return Step("doupi:flip", "按住锅面向上划动翻面。", "pan");
-        if (Workstation.IsKnifeHeld) return Step("doupi:cut", "沿虚线横划一次、竖划一次，切好后自动入盘。", "pan");
+        if (Workstation.IsKnifeHeld && _doupi?.State is DoupiState.ReadyToCut or DoupiState.Overbrowned or DoupiState.Cutting)
+            return Step("doupi:cut", "沿虚线横划一次、竖划一次，切好后自动入盘。", "pan");
         if (Workstation.IsMixing) return Step("mix:noodles", mixHint, "bowl");
 
         TutorialFocusStep? Noodles()
@@ -124,7 +125,8 @@ public partial class WuhanDayScreen
                 DoupiState.SkinCooking => Step("doupi:flip", "等待面皮定型，再向上划动翻面。", "pan"),
                 DoupiState.ReadyToFlip => Step("doupi:flip", "按住锅面向上划动翻面。", "pan"),
                 DoupiState.Flipped => Step("doupi:filling", "把三鲜馅拖入锅内，松手自动铺匀。", "filling"),
-                DoupiState.SecondCooking => Step("doupi:cut", "等待豆皮成熟，再拿小刀切块。", "pan"),
+                DoupiState.SecondCooking => Step("doupi:cut", Workstation.IsKnifeHeld
+                    ? "已拿好小刀，等待豆皮成熟后再切块。" : "可提前拿起小刀，等待豆皮成熟后再切块。", Workstation.IsKnifeHeld ? "pan" : "knife"),
                 DoupiState.ReadyToCut or DoupiState.Overbrowned or DoupiState.Cutting => Step("doupi:cut", "点击右下方小刀，再沿锅内虚线切块。", "knife"),
                 DoupiState.Cut => Delivery(ProductKind.Doupi, "stock", "熟豆皮"),
                 DoupiState.Burnt => Step("discard", "在焦豆皮上长按右键 0.45 秒，再拖入垃圾桶。", "pan"),

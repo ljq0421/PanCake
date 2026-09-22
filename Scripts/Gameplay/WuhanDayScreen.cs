@@ -153,7 +153,9 @@ public partial class WuhanDayScreen : Control
     public bool Initialize(DataCatalog catalog, SaveService save, DayController controller, int day)
     {
         EquipmentUpgradeCelebration.Attach(this, () => controller.CurrentConfig?.CityId == StableIds.Cities.Wuhan
-            && CanInteract && controller.State == DayState.Running && TeachingFocus.CurrentAction is null);
+            && (CanInteract || (controller.State == DayState.Preparing && _focused && IsVisibleInTree()
+                && !_hudPaused && !_abandon.Visible && !controller.IsPaused))
+            && TeachingFocus.CurrentAction is null);
         _demoLesson?.Hide(); _demoLessonSkipFrame?.Hide(); _demoLessonFailure = _demoLessonSaveError = ""; _demoLessonComplete = false; _demoPendingResult = null;
         TeachingFocus.ResetSession(); _teachingDoupiLast = false;
         _hudPaused = false; _hudPauseMenu.Hide(); controller.SetPauseReason("wuhan-hud", false); _sceneFeedback.Clear();
@@ -193,7 +195,14 @@ public partial class WuhanDayScreen : Control
         }
         wall.Visible = _doupi is null && !Workstation.BeefUnlocked;
     }
-    public void BeginDay() { if (BeginWuhanDemoLesson()) return; if (!_controller.TryStartDay(out string error)) Feedback(error,true); else Feedback("铺门打开，准备迎接第一位客人。",false); }
+    public void BeginDay()
+    {
+        if (!_resumeBusinessAfterLesson && !ForceDemoTutorial)
+            GetNode<EquipmentUpgradeCelebration>("UpgradeCelebration").BeforeTeaching(_controller, BeginAfterUnlocks);
+        else BeginAfterUnlocks();
+    }
+
+    private void BeginAfterUnlocks() { if (BeginWuhanDemoLesson()) return; if (!_controller.TryStartDay(out string error)) Feedback(error,true); else Feedback("铺门打开，准备迎接第一位客人。",false); }
 
     public override void _Process(double delta)
     {

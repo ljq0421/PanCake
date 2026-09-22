@@ -84,6 +84,7 @@ public partial class StartScreen
     private void CloseModal()
     {
         if (_modal is null || !_modal.Visible) return;
+        CloseSaveDeleteConfirmation(restoreFocus: false);
         bool restoreHomeBody = _homeOverlayOpen;
         CloseSettingsPopups();
         _settings.RevertDisplay(); _modal.Hide(); _modalKind = "";

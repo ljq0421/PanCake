@@ -5,4 +5,4 @@ script = ExtResource("1")
 Id = "gz_har_gow"
 DisplayName = "虾饺"
 UnitPrice = 8
-Kind = 10
+Kind = 9

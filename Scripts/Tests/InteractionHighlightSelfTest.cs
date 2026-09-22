@@ -52,10 +52,11 @@ public partial class InteractionHighlightSelfTest : Node
             {
                 bool demo = ExperienceProfile.IsDemo;
                 if (demo) save.UseDemoPathForTests(savePath + ".demo");
-                foreach (int day in demo ? new[] { 1 } : new[] { 1, 6, 15 })
+                foreach (int day in demo ? new[] { 1 } : new[] { 1, 3, 6 })
                 {
                     Check(screen.Initialize(catalog, save, controller, day), $"prepare sauce capture day {day}");
                     screen.RefreshForCapture(true);
+                    await Frames(); // Let the resized viewport and ingredient hit areas settle.
                     MovePointer(TianjinWorkbenchLayout.EmbeddedIngredient(StableIds.Ingredients.Sauce).GetCenter());
                     Check(_viewport.GetMousePosition().DistanceTo(TianjinWorkbenchLayout.EmbeddedIngredient(StableIds.Ingredients.Sauce).GetCenter()) < 2,
                         "pointer is over sauce in logical viewport coordinates");

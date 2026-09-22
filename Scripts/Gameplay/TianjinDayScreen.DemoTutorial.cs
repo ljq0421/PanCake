@@ -26,7 +26,7 @@ public partial class TianjinDayScreen
     private string _demoLessonLayout = "";
     private int _demoBusinessDay;
     private int _demoTeachingDay;
-    private bool _demoPartialSeeded;
+    private bool _resumeBusinessAfterLesson;
     private readonly HashSet<string> _demoLearned = new(StringComparer.Ordinal);
     private BusinessBookModel? _demoPendingResult;
     internal bool DemoLessonVisible => _demoLesson?.Visible == true;
@@ -36,20 +36,21 @@ public partial class TianjinDayScreen
     private bool BeginDemoLesson(bool retry = false)
     {
         bool replay = retry ? _demoLessonReplay : ForceDemoTutorial;
-        if (!replay) return false;
+        var unlock = TutorialOrders.UnlockFor(_controller.CurrentConfig!);
+        if (!retry && !replay && (_resumeBusinessAfterLesson || unlock is null || unlock.IsLearned(_save.Data.Tianjin.LearnedWorkbenchActions))) return false;
         _demoBusinessDay = _controller.CurrentConfig!.Day;
-        _demoTeachingDay = 1;
+        _demoTeachingDay = retry ? _demoTeachingDay : replay ? 1 : _demoBusinessDay;
         ForceDemoTutorial = false;
         _demoLessonReplay = replay;
         if (!_controller.TryPrepareTutorial(StableIds.Cities.Tianjin, _demoTeachingDay, _catalog, out string error)) { ShowFeedback(error, true); return true; }
-        _workstation.Initialize(_catalog, 1, 1, _demoTeachingDay >= 4 ? 1 : 0, _controller.CurrentConfig!, _art);
-        _workstation.ConfigureTutorial(replay ? null : _save.Data.Tianjin.LearnedWorkbenchActions);
+        _workstation.Initialize(_catalog, 1, 1, _controller.CurrentConfig!.AvailableProductKinds.Contains(ProductKind.Youtiao) ? 1 : 0, _controller.CurrentConfig!, _art);
+        _workstation.ConfigureTutorial(null);
         _workstation.ResetForDay();
         if (_demoTeachingDay == 1 && _demoBusinessDay == 1)
             _workstation.ConfigureFirstPancakeEggLesson(1);
         _workstation.Tutorial = _controller.Tutorial;
         GetNode<TextureRect>("ShopBackground").Texture = _art.LivingWorkbenchBackground(_controller.CurrentConfig!.AvailableProductKinds);
-        _demoLessonFailure = ""; _demoLessonComplete = false; _demoPartialSeeded = false; _demoLessonSaveError = ""; _demoLearned.Clear();
+        _demoLessonFailure = ""; _demoLessonComplete = false; _demoLessonSaveError = ""; _demoLearned.Clear();
         EnsureDemoLesson();
         _demoLesson!.Show(); _demoLessonAction!.Disabled = false;
         _controller.TryStartDay(out _);
@@ -95,16 +96,13 @@ public partial class TianjinDayScreen
     private void UpdateDemoLesson()
     {
         if (_demoLesson?.Visible != true || !_controller.TutorialActive) return;
-        if (_demoTeachingDay == 6 && !_demoPartialSeeded && _controller.CustomerQueue!.Slots.FirstOrDefault(c => c.State == ProjectCake.Customers.CustomerState.Happy) is { } example)
-        {
-            example.WaitSeconds = example.LeaveAtSeconds * .4; example.Tick(0); _demoPartialSeeded = true;
-        }
         _demoLessonAction!.Disabled = _demoLessonSkip!.Disabled = !DemoLessonControlsEnabled;
         _demoLessonSkipFrame!.Visible = !_demoLessonComplete;
         _demoLessonAction.Visible = _demoLessonComplete || DemoLessonFailed || _demoLessonSaveError.Length > 0;
         _demoLessonActionFrame!.Visible = _demoLessonAction.Visible;
         _demoLesson.MouseFilter = DemoLessonFailed ? MouseFilterEnum.Stop : MouseFilterEnum.Ignore;
-        _demoLessonTitle!.Text = DemoLessonFailed ? "本次教学未通过" : _demoLessonComplete ? "第一份早餐，做好了！" : "第一张煎饼";
+        _demoLessonTitle!.Text = DemoLessonFailed ? "本次教学未通过" : _demoLessonComplete ? "教学完成，准备营业！"
+            : TutorialOrders.UnlockFor(_controller.CurrentConfig!)?.Title ?? "第一张煎饼";
         _demoLessonAction.Text = _demoLessonSaveError.Length > 0 ? "重试保存" : DemoLessonFailed ? "重新练习" : "开始营业";
         _demoLessonHint!.Text = _demoLessonSaveError.Length > 0 ? _demoLessonSaveError
             : DemoLessonFailed ? $"{_demoLessonFailure}\n请按订单要求重新制作并交付。"
@@ -121,7 +119,12 @@ public partial class TianjinDayScreen
     {
         if (!_controller.TutorialActive || !DemoLessonControlsEnabled) return;
         var oldActions = _save.Data.Tianjin.LearnedWorkbenchActions.ToHashSet();
-        if (_demoLessonComplete) _save.Data.Tianjin.LearnedWorkbenchActions.UnionWith(_demoLearned);
+        if (_demoLessonComplete)
+        {
+            _save.Data.Tianjin.LearnedWorkbenchActions.UnionWith(_demoLearned);
+            if (TutorialOrders.UnlockFor(_controller.CurrentConfig!) is { } lesson)
+                _save.Data.Tianjin.LearnedWorkbenchActions.UnionWith(lesson.Actions);
+        }
         bool saved = _save.TrySave(out _);
         if (!saved)
         {
@@ -136,7 +139,8 @@ public partial class TianjinDayScreen
         _controller.AbandonDay();
         if (!Initialize(_catalog, _save, _controller, _demoBusinessDay)) return;
         if (remainingLessonEggs is int eggs) _workstation.ConfigureFirstPancakeEggLesson(eggs);
-        BeginDay();
+        _resumeBusinessAfterLesson = true;
+        try { BeginDay(); } finally { _resumeBusinessAfterLesson = false; }
     }
 
     private void RestDemoLesson()
@@ -155,10 +159,9 @@ public partial class TianjinDayScreen
 
     private void DemoLessonDelivery(DeliveryEvaluation evaluation, string customerId, ProductKind? deliveredKind)
     {
-        bool soyLessonCompleted = _demoTeachingDay == 6 && deliveredKind == ProductKind.SoyMilk && evaluation.ItemAccepted;
-        bool completedObjective = evaluation.CompletesOrder || soyLessonCompleted;
+        bool completedObjective = evaluation.CompletesOrder;
         if (!_controller.TutorialActive || _demoLessonComplete || DemoLessonFailed || !completedObjective) return;
-        if (evaluation.Grade is DeliveryGrade.Correct or DeliveryGrade.Perfect || soyLessonCompleted)
+        if (evaluation.Grade is DeliveryGrade.Correct or DeliveryGrade.Perfect)
         {
             _demoLessonComplete = true; _workstation.InteractionEnabled = false;
             UpdateDemoLesson();

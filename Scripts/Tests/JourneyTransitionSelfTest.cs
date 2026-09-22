@@ -39,6 +39,11 @@ public partial class JourneyTransitionSelfTest : Node
             await Frames();
             _home.PresentHome(); await Complete();
             Check(!_motion.Active, "automatic completion releases transition");
+            if (OS.GetCmdlineUserArgs().Contains("--city-backdrop-only"))
+            {
+                await CityBackdropChecks(save);
+                GD.Print($"CITY_BACKDROP_TEST_PASS checks={_checks} demo={ExperienceProfile.IsDemo}"); GetTree().Quit(); return;
+            }
             if (OS.GetCmdlineUserArgs().Contains("--shared-books-only"))
             {
                 await SharedBookChecks(save);

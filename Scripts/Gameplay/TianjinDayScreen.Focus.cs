@@ -36,9 +36,7 @@ public partial class TianjinDayScreen
             return _deliveryCustomerIds.Select((id, i) => (id, i)).Where(p => p.id is not null && ids.Contains(p.id))
                 .SelectMany(p => TutorialFocusTarget.Artwork(_customerSlots[p.i])).ToArray();
         }
-        IReadOnlyList<TutorialOrder> focusOrders = _controller.TutorialActive && _demoTeachingDay == 6 && orders.Any(o => o.Kind == ProductKind.SoyMilk)
-            ? orders.Where(o => o.Kind == ProductKind.SoyMilk).ToArray() : orders;
-        var step = _workstation.ResolveFocus(focusOrders, Recipients);
+        var step = _workstation.ResolveFocus(orders, Recipients);
         // One card owns the current instruction and the lesson action; the focus layer only spotlights it.
         if (_demoLesson?.Visible == true)
         {

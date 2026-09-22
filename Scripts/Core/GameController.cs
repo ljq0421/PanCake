@@ -60,7 +60,7 @@ public partial class GameController : Node
             ShowOnly(_yangzhouDay);
         };
         _yangzhouHub.MapRequested += () => { mapOriginCity = Data.StableIds.Cities.Yangzhou; ShowOnly(mapScreen); };
-        _yangzhouDay.HubRequested += () => { _yangzhouHub.Render(); ShowOnly(_yangzhouHub); };
+        _yangzhouDay.HubRequested += () => ReturnFromBusiness(StableIds.Cities.Yangzhou);
         hub.Initialize(catalog, save);
         dayScreen.ConnectController(dayController);
         mapScreen.Initialize(save);
@@ -110,13 +110,13 @@ public partial class GameController : Node
             dayScreen.BeginDay();
         };
         hub.MapRequested += () => { mapOriginCity = Data.StableIds.Cities.Tianjin; ShowOnly(mapScreen); };
-        dayScreen.HubRequested += () => ShowOnly(hub);
+        dayScreen.HubRequested += () => ReturnFromBusiness(StableIds.Cities.Tianjin);
         wuhanHub.DayRequested += day => { wuhanDay.Initialize(catalog, save, dayController, day); ShowOnly(wuhanDay); wuhanDay.BeginDay(); };
         wuhanHub.MapRequested += () => { mapOriginCity = Data.StableIds.Cities.Wuhan; ShowOnly(mapScreen); };
-        wuhanDay.HubRequested += () => ShowOnly(wuhanHub);
+        wuhanDay.HubRequested += () => ReturnFromBusiness(StableIds.Cities.Wuhan);
         _xianHub.DayRequested += day => { if (_xianDay.Initialize(catalog, save, dayController, day)) { ShowOnly(_xianDay); _xianDay.BeginDay(); } };
         _xianHub.MapRequested += () => { mapOriginCity = Data.StableIds.Cities.Xian; ShowOnly(mapScreen); };
-        _xianDay.HubRequested += () => { _xianHub.Render(); ShowOnly(_xianHub); };
+        _xianDay.HubRequested += () => ReturnFromBusiness(StableIds.Cities.Xian);
         _guangzhouHub.DayRequested += day =>
         {
             if (!_guangzhouDay.Initialize(catalog, save, dayController, day)) return;
@@ -124,7 +124,7 @@ public partial class GameController : Node
             _guangzhouDay.BeginDay();
         };
         _guangzhouHub.MapRequested += () => { mapOriginCity = Data.StableIds.Cities.Guangzhou; ShowOnly(mapScreen); };
-        _guangzhouDay.HubRequested += () => { _guangzhouHub.Render(); ShowOnly(_guangzhouHub); };
+        _guangzhouDay.HubRequested += () => ReturnFromBusiness(StableIds.Cities.Guangzhou);
         mapScreen.HubRequested += () =>
         {
             Control target = mapOriginCity switch { Data.StableIds.Cities.Yangzhou => _yangzhouHub, Data.StableIds.Cities.Guangzhou => _guangzhouHub, Data.StableIds.Cities.Xian => _xianHub, Data.StableIds.Cities.Wuhan => wuhanHub, _ => hub };
@@ -226,6 +226,7 @@ public partial class GameController : Node
 
     private void ShowOnly(Control show)
     {
+        _startScreen.ReleaseCityBackdrop();
         if (show is TianjinMapScreen)
         {
             Control? origin = _cityHubs.Values.FirstOrDefault(c => c.Visible);

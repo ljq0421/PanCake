@@ -27,6 +27,7 @@ public sealed class WuhanArtCatalog
         Load("city_node", "武汉已解锁城市节点.png");
         Load("empty_bowl", "热干面空碗_v2.png");
         Load("noodles_finished", "热干面完整成品.png");
+        Load("noodles_plain_finished", "基础热干面完整成品.png");
         Load("bowl_noodles", "碗中熟面基础层.png"); Load("unmixed", "芝麻酱未拌匀覆盖层.png"); Load("half_mixed", "半拌匀热干面状态覆盖层.png"); Load("mixed", "拌匀热干面基础层.png"); Load("overcooked", "煮过头热干面覆盖层.png"); Load("chopsticks", "拌面筷子_v2.png");
         Load("raw_noodles", "生热干面面条.png"); Load("basket", "通用热干面漏勺_v2.png"); Load("cooked_basket", "漏勺中的熟面状态.png");
         Load("base_seasoning", "芝麻酱容器_v2.png"); Load("scallion", "葱花覆盖层.png"); Load("chili", "辣油壶_v2.png"); Load("beef", "卤牛肉片.png");

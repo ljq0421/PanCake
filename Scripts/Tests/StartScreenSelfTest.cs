@@ -37,6 +37,11 @@ public partial class StartScreenSelfTest : Node
             GetNode<JourneySettings>("/root/JourneySettings").UsePathForTests(Path.Combine(directory, "settings.cfg"));
             InterfaceLessons.MarkAllSeen(GetNode<JourneySettings>("/root/JourneySettings"));
             await Launch();
+            if (args.Contains("--logo-motion-only"))
+            {
+                await LogoMotionChecks();
+                GD.Print($"LOGO_MOTION_TEST_PASS checks={_passed} demo={ExperienceProfile.IsDemo}"); GetTree().Quit(); return;
+            }
             if (args.Contains("--home-motion-only"))
             {
                 await HomeMotionChecks();
@@ -124,10 +129,10 @@ public partial class StartScreenSelfTest : Node
         Check(_save.TryCreateSlot(1, out _) && _save.TryCreateSlot(2, out _), "panel fixture creates two isolated slots");
         _save.TryLoadSlot(1, out _);
         _screen.PresentHome(); await Click(Find<Button>("Settings"));
-        var choice = Find<OptionButton>("SaveSlot");
+        var choice = Find<SaveSlotChoice>("SaveSlot");
         Check(choice.ItemCount == SaveService.SlotCount && !choice.IsItemDisabled(0) && !choice.IsItemDisabled(1)
             && choice.IsItemDisabled(2), "settings lists five slots and blocks empty slots");
-        choice.EmitSignal(OptionButton.SignalName.ItemSelected, 1); await Frames();
+        choice.ActivateItem(1); await Frames();
         Check(_save.ActiveSlotId == 2 && _screen.ModalOpen, "settings selector switches slots without opening a manager page");
         await Capture("panel-after");
         _screen.PresentHome();
@@ -516,7 +521,7 @@ public partial class StartScreenSelfTest : Node
             await ToSignal(GetTree().CreateTimer(0.3), SceneTreeTimer.SignalName.Timeout);
     }
 
-    private T Find<T>(string name) where T : Node => (T)_screen.FindChildren(name, typeof(T).Name, true, false).First(n => n is not Control c || c.IsVisibleInTree());
+    private T Find<T>(string name) where T : Node => _screen.FindChildren(name, "", true, false).OfType<T>().First(n => n is not Control c || c.IsVisibleInTree());
     private void Check(bool condition, string message)
     {
         if (!condition) throw new InvalidOperationException(message);

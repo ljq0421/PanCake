@@ -52,7 +52,7 @@ internal static class SaveSlotChecks
         save.Data.Coins = 654; save.Data.Tianjin.HighestUnlockedDay = 6; Check(save.TrySave(out _), "save second journey");
         save.TryLoadSlot(1, out _);
         screen.PresentHome(); await Click("Settings");
-        var selector = Find<OptionButton>("SaveSlot");
+        var selector = Find<SaveSlotChoice>("SaveSlot");
         Check(selector.ItemCount == SaveService.SlotCount && !selector.IsItemDisabled(0) && !selector.IsItemDisabled(1)
             && selector.IsItemDisabled(2), "settings selector lists all five slots and disables empty ones");
         Check(selector.GetItemText(0).Contains("天津 · 第 4 天") && selector.GetItemText(1).Contains("天津 · 第 6 天"),
@@ -67,7 +67,7 @@ internal static class SaveSlotChecks
             "full slots stay on home without replacing current journey");
         File.WriteAllText(Path.Combine(root, "slot-3.json"), "broken");
         screen.PresentHome(); await Click("Settings");
-        Check(Find<OptionButton>("SaveSlot").IsItemDisabled(2) && !Find<OptionButton>("SaveSlot").IsItemDisabled(1), "corrupt slot does not block other slot choices");
+        Check(Find<SaveSlotChoice>("SaveSlot").IsItemDisabled(2) && !Find<SaveSlotChoice>("SaveSlot").IsItemDisabled(1), "corrupt slot does not block other slot choices");
         await capture("slots-corrupt");
         save.Load();
         Check(save.ActiveSlotId == 2 && save.CanContinue, "restart restores last selected slot");
@@ -96,7 +96,7 @@ internal static class SaveSlotChecks
             for (int i = 0; i < 3; i++) await host.ToSignal(host.GetTree(), SceneTree.SignalName.ProcessFrame);
             while (JourneyTransition.For(host).Active) await host.ToSignal(host.GetTree(), SceneTree.SignalName.ProcessFrame);
         }
-        T Find<T>(string name) where T : Node => (T)screen.FindChildren(name, typeof(T).Name, true, false).First(n => n is not Control c || c.IsVisibleInTree());
+        T Find<T>(string name) where T : Node => screen.FindChildren(name, "", true, false).OfType<T>().First(n => n is not Control c || c.IsVisibleInTree());
         async Task Click(string name)
         {
             await Frames(); var control = Find<Control>(name); Vector2 at = control.GetGlobalTransformWithCanvas() * (control.Size / 2);
@@ -108,7 +108,7 @@ internal static class SaveSlotChecks
         }
         async Task SelectSaveSlot(int index)
         {
-            Find<OptionButton>("SaveSlot").EmitSignal(OptionButton.SignalName.ItemSelected, index);
+            Find<SaveSlotChoice>("SaveSlot").ActivateItem(index);
             await Frames();
         }
     }

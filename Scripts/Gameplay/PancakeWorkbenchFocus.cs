@@ -23,6 +23,8 @@ public partial class PancakeWorkstation
 
     internal IEnumerable<TutorialFocusTarget> FocusClearAreas()
     {
+        if (_stroke.SauceMeterVisible)
+            yield return TutorialFocusTarget.Area(_stroke, _stroke.SauceMeterBounds(), false);
         foreach (var progress in _focusProgress)
             if (progress.IsVisibleInTree()) yield return TutorialFocusTarget.Area(progress, new Rect2(0, 28, progress.Size.X, 12), false);
     }
@@ -124,12 +126,12 @@ public partial class PancakeWorkstation
             PancakeState.BatterPlaced or PancakeState.Spreading => Step("spread", "按住左键在面糊上划动，摊成一张饼。", Surface()),
             PancakeState.Spread or PancakeState.SideACooking when !r.HasEgg => Take("egg", "点击鸡蛋，把蛋打到饼上。"),
             PancakeState.SideACooking => Step("flip", "等第一面成熟，再翻面。", Surface()),
-            PancakeState.SideAReady or PancakeState.SideAOverdone => Step("flip", "点击翻面，或按 F。", TutorialFocusTarget.Control(_flip)),
+            PancakeState.SideAReady or PancakeState.SideAOverdone => Step("flip", "按住饼边向饼心短拖，松手翻面；也可按 F。", Surface()),
             PancakeState.SideBCooking => Step("take:sauce", "等第二面成熟，再拿刷子刷酱。", Surface()),
             PancakeState.SideBReady => Take("sauce", "点击酱碗拿刷子。"),
             PancakeState.Saucing => Step("sauce", "在饼面刷酱；达到订单酱量后短按右键收刷，或按 F。", Surface()),
-            PancakeState.Sauced or PancakeState.Toppings => Step("fold", "配料已齐，点击折叠，或按 F。", TutorialFocusTarget.Control(_fold)),
-            PancakeState.Folded => Step("bag", "点击装袋，或按 F。", TutorialFocusTarget.Control(_bag)),
+            PancakeState.Sauced or PancakeState.Toppings => Step("fold", "配料已齐，按住左侧或右侧饼边，向对侧拖动后松手；也可按 F。", Surface()),
+            PancakeState.Folded => Step("bag", "把折好的煎饼拖到左侧纸袋口，松手装袋；也可按 F。", Surface(), new TutorialFocusTarget(this, _directBag!.FocusOutline)),
             PancakeState.Bagged => Deliver("finished_pancake", ProductKind.Pancake, _finished, "装袋的煎饼", FinishedRecipe()),
             PancakeState.Burnt => Step("discard", "在焦饼上长按右键 0.45 秒，再拖入垃圾桶。", Surface()),
             _ => null,

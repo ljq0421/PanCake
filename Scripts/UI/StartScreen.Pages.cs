@@ -63,7 +63,9 @@ public partial class StartScreen
         // sign in front of the map while leaving the logo and action controls above it.
         var hangingSign = _body.GetNodeOrNull<TextureRect>("HomeHangingSign");
         if (hangingSign is not null) _body.MoveChild(hangingSign, mapArt.GetIndex() + 1);
-        HomeArt(_body, HomeLogoArt, new(80, 150, 1120, 516)).Name = "HomeLogo";
+        var logo = HomeArt(_body, HomeLogoArt, new(80, 150, 1120, 516));
+        logo.Name = "HomeLogo";
+        logo.AddChild(new HomeLogoMotion { Screen = this, Logo = logo });
         if (_save?.DemoMigrationRetryAvailable == true)
             Button(_body, "RetryDemoMigration", "重试读取存档", new(810, 790, 300, 42), () =>
             {

@@ -146,7 +146,33 @@ public partial class PancakeWorkstation : Control
     internal bool TryInvokeProductionShortcut(Key key)
     {
         if (!ProductionShortcutsEnabled || !_initialized || !IsVisibleInTree()
-            || !CanInteract || _drag.IsDragging) return false;
+            || !CanInteract || _drag.IsDragging || _foldHeld || DirectBusy) return false;
+
+        if (key == Key.F && !IsFlipping)
+        {
+            if (Machine.Runtime.State is PancakeState.SideAReady or PancakeState.SideAOverdone)
+            {
+                _canvas.FlipPickup = 0;
+                _canvas.FlipEdge = 1;
+                return Execute(PancakeCommand.Flip);
+            }
+            if (Machine.Runtime.State == PancakeState.Folded)
+            {
+                CancelFold();
+                _directGeneration = Machine.Runtime.Generation;
+                _directBag!.Begin(FoodCenter, Machine.Runtime.Quality == PancakeQuality.Overdone ? new Color(.82f, .56f, .33f) : Colors.White);
+                _canvas.DirectFoodHidden = true;
+                _directBag.Release(true, ReducedMotion);
+                CompleteDirectBag();
+                return true;
+            }
+        }
+
+        if (key == Key.F && CanFoldGesture)
+        {
+            CancelFold();
+            return Execute(PancakeCommand.Fold);
+        }
 
         if (key == Key.G)
         {
@@ -182,7 +208,7 @@ public partial class PancakeWorkstation : Control
 
     public bool CanDeliverProduct(string payload) => _initialized && CanInteract && payload switch
     {
-        "finished_pancake" => HasFinishedPancake && !IsTransferringBag,
+        "finished_pancake" => HasFinishedPancake && !IsTransferringBag && _directBag?.Animating != true,
         StoredYoutiaoPayload => FryerMachine?.Inventory.Count > 0,
         SoyMilkPayload => SoyMilkTray?.CanStartDrag == true,
         _ => false,
@@ -423,6 +449,7 @@ public partial class PancakeWorkstation : Control
             if (IsTianjinWorkbench) CancelInput();
             return;
         }
+        TickDirectGesture(deltaSeconds);
         TickFlipAnimation(deltaSeconds);
         Machine.Tick(TutorialCookingDelta(deltaSeconds));
         _canvas.TickLivingMotion(deltaSeconds, IsTianjinWorkbench && !ReducedMotion, _stroke.IsSpreading);
@@ -443,6 +470,8 @@ public partial class PancakeWorkstation : Control
 
     public void CancelInput()
     {
+        CancelDirectGesture();
+        CancelFold();
         _loopMotion?.Reset();
         _drag?.ClearAcceptedVisuals();
         _canvas?.ResetIngredientMotion();
@@ -543,8 +572,8 @@ public partial class PancakeWorkstation : Control
     }
 
     private bool CanInteract => InteractionEnabled && !Paused && (IsTianjinWorkbench || !_batterDropAnimating);
-    private bool CanUse(string id) => _initialized && CanInteract && !IsFlipping && _enabledIngredients.Contains(id) && Inventory.HasAvailable(id);
-    private bool CanDrop(string id) => CanInteract && !IsFlipping && id switch
+    private bool CanUse(string id) => _initialized && CanInteract && !IsFlipping && !_foldHeld && !DirectBusy && _enabledIngredients.Contains(id) && Inventory.HasAvailable(id);
+    private bool CanDrop(string id) => CanInteract && !IsFlipping && !_foldHeld && !DirectBusy && id switch
     {
         StableIds.Ingredients.Batter => Machine.Runtime.State == PancakeState.Empty,
         StableIds.Ingredients.Crispy or StableIds.Ingredients.Ham or StoredYoutiaoPayload => Machine.Runtime.State is PancakeState.Sauced or PancakeState.Toppings,
@@ -682,7 +711,8 @@ public partial class PancakeWorkstation : Control
     }
     private bool Execute(PancakeCommand command, string? id = null)
     {
-        if (!_initialized || !CanInteract || IsFlipping) return false;
+        if (!_initialized || !CanInteract || IsFlipping || IsDirectDragging || (_directBag?.Animating == true && command != PancakeCommand.Bag) || _foldHeld) return false;
+        if (command != PancakeCommand.Fold) CancelFold();
         YoutiaoQuality? consumedYoutiao = null;
         PancakeActionResult result = Machine.TryExecute(command, id, ingredient =>
         {
@@ -925,10 +955,10 @@ public partial class PancakeWorkstation : Control
             }
         }
         UpdateBagPresentation(state);
-        SetContextAction(_flip, state is PancakeState.SideAReady or PancakeState.SideAOverdone);
+        SetContextAction(_flip, !IsTianjinWorkbench && state is PancakeState.SideAReady or PancakeState.SideAOverdone);
         SetContextAction(_finishSauce, state == PancakeState.Saucing);
-        SetContextAction(_fold, state is PancakeState.Sauced or PancakeState.Toppings);
-        SetContextAction(_bag, state == PancakeState.Folded);
+        SetContextAction(_fold, !IsTianjinWorkbench && state is PancakeState.Sauced or PancakeState.Toppings);
+        SetContextAction(_bag, !IsTianjinWorkbench && state == PancakeState.Folded);
         SetContextAction(_discard, !IsTianjinWorkbench && state == PancakeState.Burnt);
         _pancakeActions.Visible = _flip.Visible || _finishSauce.Visible || _fold.Visible || _bag.Visible || _discard.Visible;
         if (IsTianjinWorkbench) _pancakeActions.Size = new Vector2(143, 48);
@@ -1028,13 +1058,24 @@ public partial class PancakeWorkstation : Control
     private void RenderLive()
     {
         if (!_initialized) return;
+        SyncFold();
+        SyncDirectGesture();
+        if (IsTianjinWorkbench)
+            _stroke.MouseDefaultCursorShape = (CanFoldGesture || (CanDirectGesture && Machine.Runtime.State is PancakeState.SideAReady or PancakeState.SideAOverdone or PancakeState.Folded)) ? CursorShape.Drag : CursorShape.Cross;
         _state.Text = _batterDropAnimating ? "正在落浆"
             : UseServingTray && IsTransferringBag && Machine.Runtime.State == PancakeState.Empty
                 ? "正在放入成品托盘 · 可继续摊饼"
             : DirectCustomerDelivery && Machine.Runtime.State == PancakeState.Bagged ? "拖给顾客"
             : PancakeStatus(Machine.Runtime);
+        if (IsTianjinWorkbench && Machine.Runtime.State is PancakeState.SideAReady or PancakeState.SideAOverdone)
+            _state.Text = _directGesture == DirectGesture.Flip ? _flipDragAmount >= .65f ? "松手翻面" : "向饼心短拖" : "按住饼边向内拖 · 翻面";
+        if (IsTianjinWorkbench && Machine.Runtime.State == PancakeState.Folded)
+            _state.Text = _directGesture == DirectGesture.Bag ? _directBag!.NearMouth ? "松手装袋" : "拖到纸袋口" : "把煎饼拖入左侧纸袋";
         if (IsTianjinWorkbench && Machine.Runtime.State == PancakeState.SideACooking)
             _state.Text = Machine.Runtime.HasEgg ? "等待翻面" : "可加鸡蛋";
+        if (IsTianjinWorkbench && Machine.Runtime.State is PancakeState.Sauced or PancakeState.Toppings)
+            _state.Text = _foldHeld ? _foldAmount >= .6f ? "松手完成折叠" : "向对侧拖动饼边"
+                : "配料放好后 · 拖动饼边折叠";
         _state.Modulate = Colors.White;
         _state.AddThemeColorOverride("font_color", Machine.Runtime.State switch
         {

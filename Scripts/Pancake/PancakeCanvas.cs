@@ -7,6 +7,22 @@ namespace ProjectCake.Pancake;
 
 public partial class PancakeCanvas : Control
 {
+    internal float FlipPickup { get; set; }
+    internal float FlipEdge { get; set; } = 1;
+    private float VisualFlipProgress => IsFlipping ? FlipProgress : .08f + .12f * FlipPickup;
+    private bool _directFoodHidden;
+    internal bool DirectFoodHidden { get => _directFoodHidden; set { _directFoodHidden = value; QueueRedraw(); } }
+    private bool _foldPreviewVisible;
+    internal bool FoldPreviewVisible
+    {
+        get => _foldPreviewVisible;
+        set
+        {
+            _foldPreviewVisible = value;
+            _toppingLayer?.QueueRedraw();
+            QueueRedraw();
+        }
+    }
     private readonly record struct StoveSurfaceSpec(float CenterY, float Width, float Height);
 
     private PancakeRuntime? _runtime;
@@ -14,6 +30,7 @@ public partial class PancakeCanvas : Control
     private int _stoveLevel = 1;
     private float _batterDropProgress = 1.0f;
     private bool _foodOnly;
+    private bool _compositeFoodPreview;
     private TextureRect? _sauceReveal;
     private PancakeToppingLayer? _toppingLayer;
     private long _visualGeneration = -1;
@@ -40,7 +57,7 @@ public partial class PancakeCanvas : Control
         Rect2 surface = GetSurfaceRect();
         _sauceReveal.Position = surface.Position;
         _sauceReveal.Size = surface.Size;
-        _sauceReveal.Visible = !IsFlipping && (_runtime.HasSauce || _runtime.State == PancakeState.Saucing)
+        _sauceReveal.Visible = !_compositeFoodPreview && !FoldPreviewVisible && !IsFlipping && (_runtime.HasSauce || _runtime.State == PancakeState.Saucing)
             && _runtime.State is not (PancakeState.Empty or PancakeState.Folded or PancakeState.Bagged or PancakeState.Delivered);
         _sauceReveal.Modulate = new Color(1, 1, 1, Mathf.Clamp((float)(_runtime.SauceCoverage / SauceRules.MaximumAmount), 0, 1));
     }
@@ -141,7 +158,7 @@ public partial class PancakeCanvas : Control
             DrawCentered(_art.Stove(_stoveLevel), stoveCenter, new Vector2(stoveSize, stoveSize));
         else if (EmbeddedSurface is Rect2 embedded) stoveCenter = embedded.GetCenter();
 
-        if (_runtime is null || _runtime.State == PancakeState.Empty) return;
+        if (_runtime is null || _runtime.State == PancakeState.Empty || FoldPreviewVisible || DirectFoodHidden) return;
 
         PancakeRuntime runtime = _runtime;
         Color qualityTint = runtime.Quality switch
@@ -164,7 +181,7 @@ public partial class PancakeCanvas : Control
         }
 
         Rect2 surface = GetSurfaceRect();
-        if (IsFlipping)
+        if (IsFlipping || FlipPickup > 0)
         {
             DrawFlippingPancake(surface, qualityTint);
             return;
@@ -190,20 +207,20 @@ public partial class PancakeCanvas : Control
         if (runtime.HasEgg)
             DrawIngredient(StableIds.Ingredients.Egg, _art.PancakeEgg, surface.GetCenter(), surface.Size, qualityTint);
 
-        if (_sauceReveal is null && (runtime.HasSauce || runtime.State == PancakeState.Saucing))
+        if ((_sauceReveal is null || _compositeFoodPreview) && (runtime.HasSauce || runtime.State == PancakeState.Saucing))
         {
             float alpha = Mathf.Clamp((float)(runtime.SauceCoverage / SauceRules.MaximumAmount), 0, 1f);
             DrawCentered(_art.PancakeSauce, surface.GetCenter(), surface.Size, new Color(1, 1, 1, alpha));
         }
 
-        if (_toppingLayer is null) DrawToppings(this);
+        if (_toppingLayer is null || _compositeFoodPreview) DrawToppings(this);
         else _toppingLayer.QueueRedraw();
         if (!_foodOnly) DrawStateIndicator(surface, runtime.State);
     }
 
     private void DrawToppings(CanvasItem painter)
     {
-        if (_runtime is not { } runtime || _art is null || IsFlipping || runtime.State is PancakeState.Empty or PancakeState.Folded or PancakeState.Bagged or PancakeState.Delivered) return;
+        if (_runtime is not { } runtime || _art is null || IsFlipping || FoldPreviewVisible || runtime.State is PancakeState.Empty or PancakeState.Folded or PancakeState.Bagged or PancakeState.Delivered) return;
         Rect2 surface = GetSurfaceRect();
         // Canvas drawing is painter's-order: rendering in join order makes the
         // most recently added topping visually sit on top of prior toppings.
@@ -260,7 +277,7 @@ public partial class PancakeCanvas : Control
     }
 
     // Draw the same food layers and perspective as the stove, frozen at pickup.
-    public Control CreateFoodPreview(Vector2 displaySize)
+    public Control CreateFoodPreview(Vector2 displaySize, bool bare = false, bool composite = false)
     {
         var preview = new Control { CustomMinimumSize = displaySize, MouseFilter = MouseFilterEnum.Ignore };
         if (_runtime is null || _art is null) return preview;
@@ -268,10 +285,11 @@ public partial class PancakeCanvas : Control
         {
             State = _runtime.State, Quality = _runtime.Quality,
             SpreadCoverage = _runtime.SpreadCoverage, SauceCoverage = _runtime.SauceCoverage,
-            HasEgg = _runtime.HasEgg, HasSauce = _runtime.HasSauce,
+            HasEgg = !bare && _runtime.HasEgg, HasSauce = !bare && _runtime.HasSauce,
             InternalYoutiaoQuality = _runtime.InternalYoutiaoQuality,
         };
-        foreach (string ingredient in _runtime.ExtraIngredientOrder) snapshot.AddIngredient(ingredient);
+        if (!bare)
+            foreach (string ingredient in _runtime.ExtraIngredientOrder) snapshot.AddIngredient(ingredient);
         Rect2 bounds = GetSurfaceRect();
         if (snapshot.State is PancakeState.Folded or PancakeState.Bagged)
         {
@@ -285,7 +303,7 @@ public partial class PancakeCanvas : Control
         {
             Name = "DraggedPancakeFood", Size = Size, DisplayScale = DisplayScale, DisplayOffset = DisplayOffset,
             UseTableContact = UseTableContact, EmbeddedSurface = EmbeddedSurface,
-            BatterDropProgress = BatterDropProgress, _foodOnly = true,
+            BatterDropProgress = BatterDropProgress, _foodOnly = true, _compositeFoodPreview = composite,
             MouseFilter = MouseFilterEnum.Ignore, Scale = Vector2.One * scale,
             Position = displaySize / 2 - bounds.GetCenter() * scale,
         };
@@ -294,6 +312,7 @@ public partial class PancakeCanvas : Control
         if (_sauceReveal is not null)
         {
             food.EnableIngredientDetail(_art);
+            if (composite) food._toppingLayer!.Visible = false;
             food._visualGeneration = snapshot.Generation;
             food.SyncIngredientDetail();
         }
@@ -333,7 +352,7 @@ public partial class PancakeCanvas : Control
 
     private void DrawFlippingPancake(Rect2 surface, Color tint)
     {
-        float flight = FlipFlight(FlipProgress);
+        float flight = FlipFlight(VisualFlipProgress);
         float lift = Mathf.Sin(flight * Mathf.Pi);
         // A soft contact shadow stays on the stove while the pancake leaves it.
         for (int i = 3; i >= 0; i--)
@@ -341,10 +360,10 @@ public partial class PancakeCanvas : Control
             Rect2 shadow = ScaleFromCenter(surface, .94f - .09f * lift).Grow(i * 3);
             DrawEllipse(shadow, new Color(.18f, .10f, .06f, .035f * lift));
         }
-        float settle = FlipProgress > .9f ? Mathf.Sin((FlipProgress - .9f) * 10 * Mathf.Pi) : 0;
+        float settle = VisualFlipProgress > .9f ? Mathf.Sin((VisualFlipProgress - .9f) * 10 * Mathf.Pi) : 0;
         Vector2 size = surface.Size * new Vector2(1 + .018f * lift + .008f * settle,
             Math.Max(.055f, Mathf.Abs(Mathf.Cos(flight * Mathf.Pi))) * (1 - .025f * settle));
-        Vector2 center = surface.GetCenter() + new Vector2(0, -22 * lift);
+        Vector2 center = surface.GetCenter() + new Vector2(0, -44 * lift);
         Rect2 food = new(center - size * .5f, size);
         float light = 1 - .16f * lift;
         Color face = new(tint.R * light, tint.G * light, tint.B * light, tint.A);
@@ -361,14 +380,18 @@ public partial class PancakeCanvas : Control
     private Vector2 BendFlipPoint(Vector2 point, Rect2 surface)
     {
         float x = Mathf.Clamp((point.X - surface.GetCenter().X) / (surface.Size.X * .5f), -1, 1);
-        float flight = FlipFlight(FlipProgress);
-        float pickup = Mathf.Sin(Mathf.Pi * Mathf.Clamp((FlipProgress - .08f) / .34f, 0, 1));
-        float sag = 14 * Mathf.Sin(flight * Mathf.Pi);
-        float landingCurl = 5 * Mathf.Sin(Mathf.Pi * Mathf.Clamp((FlipProgress - .78f) / .22f, 0, 1));
-        // The right edge follows the spatula first. The middle then droops between
-        // the edges in flight; on landing the middle rests before the edges relax.
-        point.Y += -14 * pickup * Mathf.Pow((x + 1) * .5f, 2)
-            + sag * (1 - x * x) - landingCurl * x * x;
+        float flight = FlipFlight(VisualFlipProgress);
+        float pickup = Mathf.Sin(Mathf.Pi * Mathf.Clamp((VisualFlipProgress - .08f) / .34f, 0, 1));
+        float airborne = Mathf.Sin(flight * Mathf.Pi);
+        float sag = 42 * airborne;
+        float landingCurl = 18 * Mathf.Sin(Mathf.Pi * Mathf.Clamp((VisualFlipProgress - .72f) / .28f, 0, 1));
+        // The spatula lifts its edge first; the unsupported center hangs in a deep
+        // curve. A travelling bend makes the opposite edge lag rather than move as
+        // one rigid disc. The center lands first, then the still-curled edges relax.
+        float edge = x * FlipEdge;
+        float travellingBend = 10 * airborne * Mathf.Sin(edge * Mathf.Pi + flight * Mathf.Tau);
+        point.Y += -38 * pickup * Mathf.Pow((edge + 1) * .5f, 2)
+            + sag * (1 - x * x) + travellingBend - landingCurl * x * x;
         return point;
     }
 

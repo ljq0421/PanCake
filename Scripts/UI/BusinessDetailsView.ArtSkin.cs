@@ -7,6 +7,8 @@ public partial class BusinessDetailsView
 {
     private const float ArtPageLeft = 230, ArtPageRight = 890, ArtPageWidth = 560;
     private const float ArtRowRight = ArtPageRight - ArtPageLeft, ArtRowWidth = 1200;
+    private const float BookContentScale = 5f / 6f;
+    private const float TravelBookContentScale = 1.10f;
     private Control _plainPaper = null!, _illustratedPaper = null!;
     private bool UsesBookArt => _model.CityId is "tianjin" or "wuhan" or "xian";
     private bool UsesTravelBook => _model.CityId is "tianjin" or "wuhan";
@@ -48,6 +50,7 @@ public partial class BusinessDetailsView
         }
         _city.AddThemeColorOverride("font_color", Muted); _title.AddThemeColorOverride("font_color", Ink);
         _plainPaper.Visible = !UsesBookArt; _illustratedPaper.Visible = UsesBookArt;
+        ApplyBookContentScale();
         _summary.Position = _details.Position = new(0, 120);
         _summary.Size = _details.Size = new(1680, 620);
         _scroll.Position = new(78, 58); _scroll.Size = new(1524, 594);
@@ -67,6 +70,24 @@ public partial class BusinessDetailsView
         if (UsesBookArt) ApplyArtLayout();
         PageArrowArt.Apply(_previousPage, false, _model.CityId, "");
         PageArrowArt.Apply(_nextPage, true, _model.CityId, "");
+    }
+
+    // Tianjin and Wuhan keep the same physical book board. Their ledger controls
+    // grow from the page-top safe area, so the heading stays clear of the curved edge.
+    private void ApplyBookContentScale()
+    {
+        if (!UsesTravelBook)
+        {
+            _bookContent.PivotOffset = Vector2.Zero;
+            _bookContent.Position = new(0, 25);
+            _bookContent.Scale = Vector2.One * BookContentScale;
+            return;
+        }
+
+        float baselineCenterX = _bookContent.Size.X * BookContentScale / 2f;
+        _bookContent.PivotOffset = new(_bookContent.Size.X / 2f, 0);
+        _bookContent.Position = new(baselineCenterX - _bookContent.PivotOffset.X, 0);
+        _bookContent.Scale = Vector2.One * BookContentScale * TravelBookContentScale;
     }
 
     private static void SetButtonBounds(Button button, Rect2 bounds)

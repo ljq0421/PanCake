@@ -89,7 +89,7 @@ public partial class BusinessDetailsView
             .SetDelay(opening + incomeStart).SetTrans(Tween.TransitionType.Expo).SetEase(Tween.EaseType.Out);
         // Emphasize the settled amount, after the counter has reached its exact total.
         const double incomeComplete = incomeStart + .80;
-        _entrance.TweenProperty(_income, "scale", Vector2.One * 1.18f, .20)
+        _entrance.TweenProperty(_income, "scale", Vector2.One * 1.35f, .20)
             .SetDelay(opening + incomeComplete).SetTrans(Tween.TransitionType.Cubic).SetEase(Tween.EaseType.Out);
         _entrance.TweenProperty(_income, "scale", Vector2.One, .28)
             .SetDelay(opening + incomeComplete + .32).SetTrans(Tween.TransitionType.Sine).SetEase(Tween.EaseType.InOut);

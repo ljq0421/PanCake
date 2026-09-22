@@ -6,6 +6,7 @@ namespace ProjectCake.UI;
 public sealed record EquipmentEffect(string Name, string Current, string Next)
 {
     public bool Changed => Current != Next;
+    internal double? NumericChangeRatio { get; init; }
 }
 
 internal static class BookUpgradeEffects
@@ -18,7 +19,19 @@ internal static class BookUpgradeEffects
     {
         var lines = new List<EquipmentEffect>();
         void Change(string name, double a, double b, string unit = "")
-        { lines.Add(new(name, $"{a:0.##}{unit}", $"{b:0.##}{unit}")); }
+        {
+            lines.Add(new(name, $"{a:0.##}{unit}", $"{b:0.##}{unit}")
+            {
+                // Rank using configuration values, before display rounding.
+                NumericChangeRatio = a == 0 ? (b == 0 ? 0 : double.PositiveInfinity)
+                    : Math.Round(Math.Abs((b - a) / a), 6),
+            });
+        }
+        void Supply(string name, bool unlimitedA, int a, bool unlimitedB, int b)
+        {
+            if (!unlimitedA && !unlimitedB) Change(name, a, b, " 份");
+            else lines.Add(new(name, unlimitedA ? "无限供应" : $"{a} 份", unlimitedB ? "无限供应" : $"{b} 份"));
+        }
         void Flag(string name, bool a, bool b) { lines.Add(new(name, a ? "开启" : "关闭", b ? "开启" : "关闭")); }
         int from = o.CurrentLevel, to = o.TargetLevel;
         switch (o.EquipmentId)
@@ -30,8 +43,8 @@ internal static class BookUpgradeEffects
                 Change("第二面成熟时间", sa.SideBReadySeconds, sb.SideBReadySeconds, " 秒"); break;
             case "ingredient_station":
                 c!.TryGetIngredientStation(from, out var ia); c.TryGetIngredientStation(to, out var ib);
-                lines.Add(new("面糊供应", ia.UnlimitedBatter ? "无限供应" : $"{ia.BatterCapacity} 份", ib.UnlimitedBatter ? "无限供应" : $"{ib.BatterCapacity} 份"));
-                lines.Add(new("酱料供应", ia.UnlimitedSauce ? "无限供应" : $"{ia.SauceCapacity} 份", ib.UnlimitedSauce ? "无限供应" : $"{ib.SauceCapacity} 份"));
+                Supply("面糊供应", ia.UnlimitedBatter, ia.BatterCapacity, ib.UnlimitedBatter, ib.BatterCapacity);
+                Supply("酱料供应", ia.UnlimitedSauce, ia.SauceCapacity, ib.UnlimitedSauce, ib.SauceCapacity);
                 Change("鸡蛋容量", ia.EggCapacity, ib.EggCapacity, " 份"); Change("薄脆容量", ia.CrispyCapacity, ib.CrispyCapacity, " 份");
                 Change("葱花容量", ia.ScallionCapacity, ib.ScallionCapacity, " 份"); Change("火腿容量", ia.HamCapacity, ib.HamCapacity, " 份");
                 Change("补料时间", ia.RefillSeconds, ib.RefillSeconds, " 秒"); break;
@@ -99,6 +112,10 @@ internal static class BookUpgradeEffects
                 }
                 break;
         }
-        return lines;
+        // LINQ ordering is stable: equal gains and unchanged rows retain their authored order.
+        return lines.OrderByDescending(e => e.Changed)
+            .ThenByDescending(e => e.Changed && !e.NumericChangeRatio.HasValue)
+            .ThenByDescending(e => e.Changed ? e.NumericChangeRatio ?? 0 : 0)
+            .ToArray();
     }
 }

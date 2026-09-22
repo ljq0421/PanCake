@@ -4,5 +4,5 @@
 script = ExtResource("1")
 Id = "hulatang"
 DisplayName = "肉丸胡辣汤"
-Kind = 7
+Kind = 6
 UnitPrice = 6

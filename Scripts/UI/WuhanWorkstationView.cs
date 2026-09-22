@@ -418,8 +418,8 @@ public partial class WuhanWorkstationView : Control
             string hit = HitTarget(mb.Position);
             if (hit == "knife")
             {
-                if (CanHoldKnife && !Busy("pan")) { IsKnifeHeld = true; _pointer = mb.Position; }
-                else GestureRejected?.Invoke("豆皮煎好后，点击小刀取刀。 ");
+                if (CanHoldKnife) { IsKnifeHeld = true; _pointer = mb.Position; }
+                else GestureRejected?.Invoke("制作豆皮时可提前拿刀，煎好后再切块。");
                 AcceptEvent(); QueueRedraw(); return;
             }
             if (hit != "pan") IsKnifeHeld = false;

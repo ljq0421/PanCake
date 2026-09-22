@@ -115,7 +115,8 @@ public partial class TianjinDayScreen : Control
             Active = () => _controller is not null && _focused && !_manualPaused && !_focusPaused && !_detailsPaused
                 && !_committed && !_controller.IsPaused && _controller.State is DayState.Running or DayState.Closing,
             Runtime = () => _workstation.Machine?.Runtime, Spreading = () => _workstation.IsSpreading,
-            FlipProgress = () => _workstation.FlipProgress,
+            FlipProgress = () => _workstation.ToolFlipProgress,
+            FlipEdge = () => _workstation.FlipEdge,
             StopPaymentFeedback = () => { _paymentFeedback.Clear(); _hud.ResetIncomeEmphasis(); } };
         AddChild(_living);
         ((TianjinPendantButton)CashPendant).IndependentArtwork = true;
@@ -151,7 +152,7 @@ public partial class TianjinDayScreen : Control
     {
         EquipmentUpgradeCelebration.Attach(this, () => controller.CurrentConfig?.CityId == StableIds.Cities.Tianjin
             && IsVisibleInTree() && _focused && !_manualPaused && !_focusPaused && !_detailsPaused
-            && !_abandonDialog.Visible && !controller.IsPaused && controller.State == DayState.Running
+            && !_abandonDialog.Visible && !controller.IsPaused && controller.State is DayState.Preparing or DayState.Running
             && TeachingFocus.CurrentAction is null);
         BusinessFeedbackAudio.Attach(this, controller.Feedback, () => controller.CurrentConfig?.CityId == StableIds.Cities.Tianjin && (IsVisibleInTree() && _focused && !_manualPaused && !_focusPaused && !_detailsPaused && !_abandonDialog.Visible && !controller.IsPaused && controller.State is DayState.Running or DayState.Closing), useCartoonCoin: true, useCartoonError: true, useCartoonCompletion: true);
         TeachingFocus.ResetSession();
@@ -202,6 +203,13 @@ public partial class TianjinDayScreen : Control
     public void BeginDay()
     {
         if (_controller is null) return;
+        if (!_resumeBusinessAfterLesson && !ForceDemoTutorial)
+            GetNode<EquipmentUpgradeCelebration>("UpgradeCelebration").BeforeTeaching(_controller, BeginAfterUnlocks);
+        else BeginAfterUnlocks();
+    }
+
+    private void BeginAfterUnlocks()
+    {
         if (BeginDemoLesson()) return;
         if (_controller.TryStartDay(out string error))
         {
@@ -269,7 +277,8 @@ public partial class TianjinDayScreen : Control
             || _controller?.State is not (DayState.Running or DayState.Closing)
             || _manualPaused || _focusPaused || _detailsPaused || _pausePanel.Visible || _results.Visible) return;
         // Handle before GUI controls consume the click, including while brushing on the pancake.
-        if (_workstation.HandleRightFoodInput(@event)) GetViewport().SetInputAsHandled();
+        if (_workstation.HandleDirectFoodInput(@event) || _workstation.HandleFoldInput(@event) || _workstation.HandleRightFoodInput(@event))
+            GetViewport().SetInputAsHandled();
     }
 
     public override void _UnhandledInput(InputEvent @event)

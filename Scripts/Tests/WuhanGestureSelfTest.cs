@@ -166,7 +166,10 @@ public partial class WuhanGestureSelfTest : Node
                     Check(!View.HasProductionGesture && !_screen.Doupi.HasFilling && _screen.Doupi.SideSeconds==heat,$"{reason} cancels uncommitted filling without advancing suspended heat");
                 }
                 FillDoupi(); Step(.30); await Shot("02b-auto-filling");
-                Click(View.KnifeCenter); Check(!View.IsKnifeHeld, "cooking and filling animation reject knife pickup");
+                Click(View.KnifeCenter); Check(View.IsKnifeHeld, "knife can be picked up during cooking and filling animation");
+                Step(.01); Check(View.IsKnifeHeld, "cooking tick keeps the knife held");
+                Drag(View.PanPoint(.05f,.5f), View.PanPoint(.95f,.5f));
+                Check(_screen.Doupi.CompletedCuts==0 && View.IsKnifeHeld, "early knife stroke cannot cut uncooked doupi");
                 double ingredientSeconds = _screen.Doupi.IngredientSeconds;
                 float animation = View.MotionProgress("pan");
                 controller.IsPaused=true;_screen._Process(2);controller.IsPaused=false;
@@ -174,10 +177,13 @@ public partial class WuhanGestureSelfTest : Node
                 Drag(View.FillingCenter,View.PanCenter);
                 Check(_screen.Doupi.HasFilling&&View.ActiveMotionCount==0,"production state rejects duplicate filling without restarting animation");
                 Step(.31);Check(!View.Busy("pan")&&_screen.Doupi.HasFilling,"automatic filling finishes without another input");
+                Click(View.KnifeCenter);
                 Move(View.PanPoint(.05f,.5f));Button(View.PanPoint(.05f,.5f),true);
                 Step(catalog.DoupiGriddlesByLevel[level].SecondStageReadySeconds/catalog.DoupiGriddlesByLevel[level].SpeedMultiplier+.01);
                 Move(View.PanPoint(.95f,.5f),true);Button(View.PanPoint(.95f,.5f),false);
                 Check(_screen.Doupi.CompletedCuts==0,"press started during cooking cannot become a cutting gesture");
+                Check(View.IsKnifeHeld, "knife stays held when doupi becomes ready");
+                View.CancelInput();
                 Click(View.PanCenter);Check(_screen.Doupi.CompletedCuts==0,"pan click does not cut");
                 Drag(View.PanPoint(.45f,.5f),View.PanPoint(.5f,.5f));Check(_screen.Doupi.CompletedCuts==0,"short accidental stroke does not cut");
                 Drag(View.PanPoint(.05f,.5f), View.PanPoint(.95f,.5f));

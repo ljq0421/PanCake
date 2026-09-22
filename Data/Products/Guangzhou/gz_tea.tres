@@ -5,4 +5,4 @@ script = ExtResource("1")
 Id = "gz_tea"
 DisplayName = "早茶"
 UnitPrice = 3
-Kind = 11
+Kind = 10

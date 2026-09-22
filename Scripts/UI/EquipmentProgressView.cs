@@ -18,12 +18,13 @@ public partial class EquipmentProgressView : Control
         CornerRadiusBottomLeft = 4, CornerRadiusBottomRight = 4 };
     private Func<EquipmentProgressState> _read = () => default;
     internal bool ShowCaption { get; private set; } = true;
+    internal bool Ring { get; private set; }
     internal EquipmentProgressState Presentation { get; private set; }
 
-    internal static EquipmentProgressView Attach(Control parent, string name, Rect2 rect, Func<EquipmentProgressState> read, bool showCaption = true)
+    internal static EquipmentProgressView Attach(Control parent, string name, Rect2 rect, Func<EquipmentProgressState> read, bool showCaption = true, bool ring = false)
     {
         var view = new EquipmentProgressView { Name = name, Position = rect.Position, Size = rect.Size,
-            MouseFilter = MouseFilterEnum.Ignore, Visible = false, _read = read, ShowCaption = showCaption };
+            MouseFilter = MouseFilterEnum.Ignore, Visible = false, _read = read, ShowCaption = showCaption, Ring = ring };
         parent.AddChild(view);
         return view;
     }
@@ -45,6 +46,11 @@ public partial class EquipmentProgressView : Control
     public override void _Draw()
     {
         if (!Presentation.Visible) return;
+        if (Ring)
+        {
+            DrawRing();
+            return;
+        }
         if (ShowCaption)
         {
             // The light outline keeps short captions legible on the illustrated counter.
@@ -61,6 +67,42 @@ public partial class EquipmentProgressView : Control
         if (filled <= 0) return;
         _fill.BgColor = FillColor(Presentation);
         DrawStyleBox(_fill, new Rect2(2, 30, filled, 8));
+    }
+
+    private void DrawRing()
+    {
+        // An ellipse follows the bowl's perspective without covering its contents.
+        Vector2 center = Size / 2;
+        Vector2 radius = center - Vector2.One * 9;
+        Vector2 Point(float turn) => center + new Vector2(
+            Mathf.Sin(turn * Mathf.Tau) * radius.X, -Mathf.Cos(turn * Mathf.Tau) * radius.Y);
+        Vector2[] Arc(float turns)
+        {
+            int segments = Math.Max(2, (int)Math.Ceiling(turns * 128));
+            var points = new Vector2[segments + 1];
+            for (int i = 0; i <= segments; i++) points[i] = Point(turns * i / segments);
+            return points;
+        }
+        var track = Arc(1);
+        DrawPolyline(track, Ink, 18, true);
+        DrawPolyline(track, Paper, 12, true);
+        float progress = (float)Math.Clamp(Presentation.Progress, 0, 1);
+        if (progress > 0)
+        {
+            Color color = FillColor(Presentation);
+            DrawPolyline(Arc(progress), color, 12, true);
+            DrawCircle(Point(0), 6, color, true, -1, true);
+            DrawCircle(Point(progress), 8, Ink, true, -1, true);
+            DrawCircle(Point(progress), 5, color, true, -1, true);
+        }
+        if (!ShowCaption) return;
+        var font = GetThemeDefaultFont();
+        const int fontSize = 20;
+        string caption = Presentation.Caption;
+        float width = font.GetStringSize(caption, HorizontalAlignment.Left, -1, fontSize).X;
+        Vector2 baseline = new((Size.X - width) / 2, Size.Y + 22);
+        DrawStringOutline(font, baseline, caption, HorizontalAlignment.Left, -1, fontSize, 5, Paper);
+        DrawString(font, baseline, caption, HorizontalAlignment.Left, -1, fontSize, Ink);
     }
 }
 

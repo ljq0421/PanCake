@@ -390,7 +390,7 @@ public partial class OrderBubbleView : PanelContainer
     private float SimpleProductWidth(ProductKind kind)
     {
         Texture2D source = kind == ProductKind.HotDryNoodles && _wuhan is not null
-            ? _wuhan.Texture("empty_bowl") : _wuhan is null ? _shared.Product(kind) : _wuhan.Product(kind);
+            ? _wuhan.Texture("noodles_plain_finished") : _wuhan is null ? _shared.Product(kind) : _wuhan.Product(kind);
         Texture2D prepared = PrepareCompactIcon(source, CompactProductSize);
         return Math.Min(CompactProductSize.X, CompactProductSize.Y * prepared.GetWidth() / prepared.GetHeight());
     }
@@ -438,15 +438,8 @@ public partial class OrderBubbleView : PanelContainer
             return Icon(_xian.Texture(kind == ProductKind.Roujiamo ? "通用卡通腊汁肉夹馍成品" : "成品肉丸胡辣汤"), size, "OrderProductIcon");
         if (kind != ProductKind.HotDryNoodles || _wuhan is null)
             return Icon(_wuhan is null ? _shared.Product(kind) : _wuhan.Product(kind), size, "OrderProductIcon");
-        // The noodle texture is a food layer; place it in the same bowl as the workbench.
-        var bowl = new Control { Name = "OrderProductIcon", CustomMinimumSize = size, MouseFilter = MouseFilterEnum.Ignore };
-        TextureRect baseLayer = Icon(_wuhan.Texture("empty_bowl"), size, "Bowl");
-        bowl.AddChild(baseLayer);
-        TianjinUi.FullRect(baseLayer);
-        TextureRect noodles = Icon(_wuhan.Texture("mixed"), new Vector2(size.X * .78f, size.Y * .55f), "Noodles");
-        noodles.Position = new Vector2(size.X * .11f, size.Y * .04f);
-        bowl.AddChild(noodles);
-        return bowl;
+        // Scale the complete plain dish as one image, including in narrower shared rows.
+        return Icon(_wuhan.Texture("noodles_plain_finished"), size, "OrderProductIcon");
     }
 
     private TextureRect Icon(Texture2D texture, Vector2 size, string name)

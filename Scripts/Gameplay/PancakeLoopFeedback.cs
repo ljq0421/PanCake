@@ -44,6 +44,7 @@ public partial class PancakeWorkstation
                     ? Input.IsMouseButtonPressed(MouseButton.Left) ? 2 : 1 : 0);
         }
         _bagArt = (TextureRect)_finished.FindChild("FinishedPancakeArt", true, false);
+        ConfigureDirectFood();
         _loopMotion.Bind(_bagArt, () => CanDeliverProduct("finished_pancake") && !_drag.IsDragging
             && _finished.GetGlobalRect().HasPoint(_finished.GetGlobalMousePosition()) ? 1 : 0);
         _drag.DragStarted += payload => { if (payload == "finished_pancake") _loopMotion.Reset(); };

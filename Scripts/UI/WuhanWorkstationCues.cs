@@ -32,7 +32,7 @@ public partial class WuhanWorkstationView
         {
             "raw" => "生面无限供应，拖进空漏勺",
             "bowl" => "芝麻酱、辣油和葱花在拌面前可任意顺序加入；划动拌匀后可加牛肉，再拖给顾客",
-            "knife" => "豆皮煎好后点击取刀，再在锅面横划、竖划",
+            "knife" => "制作豆皮时可提前拿刀，煎好后在锅面横划、竖划",
             "stock" => "豆皮拖给顾客，按订单所需数量出餐",
             "pan" when _doupi is null => "豆皮锅 · Day 4 解锁",
             "pan" when _doupi.State == DoupiState.Burnt => "豆皮焦糊；长按右键拖入底部垃圾桶",

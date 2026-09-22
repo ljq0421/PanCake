@@ -9,7 +9,7 @@ public partial class GameController
         book.WuhanUnlockRequested += () => PresentWuhanUnlock(book);
         book.WuhanUnlockStayRequested += () =>
         {
-            book.Hide(); ShowOnly(_startScreen); _startScreen.PresentCity(city); _startScreen.PresentLedger();
+            book.Hide(); ReturnFromBusiness(city, showCompletion: false); _startScreen.PresentLedger();
         };
         book.ContinueRequested += () =>
         {

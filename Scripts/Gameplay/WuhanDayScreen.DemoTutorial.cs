@@ -22,16 +22,16 @@ public partial class WuhanDayScreen
     internal bool DemoLessonFailed => _demoLessonFailure.Length > 0;
     private bool DemoLessonControlsEnabled => _focused && !_controller.IsPaused && !_abandon.Visible;
     private int _demoBusinessDay, _demoTeachingDay;
-    private bool _beefLessonHandled;
+    private bool _resumeBusinessAfterLesson;
     private readonly HashSet<string> _demoLearned = new(StringComparer.Ordinal);
     private BusinessBookModel? _demoPendingResult;
     private bool BeginWuhanDemoLesson(int? retryTeachingDay = null)
     {
-        bool introduceBeef = _controller.CurrentConfig?.Day == 3 && !_beefLessonHandled
-            && !_save.Data.Wuhan.LearnedWorkbenchActions.Contains("take:" + StableIds.Ingredients.WuhanBraisedBeef);
-        if (!ForceDemoTutorial && !introduceBeef && retryTeachingDay is null) return false;
+        var unlock = TutorialOrders.UnlockFor(_controller.CurrentConfig!);
+        bool introduceUnlock = !_resumeBusinessAfterLesson && unlock is not null && !unlock.IsLearned(_save.Data.Wuhan.LearnedWorkbenchActions);
+        if (!ForceDemoTutorial && !introduceUnlock && retryTeachingDay is null) return false;
         _demoBusinessDay = _controller.CurrentConfig!.Day;
-        _demoTeachingDay = retryTeachingDay ?? (ForceDemoTutorial ? 1 : 3);
+        _demoTeachingDay = retryTeachingDay ?? (ForceDemoTutorial ? 1 : _demoBusinessDay);
         ForceDemoTutorial = false;
         if (!_controller.TryPrepareTutorial(StableIds.Cities.Wuhan, _demoTeachingDay, _catalog, out var error))
         { Feedback(error, true); return true; }
@@ -80,7 +80,12 @@ public partial class WuhanDayScreen
     {
         if (!_controller.TutorialActive || !DemoLessonControlsEnabled) return;
         var old = _save.Data.Wuhan.LearnedWorkbenchActions.ToHashSet();
-        if (_demoLessonComplete) _save.Data.Wuhan.LearnedWorkbenchActions.UnionWith(_demoLearned);
+        if (_demoLessonComplete)
+        {
+            _save.Data.Wuhan.LearnedWorkbenchActions.UnionWith(_demoLearned);
+            if (TutorialOrders.UnlockFor(_controller.CurrentConfig!) is { } lesson)
+                _save.Data.Wuhan.LearnedWorkbenchActions.UnionWith(lesson.Actions);
+        }
         bool saved = _save.TrySave(out _);
         if (!saved)
         {
@@ -88,9 +93,12 @@ public partial class WuhanDayScreen
             _demoLessonSaveError = "教学记录未保存，请重试。"; LayoutWuhanDemoLesson(); return;
         }
         _demoLesson!.Hide(); _demoLessonSkipFrame!.Hide(); _sceneFeedback.Clear(); _paymentFeedback.Clear(); Workstation.CancelAnimations();
-        if (_demoTeachingDay == 3) _beefLessonHandled = true;
         _controller.AbandonDay();
-        if (Initialize(_catalog, _save, _controller, _demoBusinessDay)) BeginDay();
+        if (Initialize(_catalog, _save, _controller, _demoBusinessDay))
+        {
+            _resumeBusinessAfterLesson = true;
+            try { BeginDay(); } finally { _resumeBusinessAfterLesson = false; }
+        }
     }
     private void DemoLessonDelivered(DeliveryEvaluation result)
     {
@@ -128,7 +136,7 @@ public partial class WuhanDayScreen
     {
         _demoLessonLocale = TranslationServer.GetLocale();
         _demoLessonTitle!.Text = DemoLessonFailed ? "本次教学未通过" : _demoLessonComplete ? "教学完成，准备营业！"
-            : _demoTeachingDay == 3 ? "牛肉热干面 · 先拌后加" : "第一碗热干面";
+            : TutorialOrders.UnlockFor(_controller.CurrentConfig!)?.Title ?? "第一碗热干面";
         _demoLessonAction!.Text = _demoLessonSaveError.Length > 0 ? "重试保存" : DemoLessonFailed ? "重新练习" : "开始营业";
         _demoLessonHint!.Text = _demoLessonSaveError.Length > 0 ? _demoLessonSaveError
             : DemoLessonFailed ? $"{_demoLessonFailure}\n请按订单要求重新制作并交付。"

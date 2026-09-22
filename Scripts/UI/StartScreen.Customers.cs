@@ -95,11 +95,11 @@ public partial class StartScreen
             Text(button, "State", stats.Regular ? "熟客" : stats.Known ? $"已接待 {stats.Served} 次" : CustomerCategoryName(card.Category), new(8, 177, 158, 24), 19, true);
         }
         var previous = Button(_collectionContent, "CustomerPrevious", "", new(143, 795, 166, 48), () => ChangeCustomerPage(-1), bare: true);
-        PageArrowArt.Apply(previous, false, _customerCategory);
+        PageArrowArt.Apply(previous, false);
         previous.Disabled = _customerPage == 0;
         Text(_collectionContent, "CustomerPage", $"{_customerPage + 1} / {pages}", new(350, 795, 300, 48), 25, true);
         var next = Button(_collectionContent, "CustomerNext", "", new(710, 795, 166, 48), () => ChangeCustomerPage(1), bare: true);
-        PageArrowArt.Apply(next, true, _customerCategory);
+        PageArrowArt.Apply(next, true);
         next.Disabled = _customerPage + 1 == pages;
         Text(_collectionContent, "CustomerFooter", wuhan ? "一顿顿早餐，把过客变成熟悉的面孔。" : "下一站武汉，还有新的朋友等你认识。", new(150, 864, 720, 45), 23, true);
         if (selected is not null) RenderCustomerDetail(selected);

@@ -22,6 +22,7 @@ public partial class StartScreen
     public void PresentCity(string cityId, Action? returnToSource = null, bool fromHome = false)
     {
         if (_save?.IsDemo == true && (_save.ChapterLength(cityId) == 0 || !_save.Data.UnlockedCityIds.Contains(cityId))) return;
+        if (_backdropCity is not null && _backdropCity != cityId) ReleaseCityBackdrop();
         if (fromHome && Page == JourneyPage.Home) OpenHomeOverlay();
         _city = cityId; _cityReturn = returnToSource ?? RenderHome; _homeBookPalette = fromHome;
         SelectedDay = Math.Max(1, JourneyModel.Progress(_save!, cityId).HighestUnlockedDay);
@@ -179,10 +180,10 @@ public partial class StartScreen
         if (lastDay > 15)
         {
             var previous = Button(_body, "PreviousDays", "", new(320, 844, 150, 48), () => { SelectedDay = Math.Max(1, pageStart - 15); RenderLedgerPage(); }, bare: true);
-            PageArrowArt.Apply(previous, false, _city);
+            PageArrowArt.Apply(previous, false, BookPaletteCity);
             previous.Disabled = pageStart == 1;
             var next = Button(_body, "NextDays", "", new(690, 844, 150, 48), () => { SelectedDay = Math.Min(lastDay, pageStart + 15); RenderLedgerPage(); }, bare: true);
-            PageArrowArt.Apply(next, true, _city);
+            PageArrowArt.Apply(next, true, BookPaletteCity);
             next.Disabled = pageStart + 14 >= lastDay;
         }
         for (int d = pageStart; d <= Math.Min(lastDay, pageStart + 14); d++)
@@ -247,6 +248,7 @@ public partial class StartScreen
             PatchMarginRight = plateTexture.GetHeight() / 2, MouseFilter = MouseFilterEnum.Ignore
         };
         start.AddChild(plate);
+        CityPageArtSkin.Apply(plate, BookPaletteCity);
         var startLabel = Text(start, "Caption", startCaption, new(0, 0, start.Size.X, start.Size.Y), 29, true);
         startLabel.AddThemeColorOverride("font_color", StartScreenTheme.Ink);
         startLabel.AddThemeColorOverride("font_outline_color", StartScreenTheme.Cream);

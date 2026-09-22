@@ -29,14 +29,16 @@ public partial class StartScreenSelfTest
         await Until(() => _screen.JourneyStage == FirstJourneyStage.Content);
         await JourneyCapture("opening-postcard");
         await Until(() => _screen.JourneyStage == FirstJourneyStage.Ready);
-        await Delay(.35);
+        await Delay(.5);
         Check(_screen.Page == JourneyPage.NewJourney && Find<Button>("Depart").HasFocus(), "automatic show ends ready to depart");
         Check(cues.SequenceEqual(new[] { OpeningCue.Locate, OpeningCue.Paper, OpeningCue.Postcard }), "material sounds play once in order");
         for (int i = 0; i < 3; i++)
         {
-            Check(Find<Label>("BreakfastStory" + i).Text.Length > 25, "culture copy visible " + i);
-            Check(Find<Label>("BreakfastAvailability" + i).Text == (i == 0 ? "首日经营" : "后续早餐预览"), "first-day availability " + i);
+            Check(!string.IsNullOrWhiteSpace(Find<Label>("BreakfastStory" + i).Text), "culture copy visible " + i);
         }
+        Check(Find<Label>("BreakfastAvailability0").Text == "首日经营"
+            && Find<Label>("BreakfastPreviewHeading").Text == "后续早餐预览", "first-day feature and shared future preview");
+        Check(Find<Label>("PostcardCity").Text == "天津" && Find<TextureRect>("TianjinSkyline").Texture is not null, "Tianjin destination and skyline visible");
         await JourneyCapture("new-journey-tianjin");
         settings.SetLanguage("en"); await Frames(); await JourneyCapture("new-journey-tianjin-en");
         settings.SetLanguage("zh_CN"); await Frames();
@@ -53,7 +55,7 @@ public partial class StartScreenSelfTest
         await Click(Find<Button>("Continue"));
         Check(_screen.Page == JourneyPage.City, "continue retains latest city landing");
 
-        foreach (float time in new[] { .15f, .95f, 1.55f, 2.15f })
+        foreach (float time in new[] { .225f, 1.425f, 2.325f, 3.225f })
         {
             _screen.PresentNewJourney(); await Delay(time);
             var skip = Find<Button>("SkipOpening");
@@ -71,7 +73,7 @@ public partial class StartScreenSelfTest
         await Delay(.9);
         Check(_screen.JourneyStage == stage, "focus loss freezes opening");
         _screen.Notification((int)Node.NotificationApplicationFocusIn);
-        Find<Button>("OpeningHome").EmitSignal(Button.SignalName.Pressed); await Delay(3);
+        Find<Button>("OpeningHome").EmitSignal(Button.SignalName.Pressed); await Delay(4.5);
         Check(_screen.Page == JourneyPage.Home, "leaving cancels all delayed opening steps");
 
         await Click(Find<Button>("Settings"));

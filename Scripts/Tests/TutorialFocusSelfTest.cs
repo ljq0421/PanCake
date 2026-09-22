@@ -60,14 +60,17 @@ public partial class TutorialFocusSelfTest : Node
         {
             _capture = OS.GetCmdlineUserArgs().Contains("--capture");
             bool small = OS.GetCmdlineUserArgs().Contains("--small");
-            _directory = ProjectSettings.GlobalizePath($"res://.tmp/tutorial-focus/{(small ? 720 : 1080)}"); Directory.CreateDirectory(_directory);
+            string outputRoot = OS.GetCmdlineUserArgs().FirstOrDefault(arg => arg.StartsWith("--output="))
+                ?.Substring("--output=".Length) ?? "res://.tmp/tutorial-focus";
+            _directory = ProjectSettings.GlobalizePath($"{outputRoot}/{(small ? 720 : 1080)}"); Directory.CreateDirectory(_directory);
             _viewport = new SubViewport { Size = small ? new Vector2I(1280, 720) : new Vector2I(1920, 1080),
                 Size2DOverride = new Vector2I(1920, 1080), Size2DOverrideStretch = true, Disable3D = true, RenderTargetUpdateMode = SubViewport.UpdateMode.Always };
             AddChild(_viewport); _viewport.NotifyMouseEntered();
             var catalog = GetNode<DataCatalog>("/root/DataCatalog");
             string savePath = Path.Combine(_directory, Guid.NewGuid() + ".json");
             var save = new SaveService(); save.UsePathForTests(savePath); AddChild(save);
-            if (OS.GetCmdlineUserArgs().Contains("--beef-only")) await WuhanBeef(catalog, save);
+            if (OS.GetCmdlineUserArgs().Contains("--sauce-only")) await TianjinSauce(catalog, save);
+            else if (OS.GetCmdlineUserArgs().Contains("--beef-only")) await WuhanBeef(catalog, save);
             else if (OS.GetCmdlineUserArgs().Contains("--wuhan-only")) await Wuhan(catalog, save, savePath);
             else
             {
@@ -88,6 +91,35 @@ public partial class TutorialFocusSelfTest : Node
         }
         catch (Exception error) { GD.PushError(error.ToString()); GetTree().Quit(1); }
     }
+    private async Task TianjinSauce(DataCatalog catalog, SaveService save)
+    {
+        var controller = new DayController(); AddChild(controller);
+        var screen = SceneFactory.Instantiate<TianjinDayScreen>("res://Scenes/Gameplay/TianjinDayScreen.tscn");
+        _viewport.AddChild(screen); screen.ConnectController(controller); screen.SetProcess(false);
+        Check(screen.Initialize(catalog, save, controller, 1), "sauce lesson initializes");
+        screen.BeginDay();
+        string recipe = catalog.RecipesById.Values.First(r => r.Id.StartsWith("pancake") && r.ExtraIngredients.Count == 0).Id;
+        OneOrder(controller, StableIds.Cities.Tianjin, new OrderLineData(ProductKind.Pancake, recipe, 1));
+        controller.Tick(3.1); controller.Tick(.5);
+        var station = screen.Descendants<PancakeWorkstation>().Single();
+        var machine = station.Machine;
+        void Do(PancakeCommand command) => Check(machine.TryExecute(command).Success, "sauce setup " + command);
+        Do(PancakeCommand.PlaceBatter); Do(PancakeCommand.BeginSpread); Do(PancakeCommand.CompleteSpread); Do(PancakeCommand.AddEgg);
+        machine.Tick(machine.Stove.SideAReadySeconds + .01); Do(PancakeCommand.Flip);
+        machine.Tick(machine.Stove.SideBReadySeconds + .01); Do(PancakeCommand.BeginSauce);
+        machine.SetSauceCoverage(.65);
+        await Frames();
+        screen._Notification((int)NotificationApplicationFocusIn); screen.RefreshForCapture(true);
+        var stroke = station.Descendants<StrokeInteractor>().Single();
+        stroke.RefreshVisualState(); screen.TeachingFocus.Refresh();
+        Check(screen.TeachingFocus.CurrentAction == "sauce" && stroke.SauceMeterVisible,
+            "sauce teaching and meter are visible together");
+        Check(!screen.TeachingFocus.CardBounds.Intersects(stroke.GetGlobalTransform() * stroke.SauceMeterBounds()),
+            "sauce teaching card avoids meter");
+        await Shot("tianjin-sauce-meter-teaching");
+        screen.QueueFree(); controller.QueueFree(); await Frames();
+    }
+
     private async Task Tianjin(DataCatalog catalog, SaveService save)
     {
         var controller = new DayController(); AddChild(controller);
@@ -144,7 +176,12 @@ public partial class TutorialFocusSelfTest : Node
                 station.Tick(machine.Stove.SideAReadySeconds + .01); Do(PancakeCommand.Flip); station.Tick(machine.Stove.SideBReadySeconds + .01);
                 screen.RefreshForCapture(true); focus.Refresh(); Check(focus.CurrentAction == "take:sauce", "Tianjin sauce source is highlighted"); await Shot("tianjin-sauce");
                 Do(PancakeCommand.BeginSauce); machine.SetSauceCoverage(1); screen.RefreshForCapture(true); focus.Refresh();
+                Move(station, TianjinWorkbenchLayout.EmbeddedSurface.GetCenter());
+                await Frames(); focus.Refresh();
                 Check(focus.CurrentAction == "sauce", "brush targets pancake surface"); await Shot("tianjin-brush");
+                var stroke = station.Descendants<StrokeInteractor>().Single();
+                Check(stroke.SauceMeterVisible && !focus.CardBounds.Intersects(stroke.GetGlobalTransform() * stroke.SauceMeterBounds()),
+                    "brush teaching card stays clear of the visible sauce meter");
                 Do(PancakeCommand.CompleteSauce); screen.RefreshForCapture(true); focus.Refresh();
                 Check(catalog.RecipesById[id].ExtraIngredients.Any(t => focus.CurrentAction == "take:" + t), "new topping follows the actual order"); await Shot("tianjin-topping");
             }

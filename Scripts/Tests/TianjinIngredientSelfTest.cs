@@ -137,6 +137,7 @@ public partial class TianjinIngredientSelfTest : Node
                 await Wait();
                 Check(!_station.Descendants<Control>().Any(n => n.Name == "IngredientFlight" || n.Name == "EggCrack"), "fold removes all flying food");
                 Check(_station.TryInvokeProductionShortcut(Key.F), "bag immediately follows fold");
+                _station.Tick(.3);
                 Check(_station.CanDeliverProduct("finished_pancake"), "new material effects preserve delivery readiness");
                 _station.ResetForDay(); await Wait();
                 Check(!reveal.Visible && reveal.Modulate.A == 0, "new pancake clears old sauce");

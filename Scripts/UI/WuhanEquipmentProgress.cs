@@ -30,8 +30,11 @@ public partial class WuhanWorkstationView
             () => EquipmentProgressPresentation.Doupi(_doupi), showCaption: false);
         _doupiProgress.Position = new Vector2(_layout.Pan.GetCenter().X - 130, _layout.Pan.End.Y - 53);
         _doupiProgress.Refresh();
-        _mixProgress ??= EquipmentProgressView.Attach(this, "BowlMixProgress", new Rect2(0, 0, 180, 42), ReadMixProgress);
-        _mixProgress.Position = new Vector2(BowlRect.GetCenter().X - 90, BowlRect.End.Y + 2);
+        // Follow the opening, not the full bowl silhouette (which includes its foot).
+        Rect2 mixRing = BowlFood.Grow(29);
+        _mixProgress ??= EquipmentProgressView.Attach(this, "BowlMixProgress", mixRing, ReadMixProgress, showCaption: false, ring: true);
+        _mixProgress.Position = mixRing.Position;
+        _mixProgress.Size = mixRing.Size;
         _mixProgress.Refresh();
     }
 
@@ -49,10 +52,10 @@ public partial class WuhanWorkstationView
         if (_draggedProduct == ProductKind.HotDryNoodles) return default;
         return _bowl.State switch
         {
-            NoodleBowlState.Seasoned => new(true, 0, "按住左键划动拌面"),
+            NoodleBowlState.Seasoned => new(true, 0, ""),
             NoodleBowlState.Mixing => EquipmentProgressState.Working(_bowl.MixProgress,
-                HotDryNoodlesStateMachine.MixCompletionProgress, "拌面中"),
-            NoodleBowlState.Ready when _mixReadySeconds < 1.5 => EquipmentProgressState.Done("已拌匀"),
+                HotDryNoodlesStateMachine.MixCompletionProgress, ""),
+            NoodleBowlState.Ready when _mixReadySeconds < 1.5 => EquipmentProgressState.Done(""),
             _ => default,
         };
     }

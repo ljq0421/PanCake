@@ -167,7 +167,34 @@ public partial class BusinessBookSelfTest
                     Check(!MotionField<bool>(view, "_travelAnimating"), "result timeline completes");
                     await Frames();
                 }
-                model.Closing = false; view.Open(model); Complete("live summary");
+                model.Closing = false;
+                model.ChallengeReward = 0;
+                view.Open(model);
+                var liveTween = PauseMotion(view);
+                Check(Income().Modulate.A == 0 && Note().Modulate.A == 0,
+                    "live summary starts with results hidden");
+                StepMotion(liveTween, 1.14);
+                Check(Caption("93%").Modulate.A == 1 && Income().Modulate.A == 0,
+                    "live summary reveals reception and evaluation before income");
+                if (Capture) await Shot($"motion-{city}-live-reception");
+                StepMotion(liveTween, .45);
+                Check(Income().Modulate.A == 1 && Income().Text != "¥0" && Note().Modulate.A == 0,
+                    "live summary counts income before revealing note");
+                if (Capture) await Shot($"motion-{city}-live-income");
+                StepMotion(liveTween, 1.6);
+                Complete("live summary natural completion");
+                if (Capture) await Shot($"motion-{city}-live-complete");
+                view.Hide(); await Frames(); view.Open(model); PauseMotion(view);
+                Check(Income().Modulate.A == 0, "reopening live summary replays reveal");
+                foreach (bool pressed in new[] { true, false })
+                    GetViewport().PushInput(new InputEventKey { Keycode = Key.Space, Pressed = pressed }, true);
+                Complete("live summary Space skip");
+                view.Open(model); PauseMotion(view);
+                Click(view.Descendants<Button>().Single(b => b.Name == "NextBookPage"));
+                Check(view.DetailVisible, "live summary navigation works during reveal");
+                view.SelectPage(false, false); Complete("live summary return from details");
+                ProjectSettings.SetSetting("accessibility/reduce_motion", true);
+                view.Open(model); Complete("live summary reduced motion");
                 model.Closing = true;
                 ProjectSettings.SetSetting("accessibility/reduce_motion", true);
                 view.Open(model); Complete("reduced motion");

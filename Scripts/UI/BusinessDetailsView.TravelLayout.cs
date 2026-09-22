@@ -33,7 +33,8 @@ public partial class BusinessDetailsView
         closeFocus.ExpandMarginLeft = closeFocus.ExpandMarginRight = closeFocus.ExpandMarginTop = closeFocus.ExpandMarginBottom = 3;
         CloseButton.AddThemeStyleboxOverride("focus", closeFocus);
         SetButtonBounds(_previousPage, new(80, 431, 72, 72));
-        SetButtonBounds(_nextPage, new(1540, 502, 72, 72));
+        // Leave room for hover growth inside the paper after the content's 1.1x scale.
+        SetButtonBounds(_nextPage, new(1450, 502, 72, 72));
         for (int i = 0; i < _filters.Count; i++)
         {
             SetButtonBounds(_filters[i], new(ArtPageRight + i * 142, -24, 134, 52));

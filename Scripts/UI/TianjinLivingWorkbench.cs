@@ -10,6 +10,7 @@ public partial class TianjinLivingWorkbench : Control
     public Func<PancakeRuntime?> Runtime { get; set; } = () => null;
     public Func<bool> Spreading { get; set; } = () => false;
     public Func<float> FlipProgress { get; set; } = () => 1;
+    public Func<float> FlipEdge { get; set; } = () => 1;
     public Action? StopPaymentFeedback { get; set; }
     private TextureRect _pendant = null!, _scraper = null!, _spatula = null!;
     private Tween? _pendantTween;
@@ -86,9 +87,10 @@ public partial class TianjinLivingWorkbench : Control
         float reach = progress < .2f ? Mathf.SmoothStep(0, 1, progress / .2f)
             : 1 - Mathf.SmoothStep(0, 1, (progress - .48f) / .52f);
         float lift = Mathf.Sin(PancakeCanvas.FlipFlight(progress) * Mathf.Pi);
-        Vector2 contact = TianjinWorkbenchLayout.EmbeddedSurface.GetCenter() + new Vector2(125, -12 - 30 * lift);
+        Vector2 contact = TianjinWorkbenchLayout.EmbeddedSurface.GetCenter() + new Vector2(125 * FlipEdge(), -12 - 30 * lift);
         _spatula.Position = SpatulaRect.Position.Lerp(contact, reach);
-        _spatula.RotationDegrees = -12 * reach;
+        _spatula.FlipH = reach > 0 && FlipEdge() < 0;
+        _spatula.RotationDegrees = -12 * reach * FlipEdge();
         QueueRedraw();
     }
 

@@ -274,9 +274,8 @@ public partial class StrokeInteractor : Control
         DrawTool(SpreadToolTexture, SpreadToolSize, SpreadToolContactAnchor);
     }
 
-    private void DrawSauceMeter()
+    internal Rect2 SauceMeterBounds()
     {
-        double amount = Math.Clamp(ResolveSauceAmount!(), 0, SauceRules.MaximumAmount);
         Vector2 size = new(240, 106);
         // Keep the readout anchored above the pancake. It must remain readable
         // while the brush moves across the work surface.
@@ -287,7 +286,15 @@ public partial class StrokeInteractor : Control
         position.X = Mathf.Clamp(position.X, viewport.Position.X + 12, viewport.End.X - size.X - 12);
         position.Y = Mathf.Clamp(position.Y, viewport.Position.Y + 12, viewport.End.Y - size.Y - 12);
         position = transform.AffineInverse() * position;
-        DrawStyleBox(_sauceMeterStyle, new Rect2(position, size));
+        return new Rect2(position, size);
+    }
+
+    private void DrawSauceMeter()
+    {
+        double amount = Math.Clamp(ResolveSauceAmount!(), 0, SauceRules.MaximumAmount);
+        Rect2 bounds = SauceMeterBounds();
+        Vector2 position = bounds.Position, size = bounds.Size;
+        DrawStyleBox(_sauceMeterStyle, bounds);
         DrawString(GetThemeFont("font"), position + new Vector2(12, 26), SauceRules.Describe(amount),
             HorizontalAlignment.Left, size.X - 24, 20, new Color("#553322"));
         Rect2 track = new(position + new Vector2(12, 63), new Vector2(size.X - 24, 6));

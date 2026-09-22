@@ -48,6 +48,61 @@ public partial class OrderBubbleView : PanelContainer
     private readonly Color _complete = new("#DCECC8");
     private OrderData? _order;
     private float _arrivalPaperScale = 1;
+    private Texture2D? _focusPaper;
+    private (Texture2D Texture, Vector2 Size) _focusPaperKey;
+
+    internal TutorialFocusTarget PaperFocus(bool outline)
+    {
+        // Reproduce the drawn nine-slice alpha, including ornaments and the repaired
+        // bottom strip. The layout rectangle deliberately excludes this artwork.
+        var key = (_frame.Texture, Size);
+        if (_focusPaper is null || _focusPaperKey != key)
+        {
+            using Image source = _frame.Texture.GetImage();
+            int width = Mathf.CeilToInt(Size.X);
+            int height = Mathf.CeilToInt(Size.Y + OrnamentOverhang + 14);
+            using Image matte = Image.CreateEmpty(width, height, false, Image.Format.Rgba8);
+            float frameHeight = Size.Y + OrnamentOverhang;
+            float Map(float p, float length, float sourceLength, float start, float end)
+            {
+                float first = start * FrameScale, last = end * FrameScale;
+                return p < first ? p / FrameScale : p >= length - last
+                    ? sourceLength - (length - p) / FrameScale
+                    : start + (p - first) / (length - first - last) * (sourceLength - start - end);
+            }
+            Vector2[] tail = { new(Size.X / 2 - 15, Size.Y - 9), new(Size.X / 2, Size.Y + 12), new(Size.X / 2 + 15, Size.Y - 9) };
+            for (int y = 0; y < height; y++)
+            for (int x = 0; x < width; x++)
+            {
+                Vector2 p = new(x + .5f, y + .5f);
+                float alpha = 0;
+                if (p.Y < frameHeight)
+                {
+                    float sx = Map(p.X, Size.X, source.GetWidth(), _frame.TextureMarginLeft, _frame.TextureMarginRight);
+                    float sy = Map(p.Y, frameHeight, source.GetHeight(), _frame.TextureMarginTop, _frame.TextureMarginBottom);
+                    if (p.Y >= frameHeight - _frame.TextureMarginBottom * FrameScale
+                        && p.X >= _frame.TextureMarginLeft * FrameScale && p.X < Size.X - _frame.TextureMarginRight * FrameScale)
+                        sx = _frame.TextureMarginLeft + (p.X - _frame.TextureMarginLeft * FrameScale)
+                            / (Size.X - (_frame.TextureMarginLeft + _frame.TextureMarginRight) * FrameScale) * 64;
+                    alpha = source.GetPixel(Math.Clamp((int)sx, 0, source.GetWidth() - 1), Math.Clamp((int)sy, 0, source.GetHeight() - 1)).A;
+                }
+                Vector2 local = p - new Vector2(0, OrnamentOverhang);
+                if (Geometry2D.IsPointInPolygon(local, tail)) alpha = 1;
+                for (int edge = 0; edge < 2; edge++)
+                {
+                    float distance = local.DistanceTo(Geometry2D.GetClosestPointToSegment(local, tail[edge], tail[edge + 1]));
+                    alpha = Math.Max(alpha, Mathf.Clamp(2 - distance, 0, 1));
+                }
+                matte.SetPixel(x, y, new Color(1, 1, 1, alpha));
+            }
+            _focusPaper = ImageTexture.CreateFromImage(matte);
+            _focusPaperKey = key;
+        }
+        Vector2 offset = new Vector2(Size.X * .5f, Size.Y + 12) * (1 - _arrivalPaperScale);
+        return TutorialFocusTarget.Sprite(this, _focusPaper,
+            new Rect2(offset + new Vector2(0, -OrnamentOverhang) * _arrivalPaperScale,
+                _focusPaper.GetSize() * _arrivalPaperScale)) with { Outline = outline };
+    }
 
     public void SetArrivalMotion(double age, bool reduced)
     {

@@ -131,7 +131,7 @@ public partial class PancakeWorkstation
             PancakeState.SideBReady => Take("sauce", "点击酱碗拿刷子。"),
             PancakeState.Saucing => Step("sauce", "在饼面刷酱；达到订单酱量后短按右键收刷，或按 F。", Surface()),
             PancakeState.Sauced or PancakeState.Toppings => Step("fold", "配料已齐，按住左侧或右侧饼边，向对侧拖动后松手；也可按 F。", Surface()),
-            PancakeState.Folded => Step("bag", "把折好的煎饼拖到左侧纸袋口，松手装袋；也可按 F。", Surface(), new TutorialFocusTarget(this, _directBag!.FocusOutline)),
+            PancakeState.Folded => Step("bag", _directGesture == DirectGesture.Bag ? "把纸袋拖到煎饼上，松手套袋。" : "取左侧纸袋，拖到煎饼上套袋；也可按 F。", _directGesture == DirectGesture.Bag ? new[] { Surface() } : new[] { new TutorialFocusTarget(this, _directBag!.FocusOutline) }),
             PancakeState.Bagged => Deliver("finished_pancake", ProductKind.Pancake, _finished, "装袋的煎饼", FinishedRecipe()),
             PancakeState.Burnt => Step("discard", "在焦饼上长按右键 0.45 秒，再拖入垃圾桶。", Surface()),
             _ => null,

@@ -16,7 +16,7 @@ public partial class PancakeWorkstation
     private bool DirectBusy => IsDirectDragging || _directBag?.Animating == true;
     internal float ToolFlipProgress => _canvas.FlipPickup > 0 ? .08f + .12f * _canvas.FlipPickup : FlipProgress;
     internal float FlipEdge => _canvas.FlipEdge;
-    internal Rect2 BagMouth => _directBag?.Mouth ?? default;
+    internal Rect2 BagStackBounds => _directBag?.StackBounds ?? default;
     private bool CanDirectGesture => IsTianjinWorkbench && _initialized && CanInteract && IsVisibleInTree()
         && !IsFlipping && !_foldHeld && !_drag.IsDragging && !_rightPressed;
     private Vector2 DirectLocal(Vector2 point) => GetGlobalTransformWithCanvas().AffineInverse() * point;
@@ -45,7 +45,7 @@ public partial class PancakeWorkstation
             Vector2 local = _canvas.GetGlobalTransformWithCanvas().AffineInverse() * mouse.Position;
             bool success = _directGesture == DirectGesture.Flip
                 ? _flipDragAmount >= .65f && _canvas.GetSurfaceRect().Grow(25).HasPoint(local)
-                : _directBag!.NearMouth;
+                : _directBag!.OverFood;
             ReleaseDirectGesture(success);
             return true;
         }
@@ -66,13 +66,13 @@ public partial class PancakeWorkstation
         else if (Machine.Runtime.State == PancakeState.Folded)
         {
             Vector2 point = DirectLocal(mouse.Position);
-            if (!new Rect2(FoodCenter - new Vector2(130, 110), new Vector2(260, 220)).HasPoint(point)) return false;
+            if (!_directBag!.StackBounds.HasPoint(point))
+                return new Rect2(FoodCenter - new Vector2(130, 110), new Vector2(260, 220)).HasPoint(point);
             CancelFold();
             _directGesture = DirectGesture.Bag;
-            _bagGrabOffset = FoodCenter - point;
+            _bagGrabOffset = _directBag.StackBounds.GetCenter() - point;
             _directBag!.Begin(FoodCenter, Machine.Runtime.Quality == PancakeQuality.Overdone
                 ? new Color(.82f, .56f, .33f) : Colors.White);
-            _canvas.DirectFoodHidden = true;
         }
         else return false;
         _directGeneration = Machine.Runtime.Generation;
@@ -92,7 +92,7 @@ public partial class PancakeWorkstation
             _canvas.FlipPickup = ReducedMotion ? 0 : .08f + .92f * _flipDragAmount;
             _canvas.QueueRedraw();
         }
-        else _directBag!.MoveFood(DirectLocal(point) + _bagGrabOffset, ReducedMotion);
+        else _directBag!.MoveBag(DirectLocal(point) + _bagGrabOffset, ReducedMotion);
         RenderLive();
     }
 
@@ -112,7 +112,11 @@ public partial class PancakeWorkstation
         else if (gesture == DirectGesture.Bag)
         {
             _directBag!.Release(success, ReducedMotion);
-            if (success) CompleteDirectBag();
+            if (success)
+            {
+                _canvas.DirectFoodHidden = !ReducedMotion;
+                CompleteDirectBag();
+            }
             else if (ReducedMotion) _canvas.DirectFoodHidden = false;
         }
         RenderLive();
@@ -137,7 +141,9 @@ public partial class PancakeWorkstation
             CancelDirectGesture();
         if (_directBag is not null)
         {
-            _directBag.Visible = Machine.Runtime.State == PancakeState.Folded || _directBag.Animating;
+            _directBag.Show();
+            _directBag.MouseDefaultCursorShape = CanDirectGesture && Machine.Runtime.State == PancakeState.Folded
+                ? CursorShape.Drag : CursorShape.Arrow;
             if (_directBag.Animating) _finished.Hide();
         }
     }
@@ -170,15 +176,17 @@ public partial class PancakeWorkstation
 
     private void ConfigureDirectFood()
     {
-        _directBag = new TianjinBagVisual { Name = "DirectPaperBag", ZIndex = 42, MouseFilter = MouseFilterEnum.Ignore };
+        _directBag = new TianjinBagVisual { Name = "DirectPaperBag", ZIndex = 42,
+            Size = new Vector2(1920, 1080), MouseFilter = MouseFilterEnum.Pass };
         AddChild(_directBag);
-        _directBag.Configure(_art.FoldedPancake);
-        // Keep pickup and delivery at the same bag, beside the left edge of the stove.
+        _directBag.Configure(_art.FoldedPancake, _art.FinishedPancake);
+        // Packaging stays on the stove; the stack remains available beside it.
         Control slot = _finished.GetParent<Control>();
-        slot.Position = new Vector2(522, 733);
+        slot.Position = FoodCenter - new Vector2(130, 130);
+        slot.Size = new Vector2(260, 260);
         _bagArt!.Position = new Vector2(0, 0);
-        _bagArt.Size = new Vector2(170, 190);
-        _finished.Size = new Vector2(170, 190);
-        _directDeliveryHint.Position = new Vector2(-25, 185);
+        _bagArt.Size = new Vector2(260, 260);
+        _finished.Size = new Vector2(260, 260);
+        _directDeliveryHint.Position = new Vector2(18, 255);
     }
 }

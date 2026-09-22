@@ -969,7 +969,11 @@ public partial class PancakeWorkstation : Control
             Place(_pancakeStatusTag, footer);
         }
         if (_lastPancakeState is PancakeState previousPancake && previousPancake != state && IsPancakeAttentionState(state))
+        {
             PulseAttention(_canvas, state == PancakeState.Burnt ? TianjinUi.Red : state == PancakeState.SideAOverdone ? TianjinUi.Orange : TianjinUi.Yellow);
+            if (state == PancakeState.SideAReady && CanInteract && IsVisibleInTree())
+                _audio.Play(PancakeSound.Ready);
+        }
         _lastPancakeState = state;
         _fryerPanel.Visible = FryerMachine is not null;
         if (FryerMachine is not null)
@@ -1061,7 +1065,7 @@ public partial class PancakeWorkstation : Control
         SyncFold();
         SyncDirectGesture();
         if (IsTianjinWorkbench)
-            _stroke.MouseDefaultCursorShape = (CanFoldGesture || (CanDirectGesture && Machine.Runtime.State is PancakeState.SideAReady or PancakeState.SideAOverdone or PancakeState.Folded)) ? CursorShape.Drag : CursorShape.Cross;
+            _stroke.MouseDefaultCursorShape = (CanFoldGesture || (CanDirectGesture && Machine.Runtime.State is PancakeState.SideAReady or PancakeState.SideAOverdone)) ? CursorShape.Drag : CursorShape.Cross;
         _state.Text = _batterDropAnimating ? "正在落浆"
             : UseServingTray && IsTransferringBag && Machine.Runtime.State == PancakeState.Empty
                 ? "正在放入成品托盘 · 可继续摊饼"
@@ -1070,7 +1074,7 @@ public partial class PancakeWorkstation : Control
         if (IsTianjinWorkbench && Machine.Runtime.State is PancakeState.SideAReady or PancakeState.SideAOverdone)
             _state.Text = _directGesture == DirectGesture.Flip ? _flipDragAmount >= .65f ? "松手翻面" : "向饼心短拖" : "按住饼边向内拖 · 翻面";
         if (IsTianjinWorkbench && Machine.Runtime.State == PancakeState.Folded)
-            _state.Text = _directGesture == DirectGesture.Bag ? _directBag!.NearMouth ? "松手装袋" : "拖到纸袋口" : "把煎饼拖入左侧纸袋";
+            _state.Text = _directGesture == DirectGesture.Bag ? _directBag!.OverFood ? "松手套袋" : "把纸袋拖到煎饼上" : "从左侧取纸袋，拖到煎饼上";
         if (IsTianjinWorkbench && Machine.Runtime.State == PancakeState.SideACooking)
             _state.Text = Machine.Runtime.HasEgg ? "等待翻面" : "可加鸡蛋";
         if (IsTianjinWorkbench && Machine.Runtime.State is PancakeState.Sauced or PancakeState.Toppings)

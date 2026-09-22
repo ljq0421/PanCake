@@ -69,7 +69,8 @@ public partial class TutorialFocusSelfTest : Node
             var catalog = GetNode<DataCatalog>("/root/DataCatalog");
             string savePath = Path.Combine(_directory, Guid.NewGuid() + ".json");
             var save = new SaveService(); save.UsePathForTests(savePath); AddChild(save);
-            if (OS.GetCmdlineUserArgs().Contains("--sauce-only")) await TianjinSauce(catalog, save);
+            if (OS.GetCmdlineUserArgs().Contains("--order-paper-only")) await OrderPaper(catalog, save);
+            else if (OS.GetCmdlineUserArgs().Contains("--sauce-only")) await TianjinSauce(catalog, save);
             else if (OS.GetCmdlineUserArgs().Contains("--beef-only")) await WuhanBeef(catalog, save);
             else if (OS.GetCmdlineUserArgs().Contains("--wuhan-only")) await Wuhan(catalog, save, savePath);
             else
@@ -91,6 +92,40 @@ public partial class TutorialFocusSelfTest : Node
         }
         catch (Exception error) { GD.PushError(error.ToString()); GetTree().Quit(1); }
     }
+    private async Task OrderPaper(DataCatalog catalog, SaveService save)
+    {
+        foreach (bool wuhan in new[] { false, true })
+        {
+            var controller = new DayController(); AddChild(controller);
+            Control screen = wuhan
+                ? SceneFactory.Instantiate<WuhanDayScreen>("res://Scenes/Gameplay/WuhanDayScreen.tscn")
+                : SceneFactory.Instantiate<TianjinDayScreen>("res://Scenes/Gameplay/TianjinDayScreen.tscn");
+            _viewport.AddChild(screen); screen.SetProcess(false);
+            TutorialFocusLayer focus;
+            if (screen is WuhanDayScreen ws)
+            { ws.ConnectController(controller); Check(ws.Initialize(catalog, save, controller, 1), "Wuhan paper initializes"); ws.BeginDay(); focus = ws.TeachingFocus; }
+            else
+            { var ts = (TianjinDayScreen)screen; ts.ConnectController(controller); Check(ts.Initialize(catalog, save, controller, 1), "Tianjin paper initializes"); ts.BeginDay(); focus = ts.TeachingFocus; }
+            controller.Tick(3.1); controller.Tick(.5);
+            await Frames();
+            screen._Notification((int)NotificationApplicationFocusIn);
+            if (screen is WuhanDayScreen refresh) refresh.RefreshForCapture(); else ((TianjinDayScreen)screen).RefreshForCapture(true);
+            await Frames(); focus.Refresh();
+            Check(focus.Visible, "order paper checked under active teaching shade");
+            var card = screen.Descendants<OrderBubbleView>().First(c => c.IsVisibleInTree());
+            var target = TutorialFocusTarget.Control(card, false);
+            Check(target.Texture is not null && !target.Outline && target.Bounds.Position.Y < 0 && target.Bounds.End.Y > card.Size.Y,
+                "teaching includes paper ornaments and tail without a rectangular outline");
+            using Image matte = target.Texture!.GetImage();
+            Check(matte.GetPixel(0, 0).A < .01f && matte.GetPixel(matte.GetWidth() / 2, matte.GetHeight() / 2).A > .99f,
+                "paper center stays bright and surrounding corner remains shaded");
+            Check(matte.GetPixel(matte.GetWidth() / 2, matte.GetHeight() - 4).A > .99f,
+                "paper tail stays bright");
+            await Shot(wuhan ? "wuhan-order-paper" : "tianjin-order-paper");
+            screen.QueueFree(); controller.QueueFree(); await Frames();
+        }
+    }
+
     private async Task TianjinSauce(DataCatalog catalog, SaveService save)
     {
         var controller = new DayController(); AddChild(controller);

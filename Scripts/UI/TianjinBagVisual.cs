@@ -2,21 +2,20 @@ using Godot;
 
 namespace ProjectCake.UI;
 
-// Reuses the painted paper portion of the existing product texture as a native
-// textured mesh. The moving food is drawn between the back lip and front wall.
+// Reuses the existing painted paper for both the flat stack and the moving bag.
 public partial class TianjinBagVisual : Control
 {
-    private Texture2D _paper = null!, _food = null!;
-    private Vector2 _foodPosition, _home, _from;
+    private Texture2D _paper = null!, _food = null!, _finished = null!;
+    private Rect2 _paperRegion;
+    private Vector2 _foodCenter, _position, _from;
     private Color _foodTint = Colors.White;
     private bool _held, _commit;
-    private float _time, _opening;
+    private float _time, _opening, _fromOpening;
     public bool Animating { get; private set; }
-    public bool NearMouth { get; private set; }
-    public Rect2 Mouth => new(520, 757, 182, 80);
-    internal Vector2[] FocusOutline => Wall.Select(Map).ToArray();
-    private static readonly Rect2 ArtRect = new(461, 666, 288, 316);
-    // Pixel coordinates on the 1280 reference, normalized at draw time.
+    public bool OverFood { get; private set; }
+    public Rect2 StackBounds => new(516, 818, 172, 98);
+    internal Vector2[] FocusOutline => Wall.Select(p => StackPoint(p, StackBounds.GetCenter())).ToArray();
+    private static readonly Vector2 PaperPivot = new(647, 765);
     private static readonly Vector2[] Rim = new Vector2[] { new(293, 533), new(329, 546), new(373, 560),
         new(412, 582), new(507, 558), new(630, 535), new(757, 517), new(792, 523),
         new(852, 510), new(925, 498), new(970, 476) }.Select(p => p + new Vector2(0, 8)).ToArray();
@@ -25,27 +24,29 @@ public partial class TianjinBagVisual : Control
         new Vector2(1005, 922), new Vector2(467, 1045), new Vector2(420, 1038),
         new Vector2(279, 931), new Vector2(271, 907), new Vector2(303, 657), new Vector2(287, 557) }).ToArray();
 
-    public void Configure(Texture2D food)
+    public void Configure(Texture2D food, Texture2D finished)
     {
-        _food = food;
+        _food = food; _finished = finished;
         _paper = GD.Load<Texture2D>("res://resource/art/TianJin/装袋后的通用煎饼果子.png");
-        Hide();
+        _paperRegion = finished is AtlasTexture atlas ? atlas.Region : new Rect2(Vector2.Zero, finished.GetSize());
+        Show(); QueueRedraw();
     }
-    public void Begin(Vector2 home, Color tint)
+    public override bool _HasPoint(Vector2 point) => StackBounds.HasPoint(point);
+    public void Begin(Vector2 foodCenter, Color tint)
     {
-        Cancel(); _home = _foodPosition = home; _foodTint = tint; _held = true; Show(); QueueRedraw();
+        Cancel(); _foodCenter = foodCenter; _position = StackBounds.GetCenter();
+        _foodTint = tint; _held = true; QueueRedraw();
     }
-    public void MoveFood(Vector2 point, bool reduced)
+    public void MoveBag(Vector2 point, bool reduced)
     {
-        NearMouth = Mouth.Grow(18).HasPoint(point);
-        _opening = Mathf.Clamp(1 - point.DistanceTo(Mouth.GetCenter()) / 190, 0, 1);
-        // Small magnetic assistance; never accepts a release outside the generous mouth.
-        _foodPosition = NearMouth && !reduced ? point.Lerp(Mouth.GetCenter() + new Vector2(0, -48), .18f) : point;
+        OverFood = new Rect2(_foodCenter - new Vector2(120, 95), new Vector2(240, 190)).HasPoint(point);
+        _opening = Mathf.Clamp(1 - point.DistanceTo(_foodCenter) / 240, 0, 1);
+        _position = OverFood && !reduced ? point.Lerp(_foodCenter + new Vector2(0, 40), .18f) : point;
         QueueRedraw();
     }
     public void Release(bool commit, bool reduced)
     {
-        _held = false; _commit = commit; _from = _foodPosition; _time = 0;
+        _held = false; _commit = commit; _from = _position; _fromOpening = _opening; _time = 0;
         Animating = !reduced;
         if (reduced) Cancel();
         QueueRedraw();
@@ -54,40 +55,59 @@ public partial class TianjinBagVisual : Control
     {
         if (!Animating) return false;
         _time += Math.Max(0, delta);
-        float duration = _commit ? .28f : .16f;
-        float t = Mathf.Clamp(_time / duration, 0, 1);
-        _foodPosition = _from.Lerp(_commit ? Mouth.GetCenter() + new Vector2(0, 15) : _home, 1 - Mathf.Pow(1 - t, 3));
-        _opening = _commit ? 1 - t : _opening * (1 - t);
+        float t = Mathf.Clamp(_time / (_commit ? .28f : .16f), 0, 1);
+        float ease = 1 - Mathf.Pow(1 - t, 3);
+        _position = _from.Lerp(_commit ? _foodCenter : StackBounds.GetCenter(), ease);
+        _opening = Mathf.Lerp(_fromOpening, _commit ? 1 : 0, ease);
         if (reduced || t >= 1) { Cancel(); return true; }
         QueueRedraw(); return false;
     }
     public void Cancel()
     {
-        _held = false; Animating = false; NearMouth = false; _opening = 0; QueueRedraw();
+        _held = false; Animating = false; OverFood = false; _opening = 0; QueueRedraw();
     }
-    private static Vector2 Map(Vector2 pixel) => ArtRect.Position + pixel / 1280 * ArtRect.Size;
+    private static Vector2 StackPoint(Vector2 pixel, Vector2 center) =>
+        center + ((pixel - PaperPivot) * .23f).Rotated(Mathf.Pi / 2) * new Vector2(1.15f, .42f);
+    private Rect2 FinishedRect(Vector2 center)
+    {
+        Vector2 size = _finished.GetSize();
+        size *= Math.Min(260 / size.X, 260 / size.Y);
+        return new Rect2(center - size * .5f, size);
+    }
+    private Vector2 OpenPoint(Vector2 pixel, Vector2 center)
+    {
+        Rect2 rect = FinishedRect(center);
+        return rect.Position + (pixel - _paperRegion.Position) / _paperRegion.Size * rect.Size;
+    }
+    private void DrawPaper(Vector2 center, float opening, float alpha = 1)
+    {
+        Vector2 Map(Vector2 p) => StackPoint(p, center).Lerp(OpenPoint(p, center), opening);
+        Vector2[] front = Rim.Select(Map).ToArray();
+        Vector2[] back = Rim.Select(p => Map(p + new Vector2(0, -10 - 25 * opening))).ToArray();
+        DrawColoredPolygon(back.Concat(front.Reverse()).ToArray(), new Color(.36f, .19f, .08f, alpha));
+        DrawPolygon(Wall.Select(Map).ToArray(), new[] { new Color(1, 1, 1, alpha) },
+            Wall.Select(p => p / 1280).ToArray(), _paper);
+    }
     public override void _Draw()
     {
         if (_paper is null) return;
-        Vector2[] front = Rim.Select(Map).ToArray();
-        Vector2[] back = front.Select(p => p + new Vector2(0, -5 - 16 * _opening)).ToArray();
-        float sway = Animating && _commit ? Mathf.Sin(_time / .28f * Mathf.Tau) * .025f : 0;
-        Vector2 pivot = new(610, 920);
-        DrawSetTransform(pivot, sway);
-        Vector2[] opening = back.Concat(front.Reverse()).Select(p => p - pivot).ToArray();
-        DrawColoredPolygon(opening, new Color("#6d391c"));
-        DrawPolyline(back.Select(p => p - pivot).ToArray(), new Color("#ecc493"), 5, true);
-        DrawSetTransform(Vector2.Zero);
-        if (_held || Animating)
+        // Three shallow layers remain on the counter even while one is held.
+        for (int i = 2; i >= 0; i--)
+            DrawPaper(StackBounds.GetCenter() + new Vector2(-i * 5, i * 5), 0);
+        if (!_held && !Animating) return;
+        if (!_commit || _held)
         {
-            float t = Animating && _commit ? Mathf.Clamp(_time / .28f, 0, 1) : 0;
-            Vector2 size = new Vector2(260, 220).Lerp(new Vector2(158, 145), t);
-            DrawTextureRect(_food, new Rect2(_foodPosition - size * .5f, size), false, _foodTint);
+            DrawPaper(_position + new Vector2(0, 34 * _opening), _opening);
+            return;
         }
-        DrawSetTransform(pivot, sway);
-        DrawPolygon(Wall.Select(p => Map(p) - pivot).ToArray(), new[] { Colors.White },
-            Wall.Select(p => p / 1280).ToArray(), _paper);
-        DrawPolyline(front.Select(p => p - pivot).ToArray(), new Color("#603416"), 2.5f, true);
-        DrawSetTransform(Vector2.Zero);
+        float t = Mathf.Clamp(_time / .28f, 0, 1);
+        float settle = Mathf.SmoothStep(.5f, 1, t);
+        // A small lift frees the bottom edge; the paper slides up and encloses it.
+        Vector2 foodPosition = _foodCenter + new Vector2(0, -9 * Mathf.Sin(t * Mathf.Pi));
+        Vector2 size = new(260, 220);
+        DrawTextureRect(_food, new Rect2(foodPosition - size * .5f, size), false,
+            new Color(_foodTint, 1 - settle));
+        DrawPaper(_position + new Vector2(0, 34 * _fromOpening * (1 - t)), _opening, 1 - settle);
+        DrawTextureRect(_finished, FinishedRect(_foodCenter), false, new Color(1, 1, 1, settle));
     }
 }

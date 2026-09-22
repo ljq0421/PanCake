@@ -102,15 +102,16 @@ public partial class TianjinDirectFoodCapture : Node
             _caption.Text = "② 折叠：抓住一侧饼边，向对侧拖\n饼皮随手弯曲，松手贴合";
             await Travel(Food(.1f), 28); Press(true); await Travel(Food(.64f), 90); await Wait(20); Press(false);
             await Wait(65); Require(PancakeState.Folded);
-            _caption.Text = "③ 装袋：抓起折好的煎饼\n没有放到袋口，松手会回到炉面";
-            await Travel(Food(.5f, .45f), 35); Press(true); await Travel(Food(.7f, .3f), 45); await Wait(20); Press(false); await Wait(65);
+            _caption.Text = "③ 套袋：从左侧纸袋叠取出一张\n未拖到煎饼上，纸袋会回到原位";
+            Vector2 stack = _station.GetGlobalTransformWithCanvas() * _station.BagStackBounds.GetCenter();
+            await Travel(stack, 35); Press(true); await Travel(stack + new Vector2(-80, -80), 45); await Wait(20); Press(false); await Wait(65);
             Require(PancakeState.Folded);
-            _caption.Text = "拖近左侧纸袋，袋口张开并轻微吸附\n松手后滑入纸袋";
-            await Travel(Food(.5f, .45f), 30); Press(true);
-            Vector2 mouth = _station.GetGlobalTransformWithCanvas() * _station.BagMouth.GetCenter();
+            _caption.Text = "把纸袋拖到炉面煎饼上\n松手后从下端套入，露出饼的上沿";
+            await Travel(stack, 30); Press(true);
+            Vector2 mouth = Food(.5f, .45f);
             await Travel(mouth, 85); await Wait(35); Press(false); await Wait(65);
             Require(PancakeState.Bagged);
-            _caption.Text = "装袋完成，可从原位置拖给顾客\n翻面、折叠、装袋也都保留 F 键辅助";
+            _caption.Text = "套袋完成，从炉面拖给顾客\n翻面、折叠、装袋也都保留 F 键辅助";
             await Travel(mouth + new Vector2(-80, -60), 30); await Wait(110);
             GD.Print("DIRECT_FOOD_CAPTURE_OK"); GetTree().Quit();
         }

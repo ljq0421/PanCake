@@ -2,6 +2,7 @@ using Godot;
 using ProjectCake.Core;
 using ProjectCake.Data;
 using ProjectCake.Gameplay;
+using ProjectCake.Interaction;
 using ProjectCake.Pancake;
 using ProjectCake.UI;
 
@@ -9,7 +10,7 @@ namespace ProjectCake.Tests;
 
 public partial class TianjinDirectFoodSelfTest : Node
 {
-    private const string Output = "res://artifacts/tianjin-direct-food-20260922";
+    private const string Output = "res://artifacts/tianjin-bag-stack-20260922";
     private int _checks;
     private bool Capture => OS.GetCmdlineUserArgs().Contains("--capture");
     private void Check(bool value, string message)
@@ -56,7 +57,8 @@ public partial class TianjinDirectFoodSelfTest : Node
                 station.WorkbenchActionLearned += action => { if (action == "flip") flips++; if (action == "bag") bags++; };
                 Vector2 Point(float x, float y = .5f) => GetViewport().GetFinalTransform() * canvas.GetGlobalTransformWithCanvas()
                     * (canvas.GetSurfaceRect().Position + canvas.GetSurfaceRect().Size * new Vector2(x, y));
-                Vector2 Mouth() => GetViewport().GetFinalTransform() * station.GetGlobalTransformWithCanvas() * station.BagMouth.GetCenter();
+                Vector2 Stack() => GetViewport().GetFinalTransform() * station.GetGlobalTransformWithCanvas() * station.BagStackBounds.GetCenter();
+                Vector2 Food() => Point(.5f, .45f);
                 void Mouse(Vector2 at, bool down) { Input.ParseInputEvent(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = down, Position = at }); Input.FlushBufferedEvents(); }
                 void Move(Vector2 at) { Input.ParseInputEvent(new InputEventMouseMotion { Position = at, ButtonMask = MouseButtonMask.Left }); Input.FlushBufferedEvents(); }
                 void Ready(PancakeState state = PancakeState.SideAReady)
@@ -68,6 +70,9 @@ public partial class TianjinDirectFoodSelfTest : Node
                     if (state == PancakeState.Folded) station.Machine.Runtime.AddIngredient("crispy"); station.RefreshForCapture();
                 }
                 Ready(); await Frames();
+                Check(station.GetNode<Control>("DirectPaperBag").IsVisibleInTree(), "paper stack visible before folding");
+                Mouse(Stack(), true); Mouse(Stack(), false);
+                Check(!station.IsDirectDragging && station.Machine.Runtime.State == PancakeState.SideAReady, "paper pickup requires folded food");
                 Check(!((Button)station.FindChild("PancakeFlipAction", true, false)).Visible, "flip button removed");
                 Mouse(Point(.9f), true); await Frames(); Move(Point(.82f)); await Frames();
                 Check(station.IsDirectDragging && !station.IsFlipping && station.Machine.Runtime.State == PancakeState.SideAReady, "edge lift does not commit early");
@@ -94,38 +99,62 @@ public partial class TianjinDirectFoodSelfTest : Node
                 Check(!station.IsDirectDragging && canvas.FlipPickup == 0 && station.Machine.Runtime.State == PancakeState.Burnt, "burn invalidates gesture");
                 Ready(PancakeState.Folded); await Frames(); await Shot($"bag-ready-{width}");
                 Check(!((Button)station.FindChild("PancakeBagAction", true, false)).Visible, "bag button removed");
-                Mouse(Point(.5f, .45f), true); Move(Point(.75f)); Mouse(Point(.75f), false); station.Tick(.2); await Frames();
-                Check(station.Machine.Runtime.State == PancakeState.Folded && !canvas.DirectFoodHidden && bags == 0, "missed bag returns food without consuming");
-                Mouse(Point(.5f, .45f), true); Move(Mouth()); await Frames(); await Shot($"bag-mouth-{width}");
-                Check(station.IsDirectDragging && station.Machine.Runtime.State == PancakeState.Folded, "hover opens bag without committing");
-                Mouse(Mouth(), false);
+                Mouse(Food(), true); Move(Stack()); Mouse(Stack(), false);
+                Check(!station.IsDirectDragging && !canvas.DirectFoodHidden && station.Machine.Runtime.State == PancakeState.Folded,
+                    "old food-to-stack gesture cannot package or move food");
+                Mouse(Stack(), true); Move(Stack() + new Vector2(-80, -80)); Mouse(Stack() + new Vector2(-80, -80), false); station.Tick(.2); await Frames();
+                Check(station.Machine.Runtime.State == PancakeState.Folded && !canvas.DirectFoodHidden && bags == 0, "missed food returns paper to stack without consuming food");
+                Mouse(Stack(), true); Move(Food()); await Frames(); await Shot($"bag-mouth-{width}");
+                Check(station.IsDirectDragging && !canvas.DirectFoodHidden && station.Machine.Runtime.State == PancakeState.Folded, "paper hovers over stationary food without committing");
+                Check(!station.TryInvokeProductionShortcut(Key.F), "held paper blocks shortcut duplication");
+                Mouse(Food(), false);
                 Check(bags == 1 && station.Machine.Runtime.State == PancakeState.Bagged, "bag release commits once");
                 Check(!station.CanDeliverProduct("finished_pancake"), "food cannot deliver during insertion");
                 station.Tick(.12); await Frames(); await Shot($"bag-insert-{width}");
                 station.Tick(.2); await Frames(); await Shot($"bag-complete-{width}");
                 Check(station.CanDeliverProduct("finished_pancake") && station.Machine.Runtime.ExtraIngredients.Contains("crispy"), "finished bag is deliverable with recipe preserved");
+                var finished = (Control)station.FindChild("FinishedPancakeDrag", true, false);
+                Check(finished.GetGlobalRect().HasPoint(GetViewport().GetFinalTransform().AffineInverse() * Food()), "finished food is picked up on stove");
+                Check(!finished.GetGlobalRect().HasPoint(GetViewport().GetFinalTransform().AffineInverse() * Stack()), "paper stack is separate from delivery hit area");
+                Check(station.GetNode<Control>("DirectPaperBag").Visible, "stack remains after packaging");
+                Mouse(Stack(), true); Mouse(Stack(), false);
+                Check(!station.IsDirectDragging && station.Machine.Runtime.State == PancakeState.Bagged, "cannot package a finished order twice");
+                Mouse(Food(), true); Move(Food() + new Vector2(0, -50)); await Frames();
+                Check(station.Descendants<DragService>().Single().IsDragging, "actual mouse can pick up packaged food from stove");
+                Input.ParseInputEvent(new InputEventKey { Keycode = Key.Escape, Pressed = true }); Input.FlushBufferedEvents();
+                Mouse(Food(), false); await Frames();
+                Check(station.CanDeliverProduct("finished_pancake"), "cancelled delivery returns packaged food");
+                Check(station.DeliverToCustomer("finished_pancake", () => true) && station.Machine.Runtime.State == PancakeState.Empty,
+                    "successful handoff clears stove for next pancake");
+                Check(station.GetNode<Control>("DirectPaperBag").Visible, "stack persists after handoff");
                 Ready(); Mouse(Point(.9f), true); Move(Point(.5f)); screen.OpenBusinessDetails(); await Frames();
                 Check(!station.IsDirectDragging && canvas.FlipPickup == 0, "details cancel uncommitted flip");
                 screen.CloseBusinessDetails(); screen.RefreshForCapture(true);
-                Ready(PancakeState.Folded); Mouse(Point(.5f, .45f), true); Move(Mouth()); screen._Notification((int)NotificationApplicationFocusOut);
-                Check(!station.IsDirectDragging && !canvas.DirectFoodHidden && station.Machine.Runtime.State == PancakeState.Folded, "focus loss returns unbagged food");
+                Ready(PancakeState.Folded); Mouse(Stack(), true); Move(Food()); screen._Notification((int)NotificationApplicationFocusOut);
+                Check(!station.IsDirectDragging && !canvas.DirectFoodHidden && station.Machine.Runtime.State == PancakeState.Folded, "focus loss returns paper and keeps food on stove");
                 screen._Notification((int)NotificationApplicationFocusIn); screen.RefreshForCapture(true);
                 Ready(PancakeState.Folded); Check(station.TryInvokeProductionShortcut(Key.F), "F bags with same animation");
                 screen.OpenBusinessDetails(); await Frames();
                 Check(station.Machine.Runtime.State == PancakeState.Bagged && !canvas.DirectFoodHidden, "pause settles committed bag");
                 screen.CloseBusinessDetails(); screen.RefreshForCapture(true);
-                Ready(PancakeState.Folded); Mouse(Point(.5f, .45f), true); Move(Mouth());
+                Ready(PancakeState.Folded); Mouse(Stack(), true); Move(Food());
                 Input.ParseInputEvent(new InputEventKey { Keycode = Key.Escape, Pressed = true }); Input.FlushBufferedEvents(); station.Tick(.2);
-                Check(station.Machine.Runtime.State == PancakeState.Folded && !station.IsDirectDragging, "Escape returns food");
+                Check(station.Machine.Runtime.State == PancakeState.Folded && !station.IsDirectDragging, "Escape returns paper");
+                Mouse(Stack(), true); Move(Food());
+                Input.ParseInputEvent(new InputEventMouseButton { ButtonIndex = MouseButton.Right, Pressed = true, Position = Food() }); Input.FlushBufferedEvents();
+                station.Tick(.2); Mouse(Food(), false);
+                Input.ParseInputEvent(new InputEventMouseButton { ButtonIndex = MouseButton.Right, Pressed = false, Position = Food() }); Input.FlushBufferedEvents();
+                Check(station.Machine.Runtime.State == PancakeState.Folded && !station.IsDirectDragging && !canvas.DirectFoodHidden,
+                    "right click returns paper without discarding food");
                 Ready(); ProjectSettings.SetSetting("accessibility/reduce_motion", true); await Frames();
                 Mouse(Point(.9f), true); Check(station.IsDirectDragging, "reduced motion still starts gesture");
                 Move(Point(.5f)); Mouse(Point(.5f), false);
                 Check(!station.IsFlipping && station.Machine.Runtime.State == PancakeState.SideBCooking, $"reduced motion flips immediately (state={station.Machine.Runtime.State}, paused={station.Paused}, held={station.IsDirectDragging})");
-                Ready(PancakeState.Folded); Mouse(Point(.5f, .45f), true); Move(Mouth()); Mouse(Mouth(), false);
+                Ready(PancakeState.Folded); Mouse(Stack(), true); Move(Food()); Mouse(Food(), false);
                 Check(station.CanDeliverProduct("finished_pancake") && !canvas.DirectFoodHidden, "reduced motion bags immediately and releases stove visual");
                 ProjectSettings.SetSetting("accessibility/reduce_motion", false);
                 Ready(); Check(station.TryInvokeProductionShortcut(Key.F), "F flip retained"); station.Tick(.4);
-                Ready(PancakeState.Folded); Mouse(Point(.5f, .45f), true); station.ResetForDay();
+                Ready(PancakeState.Folded); Mouse(Stack(), true); station.ResetForDay();
                 Check(!station.IsDirectDragging && !canvas.DirectFoodHidden, "reset clears gesture");
                 Ready(); Mouse(Point(.9f), true); screen.Hide(); await Frames();
                 Check(!station.IsDirectDragging && canvas.FlipPickup == 0, "hide clears gesture");

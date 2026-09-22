@@ -21,7 +21,8 @@ public sealed record TutorialFocusTarget(CanvasItem Owner, Vector2[] Points, boo
     private static readonly Dictionary<(Texture2D, Rect2I), Vector2[][]> ArtPaths = new();
     public static Vector2[] Rectangle(Rect2 r) => new[] { r.Position, new Vector2(r.End.X, r.Position.Y), r.End, new Vector2(r.Position.X, r.End.Y) };
     public static TutorialFocusTarget Area(CanvasItem owner, Rect2 r, bool outline = true) => new(owner, Rectangle(r), outline);
-    public static TutorialFocusTarget Control(Control control, bool outline = true) => control is Button button && button.GetThemeStylebox("normal") is StyleBoxFlat style
+    public static TutorialFocusTarget Control(Control control, bool outline = true) => control is OrderBubbleView bubble ? bubble.PaperFocus(outline)
+        : control is Button button && button.GetThemeStylebox("normal") is StyleBoxFlat style
         ? new(control, ButtonContourHighlight.ContourPoints(style, new Rect2(Vector2.Zero, control.Size)), outline)
         : Area(control, new Rect2(Vector2.Zero, control.Size), outline);
     public static TutorialFocusTarget[] Artwork(Control control) => control.FindChildren("*", "", true, false)

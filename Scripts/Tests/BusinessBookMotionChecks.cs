@@ -67,6 +67,52 @@ public partial class BusinessBookSelfTest
         }
         try
         {
+            foreach (string city in new[] { "tianjin", "wuhan", "xian", "guangzhou", "yangzhou" })
+            {
+                bool travel = city is "tianjin" or "wuhan";
+                var soundModel = new BusinessBookModel
+                {
+                    CityId = city, Closing = true,
+                    Result = new() { SaleRevenue = 40, CompletedCustomers = 1 },
+                    ChallengeReward = travel ? 20 : 0
+                };
+                view.Open(soundModel);
+                var soundTween = PauseMotion(view);
+                var sound = view.GetNodeOrNull<AudioStreamPlayer>("IncomeCountAudio");
+                Check(sound?.Playing != true, city + " silent before income count");
+                StepMotion(soundTween, travel ? 1.60 : .75);
+                sound = view.GetNodeOrNull<AudioStreamPlayer>("IncomeCountAudio");
+                Check(sound?.Playing == true && sound.Bus == JourneySettings.EffectsBus,
+                    city + " income count plays on effects bus");
+                if (travel)
+                {
+                    StepMotion(soundTween, .25);
+                    Check(!sound!.Playing, city + " base income sound ends with count");
+                    StepMotion(soundTween, .16);
+                    Check(sound.Playing, city + " challenge reward count plays sound");
+                }
+                view._Notification((int)NotificationApplicationFocusOut);
+                Check(!sound!.Playing, city + " focus loss stops counting sound");
+                StepMotion(soundTween, .03);
+                Check(!sound.Playing, city + " unfocused count stays silent");
+                view._Notification((int)NotificationApplicationFocusIn);
+                view.FinishAnimation();
+                Check(!sound.Playing, city + " skip stops counting sound");
+
+                view.Open(soundModel); soundTween = PauseMotion(view);
+                StepMotion(soundTween, travel ? 1.60 : .75);
+                view.Hide();
+                Check(!sound.Playing, city + " closing stops counting sound");
+                view.Open(new() { CityId = city, Closing = true });
+                soundTween = PauseMotion(view);
+                StepMotion(soundTween, travel ? 1.60 : .75);
+                Check(!sound.Playing, city + " zero income stays silent");
+                view.FinishAnimation();
+                ProjectSettings.SetSetting("accessibility/reduce_motion", true);
+                view.Open(soundModel);
+                Check(!sound.Playing, city + " static income stays silent");
+                ProjectSettings.SetSetting("accessibility/reduce_motion", false);
+            }
             foreach (string city in new[] { "tianjin", "wuhan" })
             {
                 var fixture = Fixture(city);

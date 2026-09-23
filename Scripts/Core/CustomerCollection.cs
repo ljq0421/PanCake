@@ -74,4 +74,9 @@ public static partial class CustomerCollection
             if (count > 0) yield return $"{captions[i]} · {count} 位";
         }
     }
+
+    /// <summary>Stable card IDs whose first successful service was saved in this settlement.</summary>
+    public static string[] NewlyKnownIds(IReadOnlyDictionary<string, int> before, IReadOnlyDictionary<string, CustomerStatistics> after) =>
+        Cards.Where(card => after.TryGetValue(card.Id, out var stats) && stats.Known
+            && before.GetValueOrDefault(card.Id) < 1).Select(card => card.Id).ToArray();
 }

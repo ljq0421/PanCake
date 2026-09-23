@@ -50,19 +50,25 @@ public partial class WuhanUnlockSelfTest : Node
             _save.CommitDay(model.Result, plan, config); Check(_save.Data.Coins == 100, "same settlement cannot pay twice");
             _save.Load(); Check(_save.HasUnseenWuhanUnlock && _save.Data.Wuhan.HighestUnlockedDay == 1, "unlock persists before animation");
             day.AbandonDay(); var book = screen.BusinessDetails; book.Open(model);
-            Check(book.CloseButton.Text == "展开新旅程", "stable first-frame primary caption");
+            Check(book.CloseButton.Text == "开始第 8 天", "unlock keeps next-day primary caption");
+            Check(book.Descendants<Button>().Any(b => b.Name == "NewCityUnlock"), "new city has a dedicated clickable notice");
+            book.SelectPage(true, false);
+            Check(!book.Descendants<Button>().Single(b => b.Name == "NewCityUnlock").IsVisibleInTree(), "notice belongs to summary only");
+            book.SelectPage(false, false);
             await Delay(4); await Capture("settlement");
-            book.Descendants<Button>().Single(b => b.Text == "留在天津").EmitSignal(BaseButton.SignalName.Pressed); await Delay(1);
-            Check(home.Visible && home.Page == JourneyPage.Ledger && home.SelectedDay == 8 && home.SelectedCityId == StableIds.Cities.Tianjin, "settlement stay opens Tianjin Day8 ledger");
+            book.CloseButton.EmitSignal(BaseButton.SignalName.Pressed); await Delay(1);
+            Check(screen.Visible && day.CurrentConfig?.Day == 8, "settlement continues Tianjin Day8 directly");
+            Check(_save.HasUnseenWuhanUnlock, "continuing Tianjin preserves unseen city reminder");
+            day.AbandonDay();
             home.PresentMap(); JourneyTransition.For(this).Finish(); await Frames();
-            Check(home.Descendants<Label>().Any(l => l.Name == "WuhanNewTag"), "unseen unlock has a quiet map reminder");
+            Check(home.Descendants<Button>().Any(b => b.Name == "Node1" && !b.Disabled), "unlocked Wuhan remains accessible on map");
             home.Hide(); screen.Show(); book.Open(model); book.FinishAnimation(); JourneyTransition.For(this).Finish();
-            book.CloseButton.EmitSignal(BaseButton.SignalName.Pressed);
+            OpenNewJourney(book);
             var show = main.GetNode<WuhanUnlockPresentation>("WuhanUnlockPresentation");
             await Delay(2); await Capture("node-lit");
             // Exiting before the final postcard must never revert the unlock or mark it seen.
             show.QueueFree(); await Frames(); _save.Load(); Check(_save.HasUnseenWuhanUnlock, "interrupted animation keeps durable unlock and unseen flag");
-            book.Open(model); book.FinishAnimation(); JourneyTransition.For(this).Finish(); book.CloseButton.EmitSignal(BaseButton.SignalName.Pressed);
+            book.Open(model); book.FinishAnimation(); JourneyTransition.For(this).Finish(); OpenNewJourney(book);
             show = main.GetNode<WuhanUnlockPresentation>("WuhanUnlockPresentation");
             GetViewport().PushInput(new InputEventKey { Keycode = Key.Escape, Pressed = true }, true);
             Check(show.FinalVisible && _save.Data.WuhanUnlockPresentationSeen, "Escape lands on final postcard and persists seen state");
@@ -74,7 +80,7 @@ public partial class WuhanUnlockSelfTest : Node
             show.Descendants<Button>().Single(b => b.Text == "留在天津").EmitSignal(BaseButton.SignalName.Pressed); await Delay(1);
             Check(home.SelectedDay == 8 && home.Page == JourneyPage.Ledger && _save.Data.UnlockedCityIds.Contains(StableIds.Cities.Wuhan), "postcard stay retains both cities");
             // Replay the visual fixture to test natural completion and the real departure callback.
-            home.Hide(); screen.Show(); book.Open(model); book.FinishAnimation(); JourneyTransition.For(this).Finish(); book.CloseButton.EmitSignal(BaseButton.SignalName.Pressed);
+            home.Hide(); screen.Show(); book.Open(model); book.FinishAnimation(); JourneyTransition.For(this).Finish(); OpenNewJourney(book);
             show = main.GetNode<WuhanUnlockPresentation>("WuhanUnlockPresentation");
             await Delay(4.9); Check(show.FinalVisible && _save.Data.LastVisitedCityId == StableIds.Cities.Tianjin, "natural ending waits for player");
             show.Notification((int)NotificationApplicationFocusOut); show.Notification((int)NotificationApplicationFocusIn);
@@ -114,7 +120,7 @@ public partial class WuhanUnlockSelfTest : Node
         GD.Print("MOVIE_SETTLEMENT_FRAME=" + Engine.GetProcessFrames());
         screen.BusinessDetails.Open(model);
         await Delay(6);
-        screen.BusinessDetails.CloseButton.EmitSignal(BaseButton.SignalName.Pressed);
+        OpenNewJourney(screen.BusinessDetails);
         var show = main.GetNode<WuhanUnlockPresentation>("WuhanUnlockPresentation");
         await Delay(7.8);
         Check(show.FinalVisible, "recording reaches final postcard");
@@ -126,6 +132,7 @@ public partial class WuhanUnlockSelfTest : Node
             && day.CurrentConfig?.Day == 1 && day.State is DayState.Opening or DayState.Running, "recording starts Wuhan Day1 business");
         GD.Print("WUHAN_UNLOCK_MOVIE_COMPLETE");
     }
+    private static void OpenNewJourney(BusinessDetailsView book) => book.Descendants<Button>().Single(b => b.Name == "NewCityUnlock").EmitSignal(BaseButton.SignalName.Pressed);
     private async Task Frames() { for (int i = 0; i < 3; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame); }
     private async Task Delay(double seconds) => await ToSignal(GetTree().CreateTimer(seconds), SceneTreeTimer.SignalName.Timeout);
     private async Task Capture(string name)

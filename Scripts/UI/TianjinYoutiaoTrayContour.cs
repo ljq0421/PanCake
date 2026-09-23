@@ -7,7 +7,7 @@ internal static class TianjinYoutiaoTrayContour
 {
     // Measured on both 1672 x 941 backgrounds. The shadow is outside the ink rim;
     // the fryer feet end above this crop and must never deform the tray highlight.
-    internal static readonly Rect2I SourceBounds = new(88, 709, 373, 125);
+    internal static readonly Rect2I SourceBounds = new(16, 709, 373, 125);
     private static readonly Dictionary<Texture2D, Texture2D> Masks = new();
 
     public static void Draw(CanvasItem canvas, Texture2D background, InteractionHighlightState state)

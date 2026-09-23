@@ -37,14 +37,22 @@ public partial class TianjinDayScreen
     {
         bool replay = retry ? _demoLessonReplay : ForceDemoTutorial;
         var unlock = TutorialOrders.UnlockFor(_controller.CurrentConfig!);
-        if (!retry && !replay && (_resumeBusinessAfterLesson || unlock is null || unlock.IsLearned(_save.Data.Tianjin.LearnedWorkbenchActions))) return false;
+        bool firstLesson = _controller.CurrentConfig!.Day == 1
+            && !_save.Data.Tianjin.LearnedWorkbenchActions.Contains("deliver:finished_pancake");
+        if (!retry && !replay && (_resumeBusinessAfterLesson
+            || !firstLesson && (unlock is null || unlock.IsLearned(_save.Data.Tianjin.LearnedWorkbenchActions)))) return false;
         _demoBusinessDay = _controller.CurrentConfig!.Day;
         _demoTeachingDay = retry ? _demoTeachingDay : replay ? 1 : _demoBusinessDay;
         ForceDemoTutorial = false;
         _demoLessonReplay = replay;
         if (!_controller.TryPrepareTutorial(StableIds.Cities.Tianjin, _demoTeachingDay, _catalog, out string error)) { ShowFeedback(error, true); return true; }
         _workstation.Initialize(_catalog, 1, 1, _controller.CurrentConfig!.AvailableProductKinds.Contains(ProductKind.Youtiao) ? 1 : 0, _controller.CurrentConfig!, _art);
-        _workstation.ConfigureTutorial(null);
+        // 薄脆和葱花是已有煎饼流程上的新配料；独立练习只提示这两项，
+        // 不再从摊饼等已会的基础步骤重新教学。
+        IEnumerable<string>? learnedForLesson = unlock?.DefinitionId == StableIds.Recipes.ScallionCrispy
+            ? PancakeWorkstation.AllWorkbenchActions.Except(unlock.Actions, StringComparer.Ordinal)
+            : null;
+        _workstation.ConfigureTutorial(learnedForLesson);
         _workstation.ResetForDay();
         if (_demoTeachingDay == 1 && _demoBusinessDay == 1)
             _workstation.ConfigureFirstPancakeEggLesson(1);

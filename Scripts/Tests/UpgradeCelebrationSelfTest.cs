@@ -125,22 +125,20 @@ public partial class UpgradeCelebrationSelfTest : Node
         teaching.Refresh(); effect._Process(.3);
         Check(effect.IsPlaying && !effect.Visible && effect.PlayedCount == 0 && save.Data.GetCity(city).PendingUpgradeCelebrations.Count == Equipment(city).Length, "workbench teaching defers the queued cue without consuming it");
         teaching.Resolve = () => null; teaching.Refresh();
-        int i = 0;
-        while (effect.IsPlaying)
+        effect._Process(.3);
+        Check(effect.Visible && effect.CurrentCaption.Length > 5 && !effect.CurrentCaption.Contains("Lv."), "visible functional caption");
+        Check(effect.HighlightedIds.Order().SequenceEqual(Equipment(city).Order()), "opening highlights all upgrades together");
+        Check(Equipment(city).All(id => effect.CurrentCaption.Contains(EquipmentUpgradePresentation.FirstUse(id, 2))), "opening describes all upgrades together");
+        foreach (string id in Equipment(city)) effect.NotifyUse(id);
+        if (_capture)
         {
-            effect._Process(.3);
-            Check(effect.Visible && effect.CurrentCaption.Length > 5 && !effect.CurrentCaption.Contains("Lv."), "visible functional caption");
-            Check(effect.CurrentCaption == EquipmentUpgradePresentation.FirstUse(Equipment(city)[i], 2), "opening displays upgrades in order without equipment use");
-            foreach (string id in Equipment(city)) effect.NotifyUse(id);
-            if (_capture)
-            {
-                await Frames(); await ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
-                Check(GetViewport().GetTexture().GetImage().SavePng(Path.Combine(_dir, $"{city.Replace(':', '-')}-{i}.png")) == Error.Ok, "capture");
-            }
-            effect._Process(2.8); i++;
+            await Frames(); await ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
+            Check(GetViewport().GetTexture().GetImage().SavePng(Path.Combine(_dir, $"{city.Replace(':', '-')}-all.png")) == Error.Ok, "capture");
         }
+        effect._Process(2.8);
+        Check(!effect.IsPlaying, "all upgrade highlights finish together");
         var pauseReasons = (HashSet<string>)typeof(DayController).GetField("_pauseReasons", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.GetValue(controller)!;
-        Check(effect.PlayedCount == Equipment(city).Length, $"one chime per equipment: {city}, played={effect.PlayedCount}, pending={save.Data.GetCity(city).PendingUpgradeCelebrations.Count}, paused={controller.IsPaused}, reasons={string.Join(',', pauseReasons)}, teaching={teaching.CurrentAction}");
+        Check(effect.PlayedCount == 1, $"one chime per simultaneous upgrade group: {city}, played={effect.PlayedCount}, pending={save.Data.GetCity(city).PendingUpgradeCelebrations.Count}, paused={controller.IsPaused}, reasons={string.Join(',', pauseReasons)}, teaching={teaching.CurrentAction}");
         Check(effect.Begin(save, controller, out _) && !effect.IsPlaying, "same day does not repeat");
         foreach (string id in Equipment(city)) effect.NotifyUse(id);
         Check(!effect.IsPlaying, "consumed opening cues do not queue again");
@@ -152,7 +150,7 @@ public partial class UpgradeCelebrationSelfTest : Node
         Check(!effect.IsPlaying && save.Data.GetCity(city).PendingUpgradeCelebrations.Count == 1, "independent tutorial preserves pending cue");
         controller.TryPrepareDay(city, 8, catalog, out _); controller.TryStartDay(out _); controller.Tick(DayController.OpeningDurationSeconds);
         Check(effect.IsPlaying, "later opening automatically queues the new upgrade");
-        effect._Process(.1); Check(effect.IsPlaying && effect.CurrentCaption == EquipmentUpgradePresentation.FirstUse(first, 3), "later opening displays new benefit without equipment use");
+        effect._Process(.1); Check(effect.IsPlaying && effect.CurrentCaption.Contains(EquipmentUpgradePresentation.FirstUse(first, 3)), "later opening displays new benefit without equipment use");
         controller.SetPauseReason("test", true); effect._Process(.01);
         Check(effect.IsPlaying && !effect.Visible && !effect.AudioPlaying, "pause preserves cue and stops sound");
         controller.SetPauseReason("test", false); effect._Process(.1);

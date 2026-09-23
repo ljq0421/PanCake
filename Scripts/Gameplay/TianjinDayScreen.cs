@@ -246,12 +246,19 @@ public partial class TianjinDayScreen : Control
             if (_feedbackRemaining <= 0) _feedbackPanel.Visible = false;
         }
         if (_controller is null || !_focused || !IsVisibleInTree()) { UpdateDemoLesson(); return; }
+        SyncRefillTeachingClock();
         if (!DemoLessonFailed) _controller.Tick(delta);
         _workstation.Paused = _controller.IsPaused || DemoLessonFailed;
         _workstation.InteractionEnabled = !_demoLessonComplete && !DemoLessonFailed && _controller.State is DayState.Running or DayState.Closing;
         _workstation.Tick(delta);
         UpdateDemoLesson();
         Render();
+    }
+
+    private void SyncRefillTeachingClock()
+    {
+        bool teachingRefill = TeachingFocus?.CurrentAction?.StartsWith("refill:", StringComparison.Ordinal) == true;
+        _controller?.SetBusinessClockFrozen("tianjin-refill-teaching", teachingRefill);
     }
 
     public override void _Notification(int what)

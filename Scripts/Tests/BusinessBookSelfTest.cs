@@ -384,7 +384,7 @@ public partial class BusinessBookSelfTest : Node
     private static bool IsPageArrow(Control c) => c.Name == "NextBookPage" || c.Name == "PreviousBookPage"
         || c is PageArrowArt && c.GetParent() is Control parent && IsPageArrow(parent);
     private static bool InArrowRegion(Rect2 r, string city) => city is "tianjin" or "wuhan"
-        ? r.Size.X>=59f && r.Size.Y>=59f && ((r.Position.X>=60&&r.End.X<=140&&r.Position.Y>=350&&r.End.Y<=455)||(r.Position.X>=1250&&r.End.X<=1370&&r.Position.Y>=410&&r.End.Y<=525))
+        ? r.Size.X>=59f && r.Size.Y>=59f && ((r.Position.X>=190&&r.End.X<=270&&r.Position.Y>=350&&r.End.Y<=455)||(r.Position.X>=1250&&r.End.X<=1370&&r.Position.Y>=410&&r.End.Y<=525))
         : r.Size.X>=53f && r.Size.Y>=53f && r.Position.Y>=420&&r.End.Y<=510
         && ((r.Position.X>=110&&r.End.X<=190)||(r.Position.X>=1200&&r.End.X<=1300));
     private static bool InPaperColumn(Rect2 bounds) =>

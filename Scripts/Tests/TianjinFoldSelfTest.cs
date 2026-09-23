@@ -9,7 +9,8 @@ namespace ProjectCake.Tests;
 
 public partial class TianjinFoldSelfTest : Node
 {
-    private const string Output = "res://artifacts/tianjin-fold-20260922";
+    private bool CaptureCursor => OS.GetCmdlineUserArgs().Contains("--pinch-cursor");
+    private string Output => CaptureCursor ? "res://artifacts/pinch-cursor-20260923/fold" : "res://artifacts/tianjin-fold-20260922";
     private int _checks;
     private bool Capture => OS.GetCmdlineUserArgs().Contains("--capture");
     private void Check(bool value, string message)
@@ -37,7 +38,7 @@ public partial class TianjinFoldSelfTest : Node
             var settings = GetNode<JourneySettings>("/root/JourneySettings");
             settings.UsePathForTests($"{Output}/settings.cfg");
             InterfaceLessons.MarkAllSeen(settings);
-            if (Capture) GetWindow().Position = new Vector2I(-10000, -10000);
+            if (Capture && !CaptureCursor) GetWindow().Position = new Vector2I(-10000, -10000);
             var catalog = GetNode<DataCatalog>("/root/DataCatalog");
             var screenScene = GD.Load<PackedScene>("res://Scenes/Gameplay/TianjinDayScreen.tscn");
             foreach (int width in new[] { 1920, 1280 })
@@ -60,10 +61,16 @@ public partial class TianjinFoldSelfTest : Node
                 station.WorkbenchActionLearned += action => { if (action == "fold") learnedFolds++; };
                 Vector2 Point(float x, float y = .5f) => GetViewport().GetFinalTransform() * canvas.GetGlobalTransformWithCanvas()
                     * (canvas.GetSurfaceRect().Position + canvas.GetSurfaceRect().Size * new Vector2(x, y));
-                void Mouse(float x, bool pressed, float y = .5f) => Input.ParseInputEvent(new InputEventMouseButton
-                    { ButtonIndex = MouseButton.Left, Pressed = pressed, Position = Point(x, y) });
-                void Move(float x) => Input.ParseInputEvent(new InputEventMouseMotion
-                    { Position = Point(x), ButtonMask = MouseButtonMask.Left });
+                void Mouse(float x, bool pressed, float y = .5f)
+                {
+                    Input.ParseInputEvent(new InputEventMouseButton
+                        { ButtonIndex = MouseButton.Left, Pressed = pressed, Position = Point(x, y) });
+                }
+                void Move(float x)
+                {
+                    Input.ParseInputEvent(new InputEventMouseMotion
+                        { Position = Point(x), ButtonMask = MouseButtonMask.Left });
+                }
                 void Ready(PancakeState state = PancakeState.Toppings)
                 {
                     station.CancelInput(); station.Machine.TryExecute(PancakeCommand.Discard);
@@ -74,6 +81,7 @@ public partial class TianjinFoldSelfTest : Node
                     station.RefreshForCapture();
                 }
                 Ready(); await Frames(); await Shot($"ready-{width}");
+                if (CaptureCursor) { GetWindow().GrabFocus(); await Frames(8); }
                 var guidance = station.ResolveFocus(Array.Empty<TutorialOrder>(), (_, _) => Array.Empty<TutorialFocusTarget>());
                 Check(guidance is { ActionId: "fold" } && guidance.Text.Contains("拖动")
                     && guidance.Targets.Single().Owner == station, "fold guidance targets the stove and explains dragging");
@@ -81,6 +89,8 @@ public partial class TianjinFoldSelfTest : Node
                 Mouse(.1f, true); await Frames();
                 Check(station.IsFoldDragging, "real left input grabs the pancake edge");
                 Move(.3f); await Frames(); await Shot($"lift-{width}");
+                if (CaptureCursor) Check(station.GetNode<PancakePinchCursor>("PancakePinchCursor").Visible
+                    && Input.MouseMode == Input.MouseModeEnum.Hidden, $"fold drag uses the cartoon pinch cursor (focus={GetWindow().HasFocus()}, pointer={GetViewport().GetMousePosition()}, mode={Input.MouseMode}, paused={station.Paused}, held={station.IsFoldDragging})");
                 if (Capture)
                 {
                     var snapshot = (SubViewport)canvas.FindChild("FoldFoodSnapshot", true, false);
@@ -126,6 +136,7 @@ public partial class TianjinFoldSelfTest : Node
                 Check(station.Machine.Runtime.State == PancakeState.Toppings, "dragging back below threshold cancels");
                 Ready(); Mouse(.1f, true); Move(.4f); screen.OpenBusinessDetails(); await Frames();
                 Check(!station.IsFoldDragging && !canvas.FoldPreviewVisible, "details cancel unfinished fold");
+                if (CaptureCursor) Check(Input.MouseMode == Input.MouseModeEnum.Visible, "details restore OS cursor");
                 screen.CloseBusinessDetails(); screen.RefreshForCapture(true);
                 Ready(); Mouse(.1f, true); Move(.4f); screen._Notification((int)NotificationApplicationFocusOut);
                 Check(!station.IsFoldDragging && !canvas.FoldPreviewVisible, "focus loss clears preview");

@@ -11,6 +11,15 @@ public partial class PancakeWorkstation
     private long _directGeneration;
     private Vector2 _directOrigin, _directInward, _bagGrabOffset;
     private float _flipDragAmount;
+    private const float FlipCommitAmount = .65f;
+    private const float FlipDragDistance = 55;
+    private bool IsFlipGrabPoint(Vector2 local)
+    {
+        Rect2 bounds = _canvas.GetSurfaceRect();
+        Vector2 unit = (local - bounds.GetCenter()) / (bounds.Size * .5f);
+        // Allow a little space outside the painted rim, and a wider inner grip.
+        return unit.LengthSquared() is >= .16f and <= 1.44f;
+    }
     private TianjinBagVisual? _directBag;
     internal bool IsDirectDragging => _directGesture != DirectGesture.None;
     private bool DirectBusy => IsDirectDragging || _directBag?.Animating == true;
@@ -42,9 +51,8 @@ public partial class PancakeWorkstation
         {
             if (!IsDirectDragging) return false;
             MoveDirectGesture(mouse.Position);
-            Vector2 local = _canvas.GetGlobalTransformWithCanvas().AffineInverse() * mouse.Position;
             bool success = _directGesture == DirectGesture.Flip
-                ? _flipDragAmount >= .65f && _canvas.GetSurfaceRect().Grow(25).HasPoint(local)
+                ? _flipDragAmount >= FlipCommitAmount
                 : _directBag!.OverFood;
             ReleaseDirectGesture(success);
             return true;
@@ -55,7 +63,7 @@ public partial class PancakeWorkstation
             Rect2 bounds = _canvas.GetSurfaceRect();
             Vector2 local = _canvas.GetGlobalTransformWithCanvas().AffineInverse() * mouse.Position;
             Vector2 unit = (local - bounds.GetCenter()) / (bounds.Size * .5f);
-            if (unit.LengthSquared() is < .36f or > 1.15f) return false;
+            if (!IsFlipGrabPoint(local)) return false;
             _directGesture = DirectGesture.Flip;
             _directOrigin = local;
             _directInward = (bounds.GetCenter() - local).Normalized();
@@ -88,7 +96,7 @@ public partial class PancakeWorkstation
         if (_directGesture == DirectGesture.Flip)
         {
             Vector2 local = _canvas.GetGlobalTransformWithCanvas().AffineInverse() * point;
-            _flipDragAmount = Mathf.Clamp((local - _directOrigin).Dot(_directInward) / 70, 0, 1);
+            _flipDragAmount = Mathf.Clamp((local - _directOrigin).Dot(_directInward) / FlipDragDistance, 0, 1);
             _canvas.FlipPickup = ReducedMotion ? 0 : .08f + .92f * _flipDragAmount;
             _canvas.QueueRedraw();
         }

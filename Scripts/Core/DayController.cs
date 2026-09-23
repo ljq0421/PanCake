@@ -60,10 +60,16 @@ public partial class DayController : Node
     public double ClosingRemainingSeconds { get; private set; }
     private bool _paused;
     private readonly HashSet<string> _pauseReasons = new(StringComparer.Ordinal);
+    // Some in-shift guidance needs the service clock to stop while its local interaction continues.
+    private readonly HashSet<string> _businessClockFreezeReasons = new(StringComparer.Ordinal);
     public bool IsPaused { get => _paused || _pauseReasons.Count > 0; set => _paused = value; }
     internal void SetPauseReason(string reason, bool paused)
     {
         if (paused) _pauseReasons.Add(reason); else _pauseReasons.Remove(reason);
+    }
+    internal void SetBusinessClockFrozen(string reason, bool frozen)
+    {
+        if (frozen) _businessClockFreezeReasons.Add(reason); else _businessClockFreezeReasons.Remove(reason);
     }
     public double DayRemainingSeconds => Math.Max(0, (CurrentConfig?.DurationSeconds ?? 0) - DayElapsedSeconds);
     public Func<string, int>? GuangzhouStockCount { get; set; }
@@ -91,7 +97,7 @@ public partial class DayController : Node
         }
 
         DetachFeedbackQueue();
-        _paused = false; _pauseReasons.Clear();
+        _paused = false; _pauseReasons.Clear(); _businessClockFreezeReasons.Clear();
         Tutorial = tutorial ?? config.Tutorial;
         Feedback.Reset();
         CurrentConfig = config;
@@ -162,6 +168,12 @@ public partial class DayController : Node
 
         if (State == DayState.Running)
         {
+            if (_businessClockFreezeReasons.Count > 0)
+            {
+                // Keep the workstation running (for example, to finish a taught refill), while
+                // the service countdown and customer patience remain exactly where they were.
+                return;
+            }
             if (Tutorial.FreezeBusinessClocks)
             {
                 // Only the example at t=0 arrives; patience and business clocks do not advance.

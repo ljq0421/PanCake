@@ -119,7 +119,7 @@ public partial class WuhanWorkstationView : Control
                 UV = outline.Select(p => p / WuhanWorkbenchLayout.DesignSize * sheet.GetSize()).ToArray(),
                 Texture = sheet, Antialiased = true,
             });
-            foreach (var layer in BowlLayers(food, _bowl.State, (float)_bowl.MixProgress, _bowl.Quality, _bowl.Toppings))
+            foreach (var layer in BowlLayers(food, _bowl.HasBaseSeasoning, (float)_bowl.MixProgress, _bowl.Quality, _bowl.Toppings))
                 Layer(layer.Id, layer.Rect, alpha: layer.Alpha);
         }
         else if (kind == ProductKind.Doupi && _stock.Count > 0)
@@ -687,7 +687,7 @@ public partial class WuhanWorkstationView : Control
         if (!delivering)
         {
             if (_bowl.State != NoodleBowlState.Empty && !(m?.Kind == "pour" && m.Progress < .82f && !ReducedMotion))
-                DrawBowlContents(LoopFoodRect(BowlFood), _bowl.State, (float)_bowl.MixProgress, _bowl.Quality, _bowl.Toppings,
+                DrawBowlContents(LoopFoodRect(BowlFood), _bowl.HasBaseSeasoning, (float)_bowl.MixProgress, _bowl.Quality, _bowl.Toppings,
                     !ReducedMotion && m?.Kind == "ingredient" && m.Progress < .62f ? m.Ingredient : "");
         }
         if (_bowl.State != NoodleBowlState.Ready && _mixLast is Vector2 pointer && InBowl(pointer))
@@ -706,11 +706,10 @@ public partial class WuhanWorkstationView : Control
         "chili_overlay" => new Rect2(.12f, .14f, .74f, .68f),
         _ => new Rect2(.48f, .28f, .40f, .43f),
     });
-    private static IEnumerable<(string Id, Rect2 Rect, float Alpha)> BowlLayers(Rect2 food,
-        NoodleBowlState state, float progress, NoodleQuality quality, IEnumerable<string> toppings, string hidden = "")
+    internal static IEnumerable<(string Id, Rect2 Rect, float Alpha)> BowlLayers(Rect2 food,
+        bool seasoned, float progress, NoodleQuality quality, IEnumerable<string> toppings, string hidden = "")
     {
         yield return ("bowl_noodles", food, 1);
-        bool seasoned = state is NoodleBowlState.Seasoned or NoodleBowlState.Mixing or NoodleBowlState.Ready;
         if (seasoned && hidden != StableIds.Ingredients.WuhanBaseSeasoning)
         {
             float half = Mathf.Clamp(progress / 50, 0, 1), mixed = Mathf.Clamp((progress - 40) / 60, 0, 1);
@@ -726,11 +725,11 @@ public partial class WuhanWorkstationView : Control
                 yield return (id, ToppingPlacement(food, id), 1);
             }
     }
-    private void DrawBowlContents(Rect2 food, NoodleBowlState state, float progress, NoodleQuality quality,
+    private void DrawBowlContents(Rect2 food, bool seasoned, float progress, NoodleQuality quality,
         IEnumerable<string> toppings, string hidden = "", float opacity = 1)
     {
         Motion? motion = Find("bowl");
-        foreach (var layer in BowlLayers(food, state, progress, quality, toppings, hidden))
+        foreach (var layer in BowlLayers(food, seasoned, progress, quality, toppings, hidden))
         {
             if (layer.Id is "bowl_noodles" or "unmixed" or "half_mixed" or "mixed" or "overcooked")
             {

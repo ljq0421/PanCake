@@ -12,6 +12,12 @@ public partial class PancakeWorkstation
     private float _foldAmount;
     private PancakeFoldVisual? _foldVisual;
     internal bool IsFoldDragging => _foldHeld;
+    private bool IsFoldGrabPoint(Vector2 local)
+    {
+        Rect2 bounds = _canvas.GetSurfaceRect();
+        Vector2 unit = (local - bounds.GetCenter()) / (bounds.Size * .5f);
+        return unit.LengthSquared() <= 1.12f && Math.Abs(unit.X) >= .35f;
+    }
     private bool CanFoldGesture => IsTianjinWorkbench && _initialized && CanInteract
         && IsVisibleInTree() && !IsFlipping && !DirectBusy && !_drag.IsDragging && !_rightPressed
         && Machine.Runtime.State is PancakeState.Sauced or PancakeState.Toppings;
@@ -50,7 +56,7 @@ public partial class PancakeWorkstation
         Rect2 bounds = _canvas.GetSurfaceRect();
         Vector2 local = _canvas.GetGlobalTransformWithCanvas().AffineInverse() * mouse.Position;
         Vector2 unit = (local - bounds.GetCenter()) / (bounds.Size * .5f);
-        if (unit.LengthSquared() > 1.12f || Math.Abs(unit.X) < .35f) return false;
+        if (!IsFoldGrabPoint(local)) return false;
         CancelFold();
         _foldHeld = true;
         _foldOrigin = local;

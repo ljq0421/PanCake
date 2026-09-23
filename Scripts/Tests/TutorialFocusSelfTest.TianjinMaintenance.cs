@@ -46,6 +46,9 @@ public partial class TutorialFocusSelfTest
         station.Inventory.TryConsume("egg", station.Inventory.GetCapacity("egg") - 2);
         Focus(); Check(focus.CurrentAction == "refill:egg" && focus.CurrentText.Contains("左键") && focus.CurrentText.Contains("0.45"),
             "low stock prompts restock before it is empty, even between customers");
+        double refillLessonTime = controller.DayElapsedSeconds;
+        screen._Process(1);
+        Check(controller.DayElapsedSeconds == refillLessonTime, "refill lesson freezes the business clock while its instruction is active");
         await Shot("tianjin-low-stock");
         station.Descendants<DragItem>().Single(d => d.PayloadId == "batter").TryBeginDrag(); Focus();
         Check(focus.CurrentAction != "refill:egg", "restock hint does not interrupt a held ingredient"); station.CancelInput();
@@ -93,6 +96,9 @@ public partial class TutorialFocusSelfTest
         screen._Notification((int)NotificationApplicationFocusIn); station.Tick(station.Inventory.LevelData.RefillSeconds); Focus();
         Check(station.Inventory.GetQuantity("egg") == station.Inventory.GetCapacity("egg") && save.Data.Tianjin.LearnedWorkbenchActions.Contains(PancakeWorkstation.RefillLessonAction)
             && focus.CurrentAction != "refill:egg", "completed refill persists mastery and removes the instruction");
+        double afterRefillTime = controller.DayElapsedSeconds;
+        screen._Process(1);
+        Check(controller.DayElapsedSeconds > afterRefillTime, "business clock resumes after the refill lesson completes");
         station.Inventory.TryConsume("egg", station.Inventory.GetCapacity("egg")); station.Machine.Runtime.State = PancakeState.Burnt; Focus();
         Check(focus.CurrentAction is null, "successful maintenance does not repeat instructions");
         // A day reset fills stock without teaching an unfinished refill.

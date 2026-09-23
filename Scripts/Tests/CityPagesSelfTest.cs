@@ -69,6 +69,11 @@ public partial class CityPagesSelfTest : Node
                 await ReviewWuhanLedger();
                 GD.Print($"CITY_LEDGER_TEST_RESULT passed={_passed} failed=0"); GetTree().Quit(); return;
             }
+            if (args.Contains("--ledger-food-board-only"))
+            {
+                await ReviewLedgerFoodBoard();
+                GD.Print($"LEDGER_FOOD_BOARD_TEST_RESULT passed={_passed} failed=0"); GetTree().Quit(); return;
+            }
             if (args.Contains("--ledger-chrome-only"))
             {
                 await ReviewLedgerChrome();
@@ -142,6 +147,8 @@ public partial class CityPagesSelfTest : Node
                     "ledger action stays on right book page " + city.Name);
                 Check(_screen.SelectedDay == city.Days, "ledger selects latest " + city.Name);
                 Check(Find<Label>("BestRevenue").Text == "140 金币", "ledger record " + city.Name);
+                Check(Find<TextureRect>("LedgerFoodBoard").Texture?.ResourcePath.EndsWith("UpgradeUI/设备涂鸦背景-v1.png") == true,
+                    "ledger food board uses supplied artwork " + city.Name);
                 Check(Find<TextureRect>("FinalDayCrown") is not null && Find<TextureRect>("PerfectStamp") is not null, "final day and perfect badges " + city.Name);
                 Check(((AtlasTexture)Find<Button>("Date1").GetNode<TextureRect>("SatisfactionFace").Texture).Atlas.ResourcePath.EndsWith("棕平脸.png"), "38 percent uses neutral face " + city.Name);
                 Check(_screen.FindChildren("Date*", "Button", true, false).Count == city.Days, "calendar day count " + city.Name);
@@ -361,6 +368,19 @@ public partial class CityPagesSelfTest : Node
         Check(!_screen.FindChildren("Back", "Button", true, false).Any()
             && !_screen.FindChildren("PageTitle", "Label", true, false).Any(), "Wuhan ledger omits top return and title");
         await Capture("武汉-ledger-review");
+    }
+    private async Task ReviewLedgerFoodBoard()
+    {
+        _main.OpenCity(StableIds.Cities.Tianjin); await Frames();
+        _screen.PresentLedger(); await Frames();
+        var board = Find<TextureRect>("LedgerFoodBoard");
+        Check(board.Texture?.ResourcePath.EndsWith("UpgradeUI/设备涂鸦背景-v1.png") == true,
+            "ledger food board uses the supplied artwork");
+        Check(board.GetGlobalRect() == new Rect2(1005, 372, 500, 210),
+            "ledger food board fills the right-side food presentation area");
+        Check(board.MouseFilter == Control.MouseFilterEnum.Ignore,
+            "ledger food board does not block the ledger controls");
+        await Capture("ledger-food-board");
     }
     private async Task ReviewLedgerChrome()
     {

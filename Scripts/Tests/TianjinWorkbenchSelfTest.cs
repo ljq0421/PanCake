@@ -87,8 +87,8 @@ public partial class StageFourSelfTest
         raw.Activate?.Invoke();
         Check(station.FryerMachine!.Runtime.Quantity == 1 && save.Data.Tianjin.LearnedWorkbenchActions.Contains("fryer:load"),
             "生油条既有装料手势成功后学习");
-        ((Button)station.FindChild("FryerLowerAction", true, false)).EmitSignal(Button.SignalName.Pressed);
-        Check(save.Data.Tianjin.LearnedWorkbenchActions.Contains("fryer:lower"), "下锅按钮成功后独立学习");
+        ClickFryerBody();
+        Check(save.Data.Tianjin.LearnedWorkbenchActions.Contains("fryer:lower"), "点击锅体下锅成功后独立学习");
         var refill = (StockGesture)station.FindChild("StockGesture_egg", true, false);
         refill.Refill?.Invoke();
         Check(!save.Data.Tianjin.LearnedWorkbenchActions.Contains(PancakeWorkstation.RefillLessonAction), "满盘补货失败不学习");
@@ -218,8 +218,9 @@ public partial class StageFourSelfTest
                 GetViewport().PushInput(release, true);
             Check(machine.Runtime.Quantity == Math.Min(2, machine.Level.Capacity), $"Lv{level} 锅体长按仍连续装料");
             var lower = (Button)station.FindChild("FryerLowerAction", true, false);
-            Check(lower.IsVisibleInTree() && !raise.IsVisibleInTree(), $"Lv{level} 保留下锅按钮且隐藏独立抬篮按钮");
-            lower.EmitSignal(Button.SignalName.Pressed);
+            Check(!lower.IsVisibleInTree() && !raise.IsVisibleInTree() && body.Visible,
+                $"Lv{level} 待下锅时隐藏动作按钮并启用锅体点击");
+            ClickFryerBody();
             Check(!raise.IsVisibleInTree() && body.Visible == !machine.Level.AutoRaise,
                 $"Lv{level} 炸制中仅手动等级启用锅体提篮");
             station.Paused = true; ClickFryerBody(); station.Paused = false;

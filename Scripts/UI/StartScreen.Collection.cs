@@ -38,7 +38,7 @@ public partial class StartScreen
     public void PresentBreakfastCollection()
     {
         if (_save is null) return;
-        if (Page == JourneyPage.Home) { _showCustomerCollection = false; OpenHomeOverlay(); }
+        if (Page == JourneyPage.Home && !_collectionOverWorkbench) { _showCustomerCollection = false; OpenHomeOverlay(); }
         Begin(JourneyPage.Collection);
         var book = HomeArt(_body, "旅行手账双页母版", BookBounds); book.Name = "CollectionBook";
         _collectionContent = new Control

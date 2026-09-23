@@ -17,6 +17,7 @@ public partial class ButtonHoverFeedback : Node
     private Tween? _tween;
     private bool _held;
     private bool _focusAlsoScales;
+    private bool _pointerInside;
     private float _target = 1;
 
     public static void Attach(Control source, Control? visual = null, Func<bool>? canInteract = null)
@@ -45,8 +46,8 @@ public partial class ButtonHoverFeedback : Node
         // This follow-up explicitly excludes Xi'an city screens. Preserve their prior feedback.
         for (Node? owner = _source; owner is not null; owner = owner.GetParent())
             if (owner is ProjectCake.Gameplay.XianDayScreen or XianHub) _focusAlsoScales = true;
-        _source.MouseEntered += Refresh;
-        _source.MouseExited += Refresh;
+        _source.MouseEntered += Enter;
+        _source.MouseExited += Leave;
         if (_focusAlsoScales) { _source.FocusEntered += Refresh; _source.FocusExited += Refresh; }
         if (_source is BaseButton button)
         {
@@ -60,6 +61,16 @@ public partial class ButtonHoverFeedback : Node
     }
 
     private void Center() => _visual!.PivotOffset = _visual.Size * .5f;
+    private void Enter()
+    {
+        if (!_pointerInside && Available() && ButtonHoverAudio.InScope(_source))
+            ButtonHoverAudio.For(_source).Play(_source);
+        _pointerInside = true;
+        Refresh();
+    }
+    private void Leave() { _pointerInside = false; Refresh(); }
+    private bool Available() => _source.IsVisibleInTree() && _source is not BaseButton { Disabled: true }
+        && _source.MouseFilter != Control.MouseFilterEnum.Ignore && (_canInteract?.Invoke() ?? true);
     private void Down() { _held = true; Refresh(); }
     private void Up() { _held = false; Refresh(); }
 
@@ -75,8 +86,7 @@ public partial class ButtonHoverFeedback : Node
 
     private void Refresh()
     {
-        bool available = _source.IsVisibleInTree() && _source is not BaseButton { Disabled: true }
-            && _source.MouseFilter != Control.MouseFilterEnum.Ignore && (_canInteract?.Invoke() ?? true);
+        bool available = Available();
         if (!available)
         {
             _held = false; _target = 1;

@@ -131,6 +131,14 @@ public partial class BusinessBookSelfTest
                 view.FinishAnimation(); JourneyTransition.For(view).Finish();
                 await ToSignal(GetTree().CreateTimer(1.5), SceneTreeTimer.SignalName.Timeout);
                 CheckTravelHighlightLayout(view); CheckArtPage(view, city, scenario.Name);
+                Check(view.CloseButton.Visible && view.CloseButton.Text.StartsWith("开始第 ", StringComparison.Ordinal),
+                    "summary keeps the continuing-business action");
+                view.SelectPage(true, false); await Frames();
+                Check(!view.CloseButton.Visible,
+                    "customer details omit the continuing-business action on the right page");
+                view.SelectPage(false, false); await Frames();
+                Check(view.CloseButton.Visible,
+                    "returning to the summary restores the continuing-business action");
                 await Shot($"challenge-{city}-{scenario.Name}");
                 view.QueueFree(); await Frames();
             }

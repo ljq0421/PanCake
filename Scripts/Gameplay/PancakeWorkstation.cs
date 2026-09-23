@@ -470,6 +470,7 @@ public partial class PancakeWorkstation : Control
 
     public void CancelInput()
     {
+        _pinchCursor?.ReleaseCursor();
         CancelDirectGesture();
         CancelFold();
         _loopMotion?.Reset();
@@ -746,7 +747,12 @@ public partial class PancakeWorkstation : Control
         }
 
         if (IsTianjinWorkbench) PlayLoopAction(command, id);
-        if (command == PancakeCommand.CompleteSpread || (!IsTianjinWorkbench && command == PancakeCommand.AddEgg)) _audio.Play(PancakeSound.Sizzle);
+        if (command == PancakeCommand.CompleteSpread)
+        {
+            _stroke.ShowSpreadCompletion();
+            _audio.Play(PancakeSound.Ready);
+        }
+        else if (!IsTianjinWorkbench && command == PancakeCommand.AddEgg) _audio.Play(PancakeSound.Sizzle);
         else if (command == PancakeCommand.Flip && !IsTianjinWorkbench) _audio.Play(PancakeSound.Flip);
         // The food itself shows ingredient additions, spreading and flipping.
         if (!IsTianjinWorkbench || (result.ConsumedIngredient is null
@@ -1006,10 +1012,11 @@ public partial class PancakeWorkstation : Control
                 : youtiaoRequired
                     ? WorkstationSlotAttentionState.Required
                     : WorkstationSlotAttentionState.Normal);
-            SetContextAction(_lowerBasket, fryer.State == FryerState.Loaded);
+            SetContextAction(_lowerBasket, !IsTianjinWorkbench && fryer.State == FryerState.Loaded);
             SetContextAction(_raiseBasket, !IsTianjinWorkbench && fryer.State == FryerState.Frying && !FryerMachine.Level.AutoRaise);
             if (_fryerBodyInput is not null)
-                _fryerBodyInput.Visible = fryer.State == FryerState.Frying && !FryerMachine.Level.AutoRaise;
+                _fryerBodyInput.Visible = fryer.State == FryerState.Loaded
+                    || fryer.State == FryerState.Frying && !FryerMachine.Level.AutoRaise;
             SetContextAction(_discardBatch, !IsTianjinWorkbench && fryer.State == FryerState.Burnt);
             _fryerActions.Visible = _lowerBasket.Visible || _raiseBasket.Visible || _discardBatch.Visible;
             if (IsTianjinWorkbench) _fryerActions.Size = new Vector2(150, 44);
@@ -1065,14 +1072,14 @@ public partial class PancakeWorkstation : Control
         SyncFold();
         SyncDirectGesture();
         if (IsTianjinWorkbench)
-            _stroke.MouseDefaultCursorShape = (CanFoldGesture || (CanDirectGesture && Machine.Runtime.State is PancakeState.SideAReady or PancakeState.SideAOverdone)) ? CursorShape.Drag : CursorShape.Cross;
+            _stroke.MouseDefaultCursorShape = CursorShape.Cross;
         _state.Text = _batterDropAnimating ? "正在落浆"
             : UseServingTray && IsTransferringBag && Machine.Runtime.State == PancakeState.Empty
                 ? "正在放入成品托盘 · 可继续摊饼"
             : DirectCustomerDelivery && Machine.Runtime.State == PancakeState.Bagged ? "拖给顾客"
             : PancakeStatus(Machine.Runtime);
         if (IsTianjinWorkbench && Machine.Runtime.State is PancakeState.SideAReady or PancakeState.SideAOverdone)
-            _state.Text = _directGesture == DirectGesture.Flip ? _flipDragAmount >= .65f ? "松手翻面" : "向饼心短拖" : "按住饼边向内拖 · 翻面";
+            _state.Text = _directGesture == DirectGesture.Flip ? _flipDragAmount >= FlipCommitAmount ? "松手翻面" : "向饼心短拖" : "按住饼边向内拖 · 翻面";
         if (IsTianjinWorkbench && Machine.Runtime.State == PancakeState.Folded)
             _state.Text = _directGesture == DirectGesture.Bag ? _directBag!.OverFood ? "松手套袋" : "把纸袋拖到煎饼上" : "从左侧取纸袋，拖到煎饼上";
         if (IsTianjinWorkbench && Machine.Runtime.State == PancakeState.SideACooking)

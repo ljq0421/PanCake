@@ -80,6 +80,7 @@ public partial class SharedTeachingSelfTest : Node
             var result = station.DeliverPancakeTo(controller, controller.CustomerQueue!.Slots.Single().Id, catalog);
             Check(result.CompletesOrder && controller.Ledger!.Build().TotalRevenue == 0, "example delivery works without business income");
             controller.AbandonDay(); config.Tutorial = original;
+            save.Data.Tianjin.LearnedWorkbenchActions.Add("deliver:finished_pancake");
             Check(main.StartCityBusiness(StableIds.Cities.Tianjin, 1) && !controller.TutorialActive && !station.Tutorial.IsActive,
                 "next normal shift clears controller and workbench protection");
             station.Paused = false; station.InteractionEnabled = true; machine = station.Machine;

@@ -47,6 +47,32 @@ public partial class StartScreen
     private CustomerStatistics CustomerStats(string id) => _save!.Data.CustomerRecords.GetValueOrDefault(id) ?? new();
     private static string CustomerCategoryName(string category) => category == CustomerCollection.Generic ? "通用" : JourneyModel.City(category).Name;
 
+    /// <summary>Opens the customer catalog directly from a freshly saved business summary.</summary>
+    public void PresentCustomerCollection()
+    {
+        _collectionOverWorkbench = false;
+        _showCustomerCollection = true;
+        _customerCategory = "";
+        _customerPage = 0;
+        _selectedCollectionCustomer = "";
+        PresentBreakfastCollection();
+    }
+
+    /// <summary>Presents the customer catalog over the current business workbench and restores its source on return.</summary>
+    public void PresentCustomerCollectionOverWorkbench(Action returnToSource)
+    {
+        _collectionOverWorkbench = true;
+        _collectionOverWorkbenchReturn = returnToSource;
+        _collectionOverlayZIndex = ZIndex;
+        ZIndex = 300;
+        _showCustomerCollection = true;
+        _customerCategory = "";
+        _customerPage = 0;
+        _selectedCollectionCustomer = "";
+        Show();
+        PresentBreakfastCollection();
+    }
+
     private void RenderCustomerCollection()
     {
         bool wuhan = _save!.Data.UnlockedCityIds.Contains(StableIds.Cities.Wuhan);

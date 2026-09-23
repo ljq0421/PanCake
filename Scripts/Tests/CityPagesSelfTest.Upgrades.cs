@@ -33,6 +33,8 @@ public partial class CityPagesSelfTest
             Check(Find<Button>("Home").IsVisibleInTree() && !_screen.Descendants<Button>().Any(b => b.Name == "MapTab"), city.Name + " upgrade page retains home without map bookmark");
             Check(!_screen.Descendants<Button>().Any(b => b.Name == "CloseUpgrades"), city.Name + " home has no settlement return");
             var offer = model.Equipment(city.Id).First(e => e.CanBuy);
+            Check(_screen.Descendants<EquipmentUpgradeView>().Single().SelectedId == offer.Id,
+                city.Name + " upgrade page defaults to the first currently purchasable device");
             if (city.Id == StableIds.Cities.Wuhan)
             {
                 var equipment = model.Equipment(city.Id);

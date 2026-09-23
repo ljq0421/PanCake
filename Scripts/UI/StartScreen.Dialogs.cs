@@ -121,6 +121,7 @@ public partial class StartScreen
         if (_body?.GetNodeOrNull<TextureRect>("HomeLogo") is { } logo)
             logo.Texture = HomeTexture(HomeLogoArt);
         if (_body is not null) FitJourneyIntroduction();
+        if (_body is not null) FitWuhanIntroduction();
         if (_body is not null)
         {
             if (_body.GetNodeOrNull<Label>("PageTitle") is { } heading) FitTextWidth(heading, 42, 26);

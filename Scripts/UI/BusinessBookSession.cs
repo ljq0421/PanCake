@@ -51,6 +51,7 @@ public static class BusinessBookSettlement
     {
         model.Closing = true; model.Stickers = Array.Empty<string>(); model.Upgrades = null; model.CanClose = true; model.CanRetry = false;
         model.CustomerMilestones = Array.Empty<string>();
+        model.NewCustomerIds = Array.Empty<string>();
         model.Challenge = plan.Challenge; model.ChallengeReward = 0; model.ChallengeClaimed = false;
         var before = save.Data.GetCity(config.CityId).UnlockedContentIds.ToHashSet(StringComparer.Ordinal);
         var collected = save.CollectedBreakfastIds.ToHashSet();
@@ -73,6 +74,7 @@ public static class BusinessBookSettlement
             foreach (var card in DemoBreakfastCollection.Cards.Where(c => !collected.Contains(c.Id) && save.BreakfastRecordDay(c.Id).HasValue))
                 stickers.Add("早餐新记录：" + card.Name);
             model.CustomerMilestones = CustomerCollection.MilestoneMessages(customersBefore, save.Data.CustomerRecords).ToArray();
+            model.NewCustomerIds = CustomerCollection.NewlyKnownIds(customersBefore, save.Data.CustomerRecords);
             model.Stickers = stickers.ToArray();
             model.Upgrades = new BookUpgradeSource(save, catalog, config.CityId);
         }

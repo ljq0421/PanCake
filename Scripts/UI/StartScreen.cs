@@ -49,6 +49,9 @@ public partial class StartScreen : Control
         CityBackdropReleased?.Invoke();
     }
     private bool _homeOverlayOpen;
+    private bool _collectionOverWorkbench;
+    private Action? _collectionOverWorkbenchReturn;
+    private int _collectionOverlayZIndex;
 
     public override void _Ready()
     {
@@ -112,7 +115,8 @@ public partial class StartScreen : Control
     }
     private void Begin(JourneyPage page, bool animate = true)
     {
-        if (page is not (JourneyPage.City or JourneyPage.Ledger or JourneyPage.Upgrades or JourneyPage.Completion))
+        if (page is not (JourneyPage.City or JourneyPage.Ledger or JourneyPage.Upgrades or JourneyPage.Completion)
+            && !(page == JourneyPage.Collection && _collectionOverWorkbench))
             ReleaseCityBackdrop();
         // The home journey and collection books live above the intact home page.
         // Other pages still replace the page content as before.
@@ -134,7 +138,8 @@ public partial class StartScreen : Control
         Page = page; _busy = false; _error = "";
         // A result reached from a city hub is an overlay: keep that workbench visible
         // behind the book instead of exposing the start-page artwork.
-        bool showStartBackdrop = !HostedByBook && !_cityOverWorkbench && (page != JourneyPage.Completion || !_completionOverWorkbench);
+        bool showStartBackdrop = !HostedByBook && !_cityOverWorkbench && !_collectionOverWorkbench
+            && (page != JourneyPage.Completion || !_completionOverWorkbench);
         GetNode<Control>("Letterbox").Visible = showStartBackdrop;
         GetNode<Control>("Canvas/Background").Visible = showStartBackdrop;
         _body.Modulate = Colors.White;

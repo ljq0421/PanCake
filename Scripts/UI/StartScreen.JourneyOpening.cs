@@ -117,13 +117,13 @@ public partial class StartScreen
         {
             string name = control.Name;
             bool isBook = name == "SharedBook";
-            bool postcard = name is "JourneyPostcard" or "StationTitle";
+            bool postcard = name is "JourneyPostcard" or "StationTitle" or "IntroductionTitleBacking";
             bool depart = name is "Depart" or "DepartureHint";
             float progress = isBook ? book : Ease(Beat(time, postcard ? 1.9f : depart ? 2.3f : 2.05f, depart ? .4f : .5f));
             var color = _introColors[control];
             control.Modulate = new(color.R, color.G, color.B, color.A * progress);
             control.Position = position + new Vector2(0, isBook ? 32 * (1 - book) : postcard ? -18 * (1 - progress) : 10 * (1 - progress));
-            if (name == "JourneyPostcard") { control.PivotOffset = control.Size / 2; control.RotationDegrees = -2 * (1 - progress); }
+            if (name == "JourneyPostcard") { control.PivotOffset = control.Size / 2; control.RotationDegrees = (_save?.IsDemo == true ? -3 : 0) - 2 * (1 - progress); }
             if (control is Button button) button.Disabled = time < 2.5f;
         }
         _openingCover!.Position = new(685, 210 + 32 * (1 - book));

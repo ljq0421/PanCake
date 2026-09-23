@@ -33,6 +33,8 @@ public sealed class BusinessBookModel
     public string SaveMessage { get; set; } = "";
     public string[] Stickers { get; set; } = Array.Empty<string>();
     public string[] CustomerMilestones { get; set; } = Array.Empty<string>();
+    /// <summary>Customers first recorded by this successfully saved business day.</summary>
+    public string[] NewCustomerIds { get; set; } = Array.Empty<string>();
     public BookUpgradeSource? Upgrades { get; set; }
     public DailyChallenge? Challenge { get; set; }
     public int ChallengeReward { get; set; }

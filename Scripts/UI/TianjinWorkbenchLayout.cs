@@ -8,6 +8,10 @@ internal static class TianjinWorkbenchLayout
 {
     // All embedded-art anchors are measured on the user's 1672 x 941 originals.
     public static readonly Vector2 SourceScale = new(1920f / 1672, 1080f / 941);
+    // The v3 fryer group moved 72 source pixels left. Keep every fryer overlay,
+    // input and foreground crop on the same translation.
+    public static readonly Vector2 FryerSourceOffset = new(-72, 0);
+    public static readonly Vector2 FryerDisplayOffset = FryerSourceOffset * SourceScale;
     public static readonly Rect2 EmbeddedTrash = FromSource(1000, 838, 170, 103);
     public static readonly Rect2 CashPendant = FromSource(1210, 30, 143, 302);
     public static readonly Vector2 CashSlot = new Vector2(1280, 162) * SourceScale;
@@ -15,10 +19,11 @@ internal static class TianjinWorkbenchLayout
         new(new Vector2(x, y) * SourceScale, new Vector2(width, height) * SourceScale);
     public static readonly Rect2 EmbeddedStove = FromSource(520, 510, 430, 310);
     public static readonly Rect2 EmbeddedSurface = FromSource(550, 530, 365, 197);
-    public static readonly Rect2 EmbeddedFryer = FromSource(112, 447, 338, 258);
-    // The painted tub center is x=282.5; keep basket and contents on that axis.
-    public static readonly Rect2 EmbeddedOpening = FromSource(156, 477, 253, 96);
-    public static readonly Rect2 EmbeddedYoutiaoTray = FromSource(104, 710, 343, 116);
+    public static readonly Rect2 EmbeddedFryer = FromSource(40, 447, 338, 258);
+    // The painted tub center moved from x=282.5 to x=210.5.
+    public static readonly Rect2 EmbeddedOpening = FromSource(84, 477, 253, 96);
+    public static readonly Rect2 EmbeddedYoutiaoTray = FromSource(32, 710, 343, 116);
+    public static readonly Rect2 EmbeddedBagStack = FromSource(382, 690, 182, 150);
     public static readonly Rect2 EmbeddedSoyTray = FromSource(1468, 583, 173, 219);
     public static Rect2 EmbeddedIngredient(string id) => id switch
     {

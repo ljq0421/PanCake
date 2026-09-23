@@ -55,10 +55,10 @@ public partial class BusinessDetailsView
         void Count(int from, int to, double start, double duration)
         {
             _entrance.TweenMethod(Callable.From<double>(value =>
-                _income.Text = $"¥{(int)Math.Round(value, MidpointRounding.AwayFromZero)}"),
+                SetCountingIncome((int)Math.Round(value, MidpointRounding.AwayFromZero))),
                 (double)from, (double)to, duration).SetDelay(opening + start)
                 .SetTrans(Tween.TransitionType.Cubic).SetEase(Tween.EaseType.Out);
-            At(start + duration, () => _income.Text = $"¥{to}");
+            At(start + duration, () => { _income.Text = $"¥{to}"; _incomeAudio?.Stop(); _lastIncomeSound = null; });
         }
 
         Group(TravelMotionGroup.Reception, .15, .25);

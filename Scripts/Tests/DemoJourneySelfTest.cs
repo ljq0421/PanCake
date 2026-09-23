@@ -125,6 +125,9 @@ public partial class DemoJourneySelfTest : Node
             settings.RevertDisplay(); await Frames();
             Check(GetWindow().Mode == Window.ModeEnum.Windowed && GetWindow().Size == originalSize, "display rollback restores exact window");
             screen.PresentCity(StableIds.Cities.Tianjin); await Capture("tianjin-ready", screen);
+            screen.PresentNewJourney(); await Frames();
+            Check(!screen.Descendants<Label>().Any(l => l.Name.ToString() is "BreakfastAvailability0" or "BreakfastPreviewHeading" or "DepartureHint"),
+                "Demo Tianjin entry omits day and preview copy");
             screen.PresentLedger(); await Capture("tianjin-calendar", screen);
             screen.PresentUpgrades(); await Capture("tianjin-upgrades", screen);
             screen.PresentMap(); await Capture("xian-preview", screen);
@@ -143,10 +146,12 @@ public partial class DemoJourneySelfTest : Node
             screen.Descendants<Button>().Single(b=>b.Name=="Skip").EmitSignal(Button.SignalName.Pressed);
             await ToSignal(GetTree().CreateTimer(.8), SceneTreeTimer.SignalName.Timeout); await Capture("wuhan-opening",screen);
             var wuhanOpening = screen.Descendants<Button>().Single(b => b.Name == "WuhanOpeningContinue");
+            Check(!screen.Descendants<Label>().Any(l => l.Name.ToString() is "WuhanBreakfastAvailability" or "WuhanBreakfastPreview" or "WuhanReturnHint"),
+                "Demo Wuhan entry omits day, preview and return copy");
             Check(!screen.Descendants<Button>().Any(b => b.Name == "Back"), "Wuhan opening omits the return button");
             Check(!screen.Descendants<Label>().Any(l => l.Text.Contains("下一站 · 武汉")), "Wuhan opening omits the next-stop title");
-            Check(wuhanOpening.GetNode<NinePatchRect>("WuhanOpeningButtonPlate").Texture is AtlasTexture { Atlas.ResourcePath: "res://resource/art/Wuhan/武汉解锁按钮底板-v1.png" },
-                "Wuhan opening uses the teal city journey button plate");
+            Check(wuhanOpening.GetNode<TextureRect>("WuhanOpeningButtonPlate").Texture is AtlasTexture { Atlas.ResourcePath: "res://resource/art/Global/StartPage/首页地图按钮底板.png" },
+                "Wuhan opening uses the home journey button plate");
             foreach (var (city, day) in new[] { (StableIds.Cities.Tianjin, 1), (StableIds.Cities.Tianjin, 4), (StableIds.Cities.Tianjin, 6), (StableIds.Cities.Wuhan, 1), (StableIds.Cities.Wuhan, 4) })
             {
                 Check(main.StartCityBusiness(city, day), city + " ordinary shift " + day);

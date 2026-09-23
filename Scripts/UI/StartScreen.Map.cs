@@ -153,6 +153,11 @@ public partial class StartScreen
             bool persistentHighlight = ring.Visible;
             void RefreshHighlight() => ring.Visible = persistentHighlight || node.IsHovered() || node.HasFocus();
             node.MouseEntered += RefreshHighlight; node.MouseExited += RefreshHighlight;
+            node.MouseEntered += () =>
+            {
+                if (!node.Disabled && !_busy && !ModalOpen && node.IsVisibleInTree())
+                    ButtonHoverAudio.For(node).Play(node);
+            };
             node.FocusEntered += RefreshHighlight; node.FocusExited += RefreshHighlight;
         }
     }

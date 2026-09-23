@@ -1,11 +1,16 @@
-param([string]$GeneratedRoot = 'D:/CodexHome-Clean-Test-20260814/generated_images/01a0a30d-9af7-7152-988f-613da4fb7668')
+param(
+  [string]$GeneratedRoot = 'D:/CodexHome-Clean-Test-20260814/generated_images/01a0a30d-9af7-7152-988f-613da4fb7668',
+  [switch]$RefreshGeneratedSources
+)
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path $PSScriptRoot -Parent
 $artRoot = Join-Path $projectRoot 'resource/art/TianJin/LivingWorkbench'
 $recordRoot = Join-Path $projectRoot 'docs/art-concepts/tianjin-living'
 New-Item -ItemType Directory -Force -Path $artRoot,$recordRoot | Out-Null
-Copy-Item -LiteralPath (Join-Path $GeneratedRoot 'exec-e69716fe-2222-41ac-8dee-167c7ad3c5e7.png') -Destination (Join-Path $recordRoot 'sprites-green.png')
-Copy-Item -LiteralPath (Join-Path $GeneratedRoot 'exec-fdf4d68f-eea2-4773-bfc6-5f9d0a6799bc.png') -Destination (Join-Path $recordRoot 'clean-generated.png')
+if ($RefreshGeneratedSources) {
+  Copy-Item -LiteralPath (Join-Path $GeneratedRoot 'exec-e69716fe-2222-41ac-8dee-167c7ad3c5e7.png') -Destination (Join-Path $recordRoot 'sprites-green.png') -Force
+  Copy-Item -LiteralPath (Join-Path $GeneratedRoot 'exec-fdf4d68f-eea2-4773-bfc6-5f9d0a6799bc.png') -Destination (Join-Path $recordRoot 'clean-generated.png') -Force
+}
 Add-Type -AssemblyName System.Drawing
 Add-Type -ReferencedAssemblies System.Drawing.Common,System.Drawing.Primitives,System.Console,System.Runtime,System.Private.Windows.GdiPlus,System.Private.Windows.Core -TypeDefinition @'
 using System;
@@ -20,7 +25,7 @@ public static class TianjinLivingArt {
   Sprite(green,new Rectangle(790,575,730,245),Path.Combine(output,"spatula.png"));
   using var clean = new Bitmap(Path.Combine(records,"clean-generated.png"));
   foreach(string stem in new[]{"天津-煎饼","天津-煎饼-炸锅","天津-煎饼-炸锅-豆浆"}) {
-   using var original = new Bitmap(Path.Combine(source,stem+"-v2.png"));
+   using var original = new Bitmap(Path.Combine(source,stem+"-v3.png"));
    using var result = new Bitmap(original);
    // Transfer only authorized removal regions. Pixels elsewhere remain identical.
    foreach(var area in new[]{new Rectangle(1213,65,141,273),new Rectangle(1115,503,371,71)})
@@ -30,7 +35,7 @@ public static class TianjinLivingArt {
      Color c=clean.GetPixel(x,y),b=original.GetPixel(x,y);
      result.SetPixel(x,y,Color.FromArgb(255,(int)(c.R*a+b.R*(1-a)),(int)(c.G*a+b.G*(1-a)),(int)(c.B*a+b.B*(1-a))));
     }
-   result.Save(Path.Combine(output,stem+"-clean.png"),ImageFormat.Png);
+   SavePng(result,Path.Combine(output,stem+"-clean.png"));
   }
  }
  static void Sprite(Bitmap source,Rectangle region,string path) {
@@ -49,8 +54,13 @@ public static class TianjinLivingArt {
   }
   Rectangle crop=Rectangle.FromLTRB(Math.Max(0,left-2),Math.Max(0,top-2),Math.Min(region.Width,right+3),Math.Min(region.Height,bottom+3));
   using var final=keyed.Clone(crop,PixelFormat.Format32bppArgb);
-  final.Save(path,ImageFormat.Png);
+  SavePng(final,path);
   Console.WriteLine(Path.GetFileName(path)+": "+final.Width+"x"+final.Height+", antialiased alpha pixels="+partial);
+ }
+ static void SavePng(Bitmap image,string path) {
+  string temporary=path+".tmp.png";
+  image.Save(temporary,ImageFormat.Png);
+  File.Move(temporary,path,true);
  }
 }
 '@

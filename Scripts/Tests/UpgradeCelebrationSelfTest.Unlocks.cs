@@ -52,32 +52,28 @@ public partial class UpgradeCelebrationSelfTest
                 effect._Notification((int)NotificationApplicationFocusIn);
                 Check(effect.IsPlaying, $"opening queues unlocks {city} {day}: state={controller.State}, tutorial={controller.TutorialActive}");
                 effect.NotifyUse(upgraded); effect.NotifyUse(upgraded);
-                for (int i = 0; i < expected; i++)
+                effect._Process(.45);
+                Check(effect.Visible && effect.CurrentCaption.StartsWith("新解锁："), "unlock caption is visible");
+                Check(effect.HighlightedIds.Order().SequenceEqual(items.Select(item => item.Id).Order()), "all new unlocks highlight together");
+                Check(items.All(item => effect.CurrentCaption.Contains(item.Name)), "unlock caption names every highlighted item");
+                Check(save.Data.GetCity(city).PendingUpgradeCelebrations.ContainsKey(upgraded), "unlocks do not consume upgrade cue");
+                if (_capture)
                 {
-                    effect._Process(.45);
-                    Check(effect.Visible && effect.CurrentCaption == "新解锁：" + items[i].Name, "ordered unlock caption");
-                    Check(save.Data.GetCity(city).PendingUpgradeCelebrations.ContainsKey(upgraded), "unlocks do not consume upgrade cue");
-                    if (_capture)
-                    {
-                        await Frames(); await ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
-                        using var image = GetViewport().GetTexture().GetImage();
-                        Check(image.SavePng(Path.Combine(_dir, $"unlock-{city.Replace(':', '-')}-{day}-{i}.png")) == Error.Ok, "unlock capture");
-                    }
-                    if (i == 0)
-                    {
-                        controller.SetPauseReason("unlock-test", true); effect._Process(10);
-                        Check(effect.IsPlaying && !effect.Visible && !effect.AudioPlaying, "unlock pause retains queue");
-                        controller.SetPauseReason("unlock-test", false); effect._Process(.01);
-                        Check(effect.Visible && !effect.AudioPlaying, "unlock resume is silent");
-                        effect._Notification((int)NotificationApplicationFocusOut); effect._Process(10);
-                        Check(!effect.Visible && effect.IsPlaying && !effect.AudioPlaying, "focus suspends unlock");
-                        effect._Notification((int)NotificationApplicationFocusIn); effect._Process(.01);
-                        Check(effect.Visible && !effect.AudioPlaying, "focus resumes silently");
-                    }
-                    effect._Process(3);
+                    await Frames(); await ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
+                    using var image = GetViewport().GetTexture().GetImage();
+                    Check(image.SavePng(Path.Combine(_dir, $"unlock-{city.Replace(':', '-')}-{day}-all.png")) == Error.Ok, "unlock capture");
                 }
+                controller.SetPauseReason("unlock-test", true); effect._Process(10);
+                Check(effect.IsPlaying && !effect.Visible && !effect.AudioPlaying, "unlock pause retains queue");
+                controller.SetPauseReason("unlock-test", false); effect._Process(.01);
+                Check(effect.Visible && !effect.AudioPlaying, "unlock resume is silent");
+                effect._Notification((int)NotificationApplicationFocusOut); effect._Process(10);
+                Check(!effect.Visible && effect.IsPlaying && !effect.AudioPlaying, "focus suspends unlock");
+                effect._Notification((int)NotificationApplicationFocusIn); effect._Process(.01);
+                Check(effect.Visible && !effect.AudioPlaying, "focus resumes silently");
+                effect._Process(3);
                 effect._Process(.2);
-                Check(effect.CurrentCaption == EquipmentUpgradePresentation.FirstUse(upgraded, 2), $"upgrade follows unlocks {city} {day}: {effect.CurrentCaption}, pending={save.Data.GetCity(city).PendingUpgradeCelebrations.Count}, paused={controller.IsPaused}, playing={effect.IsPlaying}");
+                Check(effect.CurrentCaption.Contains(EquipmentUpgradePresentation.FirstUse(upgraded, 2)), $"upgrade follows unlocks {city} {day}: {effect.CurrentCaption}, pending={save.Data.GetCity(city).PendingUpgradeCelebrations.Count}, paused={controller.IsPaused}, playing={effect.IsPlaying}");
                 effect._Process(3); Check(!effect.IsPlaying, "duplicate use does not duplicate upgrade");
                 Check(controller.TryPrepareDay(city, day, catalog, out _), "prepare same day reentry");
                 effect.BeforeTeaching(controller, () => controller.TryStartDay(out _)); Check(effect.IsPlaying, "same day reentry repeats unlocks");

@@ -68,6 +68,11 @@ public partial class GameController : Node
         wuhanDay.ConnectController(dayController);
         ConnectBusinessContinuation(dayScreen.BusinessDetails, Data.StableIds.Cities.Tianjin);
         ConnectBusinessContinuation(wuhanDay.BusinessDetails, Data.StableIds.Cities.Wuhan);
+        ConnectCustomerCollection(dayScreen.BusinessDetails);
+        ConnectCustomerCollection(wuhanDay.BusinessDetails);
+        ConnectCustomerCollection(_xianDay.BusinessDetails);
+        ConnectCustomerCollection(_guangzhouDay.BusinessDetails);
+        ConnectCustomerCollection(_yangzhouDay.BusinessDetails);
         _cityHubs[Data.StableIds.Cities.Tianjin] = hub;
         _cityHubs[Data.StableIds.Cities.Wuhan] = wuhanHub;
         _cityHubs[Data.StableIds.Cities.Xian] = _xianHub;
@@ -251,6 +256,17 @@ public partial class GameController : Node
         foreach (Control page in GetNode("UI").GetChildren().OfType<Control>()) page.Visible = page == show;
         GetNode<Node2D>("ShopRoot").Visible = show != _startScreen;
     }
+
+    private void ConnectCustomerCollection(BusinessDetailsView book) => book.CustomerCollectionRequested += () =>
+    {
+        if (!book.Model.Closing || book.Model.NewCustomerIds.Length == 0) return;
+        book.Hide();
+        _startScreen.PresentCustomerCollectionOverWorkbench(() =>
+        {
+            book.Show();
+            book.CloseButton.GrabFocus();
+        });
+    };
 
     private void PresentCompletionOverHub(Control hub, string completedCity)
     {

@@ -28,8 +28,10 @@ public partial class WuhanDayScreen
     private bool BeginWuhanDemoLesson(int? retryTeachingDay = null)
     {
         var unlock = TutorialOrders.UnlockFor(_controller.CurrentConfig!);
+        bool firstLesson = !_resumeBusinessAfterLesson && _controller.CurrentConfig!.Day == 1
+            && !_save.Data.Wuhan.LearnedWorkbenchActions.Contains("deliver:hot_dry_noodles");
         bool introduceUnlock = !_resumeBusinessAfterLesson && unlock is not null && !unlock.IsLearned(_save.Data.Wuhan.LearnedWorkbenchActions);
-        if (!ForceDemoTutorial && !introduceUnlock && retryTeachingDay is null) return false;
+        if (!ForceDemoTutorial && !firstLesson && !introduceUnlock && retryTeachingDay is null) return false;
         _demoBusinessDay = _controller.CurrentConfig!.Day;
         _demoTeachingDay = retryTeachingDay ?? (ForceDemoTutorial ? 1 : _demoBusinessDay);
         ForceDemoTutorial = false;

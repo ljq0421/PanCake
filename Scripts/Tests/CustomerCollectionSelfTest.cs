@@ -80,6 +80,9 @@ public partial class CustomerCollectionSelfTest : Node
         Check(stats["young_woman"].Regular && stats["young_woman"].FirstCity == StableIds.Cities.Tianjin, "five cross-city visits preserve first encounter");
         Check(CustomerCollection.MilestoneMessages(new(), stats).Count() == 3
             && !CustomerCollection.MilestoneMessages(new() { ["young_woman"] = 5 }, stats).Any(), "milestone feedback only on threshold crossings");
+        var newlyKnown = CustomerCollection.NewlyKnownIds(new Dictionary<string, int> { ["young_woman"] = 5 },
+            new Dictionary<string, CustomerStatistics> { ["young_woman"] = stats["young_woman"], ["male_office"] = new() { Served = 1 } });
+        Check(newlyKnown.SequenceEqual(new[] { "male_office" }), "newly known IDs retain only this settlement's first encounters");
     }
 
     private void TestController()
@@ -141,7 +144,8 @@ public partial class CustomerCollectionSelfTest : Node
             Check(book.CanRetry && book.CustomerMilestones.Length == 0, "failed settlement never announces unsaved unlocks " + demo);
             Directory.Delete(path + ".tmp");
             BusinessBookSettlement.Commit(book, save, plan, config, _catalog);
-            Check(book.CustomerMilestones.Length == 3 && book.DailyNote.Contains("熟客印章"), "successful settlement exposes all milestones in visible note " + demo);
+            Check(book.CustomerMilestones.Length == 3 && book.DailyNote.Contains("熟客印章")
+                && book.NewCustomerIds.SequenceEqual(new[] { "student" }), "successful settlement exposes milestones and new customer portraits " + demo);
             save.CommitDay(result, plan, config); save.Load();
             Check(save.Data.CustomerRecords["student"].Served == 5, "retry persists once and duplicate settlement ignored " + demo);
             var replay = new DayPlan(); Observe(replay, "student"); save.CommitDay(result, replay, config);
@@ -177,6 +181,9 @@ public partial class CustomerCollectionSelfTest : Node
         var save = GetNode<SaveService>("/root/SaveService");
         string path = Path.Combine(_dir, "ui.json"); if (ExperienceProfile.IsDemo) save.UseDemoPathForTests(path); else save.UsePathForTests(path);
         var screen = GD.Load<PackedScene>("res://Scenes/UI/StartScreen.tscn").Instantiate<StartScreen>(); AddChild(screen); screen.Initialize(save);
+        screen.PresentCustomerCollection(); await Frames();
+        Check(screen.Page == JourneyPage.Collection && screen.Descendants<Button>().Any(b => b.Name.ToString().StartsWith("CustomerCard_")),
+            "direct customer collection entry opens the catalog");
         screen.PresentBreakfastCollection(); await Frames();
         async Task Click(string name) { screen.Descendants<Button>().Single(b => b.Name == name).EmitSignal(Button.SignalName.Pressed); await Frames(); }
         async Task Capture(string name)
@@ -225,19 +232,39 @@ public partial class CustomerCollectionSelfTest : Node
         await Click("CustomerSection");
         screen._Input(new InputEventKey { Keycode = Key.Escape, Pressed = true }); await Frames();
         Check(screen.Page == JourneyPage.Home && GetViewport().GuiGetFocusOwner()?.Name == "BreakfastRecords", "Escape returns home and restores collection focus");
+        bool restoredWorkbench = false;
+        screen.PresentCustomerCollectionOverWorkbench(() => restoredWorkbench = true); await Frames();
+        Check(screen.Page == JourneyPage.Collection && !screen.GetNode<Control>("Canvas/Background").Visible,
+            "workbench customer collection hides only start screen background");
+        screen.Descendants<Button>().First(b => b.Name == "Back" && b.IsVisibleInTree()).EmitSignal(Button.SignalName.Pressed); await Frames();
+        Check(restoredWorkbench && !screen.Visible, "workbench customer collection returns to its source");
         screen.QueueFree(); await Frames();
         if (OS.GetCmdlineUserArgs().Contains("--visual-only")) return;
         InterfaceLessons.MarkAllSeen(GetNode<JourneySettings>("/root/JourneySettings"));
-        foreach (var city in new[] { "tianjin", "wuhan" })
+        foreach (var city in new[] { "tianjin", "wuhan", "xian", "guangzhou", "yangzhou" })
         {
             var book = new BusinessDetailsView(); AddChild(book);
             var model = new BusinessBookModel { CityId = city, Closing = true,
                 Result = new DayResult { Day = 9, PlannedCustomers = 20, CompletedCustomers = 20, SaleRevenue = 230, Tips = 20, Satisfaction = 94 },
-                SaveMessage = "已入账 ¥250", CustomerMilestones = new[] { "认识了新朋友 · 12 位", "解锁人物趣闻 · 10 位", "获得熟客印章 · 10 位" } };
+                SaveMessage = "已入账 ¥250", CustomerMilestones = new[] { "认识了新朋友 · 12 位", "解锁人物趣闻 · 10 位", "获得熟客印章 · 10 位" },
+                NewCustomerIds = CustomerCollection.Cards.Take(6).Select(c => c.Id).ToArray() };
+            bool collectionRequested = false; book.CustomerCollectionRequested += () => collectionRequested = true;
             book.Open(model); book.FinishAnimation();
             // The paper-spread shader has its own entrance, independent of the count-up tween.
             await ToSignal(GetTree().CreateTimer(.8), SceneTreeTimer.SignalName.Timeout); await Frames();
             Check(book.Descendants<Label>().Any(l => l.IsVisibleInTree() && l.Text == model.DailyNote), city + " visible settlement milestones");
+            int portraitCount = book.Descendants<TextureRect>().Count(p => p.Name.ToString().StartsWith("NewCustomerPortrait_"));
+            bool hasOverflow = book.Descendants<Label>().Any(l => l.Text == "等 6 位");
+            int resolvable = book.Model.NewCustomerIds.Count(id => CustomerCollection.Find(id) is not null);
+            Check(portraitCount == 5 && hasOverflow, city + $" settlement shows five new-customer portraits and overflow (new={book.Model.NewCustomerIds.Length}, resolvable={resolvable}, portraits={portraitCount}, overflow={hasOverflow})");
+            Vector2 portraitSize = city is "tianjin" or "wuhan" or "xian" ? new(45, 48) : new(51, 54);
+            var portraits = book.Descendants<TextureRect>().Where(p => p.Name.ToString().StartsWith("NewCustomerPortrait_")).ToArray();
+            var collectionButton = book.Descendants<Button>().Single(b => b.Name == "OpenCustomerCollection");
+            Check(portraits.All(p => Mathf.IsEqualApprox(p.Size.X, portraitSize.X) && Mathf.IsEqualApprox(p.Size.Y, portraitSize.Y))
+                && portraits.All(p => !p.GetGlobalRect().Intersects(collectionButton.GetGlobalRect())),
+                city + " settlement uses 1.5x new-customer portraits without covering the collection action");
+            collectionButton.EmitSignal(Button.SignalName.Pressed); await Frames();
+            Check(collectionRequested, city + " settlement customer collection button requests direct navigation");
             await Capture(city + "-settlement"); book.QueueFree(); await Frames();
         }
     }

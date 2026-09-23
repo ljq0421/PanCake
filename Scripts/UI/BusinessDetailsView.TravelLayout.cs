@@ -32,7 +32,9 @@ public partial class BusinessDetailsView
         closeFocus.BorderColor = CityTheme.Primary;
         closeFocus.ExpandMarginLeft = closeFocus.ExpandMarginRight = closeFocus.ExpandMarginTop = closeFocus.ExpandMarginBottom = 3;
         CloseButton.AddThemeStyleboxOverride("focus", closeFocus);
-        SetButtonBounds(_previousPage, new(80, 431, 72, 72));
+        // Keep the return affordance within the left paper's safe area instead of
+        // letting it float in the book's outer margin.
+        SetButtonBounds(_previousPage, new(ArtPageLeft, 431, 72, 72));
         // Leave room for hover growth inside the paper after the content's 1.1x scale.
         SetButtonBounds(_nextPage, new(1450, 502, 72, 72));
         for (int i = 0; i < _filters.Count; i++)
@@ -79,6 +81,12 @@ public partial class BusinessDetailsView
         BuildTravelReception();
         BuildTravelSatisfaction();
         BuildTravelNote();
+
+        if (_model.NewWuhanUnlock)
+        {
+            BuildNewCitySummary();
+            return;
+        }
 
         TravelPanel(_summary, new(890, 0, 560, 240), emphasize: true);
         TravelHeading(_summary, "今日收入", new(905, -18, 245, 51));
@@ -194,8 +202,10 @@ public partial class BusinessDetailsView
             _summary.AddChild(_note);
             var paper = Art(_note, "今日手记便签底板", new(0, 0, 560, 122));
             paper.StretchMode = TextureRect.StretchModeEnum.Scale;
-            Text(_note, "营业手记", new(64, 18, 430, 34), 26);
-            Text(_note, _model.DailyNote, new(34, 57, 488, 68), 21, wrap: true);
+            Text(_note, "营业手记", new(64, 10, 430, 34), 26);
+            bool hasNewCustomers = _model.NewCustomerIds.Length > 0;
+            Text(_note, _model.DailyNote, new(34, 50, hasNewCustomers ? 220 : 488, hasNewCustomers ? 46 : 68), hasNewCustomers ? 18 : 21, wrap: true);
+            if (hasNewCustomers) AddNewCustomerNote(_note, new(270, 45), 51, new(300, 96, 206, 26), new(194, 96, 96, 26), 15);
         });
     }
 

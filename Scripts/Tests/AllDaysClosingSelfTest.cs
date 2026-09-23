@@ -21,6 +21,7 @@ public partial class AllDaysClosingSelfTest : Node
         {
             var catalog = GetNode<DataCatalog>("/root/DataCatalog");
             Require(catalog.IsValid, "valid catalog");
+            CheckEmptyShop(catalog);
             int days = 0;
             foreach (string city in new[] { StableIds.Cities.Tianjin, StableIds.Cities.Wuhan, StableIds.Cities.Xian, StableIds.Cities.Guangzhou })
                 foreach (int day in catalog.GetDays(city).Keys)
@@ -75,6 +76,9 @@ public partial class AllDaysClosingSelfTest : Node
             var queue = controller.CustomerQueue!;
             bool unresolvedBefore = !queue.IsResolved;
             controller.Tick(.05);
+            Require(controller.State != DayState.Running || !queue.HasUnscheduled
+                || queue.Slots.Count > 0 || queue.DoorQueue.Count > 0,
+                $"{city} {day} immediately refills an empty shop");
             if (controller.State == DayState.Results)
             {
                 Require(unresolvedBefore && queue.IsResolved, "settles on resolution, not on a later empty countdown tick");
@@ -121,6 +125,44 @@ public partial class AllDaysClosingSelfTest : Node
         controller.Free();
     }
 
+    private void CheckEmptyShop(DataCatalog catalog)
+    {
+        foreach (string city in new[] { StableIds.Cities.Tianjin, StableIds.Cities.Wuhan, StableIds.Cities.Xian, StableIds.Cities.Guangzhou })
+        {
+            if (!ExperienceProfile.IsCityAvailable(city, ExperienceProfile.IsDemo)) continue;
+            var controller = new DayController(); AddChild(controller);
+            Require(controller.TryPrepareDay(city, 6, catalog, out _), "prepare empty-shop fixture");
+            var plan = new DayPlan { Customers = controller.CurrentPlan!.Customers.Take(3).Select((c, i) => new PlannedCustomer
+            {
+                CustomerId = c.CustomerId, CustomerTypeId = c.CustomerTypeId,
+                ArrivalTime = 100 + i * 100, Order = c.Order,
+            }).ToArray() };
+            var queue = new CustomerQueue(plan, catalog.CustomersById, 1, 5);
+            int resolved = 0; queue.ResolveBeforeArrival = (c, _) => { resolved++; return c.Order; };
+            queue.Tick(0, 0, false);
+            Require(queue.Slots.Count == 0, "closed arrivals do not refill");
+            queue.Tick(0, 0, true);
+            Require(queue.Slots.Count == 1 && resolved == 1, "empty shop immediately admits exactly one guest");
+            var first = queue.Slots[0];
+            queue.Tick(.4, .4, true);
+            Require(queue.Slots.Count == 1 && resolved == 1, "occupied shop keeps future schedule");
+            Require(queue.TryMarkServed(first.Id), "serve first guest");
+            queue.Tick(.5, .1, true);
+            Require(queue.Slots.Count == 1 && queue.Slots[0] == first, "exit animation blocks refill");
+            queue.Tick(.9, .4, true);
+            Require(queue.Slots.Count == 1 && queue.Slots[0].Id == plan.Customers[1].CustomerId && resolved == 2,
+                "same tick as final exit admits next guest and resolves its order once");
+            queue.Tick(1.3, .4, true);
+            queue.Slots[0].WaitSeconds = queue.Slots[0].LeaveAtSeconds;
+            queue.Tick(1.4, .1, true);
+            queue.Tick(2, .6, true);
+            Require(queue.Slots.Count == 1 && queue.Slots[0].Id == plan.Customers[2].CustomerId && resolved == 3,
+                "timeout exit also immediately refills");
+            Require(plan.Customers[1].ArrivalTime == 200, "planned schedule stays intact");
+            controller.Free();
+        }
+    }
+
     private static DeliveryEvaluation Deliver(DayController c, DataCatalog catalog, string id, OrderLineData line)
     {
         if (line.ProductKind == ProductKind.Pancake)
@@ -153,6 +195,8 @@ public partial class AllDaysClosingSelfTest : Node
         {
             foreach (var customer in session.Waiting) customer.Tick(customer.Patience, false);
             session.Tick(.05);
+            Require(session.Phase != YangzhouPhase.Running || session.Waiting.Count > 0,
+                "Yangzhou immediately refills after timeout while customers remain");
         }
         var result = session.Result();
         Require(session.Phase == YangzhouPhase.Results && session.Elapsed < session.Day.Duration

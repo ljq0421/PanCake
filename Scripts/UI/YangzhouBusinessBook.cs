@@ -41,6 +41,7 @@ public static class YangzhouBusinessBook
             var upgrades = save.AvailableYangzhouBookUpgrades(catalog);
             if (upgrades.Length > 0) stickers.Add("可升级：" + string.Join("、", upgrades));
             model.CustomerMilestones = CustomerCollection.MilestoneMessages(customersBefore, save.Data.CustomerRecords).ToArray();
+            model.NewCustomerIds = CustomerCollection.NewlyKnownIds(customersBefore, save.Data.CustomerRecords);
             model.Stickers = stickers.ToArray();
             model.Upgrades = new BookUpgradeSource(save, catalog);
         }

@@ -29,7 +29,14 @@ public partial class StartScreen
         Show(); RenderCity();
     }
     public void PresentLedger() { SelectedDay = Math.Max(1, JourneyModel.Progress(_save!, _city).HighestUnlockedDay); RenderLedgerPage(); }
-    public void PresentUpgrades() => RenderUpgradePage();
+    public void PresentUpgrades()
+    {
+        // Entering the page starts at the first upgrade the player can buy now.
+        // Refreshes after selecting or purchasing still retain their current selection.
+        _selectedEquipment = null;
+        _equipmentCity = _city;
+        RenderUpgradePage();
+    }
     public void RefreshCityPage()
     {
         string focus = GetViewport().GuiGetFocusOwner()?.Name.ToString() ?? "";
@@ -220,6 +227,17 @@ public partial class StartScreen
             HomeArt(_body, "未解锁城市节点", new(1175, 401, 145, 145));
         else
         {
+            var foodBoard = new TextureRect
+            {
+                Name = "LedgerFoodBoard",
+                Position = new(1005, 372),
+                Size = new(500, 210),
+                Texture = GD.Load<Texture2D>("res://resource/art/Global/UpgradeUI/设备涂鸦背景-v1.png"),
+                ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+                StretchMode = TextureRect.StretchModeEnum.Scale,
+                MouseFilter = MouseFilterEnum.Ignore,
+            };
+            _body.AddChild(foodBoard);
             var paths = _cityModel?.LedgerArt(_city, SelectedDay) ?? Array.Empty<string>();
             if (paths.Length == 0) Foods(_body, city, new(1020, 385), 170, .75f);
             else for (int i = 0; i < paths.Length; i++)

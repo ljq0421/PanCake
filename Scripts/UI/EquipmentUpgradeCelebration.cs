@@ -13,8 +13,8 @@ public partial class EquipmentUpgradeCelebration : Control
     private DayController? _controller;
     private string _city = "";
     private readonly Dictionary<string, Target> _targets = new();
-    private readonly Queue<Target> _queue = new();
-    private Target? _current;
+    private readonly Queue<IReadOnlyList<Target>> _queue = new();
+    private IReadOnlyList<Target>? _current;
     private float _elapsed;
     private Func<bool> _active = () => false;
     private Action? _afterUnlocks;
@@ -25,6 +25,8 @@ public partial class EquipmentUpgradeCelebration : Control
     internal string CurrentCaption => _caption.Text;
     internal int PlayedCount { get; private set; }
     internal bool AudioPlaying => _audio.Playing;
+    internal IReadOnlyCollection<string> HighlightedIds => _current?.Select(target => target.Id).ToArray()
+        ?? Array.Empty<string>();
     private const float Duration = 3f;
 
     public static EquipmentUpgradeCelebration Attach(Control owner, Func<bool> active)
@@ -43,9 +45,10 @@ public partial class EquipmentUpgradeCelebration : Control
 
     public override void _Ready()
     {
-        _caption = new Label { MouseFilter = MouseFilterEnum.Ignore, Size = new(620, 62),
+        _caption = new Label { MouseFilter = MouseFilterEnum.Ignore, Size = new(1100, 132),
             HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
-        _caption.AddThemeFontSizeOverride("font_size", 30);
+        _caption.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        _caption.AddThemeFontSizeOverride("font_size", 25);
         _caption.AddThemeColorOverride("font_color", new Color("fff0bd"));
         _caption.AddThemeColorOverride("font_outline_color", new Color("51351e"));
         _caption.AddThemeConstantOverride("outline_size", 8);
@@ -77,9 +80,8 @@ public partial class EquipmentUpgradeCelebration : Control
         }
         foreach (var target in targets) _targets[target.Id] = target;
         // Queue at opening; persistence is consumed only when each cue is actually shown.
-        foreach (var target in targets)
-            if (save.Data.GetCity(city).PendingUpgradeCelebrations.ContainsKey(target.Id))
-                _queue.Enqueue(target);
+        var pending = targets.Where(target => save.Data.GetCity(city).PendingUpgradeCelebrations.ContainsKey(target.Id)).ToArray();
+        if (pending.Length > 0) _queue.Enqueue(pending);
         return true;
     }
 
@@ -89,9 +91,10 @@ public partial class EquipmentUpgradeCelebration : Control
         Clear();
         _controller = controller;
         _city = controller.CurrentConfig!.CityId;
-        foreach (var item in DayUnlockPresentation.ForDay(GetNode<DataCatalog>("/root/DataCatalog"), controller.CurrentConfig))
-            _queue.Enqueue(new(item.Id, "新解锁：" + item.Name, item.Bounds, true));
-        if (_queue.Count == 0) { continueDay(); return; }
+        var unlocks = DayUnlockPresentation.ForDay(GetNode<DataCatalog>("/root/DataCatalog"), controller.CurrentConfig)
+            .Select(item => new Target(item.Id, item.Name, item.Bounds, true)).ToArray();
+        if (unlocks.Length == 0) { continueDay(); return; }
+        _queue.Enqueue(unlocks);
         _afterUnlocks = continueDay;
     }
 
@@ -101,9 +104,9 @@ public partial class EquipmentUpgradeCelebration : Control
         if (!_active() || _controller?.TutorialActive != false || _save is null
             || !_targets.TryGetValue(equipmentId, out var target)
             || !_save.Data.GetCity(_city).PendingUpgradeCelebrations.ContainsKey(equipmentId)
-            || (_current is { Unlock: false } && _current.Id == equipmentId)
-            || _queue.Any(t => !t.Unlock && t.Id == equipmentId)) return;
-        _queue.Enqueue(target with { Bounds = bounds ?? target.Bounds });
+            || (_current?.Any(target => !target.Unlock && target.Id == equipmentId) == true)
+            || _queue.Any(group => group.Any(target => !target.Unlock && target.Id == equipmentId))) return;
+        _queue.Enqueue(new[] { target with { Bounds = bounds ?? target.Bounds } });
     }
 
     public override void _Process(double delta)
@@ -115,16 +118,21 @@ public partial class EquipmentUpgradeCelebration : Control
         if (_current is not null) Show();
         if (_current is null)
         {
-            var target = _queue.Dequeue();
-            string caption = target.Caption;
-            if (!target.Unlock)
+            var group = _queue.Dequeue();
+            IReadOnlyList<Target> visible = group;
+            if (!group[0].Unlock)
             {
-                if (_save is null || !_save.TryConsumeUpgradeCelebrations(_city, new[] { target.Id }, out var upgrades, out _)
-                    || !upgrades.TryGetValue(target.Id, out int level)) return;
-                caption = EquipmentUpgradePresentation.FirstUse(target.Id, level);
+                if (_save is null || !_save.TryConsumeUpgradeCelebrations(_city, group.Select(target => target.Id), out var upgrades, out _)) return;
+                visible = group.Where(target => upgrades.ContainsKey(target.Id)).ToArray();
+                if (visible.Count == 0) return;
+                _caption.Text = string.Join("\n", visible.Select(target =>
+                    $"{target.Caption}：{EquipmentUpgradePresentation.FirstUse(target.Id, upgrades[target.Id])}"));
             }
-            _current = target; _elapsed = 0;
-            _caption.Text = caption; Show();
+            else
+                _caption.Text = "新解锁：\n" + string.Join("\n", visible.Select(target => target.Caption).Chunk(3)
+                    .Select(row => string.Join(" · ", row)));
+            _current = visible; _elapsed = 0;
+            Show();
             _audio.Play(); PlayedCount++;
         }
         _elapsed += (float)delta;
@@ -140,9 +148,9 @@ public partial class EquipmentUpgradeCelebration : Control
         }
         float alpha = Mathf.Min(1, _elapsed / .12f) * Mathf.Clamp((Duration - _elapsed) / .35f, 0, 1);
         _caption.Modulate = new(1, 1, 1, alpha);
-        var rect = _current.Bounds;
-        _caption.Position = new(Mathf.Clamp(rect.GetCenter().X - 310, 20, 1280),
-            Math.Max(8, rect.Position.Y - 62 - (ProjectSettings.GetSetting("accessibility/reduce_motion", false).AsBool() ? 0 : 18 * (1 - Mathf.Exp(-_elapsed * 4)))));
+        var rect = HighlightBounds(_current);
+        _caption.Position = new(Mathf.Clamp(rect.GetCenter().X - _caption.Size.X / 2, 20, 800),
+            Math.Max(8, rect.Position.Y - _caption.Size.Y - (ProjectSettings.GetSetting("accessibility/reduce_motion", false).AsBool() ? 0 : 18 * (1 - Mathf.Exp(-_elapsed * 4)))));
         QueueRedraw();
     }
 
@@ -151,7 +159,11 @@ public partial class EquipmentUpgradeCelebration : Control
         if (_current is null) return;
         float p = ProjectSettings.GetSetting("accessibility/reduce_motion", false).AsBool() ? 1 : _elapsed / Duration;
         float alpha = Mathf.Min(1, _elapsed / .12f) * Mathf.Clamp((Duration - _elapsed) / .4f, 0, 1);
-        var rect = _current.Bounds;
+        foreach (var target in _current) DrawHighlight(target.Bounds, p, alpha);
+    }
+
+    private void DrawHighlight(Rect2 rect, float p, float alpha)
+    {
         Vector2 center = rect.GetCenter();
         Vector2 radius = rect.Size * (.48f + .06f * (1 - Mathf.Exp(-p * 7)));
         var points = Enumerable.Range(0, 81).Select(i => center + new Vector2(
@@ -170,6 +182,13 @@ public partial class EquipmentUpgradeCelebration : Control
                 at + new Vector2(-size * .26f, size * .26f), at + new Vector2(-size, 0), at + new Vector2(-size * .26f, -size * .26f) };
             DrawColoredPolygon(star, new Color(1, .91f, .62f, alpha));
         }
+    }
+
+    private static Rect2 HighlightBounds(IReadOnlyList<Target> targets)
+    {
+        Rect2 result = targets[0].Bounds;
+        foreach (var target in targets.Skip(1)) result = result.Merge(target.Bounds);
+        return result;
     }
 
     public void Clear()

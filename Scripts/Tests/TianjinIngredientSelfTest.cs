@@ -73,6 +73,8 @@ public partial class TianjinIngredientSelfTest : Node
                 Check(_station.Machine.Runtime.State == PancakeState.Spreading, "spreading interrupts pour without waiting");
                 Release();
                 _station.Machine.SetSpreadCoverage(1); stroke.StrokeCompleted?.Invoke(StrokeMode.Spread);
+                Check(stroke.SpreadCompletionVisible, "spread completion keeps a full green ring visible");
+                await Shot($"{width}-spread-complete");
                 int eggStock = _station.Inventory.GetQuantity("egg");
                 if (Capture) Engine.TimeScale = .2;
                 Click("egg"); Click("egg");

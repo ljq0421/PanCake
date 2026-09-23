@@ -161,7 +161,7 @@ public partial class PancakeWorkstation
             var basket = _fryerVisual.TeachingBasketTarget();
             return f.State switch {
                 FryerState.Empty or FryerState.Stored when FryerMachine.Inventory.Count == 0 => Step("fryer:load", "在炸锅上按住左键，装入油条。", basket),
-                FryerState.Loaded => Step("fryer:lower", "点击下锅，或按 G。", TutorialFocusTarget.Control(_lowerBasket)),
+                FryerState.Loaded => Step("fryer:lower", "点击炸锅锅体下锅，或按 G。", TutorialFocusTarget.Control(_fryerVisual)),
                 FryerState.Frying when !FryerMachine.Level.AutoRaise => Step("fryer:raise", f.Quality == YoutiaoQuality.Light ? "等待油条金黄，再点击炸锅锅体提篮。" : "点击炸锅锅体提篮，或按 G。", TutorialFocusTarget.Control(_fryerVisual)),
                 FryerState.Burnt => Step("discard", "在焦油条上长按右键 0.45 秒，再拖入垃圾桶。", basket),
                 _ => null,

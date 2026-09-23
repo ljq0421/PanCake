@@ -20,6 +20,8 @@ public partial class StrokeInteractor : Control
     private readonly CoverageTracker _sauce = new(SauceRequiredCells, SauceRules.MaximumAmount,
         SauceRings, SauceSectors, 1);
     private double _sauceCompletionRemaining;
+    private double _spreadCompletionRemaining;
+    internal bool SpreadCompletionVisible => _spreadCompletionRemaining > 0;
     private double _completedSauceAmount;
     internal bool SauceCompletionVisible => _sauceCompletionRemaining > 0;
     private StrokeMode _activeMode;
@@ -79,6 +81,11 @@ public partial class StrokeInteractor : Control
 
     public override void _Process(double delta)
     {
+        if (SpreadCompletionVisible)
+        {
+            _spreadCompletionRemaining = Math.Max(0, _spreadCompletionRemaining - delta);
+            QueueRedraw();
+        }
         if (IsToolHeld?.Invoke() == true || _toolVisible) RefreshVisualState();
         if (_sauceCompletionRemaining > 0)
         {
@@ -94,6 +101,13 @@ public partial class StrokeInteractor : Control
         _completedSauceAmount = amount;
         _sauceCompletionRemaining = 1.1;
         ZIndex = 88;
+        QueueRedraw();
+    }
+
+    public void ShowSpreadCompletion()
+    {
+        CancelStroke();
+        _spreadCompletionRemaining = 1.1;
         QueueRedraw();
     }
 
@@ -137,6 +151,7 @@ public partial class StrokeInteractor : Control
         _spread.Reset();
         _sauce.Reset();
         _sauceCompletionRemaining = 0;
+        _spreadCompletionRemaining = 0;
         QueueRedraw();
     }
 
@@ -239,6 +254,12 @@ public partial class StrokeInteractor : Control
 
     public override void _Draw()
     {
+        if (SpreadCompletionVisible)
+        {
+            EllipseGeometry completedGeometry = GetSpreadGeometry();
+            DrawPolyline(EllipsePoints(completedGeometry, -Mathf.Pi / 2.0f, Mathf.Tau, 72),
+                ProjectCake.UI.TianjinUi.Green, 10.0f, true);
+        }
         if (SauceCompletionVisible)
         {
             EllipseGeometry finishedGeometry = GetSpreadGeometry();
@@ -346,13 +367,16 @@ public partial class StrokeInteractor : Control
 
     private void SetToolVisible(bool visible)
     {
+        bool wasVisible = _toolVisible;
         _toolVisible = visible;
         QueueRedraw();
         if (visible)
         {
             Input.MouseMode = Input.MouseModeEnum.Hidden;
         }
-        else if (Input.MouseMode == Input.MouseModeEnum.Hidden)
+        // An inactive brush must not restore the OS pointer owned by another
+        // cooking cursor (for example the pinch hand during folding).
+        else if (wasVisible && Input.MouseMode == Input.MouseModeEnum.Hidden)
         {
             Input.MouseMode = Input.MouseModeEnum.Visible;
         }

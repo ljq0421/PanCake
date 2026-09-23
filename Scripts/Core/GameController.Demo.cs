@@ -21,6 +21,8 @@ public partial class GameController
         wuhan.ConnectController(controller);
         ConnectBusinessContinuation(screen.BusinessDetails, StableIds.Cities.Tianjin);
         ConnectBusinessContinuation(wuhan.BusinessDetails, StableIds.Cities.Wuhan);
+        ConnectCustomerCollection(screen.BusinessDetails);
+        ConnectCustomerCollection(wuhan.BusinessDetails);
         screen.HubRequested += () => ReturnFromBusiness(StableIds.Cities.Tianjin);
         wuhan.HubRequested += () => ReturnFromBusiness(StableIds.Cities.Wuhan);
         _startScreen.Initialize(_save);

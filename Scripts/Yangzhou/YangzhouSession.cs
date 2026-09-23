@@ -143,7 +143,8 @@ public sealed class YangzhouSession
     }
     private void Arrive(bool tutorialClosing = false)
     {
-        if (_next >= Plan.Count || _waiting.Count >= 5 || (!tutorialClosing && Elapsed + .000001 < _nextAt)) return;
+        if (_next >= Plan.Count || _waiting.Count >= 5
+            || (_waiting.Count > 0 && !tutorialClosing && Elapsed + .000001 < _nextAt)) return;
         var next = Plan[_next];
         if (Day.Day < 6 && next.TemplateId == "K" && _waiting.Any(o => o.Template.Id == "K")) return;
         int complex = _waiting.Count(o => o.Template.Complex);

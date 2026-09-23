@@ -195,8 +195,12 @@ public partial class BusinessDetailsView
 
         _note = new Control { Name = "DailyNote", Position = new(ArtPageLeft, 418), Size = new(ArtPageWidth, 122), MouseFilter = MouseFilterEnum.Ignore }; _summary.AddChild(_note);
         var notePaper = FittedArtBounds(Art(_note, "今日手记便签底板", new(0, 0, ArtPageWidth, 122)));
-        Text(_note, "营业手记", new(notePaper.Position + new Vector2(52, 18), new(notePaper.Size.X - 80, 30)), 21);
-        Text(_note, _model.DailyNote, new(notePaper.Position + new Vector2(28, 52), new(notePaper.Size.X - 56, 62)), 20, wrap: true);
+        Text(_note, "营业手记", new(notePaper.Position + new Vector2(52, 10), new(notePaper.Size.X - 80, 30)), 21);
+        bool hasNewCustomers = _model.NewCustomerIds.Length > 0;
+        Text(_note, _model.DailyNote, new(notePaper.Position + new Vector2(28, 50), new(hasNewCustomers ? 220 : notePaper.Size.X - 56, hasNewCustomers ? 46 : 62)), hasNewCustomers ? 18 : 20, wrap: true);
+        if (hasNewCustomers) AddNewCustomerNote(_note, notePaper.Position + new Vector2(275, 45), 51,
+            new(notePaper.Position + new Vector2(305, 96), new Vector2(notePaper.Size.X - 325, 26)),
+            new(notePaper.Position + new Vector2(195, 96), new Vector2(100, 26)), 15);
         var rating = _model.Stickers.Where(s => s.Contains("评级")).ToArray();
         if (rating.Length > 0) Text(_summary, string.Join(" · ", rating), new(ArtPageRight, 408, ArtPageWidth, 30), 21);
         var unlocked = _model.Stickers.Where(s => !s.Contains("评级") && !s.Contains("升级") && !s.StartsWith("早餐新记录：", StringComparison.Ordinal)).ToArray();

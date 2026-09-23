@@ -44,8 +44,8 @@ public partial class UnlockTeachingSelfTest : Node
             var save = new SaveService(); string path = Path.Combine(_output, Guid.NewGuid() + ".json");
             save.UsePathForTests(path); AddChild(save);
             save.Data.Tianjin.HighestUnlockedDay = 15; save.Data.Wuhan.HighestUnlockedDay = 12;
-            foreach (var item in new[] { ("Tianjin", 2), ("Tianjin", 3), ("Tianjin", 4), ("Tianjin", 5), ("Tianjin", 6),
-                ("Wuhan", 2), ("Wuhan", 3), ("Wuhan", 4) })
+            foreach (var item in new[] { ("Tianjin", 1), ("Tianjin", 2), ("Tianjin", 3), ("Tianjin", 4), ("Tianjin", 5), ("Tianjin", 6),
+                ("Wuhan", 1), ("Wuhan", 2), ("Wuhan", 3), ("Wuhan", 4) })
             {
                 bool tianjin = item.Item1 == "Tianjin";
                 var learned = tianjin ? save.Data.Tianjin.LearnedWorkbenchActions : save.Data.Wuhan.LearnedWorkbenchActions;
@@ -67,12 +67,13 @@ public partial class UnlockTeachingSelfTest : Node
                     effect.SetProcess(false);
                     effect._Notification((int)NotificationApplicationFocusIn);
                     int unlockCount = DayUnlockPresentation.ForDay(catalog, controller.CurrentConfig!).Count;
-                    for (int index = 0; index < unlockCount; index++)
+                    if (unlockCount > 0)
                     {
                         Check(controller.State == DayState.Preparing && !controller.TutorialActive
                             && controller.CustomerQueue!.Slots.Count == 0, "unlock cue precedes teaching and customer arrival");
                         effect._Process(.5);
                         Check(effect.Visible && effect.CurrentCaption.StartsWith("新解锁："), "unlock cue is visible before teaching");
+                        Check(effect.HighlightedIds.Count == unlockCount, "all new unlocks are highlighted together before teaching");
                         controller.Tick(10);
                         Check(controller.DayElapsedSeconds == 0, "unlock cue does not consume business time");
                         effect._Process(3);
@@ -82,7 +83,11 @@ public partial class UnlockTeachingSelfTest : Node
                 void Finish() { if (t is not null) t.FinishDemoLesson(); else w!.FinishWuhanDemoLesson(); }
                 void Retry() { if (t is not null) t.RetryDemoLesson(); else w!.RetryWuhanDemoLesson(); }
                 Start();
-                var lesson = TutorialOrders.UnlockFor(controller.CurrentConfig!)!;
+                var lesson = TutorialOrders.UnlockFor(controller.CurrentConfig!)
+                    ?? (tianjin
+                        ? new TutorialOrders.UnlockLesson("第一张煎饼", ProductKind.Pancake, StableIds.Recipes.Basic, "deliver:finished_pancake")
+                        : new TutorialOrders.UnlockLesson("第一碗热干面", ProductKind.HotDryNoodles,
+                            controller.CurrentPlan!.Customers.Single().Order.Lines.Single().DefinitionId, "deliver:hot_dry_noodles"));
                 Check(controller.TutorialActive && controller.CurrentPlan!.Customers.Count == 1, $"{item} starts one isolated guest");
                 var guest = controller.CustomerQueue!.Slots.Single();
                 Check(guest.Order.Lines.Single() == new OrderLineData(lesson.Kind, lesson.DefinitionId, 1), $"{item} practices the unlocked food");
@@ -90,7 +95,27 @@ public partial class UnlockTeachingSelfTest : Node
                 Check(controller.DayElapsedSeconds == 0 && guest.WaitSeconds == 0 && controller.CustomerQueue.Slots.Count == 1,
                     $"{item} no extra arrivals or patience loss during long practice");
                 var focus = t?.TeachingFocus ?? w!.TeachingFocus; focus.Refresh();
-                Check(focus.CurrentAction is not null, $"{item} has actionable guidance");
+                if (item == ("Tianjin", 2))
+                {
+                    Check(focus.CurrentAction is null, "crispy and scallion lesson skips the earlier pancake-spreading guidance");
+                    var station = t!.GetNode<PancakeWorkstation>("PancakeWorkstation");
+                    var machine = station.Machine;
+                    Check(machine.TryExecute(PancakeCommand.PlaceBatter).Success && machine.TryExecute(PancakeCommand.BeginSpread).Success
+                        && machine.TryExecute(PancakeCommand.CompleteSpread).Success && machine.TryExecute(PancakeCommand.AddEgg).Success,
+                        "crispy and scallion lesson allows the familiar pancake setup without guidance");
+                    station.Tick(100);
+                    Check(machine.TryExecute(PancakeCommand.Flip).Success, "crispy and scallion lesson flips familiar pancake");
+                    station.Tick(100);
+                    Check(machine.TryExecute(PancakeCommand.BeginSauce).Success, "crispy and scallion lesson starts familiar sauce step");
+                    machine.SetSauceCoverage(1);
+                    Check(machine.TryExecute(PancakeCommand.CompleteSauce).Success, "crispy and scallion lesson completes familiar sauce step");
+                    focus.Refresh();
+                    Check(focus.CurrentAction is "take:crispy" or "take:scallion",
+                        $"crispy and scallion lesson first guides one of the newly unlocked toppings: {focus.CurrentAction}");
+                    controller.AbandonDay(); Start();
+                    focus = t.TeachingFocus; focus.Refresh();
+                }
+                else Check(focus.CurrentAction is not null, $"{item} has actionable guidance");
                 await Capture($"{item.Item1}-{item.Item2}-practice");
                 var beforeSkip = learned.ToHashSet();
                 Finish();

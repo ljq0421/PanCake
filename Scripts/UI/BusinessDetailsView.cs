@@ -14,11 +14,11 @@ public partial class BusinessDetailsView : Control
     public event Action? ContinueRequested;
     public event Action? WuhanUnlockRequested;
     public event Action? WuhanUnlockStayRequested;
-    private Button? _stayInTianjin;
+    public event Action? CustomerCollectionRequested;
     private bool _continuing;
     private bool CanContinueBusiness => ContinueRequested is not null && _model.Closing && _model.CanClose && !_model.CanRetry && _model.Upgrades?.SupportsContinue == true;
     private Control _canvas = null!, _book = null!, _bookContent = null!, _summary = null!, _details = null!, _metrics = null!, _note = null!, _stamp = null!;
-    private Label _city = null!, _title = null!, _income = null!, _save = null!, _status = null!;
+    private Label _city = null!, _title = null!, _income = null!, _save = null!, _status = null!, _closeButtonCaption = null!;
     private VBoxContainer _rows = null!;
     private ScrollContainer _scroll = null!;
     private Button _previousPage = null!, _nextPage = null!, _retry = null!;
@@ -71,6 +71,8 @@ public partial class BusinessDetailsView : Control
         _rows = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; _rows.AddThemeConstantOverride("separation", 12); _scroll.AddChild(_rows);
         _save = Text(_bookContent, "", new(80, 792, 1120, 65), 20, Muted, wrap: true);
         CloseButton = ButtonAt(_bookContent, "收好账本", new(1320, 798, 240, 72), RequestPrimary); CloseButton.Name = "CloseBusinessDetails";
+        _closeButtonCaption = Text(_bookContent, "", new Rect2(), TravelActionFontSize, Ink, HorizontalAlignment.Center);
+        _closeButtonCaption.Name = "CloseBusinessDetailsCaption";
         _retry = ButtonAt(_bookContent, "重试保存", new(1100, 809, 190, 58), () => { FinishAnimation(); RetryRequested?.Invoke(); });
         _audio = new PancakeAudio(); AddChild(_audio);
         BuildUpgradeTeaching();
@@ -93,18 +95,8 @@ public partial class BusinessDetailsView : Control
         _status.Visible = !UsesTravelBook || !model.Closing;
         _save.Text = model.SaveMessage;
         _save.Visible = _save.Text.Length > 0 && !(UsesTravelBook && _save.Text.Contains("已入账", StringComparison.Ordinal));
-        _retry.Visible = model.CanRetry; CloseButton.Disabled = !model.CanClose;
-        CloseButton.Text = model.NewWuhanUnlock ? "展开新旅程" : CanContinueBusiness ? $"开始第 {_model.Upgrades!.NextDay} 天" : "收好账本";
-        if (_stayInTianjin is null)
-            _stayInTianjin = ButtonAt(_bookContent, "留在天津", new(890, 776, 230, 70), RequestClose);
-        _stayInTianjin.Visible = model.NewWuhanUnlock;
-        if (model.NewWuhanUnlock)
-        {
-            SetButtonBounds(_stayInTianjin, new(960, 776, 240, 64));
-            _stayInTianjin.AddThemeFontSizeOverride("font_size", 27);
-            foreach (string state in new[] { "normal", "hover", "pressed", "disabled", "focus" })
-                _stayInTianjin.AddThemeStyleboxOverride(state, CloseButton.GetThemeStylebox(state));
-        }
+        _retry.Visible = model.CanRetry; CloseButton.Visible = true; CloseButton.Disabled = !model.CanClose;
+        CloseButton.Text = CanContinueBusiness ? $"开始第 {_model.Upgrades!.NextDay} 天" : "收好账本";
         BuildSummary(); RefreshRows(); SelectPage(false, false); Show();
         (model.CanClose ? CloseButton : _retry).GrabFocus(); StartAnimation();
         if (model.CityId == "tianjin" && model.Result.Day == 1 && model.Closing)
@@ -157,7 +149,9 @@ public partial class BusinessDetailsView : Control
         _note = new Control { Position = new(920, 451), Size = new(655, 143), MouseFilter = MouseFilterEnum.Ignore }; _summary.AddChild(_note);
         Panel(_note, new(0, 0, 655, 143), new("#F4E6BC"), 3, 0);
         Text(_note, "营业手记", new(22, 10, 590, 34), 24, Accent);
-        var note = Text(_note, _model.DailyNote, new(22, 51, 602, 80), 28, wrap: true);
+        bool hasNewCustomers = _model.NewCustomerIds.Length > 0;
+        Text(_note, _model.DailyNote, new(22, 51, hasNewCustomers ? 265 : 602, hasNewCustomers ? 62 : 80), hasNewCustomers ? 20 : 28, wrap: true);
+        if (hasNewCustomers) AddNewCustomerNote(_note, new(305, 48), 57, new(310, 109, 321, 28), new(210, 111, 90, 25), 18);
         if (_model.Stickers.Length > 0)
         {
             var sticker = Text(_summary, string.Join("  ·  ", _model.Stickers.Where(s => (!CanUpgrade || !s.Contains("升级")) && !s.StartsWith("早餐新记录：", StringComparison.Ordinal))), new(100, 582, 1440, 52), 20, Accent, wrap: true);
@@ -176,10 +170,14 @@ public partial class BusinessDetailsView : Control
         _previousPage.Visible = details; _nextPage.Visible = !details;
         if (UsesTravelBook)
         {
-            SetButtonBounds(CloseButton, _model.NewWuhanUnlock ? new(1225, 776, 240, 64) : details ? new(1145, 776, 280, 70) : new(1184, 625, 260, 64));
+            SetButtonBounds(CloseButton, details ? new(1145, 776, 280, 70) : new(1184, 625, 260, 64));
             CloseButton.AddThemeFontSizeOverride("font_size", details ? 30 : TravelActionFontSize);
-            if (CanContinueBusiness) CloseButton.AddThemeFontSizeOverride("font_size", 23);
         }
+        // Continuing a business day belongs to the settlement summary.  The
+        // detail spread offers only its return-page affordance, so it does not
+        // duplicate the "开始第 x 天" action on the right page.
+        CloseButton.Visible = !details || !CanContinueBusiness;
+        SyncCloseButtonCaption();
         if (!changed) return;
         (details ? _previousPage : _nextPage).GrabFocus();
     }
@@ -238,21 +236,23 @@ public partial class BusinessDetailsView : Control
     }
     private void RequestPrimary()
     {
-        if (_model.NewWuhanUnlock && _model.CanClose && WuhanUnlockRequested is not null)
-        {
-            if (_entrance?.IsRunning() == true) { FinishAnimation(); return; }
-            if (_continuing) return;
-            _continuing = true; RemoveUpgradeModal(); WuhanUnlockRequested.Invoke(); return;
-        }
         if (!CanContinueBusiness) { RequestClose(); return; }
         if (_continuing) return;
         if (_entrance?.IsRunning() == true) { FinishAnimation(); return; }
-        _continuing = true; CloseButton.Disabled = true;
+        _continuing = true; CloseButton.Disabled = true; SyncCloseButtonCaption();
         RemoveUpgradeModal(); ContinueRequested?.Invoke();
     }
-    public void RestoreContinueAfterFailure() { _continuing = false; CloseButton.Disabled = !_model.CanClose; }
+    private void RequestNewJourney()
+    {
+        if (!_model.NewWuhanUnlock || !_model.CanClose || _upgradeModal is not null || _continuing || WuhanUnlockRequested is null) return;
+        if (_entrance?.IsRunning() == true) { FinishAnimation(); return; }
+        _continuing = true;
+        WuhanUnlockRequested.Invoke();
+    }
+    public void RestoreContinueAfterFailure() { _continuing = false; CloseButton.Disabled = !_model.CanClose; SyncCloseButtonCaption(); }
     private void StartAnimation()
     {
+        StopIncomeAudio();
         if (ProjectSettings.GetSetting("accessibility/reduce_motion", false).AsBool()) return;
         _audio.Play(PancakeSound.BookOpen);
         if (UsesTravelBook)
@@ -266,7 +266,8 @@ public partial class BusinessDetailsView : Control
         _entrance.TweenInterval(.52);
         if (!_model.Closing) return;
         _income.Text = "¥0"; _metrics.Modulate = new(1, 1, 1, 0); _stamp.Modulate = new(1, 1, 1, 0); _note.Modulate = new(1, 1, 1, 0);
-        _entrance.TweenMethod(Callable.From<float>(n => _income.Text = $"¥{Mathf.RoundToInt(n)}"), 0f, (float)_model.Result.TotalRevenue, .6);
+        _entrance.TweenMethod(Callable.From<double>(n => SetCountingIncome((int)Math.Round(n, MidpointRounding.AwayFromZero))), 0d, (double)_model.Result.TotalRevenue, .6);
+        _entrance.TweenCallback(Callable.From(() => _incomeAudio?.Stop()));
         _entrance.TweenProperty(_metrics, "modulate", Colors.White, .25);
         _entrance.TweenCallback(Callable.From(() => { if (_model.Result.PerfectOrders > 0) _audio.Play(PancakeSound.BookStamp); _stamp.Scale = Vector2.One * 1.13f; }));
         _entrance.TweenProperty(_stamp, "modulate", Colors.White, .08);
@@ -276,6 +277,7 @@ public partial class BusinessDetailsView : Control
     }
     internal void FinishAnimation()
     {
+        StopIncomeAudio();
         FinishPageAnimation();
         _entrance?.Kill(); _entrance = null;
         RestoreTravelMotion();
@@ -400,6 +402,35 @@ public partial class BusinessDetailsView : Control
     private static string Percent(double? value) => value is { } n ? $"{Math.Round(n, MidpointRounding.AwayFromZero):0}%" : "—";
     private static void Clear(Node n) { foreach (Node child in n.GetChildren()) { n.RemoveChild(child); child.QueueFree(); } }
     private static void Place(Control parent, Control node, Rect2 r) { parent.AddChild(node); node.Position = r.Position; node.Size = r.Size; }
+    private void SyncCloseButtonCaption()
+    {
+        if (!UsesTravelBook)
+        {
+            _closeButtonCaption.Hide();
+            RestoreCloseButtonTextColors();
+            return;
+        }
+
+        // The button remains semantic and focusable. Its visible caption follows the
+        // Label path used by the upgrade sticker, so both actions share glyph sizing
+        // and vertical centering without changing their artwork or hit areas.
+        _closeButtonCaption.Text = CloseButton.Text;
+        _closeButtonCaption.Position = CloseButton.Position + new Vector2(22, 6);
+        _closeButtonCaption.Size = CloseButton.Size - new Vector2(44, 16);
+        _closeButtonCaption.AddThemeFontSizeOverride("font_size", CloseButton.GetThemeFontSize("font_size"));
+        _closeButtonCaption.AddThemeColorOverride("font_color", CloseButton.Disabled ? Muted : Ink);
+        _closeButtonCaption.Visible = CloseButton.Visible;
+        foreach (string color in new[] { "font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "font_disabled_color" })
+            CloseButton.AddThemeColorOverride(color, Colors.Transparent);
+    }
+
+    private void RestoreCloseButtonTextColors()
+    {
+        foreach (string color in new[] { "font_color", "font_hover_color", "font_pressed_color", "font_focus_color" })
+            CloseButton.AddThemeColorOverride(color, TianjinUi.BrownText);
+        CloseButton.AddThemeColorOverride("font_disabled_color", new Color("#826F5D"));
+    }
+
     private Label Text(Control parent, string value, Rect2 r, int size, Color? color = null, HorizontalAlignment align = HorizontalAlignment.Left, bool wrap = false)
     {
         var label = TianjinUi.Label(wrap ? "" : value, size, color ?? Ink, align);

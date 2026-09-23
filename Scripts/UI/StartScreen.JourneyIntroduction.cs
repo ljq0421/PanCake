@@ -39,7 +39,7 @@ public partial class StartScreen
                 COLOR = vec4(vec3(0.64, 0.40, 0.20), pow(source.a, 3.0) * ink) * tint;
             }
             """ } };
-        AddBreakfastPaper();
+        if (_save?.IsDemo != true) AddBreakfastPaper();
         var heading = Text(_body, "BreakfastHeading", "从街坊的一份早餐开始", new(1010, 280, 530, 62), 34, true);
         FitTextWidth(heading, 34, 24);
         GetNode<DataCatalog>("/root/DataCatalog").TryGetDay(city.Id, 1, out var firstDay);
@@ -57,7 +57,7 @@ public partial class StartScreen
             _body.AddChild(icon);
             Text(_body, "BreakfastName" + i, food.Name,
                 featured ? new(1220, 400, 278, 47) : new(x + 102, 621, 156, 39), featured ? 34 : 27);
-            if (featured)
+            if (featured && _save?.IsDemo != true)
             {
                 var availability = Text(_body, "BreakfastAvailability0", available ? "首日经营" : "后续早餐预览", new(1220, 367, 150, 30), 19, true);
                 availability.AddThemeColorOverride("font_color", new Color("#95552F"));
@@ -67,13 +67,17 @@ public partial class StartScreen
                 featured ? new(1220, 456, 278, 109) : new(x + 102, 666, 150, 73), featured ? 22 : 20);
             story.VerticalAlignment = VerticalAlignment.Top;
         }
-        Text(_body, "BreakfastPreviewHeading", "后续早餐预览", new(1140, 584, 270, 30), 20, true)
-            .AddThemeColorOverride("font_color", new Color("#896345"));
-        Text(_body, "DepartureHint", "第一天，从一份热乎早餐开始。", new(1010, 751, 530, 36), 23, true);
+        if (_save?.IsDemo != true)
+        {
+            Text(_body, "BreakfastPreviewHeading", "后续早餐预览", new(1140, 584, 270, 30), 20, true)
+                .AddThemeColorOverride("font_color", new Color("#896345"));
+            Text(_body, "DepartureHint", "第一天，从一份热乎早餐开始。", new(1010, 751, 530, 36), 23, true);
+        }
         var depart = Button(_body, "Depart", "从天津出发", new(1065, 794, 420, 65), DepartFirstStation, bare: true);
         var plate = HomeArt(depart, "首页地图按钮底板", new(Vector2.Zero, depart.Size), stretch: true);
         plate.ShowBehindParent = true;
         depart.AddThemeFontSizeOverride("font_size", 32);
+        if (_save?.IsDemo == true) DecorateDemoIntroduction(false);
         FitJourneyIntroduction();
         if (!opening) { JourneyStage = FirstJourneyStage.Ready; Focus("Depart"); }
     }
@@ -86,12 +90,15 @@ public partial class StartScreen
             _body.GetNode<Label>("BreakfastStory" + i).AddThemeFontSizeOverride("font_size", _settings.Language == "en" ? 18 : i == 0 ? 22 : 20);
             FitTextWidth(_body.GetNode<Label>("BreakfastName" + i), i == 0 ? 34 : 27, 18);
         }
-        FitTextWidth(_body.GetNode<Label>("BreakfastAvailability0"), 19, 15);
-        FitTextWidth(_body.GetNode<Label>("BreakfastPreviewHeading"), 20, 16);
+        if (_body.GetNodeOrNull<Label>("BreakfastAvailability0") is { } availability)
+            FitTextWidth(availability, 19, 15);
+        if (_body.GetNodeOrNull<Label>("BreakfastPreviewHeading") is { } previewHeading)
+            FitTextWidth(previewHeading, 20, 16);
         FitTextWidth(_body.GetNode<Label>("JourneyPostcard/PostcardCity"), 25, 18);
         FitTextWidth(_body.GetNode<Label>("BreakfastHeading"), 34, 24);
         FitTextWidth(_body.GetNode<Label>("StationTitle"), 48, 30);
-        FitTextWidth(_body.GetNode<Label>("DepartureHint"), 23, 18);
+        if (_body.GetNodeOrNull<Label>("DepartureHint") is { } departureHint)
+            FitTextWidth(departureHint, 23, 18);
     }
 
     private void AddBreakfastPaper()

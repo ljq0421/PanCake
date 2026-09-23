@@ -70,7 +70,8 @@ public partial class EquipmentUpgradeView : Control
         _detail = new Control { Name = "EquipmentDetail", Position = new(700, 0), Size = new(560, 620), MouseFilter = MouseFilterEnum.Ignore };
         AddChild(_detail);
         if (items.Length == 0) { LabelAt(this, "EmptyEquipment", "暂无设备", new(0, 120, 560, 100), 30); return; }
-        Select(items.Any(i => i.Id == selected) ? selected! : items[0].Id, false);
+        string defaultId = items.FirstOrDefault(i => i.CanBuy)?.Id ?? items[0].Id;
+        Select(items.Any(i => i.Id == selected) ? selected! : defaultId, false);
     }
 
     private void Select(string id, bool focus)

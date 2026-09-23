@@ -69,7 +69,8 @@ public partial class TutorialFocusSelfTest : Node
             var catalog = GetNode<DataCatalog>("/root/DataCatalog");
             string savePath = Path.Combine(_directory, Guid.NewGuid() + ".json");
             var save = new SaveService(); save.UsePathForTests(savePath); AddChild(save);
-            if (OS.GetCmdlineUserArgs().Contains("--order-paper-only")) await OrderPaper(catalog, save);
+            if (OS.GetCmdlineUserArgs().Contains("--sesame-only")) await WuhanSesame(catalog, save);
+            else if (OS.GetCmdlineUserArgs().Contains("--order-paper-only")) await OrderPaper(catalog, save);
             else if (OS.GetCmdlineUserArgs().Contains("--sauce-only")) await TianjinSauce(catalog, save);
             else if (OS.GetCmdlineUserArgs().Contains("--beef-only")) await WuhanBeef(catalog, save);
             else if (OS.GetCmdlineUserArgs().Contains("--wuhan-only")) await Wuhan(catalog, save, savePath);
@@ -91,6 +92,49 @@ public partial class TutorialFocusSelfTest : Node
             GD.Print($"TUTORIAL_FOCUS_SELF_TEST_OK {_checks}"); GetTree().Quit();
         }
         catch (Exception error) { GD.PushError(error.ToString()); GetTree().Quit(1); }
+    }
+    private async Task WuhanSesame(DataCatalog catalog, SaveService save)
+    {
+        var settings = GetNode<JourneySettings>("/root/JourneySettings");
+        settings.UsePathForTests(Path.Combine(_directory, "sesame-settings.cfg"));
+        InterfaceLessons.MarkAllSeen(settings);
+        var controller = new DayController(); AddChild(controller);
+        var screen = SceneFactory.Instantiate<WuhanDayScreen>("res://Scenes/Gameplay/WuhanDayScreen.tscn");
+        _viewport.AddChild(screen); screen.ConnectController(controller); screen.SetProcess(false);
+        Check(screen.Initialize(catalog, save, controller, 1), "sesame lesson initializes");
+        screen.ForceDemoTutorial = true; screen.BeginDay();
+        void Step(double dt) { screen._Notification((int)NotificationApplicationFocusIn); screen._Process(dt); }
+        Step(.5); await Frames();
+        var view = screen.Workstation; var focus = screen.TeachingFocus;
+        var order = TutorialOrders.Pending(controller, catalog).Single();
+        Check(order.Toppings.Count > 0, "lesson has ordered toppings");
+        screen.Bowl.TryAddNoodles(NoodleQuality.Optimal); Step(.01); focus.Refresh();
+        Check(focus.CurrentAction == "take:" + StableIds.Ingredients.WuhanBaseSeasoning, "sesame is taught before ordered toppings");
+        await Shot("sesame-first");
+        foreach (string topping in new[] { StableIds.Ingredients.WuhanScallion, StableIds.Ingredients.WuhanChiliOil })
+        {
+            Click(view, view.IngredientCenter(Array.IndexOf(WuhanWorkstationView.IngredientIds, topping))); Step(.8); focus.Refresh();
+            Check(screen.Bowl.Toppings.Contains(topping) && !screen.Bowl.HasBaseSeasoning
+                && !screen.Bowl.AddMixDistance(500), "early topping does not add sesame or enable mixing");
+            Check(WuhanWorkstationView.BowlLayers(new Rect2(0, 0, 200, 200), screen.Bowl.HasBaseSeasoning,
+                0, screen.Bowl.Quality, screen.Bowl.Toppings).All(l => l.Id != "unmixed"), "early topping does not render sesame");
+            await Shot(topping == StableIds.Ingredients.WuhanScallion ? "scallion-without-sesame" : "chili-without-sesame");
+            screen.Bowl.Reset(); screen.Bowl.TryAddNoodles(NoodleQuality.Optimal);
+        }
+        Click(view, view.IngredientCenter(0)); Step(.8); focus.Refresh();
+        Check(screen.Bowl.HasBaseSeasoning && order.Toppings.Any(t => focus.CurrentAction == "take:" + t), "adding sesame advances to ordered topping");
+        Check(WuhanWorkstationView.BowlLayers(new Rect2(0, 0, 200, 200), screen.Bowl.HasBaseSeasoning,
+            0, screen.Bowl.Quality, screen.Bowl.Toppings).Any(l => l.Id == "unmixed"), "sesame appears after its actual click");
+        await Shot("sesame-added");
+        foreach (string topping in order.Toppings)
+        { Click(view, view.IngredientCenter(Array.IndexOf(WuhanWorkstationView.IngredientIds, topping))); Step(.8); }
+        focus.Refresh(); Check(focus.CurrentAction == "mix:noodles", "seasoning steps lead to mixing");
+        Move(view, view.BowlCenter); Button(view, view.BowlCenter, true);
+        for (int i = 0; i < 12; i++) Move(view, view.BowlCenter + new Vector2(i % 2 == 0 ? 45 : -45, 0), true);
+        Button(view, view.BowlCenter, false); Step(.01);
+        Check(screen.DeliverToCustomer(order.CustomerId, ProductKind.HotDryNoodles) && !screen.DemoLessonFailed, "seasoned meal completes tutorial");
+        await Shot("sesame-lesson-complete");
+        screen.QueueFree(); controller.QueueFree(); await Frames();
     }
     private async Task OrderPaper(DataCatalog catalog, SaveService save)
     {
@@ -366,10 +410,23 @@ public partial class TutorialFocusSelfTest : Node
         Check(focus.CurrentAction == "take:" + StableIds.Ingredients.WuhanBaseSeasoning, "seasoning is the next target"); await Shot("wuhan-seasoning");
         CheckAdjacent(focus);
         Check(focus.CardBounds.Position != rawCardPosition, "Wuhan card moves from raw noodles to seasoning");
+        foreach (string topping in new[] { StableIds.Ingredients.WuhanScallion, StableIds.Ingredients.WuhanChiliOil })
+        {
+            screen.IngredientAction(topping); Step(.8); focus.Refresh();
+            Check(!screen.Bowl.HasBaseSeasoning && !screen.Bowl.AddMixDistance(500), "topping alone neither adds sesame sauce nor enables mixing");
+            var layers = WuhanWorkstationView.BowlLayers(new Rect2(0, 0, 200, 200), screen.Bowl.HasBaseSeasoning,
+                (float)screen.Bowl.MixProgress, screen.Bowl.Quality, screen.Bowl.Toppings).Select(l => l.Id).ToArray();
+            Check(layers.Length == 2 && !layers.Contains("unmixed"), "topping without sauce renders only noodles and its own topping");
+            Check(focus.CurrentAction == "take:" + StableIds.Ingredients.WuhanBaseSeasoning, "missing sauce remains the teaching target after a topping");
+            await Shot(topping == StableIds.Ingredients.WuhanScallion ? "wuhan-scallion-without-sauce" : "wuhan-chili-without-sauce");
+            screen.Bowl.Reset(); screen.Bowl.TryAddNoodles(NoodleQuality.Optimal);
+        }
         screen.IngredientAction(StableIds.Ingredients.WuhanBraisedBeef);
         Check(!save.Data.Wuhan.LearnedWorkbenchActions.Contains("take:" + StableIds.Ingredients.WuhanBraisedBeef), "failed topping is not learned");
         Click(view, view.IngredientCenter(0)); Step(.8); focus.Refresh();
         Check(save.Data.Wuhan.LearnedWorkbenchActions.Contains("take:" + StableIds.Ingredients.WuhanBaseSeasoning), "valid seasoning click passes through shade");
+        Check(WuhanWorkstationView.BowlLayers(new Rect2(0, 0, 200, 200), screen.Bowl.HasBaseSeasoning,
+            (float)screen.Bowl.MixProgress, screen.Bowl.Quality, screen.Bowl.Toppings).Any(l => l.Id == "unmixed"), "actual sesame addition renders the sauce layer");
         Check(focus.CurrentAction == "mix:noodles", "mixing targets bowl"); await Shot("wuhan-mix");
         Move(view, view.BowlCenter); Button(view, view.BowlCenter, true);
         for (int i = 0; i < 12; i++) Move(view, view.BowlCenter + new Vector2(i % 2 == 0 ? 45 : -45, 0), true);
@@ -415,8 +472,12 @@ public partial class TutorialFocusSelfTest : Node
         Drag(view, view.RawCenter, view.BasketRect(0).GetCenter()); Step(.3); Step(catalog.NoodleCookersByLevel[1].OptimalSeconds + .01);
         Check(screen.RaiseBasket(0), "replay raising succeeds"); Step(.4); screen.Cooker.TryQuickDrain(0);
         Check(screen.ReservePour(0), "replay pour succeeds"); Step(1); await Frames(); Step(.01); focus.Refresh();
+        Check(TutorialOrders.Pending(controller, catalog).Single().Toppings.Count > 0
+            && focus.CurrentAction == "take:" + StableIds.Ingredients.WuhanBaseSeasoning, "lesson teaches sesame before ordered toppings");
         CheckAdjacent(focus); await Shot("wuhan-lesson-seasoning");
         Click(view, view.IngredientCenter(0)); Step(.8); focus.Refresh();
+        Check(screen.Bowl.HasBaseSeasoning && TutorialOrders.Pending(controller, catalog).Single().Toppings
+            .Any(t => focus.CurrentAction == "take:" + t), "lesson teaches ordered toppings only after adding sesame");
         CheckAdjacent(focus); await Shot("wuhan-lesson-topping");
         foreach (string topping in TutorialOrders.Pending(controller, catalog).Single().Toppings)
         {

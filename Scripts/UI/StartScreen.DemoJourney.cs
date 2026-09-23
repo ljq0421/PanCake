@@ -7,31 +7,71 @@ public partial class StartScreen
 {
     private void ReturnFromBreakfastCollection()
     {
+        if (_collectionOverWorkbench)
+        {
+            var returnToSource = _collectionOverWorkbenchReturn;
+            _collectionOverWorkbench = false;
+            _collectionOverWorkbenchReturn = null;
+            ZIndex = _collectionOverlayZIndex;
+            Hide();
+            returnToSource?.Invoke();
+            return;
+        }
         RenderHome(); Focus("BreakfastRecords");
     }
     private void PresentDemoWuhanOpening()
     {
         Begin(JourneyPage.Opening); Chrome(() => PresentCity(StableIds.Cities.Wuhan), showBack: false); BookFrame(StableIds.Cities.Wuhan);
-        CityPicture(_body, JourneyModel.City(StableIds.Cities.Wuhan), new(335, 340, 550, 360));
-        Text(_body, "WuhanOpeningTitle", "江城过早", new(1030, 300, 470, 80), 46, true);
-        Text(_body, "WuhanOpeningText", "热干面拌开芝麻酱的香气，三鲜豆皮在锅里慢慢定型。\n\n先从一碗热干面开始，再添一份豆皮。\n天津的早餐铺随时等你回访。", new(1030, 420, 470, 300), 28);
-        var depart = Button(_body, "WuhanOpeningContinue", "开始武汉之旅", new(1050, 817, 460, 74), () => PresentCity(StableIds.Cities.Wuhan), bare: true);
-        var plate = Texture("res://resource/art/Wuhan/武汉解锁按钮底板-v1.png");
-        float plateScale = depart.Size.Y / plate.GetHeight();
-        depart.AddChild(new NinePatchRect
+        var city = JourneyModel.City(StableIds.Cities.Wuhan);
+        Text(_body, "WuhanOpeningTitle", "江城过早", new(350, 277, 530, 75), 44, true);
+        var postcard = HomeArt(_body, "武汉旅行明信片", new(335, 370, 550, 350));
+        postcard.Name = "WuhanJourneyPostcard";
+        HomeArt(_body, "定位符", new(535, 708, 23, 31)).Name = "WuhanPostcardMarker";
+        Text(_body, "WuhanPostcardCity", "武汉", new(570, 700, 150, 44), 26);
+        var skyline = HomeArt(_body, "早餐地图-武汉", new(580, 758, 295, 80));
+        skyline.Name = "WuhanSkyline";
+        // Match the Tianjin page's quiet ink print while retaining Wuhan's green palette.
+        skyline.Material = new ShaderMaterial { Shader = new Shader { Code = """
+            shader_type canvas_item;
+            varying vec4 tint;
+            void vertex() { tint = COLOR; }
+            void fragment() {
+                vec4 source = texture(TEXTURE, UV);
+                float lightness = dot(source.rgb, vec3(0.299, 0.587, 0.114));
+                float ink = mix(0.08, 0.55, clamp((1.0 - lightness) * 2.5, 0.0, 1.0));
+                COLOR = vec4(vec3(0.31, 0.46, 0.39), pow(source.a, 3.0) * ink) * tint;
+            }
+            """ } };
+        Text(_body, "WuhanBreakfastHeading", "先从一碗热干面开始", new(1010, 280, 530, 62), 32, true);
+        for (int i = 0; i < city.Foods.Length; i++)
         {
-            Name = "WuhanOpeningButtonPlate", Texture = plate, Size = depart.Size / plateScale, Scale = Vector2.One * plateScale,
-            PatchMarginLeft = plate.GetHeight() / 2, PatchMarginRight = plate.GetHeight() / 2,
-            MouseFilter = MouseFilterEnum.Ignore, ShowBehindParent = true
-        });
+            var food = city.Foods[i];
+            _body.AddChild(new BookFoodIcon { Name = "WuhanBreakfastFood" + i,
+                Position = i == 0 ? new(1025, 389) : new(1030, 632),
+                Size = i == 0 ? new(172, 167) : new(118, 112),
+                CropTransparentMargins = true, Product = new(food.Visual, food.Name, 1, food.Visual) });
+            Text(_body, "WuhanBreakfastName" + i, food.Name,
+                i == 0 ? new(1220, 409, 278, 44) : new(1180, 628, 330, 44), i == 0 ? 32 : 28);
+            var story = Text(_body, "WuhanBreakfastStory" + i,
+                i == 0 ? "热干面拌开芝麻酱的香气。" : "三鲜豆皮在锅里慢慢定型。",
+                i == 0 ? new(1220, 463, 278, 99) : new(1180, 680, 330, 65), 22);
+            story.VerticalAlignment = VerticalAlignment.Top;
+        }
+        var depart = Button(_body, "WuhanOpeningContinue", "开始武汉之旅", new(1050, 798, 460, 65), () => PresentCity(StableIds.Cities.Wuhan), bare: true);
+        var plate = HomeArt(depart, "首页地图按钮底板", new(Vector2.Zero, depart.Size), stretch: true);
+        plate.Name = "WuhanOpeningButtonPlate";
+        plate.ShowBehindParent = true;
         depart.AddThemeFontSizeOverride("font_size", 32);
-        depart.AddThemeColorOverride("font_color", WuhanUi.Ink);
-        depart.AddThemeColorOverride("font_hover_color", WuhanUi.Ink);
-        depart.AddThemeColorOverride("font_pressed_color", WuhanUi.Ink);
-        depart.AddThemeColorOverride("font_focus_color", WuhanUi.Ink);
-        depart.AddThemeColorOverride("font_outline_color", WuhanUi.Paper);
-        depart.AddThemeConstantOverride("outline_size", 4);
+        DecorateDemoIntroduction(true);
+        FitWuhanIntroduction();
         Focus("WuhanOpeningContinue");
+    }
+    private void FitWuhanIntroduction()
+    {
+        if (_body.GetNodeOrNull<Label>("WuhanOpeningTitle") is null) return;
+        foreach (var (name, size) in new[] { ("WuhanOpeningTitle", 44), ("WuhanBreakfastHeading", 32),
+            ("WuhanBreakfastName0", 32), ("WuhanBreakfastName1", 28) })
+            FitTextWidth(_body.GetNode<Label>(name), size, 18);
     }
     private void RenderDemoEnding()
     {

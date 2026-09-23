@@ -28,7 +28,11 @@ public partial class TianjinDayScreen
     {
         if (_controller?.CurrentConfig?.CityId != StableIds.Cities.Tianjin || !_focused || _manualPaused || _focusPaused || _detailsPaused
             || _abandonDialog.Visible || _controller.IsPaused || _committed || _demoLessonComplete || DemoLessonFailed
-            || _controller.State is not (DayState.Running or DayState.Closing)) return null;
+            || _controller.State is not (DayState.Running or DayState.Closing))
+        {
+            _controller?.SetBusinessClockFrozen("tianjin-refill-teaching", false);
+            return null;
+        }
         var orders = TutorialOrders.Pending(_controller, _catalog);
         TutorialFocusTarget[] Recipients(ProductKind kind, string? recipe)
         {
@@ -37,6 +41,7 @@ public partial class TianjinDayScreen
                 .SelectMany(p => TutorialFocusTarget.Artwork(_customerSlots[p.i])).ToArray();
         }
         var step = _workstation.ResolveFocus(orders, Recipients);
+        _controller.SetBusinessClockFrozen("tianjin-refill-teaching", step?.ActionId.StartsWith("refill:", StringComparison.Ordinal) == true);
         // One card owns the current instruction and the lesson action; the focus layer only spotlights it.
         if (_demoLesson?.Visible == true)
         {

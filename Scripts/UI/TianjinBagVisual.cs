@@ -13,7 +13,7 @@ public partial class TianjinBagVisual : Control
     private float _time, _opening, _fromOpening;
     public bool Animating { get; private set; }
     public bool OverFood { get; private set; }
-    public Rect2 StackBounds => new(516, 818, 172, 98);
+    public Rect2 StackBounds => TianjinWorkbenchLayout.EmbeddedBagStack;
     internal Vector2[] FocusOutline => Wall.Select(p => StackPoint(p, StackBounds.GetCenter())).ToArray();
     private static readonly Vector2 PaperPivot = new(647, 765);
     private static readonly Vector2[] Rim = new Vector2[] { new(293, 533), new(329, 546), new(373, 560),
@@ -91,9 +91,8 @@ public partial class TianjinBagVisual : Control
     public override void _Draw()
     {
         if (_paper is null) return;
-        // Three shallow layers remain on the counter even while one is held.
-        for (int i = 2; i >= 0; i--)
-            DrawPaper(StackBounds.GetCenter() + new Vector2(-i * 5, i * 5), 0);
+        // The v3 background owns the paper stack at rest. Draw only the sheet
+        // being moved so the painted stack is not duplicated or misaligned.
         if (!_held && !Animating) return;
         if (!_commit || _held)
         {

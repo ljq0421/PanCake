@@ -74,11 +74,7 @@ public sealed class CustomerQueue
                     _pressureBlockedUntil = dayElapsedSeconds + delay;
                     break;
                 }
-                PlannedCustomer plan = _plan.Customers[_nextPlanIndex];
-                if (ResolveBeforeArrival is not null) plan.Order = ResolveBeforeArrival(plan, _nextPlanIndex);
-                _nextPlanIndex++;
-                _pending.Enqueue(new CustomerRuntime(plan, _types[plan.CustomerTypeId], _patienceMultiplier));
-                _pressurePlanIndex = -1;
+                EnqueueNext();
                 changed = true;
                 changed |= AdmitPending();
             }
@@ -134,6 +130,14 @@ public sealed class CustomerQueue
         }
 
         changed |= AdmitPending();
+
+        // Exits and the door queue must resolve first. Pull only the next guest
+        // forward; keep the business clock and all remaining scheduled times intact.
+        if (acceptArrivals && HasUnscheduled && _slots.Count == 0 && _pending.Count == 0 && _capacity > 0)
+        {
+            EnqueueNext();
+            changed |= AdmitPending();
+        }
 
         if (changed)
         {
@@ -209,6 +213,15 @@ public sealed class CustomerQueue
         SelectedCustomerId = null;
         Changed?.Invoke();
         return lost;
+    }
+
+    private void EnqueueNext()
+    {
+        PlannedCustomer plan = _plan.Customers[_nextPlanIndex];
+        if (ResolveBeforeArrival is not null) plan.Order = ResolveBeforeArrival(plan, _nextPlanIndex);
+        _nextPlanIndex++;
+        _pending.Enqueue(new CustomerRuntime(plan, _types[plan.CustomerTypeId], _patienceMultiplier));
+        _pressurePlanIndex = -1;
     }
 
     private bool AdmitPending()

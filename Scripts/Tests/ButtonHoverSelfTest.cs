@@ -107,6 +107,11 @@ public partial class ButtonHoverSelfTest : Node
                 GD.Print($"BUTTON_HOVER_SCOPE_CHECK_OK checks={_checks}"); GetTree().Quit(); return;
             }
             var home = start.Descendants<Button>().First(b => b.Name == "Continue");
+            if (OS.GetCmdlineUserArgs().Contains("--audio-only"))
+            {
+                await CheckAudio(start, home, settings);
+                GD.Print($"BUTTON_HOVER_AUDIO_OK checks={_checks}"); GetTree().Quit(); return;
+            }
             Require(home.HasFocus(), "Continue has production default focus");
             Move(new(1918, 1078)); await Settle(); await Shot("home-rest");
             await CheckHover(home, "home");
@@ -116,7 +121,11 @@ public partial class ButtonHoverSelfTest : Node
             Require(start.Descendants<Button>().Any(b => b.Name.ToString().StartsWith("Node") && b.HasFocus()), "map has production default focus");
             await Shot("map-rest");
             foreach (var node in start.Descendants<Button>().Where(b => b.Name.ToString().StartsWith("Node")).ToArray())
-                await CheckHover(node, "map-" + node.Name);
+            {
+                Move(node.GetGlobalRect().GetCenter()); await Settle();
+                Require(node.IsHovered() && node.GetNode<Control>("Art/Highlight").Visible, "map marker highlights on hover");
+                Require(node.Scale.IsEqualApprox(Vector2.One), "map marker keeps leader attached");
+            }
             start.PresentHome(); await Settle();
             var settingsButton = start.Descendants<Button>().First(b => b.Name == "Settings");
             settingsButton.EmitSignal(BaseButton.SignalName.Pressed); await Settle();

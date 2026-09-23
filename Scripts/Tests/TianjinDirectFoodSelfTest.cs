@@ -10,7 +10,8 @@ namespace ProjectCake.Tests;
 
 public partial class TianjinDirectFoodSelfTest : Node
 {
-    private const string Output = "res://artifacts/tianjin-bag-stack-20260922";
+    private bool CaptureCursor => OS.GetCmdlineUserArgs().Contains("--pinch-cursor");
+    private string Output => CaptureCursor ? "res://artifacts/pinch-cursor-20260923/direct" : "res://artifacts/tianjin-bag-stack-20260922";
     private int _checks;
     private bool Capture => OS.GetCmdlineUserArgs().Contains("--capture");
     private void Check(bool value, string message)
@@ -36,7 +37,7 @@ public partial class TianjinDirectFoodSelfTest : Node
             Directory.CreateDirectory(ProjectSettings.GlobalizePath(Output));
             var settings = GetNode<JourneySettings>("/root/JourneySettings");
             settings.UsePathForTests($"{Output}/settings.cfg"); InterfaceLessons.MarkAllSeen(settings);
-            if (Capture) GetWindow().Position = new Vector2I(-10000, -10000);
+            if (Capture && !CaptureCursor) GetWindow().Position = new Vector2I(-10000, -10000);
             var catalog = GetNode<DataCatalog>("/root/DataCatalog");
             var scene = GD.Load<PackedScene>("res://Scenes/Gameplay/TianjinDayScreen.tscn");
             foreach (int width in new[] { 1920, 1280 })
@@ -70,12 +71,24 @@ public partial class TianjinDirectFoodSelfTest : Node
                     if (state == PancakeState.Folded) station.Machine.Runtime.AddIngredient("crispy"); station.RefreshForCapture();
                 }
                 Ready(); await Frames();
+                if (CaptureCursor)
+                {
+                    GetWindow().GrabFocus();
+                    Move(Point(.9f)); await Frames(8);
+                    Check(station.GetNode<PancakePinchCursor>("PancakePinchCursor").Visible
+                        && Input.MouseMode == Input.MouseModeEnum.Hidden, $"pinch hand appears on grabbable rim (focus={GetWindow().HasFocus()}, pointer={GetViewport().GetMousePosition()}, target={Point(.9f)}, mode={Input.MouseMode}, paused={station.Paused})");
+                    await Shot($"pinch-hover-{width}");
+                    Move(Point(.5f)); await Frames();
+                    Check(!station.GetNode<PancakePinchCursor>("PancakePinchCursor").Visible
+                        && Input.MouseMode == Input.MouseModeEnum.Visible, "center hover restores regular cursor");
+                }
                 Check(station.GetNode<Control>("DirectPaperBag").IsVisibleInTree(), "paper stack visible before folding");
                 Mouse(Stack(), true); Mouse(Stack(), false);
                 Check(!station.IsDirectDragging && station.Machine.Runtime.State == PancakeState.SideAReady, "paper pickup requires folded food");
                 Check(!((Button)station.FindChild("PancakeFlipAction", true, false)).Visible, "flip button removed");
                 Mouse(Point(.9f), true); await Frames(); Move(Point(.82f)); await Frames();
                 Check(station.IsDirectDragging && !station.IsFlipping && station.Machine.Runtime.State == PancakeState.SideAReady, "edge lift does not commit early");
+                if (CaptureCursor) Check(station.GetNode<PancakePinchCursor>("PancakePinchCursor").Visible, "pinch cursor stays visible during flip drag");
                 Check(!station.TryInvokeProductionShortcut(Key.F), "held gesture blocks F");
                 Check(!station.TryBeginTrashDrag(GetViewport().GetFinalTransform().AffineInverse() * Point(.5f)), "held gesture blocks trash pickup");
                 await Shot($"flip-lift-{width}");
@@ -91,6 +104,20 @@ public partial class TianjinDirectFoodSelfTest : Node
                     Check(!station.IsFlipping && station.Machine.Runtime.HasEgg && living.ToolsAtRest, "soft flip lands with egg intact");
                 }
                 Check(flips == 1, "successful flips record the tutorial once");
+                // Previously rejected: a grip slightly inside the narrow rim,
+                // a short deliberate inward pull, or a release beyond the stove.
+                Ready(); Mouse(Point(.74f), true); Move(Point(.64f)); Mouse(Point(.64f), false);
+                Check(station.IsFlipping, "inner edge grip and short inward pull flip"); station.Tick(.4);
+                Ready(); Mouse(Point(1.06f), true); Move(Point(.96f)); Mouse(Point(.96f), false);
+                Check(station.IsFlipping, "near-rim grip tolerates painted edge padding"); station.Tick(.4);
+                Ready(); Mouse(Point(.9f), true); Move(Point(.65f, 1.2f)); Mouse(Point(.65f, 1.2f), false);
+                Check(station.IsFlipping, "diagonal inward drag can release beyond stove"); station.Tick(.4);
+                Ready(); Mouse(Point(.5f), true); Mouse(Point(.5f), false);
+                Check(!station.IsDirectDragging && !station.IsFlipping, "center click does not accidentally flip");
+                Ready(); Mouse(Point(.9f), true); Move(Point(1.1f)); Mouse(Point(1.1f), false);
+                Check(station.Machine.Runtime.State == PancakeState.SideAReady, "outward drag does not flip");
+                Ready(); Mouse(Point(.9f), true); Mouse(Point(.9f), false);
+                Check(station.Machine.Runtime.State == PancakeState.SideAReady, "edge click without drag does not flip");
                 Ready(); Mouse(Point(.9f), true); Move(Point(.5f)); Move(Point(.9f)); Mouse(Point(.9f), false); station.Tick(.2);
                 Check(station.Machine.Runtime.State == PancakeState.SideAReady, "drag back cancels");
                 Ready(PancakeState.SideACooking); Mouse(Point(.9f), true); Move(Point(.5f)); Mouse(Point(.5f), false);
@@ -158,6 +185,7 @@ public partial class TianjinDirectFoodSelfTest : Node
                 Check(!station.IsDirectDragging && !canvas.DirectFoodHidden, "reset clears gesture");
                 Ready(); Mouse(Point(.9f), true); screen.Hide(); await Frames();
                 Check(!station.IsDirectDragging && canvas.FlipPickup == 0, "hide clears gesture");
+                if (CaptureCursor) Check(Input.MouseMode == Input.MouseModeEnum.Visible, "hiding restores OS cursor");
                 screen.QueueFree(); controller.QueueFree(); save.QueueFree(); await Frames();
             }
             GD.Print($"TIANJIN_DIRECT_TEST: {_checks} passed, 0 failed"); GetTree().Quit();

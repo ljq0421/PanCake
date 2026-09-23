@@ -36,8 +36,12 @@ public partial class StartScreenSelfTest
         {
             Check(!string.IsNullOrWhiteSpace(Find<Label>("BreakfastStory" + i).Text), "culture copy visible " + i);
         }
-        Check(Find<Label>("BreakfastAvailability0").Text == "首日经营"
-            && Find<Label>("BreakfastPreviewHeading").Text == "后续早餐预览", "first-day feature and shared future preview");
+        if (ExperienceProfile.IsDemo)
+            Check(!_screen.Descendants<Label>().Any(l => l.Name.ToString() is "BreakfastAvailability0" or "BreakfastPreviewHeading" or "DepartureHint"),
+                "Demo entry omits day and preview copy");
+        else
+            Check(Find<Label>("BreakfastAvailability0").Text == "首日经营"
+                && Find<Label>("BreakfastPreviewHeading").Text == "后续早餐预览", "first-day feature and shared future preview");
         Check(Find<Label>("PostcardCity").Text == "天津" && Find<TextureRect>("TianjinSkyline").Texture is not null, "Tianjin destination and skyline visible");
         await JourneyCapture("new-journey-tianjin");
         settings.SetLanguage("en"); await Frames(); await JourneyCapture("new-journey-tianjin-en");

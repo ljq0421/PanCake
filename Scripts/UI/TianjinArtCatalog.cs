@@ -41,9 +41,9 @@ public sealed class TianjinArtCatalog
     {
         _portraitLayouts = LoadPortraitLayouts();
         Load("background", "早餐铺主界面-1920x1080.png");
-        Load("background_pancake", "天津-煎饼-v2.png");
-        Load("background_fryer", "天津-煎饼-炸锅-v2.png");
-        Load("background_soy", "天津-煎饼-炸锅-豆浆-v2.png");
+        Load("background_pancake", "天津-煎饼-v3.png");
+        Load("background_fryer", "天津-煎饼-炸锅-v3.png");
+        Load("background_soy", "天津-煎饼-炸锅-豆浆-v3.png");
         Load("embedded_basket", "Workbench/阶段工作台-升降滤篮-v4.png");
         Load("coin", "金币图标.png", true);
         Load("ledger_book", "Ledger/ledger_book.png", true);

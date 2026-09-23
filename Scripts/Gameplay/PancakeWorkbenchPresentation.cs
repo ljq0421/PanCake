@@ -9,6 +9,18 @@ namespace ProjectCake.Gameplay;
 public partial class PancakeWorkstation
 {
     private Control? _fryerBodyInput;
+    private PancakePinchCursor? _pinchCursor;
+
+    private bool ShowPinchCursor(Vector2 point)
+    {
+        if (!_initialized || !CanInteract || !IsVisibleInTree()) return false;
+        if (_foldHeld || _directGesture == DirectGesture.Flip) return true;
+        Vector2 local = _canvas.GetGlobalTransformWithCanvas().AffineInverse() * point;
+        return CanFoldGesture && IsFoldGrabPoint(local)
+            || CanDirectGesture && !DirectBusy
+                && Machine.Runtime.State is ProjectCake.Pancake.PancakeState.SideAReady or ProjectCake.Pancake.PancakeState.SideAOverdone
+                && IsFlipGrabPoint(local);
+    }
 
     private static void PositionEmbedded(Control control, Rect2 rect)
     {
@@ -21,6 +33,8 @@ public partial class PancakeWorkstation
 
     private void ConfigureTianjinPresentation()
     {
+        _pinchCursor = new PancakePinchCursor { Name = "PancakePinchCursor", ShouldShow = ShowPinchCursor };
+        AddChild(_pinchCursor);
         foreach (DropZone zone in this.Descendants<DropZone>())
             zone.HideInteractionFrame();
         foreach (WorkstationSlotView slot in this.Descendants<WorkstationSlotView>())
@@ -52,11 +66,12 @@ public partial class PancakeWorkstation
         _fryerPanel.ZIndex = 35;
         // The painted fryer rises above the counter and must occlude customer waists.
         // Sample the unchanged source art through its silhouette, not a rectangular patch.
-        Vector2[] fryerOutline = {
+        Vector2[] fryerOutline = new Vector2[] {
             new(162, 447), new(389, 447), new(414, 461), new(428, 506), new(452, 510),
             new(466, 555), new(452, 573), new(449, 665), new(435, 699), new(396, 709),
             new(141, 709), new(117, 692), new(111, 577), new(97, 565), new(108, 516),
-            new(123, 508), new(139, 467) };
+            new(123, 508), new(139, 467) }
+            .Select(point => point + TianjinWorkbenchLayout.FryerSourceOffset).ToArray();
         var foreground = new Polygon2D {
             Name = "EmbeddedFryerForeground", Polygon = fryerOutline, UV = fryerOutline,
             Texture = _art.WorkbenchBackground(new[] { ProductKind.Youtiao }), Scale = TianjinWorkbenchLayout.SourceScale };
@@ -80,8 +95,11 @@ public partial class PancakeWorkstation
         var tongs = new Node2D { Name = "EmbeddedTongsForeground" };
         _fryerPanel.AddChild(tongs);
         foreach (Vector2[] outline in tongOutlines)
-            tongs.AddChild(new Polygon2D { Polygon = outline, UV = outline,
+        {
+            Vector2[] movedOutline = outline.Select(point => point + TianjinWorkbenchLayout.FryerSourceOffset).ToArray();
+            tongs.AddChild(new Polygon2D { Polygon = movedOutline, UV = movedOutline,
                 Texture = foreground.Texture, Scale = TianjinWorkbenchLayout.SourceScale });
+        }
         _fryerVisual.Reparent(_fryerPanel, false);
         _fryerVisual.ZIndex = 1;
         PositionEmbedded(_fryerVisual, TianjinWorkbenchLayout.EmbeddedFryer);
@@ -90,7 +108,8 @@ public partial class PancakeWorkstation
             TianjinWorkbenchLayout.EmbeddedOpening.Size);
         EquipmentProgressView.Attach(this, "PancakeCookingProgress", new Rect2(700, 893, 240, 42),
             () => EquipmentProgressPresentation.Pancake(Machine), showCaption: false);
-        EquipmentProgressView.Attach(_fryerPanel, "FryerCookingProgress", new Rect2(196, 767, 240, 42),
+        EquipmentProgressView.Attach(_fryerPanel, "FryerCookingProgress", new Rect2(
+                new Vector2(196, 767) + TianjinWorkbenchLayout.FryerDisplayOffset, new Vector2(240, 42)),
             () => EquipmentProgressPresentation.Fryer(FryerMachine), showCaption: false).ZIndex = 3;
         Control rawSlot = _rawYoutiaoInput.GetParent().GetParent<Control>();
         _rawYoutiaoInput.Reparent(_fryerPanel, false);
@@ -101,7 +120,7 @@ public partial class PancakeWorkstation
         _rawYoutiaoInput.ActivateOnTap = false;
         _rawYoutiaoInput.TooltipText = string.Empty;
         _rawYoutiaoInput.CanActivate = () => CanLoadRawYoutiao() && !_drag.IsDragging;
-        // A drawing-free hit area replaces the separate raise button while frying.
+        // A drawing-free hit area replaces the separate fryer action buttons.
         // Loading retains its existing hold gesture underneath this area.
         _fryerBodyInput = new Control {
             Name = "FryerBodyInput", ZIndex = 2, Visible = false,
@@ -112,14 +131,21 @@ public partial class PancakeWorkstation
         {
             if (input is not InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: true }) return;
             _fryerBodyInput.AcceptEvent();
-            if (CanRaiseFryer() && !_rightPressed)
+            if (FryerMachine?.Runtime.State == FryerState.Loaded)
+            {
+                _rawYoutiaoInput.Cancel();
+                ExecuteFryer(FryerCommand.LowerBasket);
+            }
+            else if (CanRaiseFryer() && !_rightPressed)
             {
                 _rawYoutiaoInput.Cancel();
                 ExecuteFryer(FryerCommand.RaiseBasket);
             }
         };
-        PositionEmbedded(_fryerStatus.GetParent<Control>(), new Rect2(108, 955, 266, 44));
-        PositionEmbedded(_fryerActions, new Rect2(383, 955, 150, 44));
+        PositionEmbedded(_fryerStatus.GetParent<Control>(), new Rect2(
+            new Vector2(108, 955) + TianjinWorkbenchLayout.FryerDisplayOffset, new Vector2(266, 44)));
+        PositionEmbedded(_fryerActions, new Rect2(
+            new Vector2(383, 955) + TianjinWorkbenchLayout.FryerDisplayOffset, new Vector2(150, 44)));
         _finishedYoutiaoSlot.Reparent(_fryerPanel, false);
         Rect2 rack = TianjinWorkbenchLayout.EmbeddedYoutiaoTray;
         var rackSpec = TianjinWorkbenchLayout.EmbeddedFinishedYoutiaoSlot();

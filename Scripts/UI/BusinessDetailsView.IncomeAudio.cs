@@ -24,8 +24,10 @@ public partial class BusinessDetailsView
             _incomeAudio = new AudioStreamPlayer
             {
                 Name = "IncomeCountAudio", Bus = JourneySettings.EffectsBus,
-                VolumeDb = -16, MaxPolyphony = 2,
-                Stream = BusinessFeedbackAudio.Make(ProjectCake.Gameplay.BusinessCue.CoinCredited)
+                // The revenue counter represents coins being tallied, rather than a generic UI confirmation.
+                // Reuse the approved metal-coin credit clip so this read is distinct from other book cues.
+                VolumeDb = -10, MaxPolyphony = 2,
+                Stream = GD.Load<AudioStreamWav>(BusinessFeedbackAudio.CartoonCoinPath)
             };
             AddChild(_incomeAudio);
         }
@@ -45,6 +47,7 @@ public partial class BusinessDetailsView
         {
             _incomeAudioFocused = false;
             _incomeAudio?.Stop();
+            _newCityAudio?.Stop();
         }
         if (what == NotificationApplicationFocusIn) _incomeAudioFocused = true;
     }

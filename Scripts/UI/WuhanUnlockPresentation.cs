@@ -7,22 +7,20 @@ namespace ProjectCake.UI;
 /// <summary>Presentation only: the successful settlement has already unlocked the destination.</summary>
 public partial class WuhanUnlockPresentation : CanvasLayer
 {
-    private Control _root = null!, _canvas = null!, _card = null!, _copy = null!, _actions = null!;
-    private TextureRect _tianjin = null!, _wuhan = null!, _locked = null!, _halo = null!, _food = null!, _stamp = null!;
+    private Control _root = null!, _canvas = null!;
+    private TextureRect _tianjin = null!, _wuhan = null!, _locked = null!, _halo = null!;
     private ColorRect _paper = null!;
-    private Label _error = null!;
+    private Action<string> _finished = null!;
     private Control _map = null!;
     private TextureRect _cover = null!;
     private ColorRect _sheet = null!;
-    private Button _skip = null!, _depart = null!, _stay = null!;
-    private readonly List<Control> _dashes = new(), _stars = new(), _steam = new();
-    private OpeningAudio _audio = null!;
+    private Button _skip = null!;
+    private readonly List<Control> _dashes = new(), _stars = new();
+    private WuhanUnlockAudio _audio = null!;
     private Tween? _timeline;
     private SaveService _save = null!;
-    private Func<string, string> _navigate = null!;
     private float _time;
-    private bool _ready, _leaving, _focused = true;
-    private double _armedAt;
+    private bool _ready, _focused = true;
     public Texture2D? SourceFrame { get; set; }
     private TextureRect? _sourceFrame;
     public bool FinalVisible => _ready;
@@ -35,8 +33,6 @@ public partial class WuhanUnlockPresentation : CanvasLayer
         Layer = 310;
         _root = new Control { MouseFilter = Control.MouseFilterEnum.Stop, Theme = TianjinUi.CreateTheme() };
         AddChild(_root); _root.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
-        var background = new ColorRect { Color = new("#F4E7CD"), MouseFilter = Control.MouseFilterEnum.Stop };
-        _root.AddChild(background); background.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
         _canvas = new Control { Size = new(1920, 1080), MouseFilter = Control.MouseFilterEnum.Ignore };
         _root.AddChild(_canvas);
         void Fit() { float s = Math.Min(_root.Size.X / 1920, _root.Size.Y / 1080); _canvas.Scale = Vector2.One * s; _canvas.Position = (_root.Size - new Vector2(1920, 1080) * s) / 2; }
@@ -77,31 +73,9 @@ public partial class WuhanUnlockPresentation : CanvasLayer
         MapCaption("下一站 · 武汉", new(600, 390, 220, 38));
         for (int i = 0; i < 3; i++) _stars.Add(Art(_map, "城市节点点亮星闪" + (i + 1), new(650 + i * 42, 285 - (i % 2) * 20, 30, 30)));
 
-        _card = new Control { Name = "WuhanPostcard", Size = new(1920, 1080), PivotOffset = new(960, 540), MouseFilter = Control.MouseFilterEnum.Ignore };
-        _canvas.AddChild(_card);
-        var book = Art(_card, "旅行手账双页母版", StartScreen.BookBounds);
-        CityPageArtSkin.Apply(book, StableIds.Cities.Wuhan);
-        _copy = new Control { MouseFilter = Control.MouseFilterEnum.Ignore }; _card.AddChild(_copy);
-        Text(_copy, "下一站，武汉", new(350, 277, 530, 75), 48, true);
-        _food = Art(_card, "武汉旅行明信片", new(335, 390, 550, 350));
-        _stamp = Art(_card, "武汉城市旅行印章", new(733, 709, 120, 120));
-        Text(_copy, "从摊煎饼，到拌一碗热干面。", new(1015, 288, 505, 65), 32, true);
-        var noodles = new BookFoodIcon { Position = new(1075, 397), Size = new(140, 125), CropTransparentMargins = true, Product = new("", "热干面", 1, "HotDryNoodles") };
-        _copy.AddChild(noodles);
-        var doupi = new BookFoodIcon { Position = new(1320, 397), Size = new(140, 125), CropTransparentMargins = true, Product = new("", "三鲜豆皮", 1, "Doupi") };
-        _copy.AddChild(doupi);
-        Text(_copy, "热干面", new(1055, 532, 180, 42), 28, true);
-        Text(_copy, "三鲜豆皮", new(1300, 532, 180, 42), 28, true);
-        Text(_copy, "天津仍然开放\n熟悉的小店，随时都能回来", new(1040, 603, 465, 105), 27, true);
-        for (int i = 0; i < 2; i++) _steam.Add(Art(_card, "早餐铺蒸汽动画" + (i + 1), new(540 + 65 * i, 472, 48, 80)));
-        _actions = new Control { MouseFilter = Control.MouseFilterEnum.Ignore }; _card.AddChild(_actions);
-        _depart = Button(_actions, "前往武汉", new(1080, 748, 390, 70), true, () => Leave(StableIds.Cities.Wuhan));
-        _stay = Button(_actions, "留在天津", new(1160, 813, 230, 48), false, () => Leave(StableIds.Cities.Tianjin));
-        Text(_actions, "天津的营业进度与设备升级都会保留。", new(345, 813, 540, 36), 22, true);
         _cover = Art(_canvas, "闭合旅行手账封面｜新旅程入口", new(685, 210, 540, 690));
         _sheet = new ColorRect { Size = new(32, 625), Color = new("#FFF5DF"), MouseFilter = Control.MouseFilterEnum.Ignore };
         _canvas.AddChild(_sheet);
-        _error = Text(_canvas, "", new(390, 960, 1140, 64), 22, true);
         _skip = Button(_canvas, "跳过 · Esc", new(1530, 40, 275, 58), false, Skip);
         _paper = new ColorRect { Size = new(1920, 1080), Color = new("#FFF6E5"), MouseFilter = Control.MouseFilterEnum.Stop };
         _canvas.AddChild(_paper);
@@ -111,14 +85,14 @@ public partial class WuhanUnlockPresentation : CanvasLayer
                 StretchMode = TextureRect.StretchModeEnum.Scale, MouseFilter = Control.MouseFilterEnum.Ignore };
             _paper.AddChild(_sourceFrame); _sourceFrame.Size = new(1920, 1080);
         }
-        _audio = new OpeningAudio(); AddChild(_audio);
+        _audio = new WuhanUnlockAudio(); AddChild(_audio);
     }
 
-    public void Begin(SaveService save, Func<string, string> navigate)
+    public void Begin(SaveService save, Action<string> finished)
     {
-        _save = save; _navigate = navigate;
+        _save = save; _finished = finished;
         JourneyTransition.For(this).Finish();
-        ApplyTime(0); _audio.Play(OpeningCue.Paper);
+        ApplyTime(0); _audio.Play(WuhanUnlockCue.Sweep);
         _timeline = CreateTween();
         if (Reduced)
         {
@@ -136,9 +110,8 @@ public partial class WuhanUnlockPresentation : CanvasLayer
     {
         if (_focused)
         {
-            if (_time < 1.7f && t >= 1.7f) _audio.Play(OpeningCue.Locate);
-            if (_time < 2.3f && t >= 2.3f) _audio.Play(OpeningCue.Paper);
-            if (_time < 3.8f && t >= 3.8f) _audio.Play(OpeningCue.Postcard);
+            if (_time < 1.7f && t >= 1.7f) _audio.Play(WuhanUnlockCue.Unlock);
+            if (_time < 2.3f && t >= 2.3f) _audio.Play(WuhanUnlockCue.Paper);
         }
         _time = t;
         _paper.Position = Vector2.Zero;
@@ -160,29 +133,18 @@ public partial class WuhanUnlockPresentation : CanvasLayer
         float halo = Beat(t, 1.7f, .6f); _halo.PivotOffset = _halo.Size / 2; _halo.Scale = Vector2.One * (1 + halo * .25f);
         Alpha(_halo, Mathf.Sin(halo * Mathf.Pi) * .8f);
         foreach (var star in _stars) Alpha(star, Mathf.Sin(Beat(t, 1.75f, .55f) * Mathf.Pi));
-        float card = Ease(Beat(t, 2.3f, .7f)); Alpha(_card, card);
-        _card.Position = new(0, 32 * (1 - card));
+        // Reveal the shared introduction beneath the map instead of building a second final page.
+        float card = Ease(Beat(t, 2.3f, .7f));
+        Alpha(_canvas, 1 - card);
         _cover.Position = new(685, 210 + 32 * (1 - card));
         Alpha(_cover, Beat(t, 2.3f, .15f) * (1 - Beat(t, 2.5f, .35f)));
         _sheet.Position = new(1510 - 1150 * Ease(Beat(t, 2.5f, .45f)), 225);
         Alpha(_sheet, Mathf.Sin(Beat(t, 2.5f, .45f) * Mathf.Pi) * .8f);
-        Alpha(_copy, Beat(t, 2.9f, .35f));
-        float postcard = Ease(Beat(t, 2.9f, .5f)); Alpha(_food, postcard);
-        _food.PivotOffset = _food.Size / 2;
-        _food.RotationDegrees = -2 * (1 - postcard);
-        _food.Position = new(335, 390 - 18 * (1 - postcard));
-        for (int i = 0; i < _steam.Count; i++)
-        {
-            float steam = Beat(t, 3.1f + .15f * i, 1);
-            Alpha(_steam[i], Mathf.Sin(steam * Mathf.Pi) * .65f); _steam[i].Position = new(540 + 65 * i, 472 - steam * 32);
-        }
-        float stamp = Beat(t, 3.8f, .25f); Alpha(_stamp, stamp); _stamp.PivotOffset = _stamp.Size / 2; _stamp.Scale = Vector2.One * Mathf.Lerp(1.14f, 1, Ease(stamp));
-        Alpha(_actions, Beat(t, 4.0f, .4f)); _depart.Disabled = _stay.Disabled = true;
     }
 
     public void Skip()
     {
-        if (_ready || _leaving) return;
+        if (_ready) return;
         _timeline?.Kill(); _audio.Stop(); _time = 4.4f; ShowFinal();
         GetViewport().SetInputAsHandled();
     }
@@ -190,59 +152,20 @@ public partial class WuhanUnlockPresentation : CanvasLayer
     {
         _timeline = null;
         _time = 4.4f; ApplyTime(4.4f); _paper.Hide(); _skip.Hide();
-        _ready = true; _armedAt = Time.GetTicksMsec() + 300;
-        _depart.Disabled = _stay.Disabled = false;
-        if (!_save.TryMarkWuhanUnlockSeen(out string error)) _error.Text = "演出记录未保存：" + error + "（武汉仍已解锁）";
-        // Do not focus a newly revealed action with the key used to skip.
+        _ready = true;
+        string error = _save.TryMarkWuhanUnlockSeen(out string message) ? "" : "演出记录未保存：" + message + "（武汉仍已解锁）";
         GetViewport().GuiReleaseFocus();
-    }
-    private void Leave(string city)
-    {
-        if (!_ready || _leaving || Time.GetTicksMsec() < _armedAt) return;
-        _leaving = true; _depart.Disabled = _stay.Disabled = true;
-        _audio.Play(OpeningCue.Paper);
-        _paper.Show(); _paper.Modulate = Colors.White; _paper.Position = new(1920, 0);
+        // Keep the input shield through the skip key release; only then enable the shared page.
         _timeline = CreateTween();
-        _timeline.TweenProperty(_paper, "position", Vector2.Zero, Reduced ? .1 : .35).SetTrans(Tween.TransitionType.Cubic).SetEase(Tween.EaseType.InOut);
-        if (!Reduced) _timeline.Parallel().TweenProperty(_card, "scale", Vector2.One * 1.035f, .35);
-        _timeline.TweenCallback(Callable.From(() =>
-        {
-            string error = _navigate(city);
-            JourneyTransition.For(this).Finish();
-            if (error.Length == 0)
-            {
-                foreach (var control in _root.GetChildren().OfType<Control>().Where(c => c != _canvas)) control.Hide();
-                foreach (var control in _canvas.GetChildren().OfType<Control>().Where(c => c != _paper)) control.Hide();
-            }
-            else { _error.Text = "暂时无法出发：" + error; _leaving = false; _depart.Disabled = _stay.Disabled = false; }
-        }));
-        // The paper lives separately during the reveal; keep the destination visible beneath it.
-        _timeline.TweenProperty(_paper, "position", new Vector2(-1920, 0), Reduced ? .1 : .35).SetTrans(Tween.TransitionType.Cubic).SetEase(Tween.EaseType.InOut);
-        _timeline.TweenCallback(Callable.From(() => { _timeline = null; if (_leaving) QueueFree(); else { _paper.Hide(); _card.Scale = Vector2.One; } }));
+        _timeline.TweenInterval(.3);
+        _timeline.TweenCallback(Callable.From(() => { _finished(error); QueueFree(); }));
     }
     public override void _Input(InputEvent input)
     {
-        if (input is InputEventKey { Pressed: true, Echo: false, Keycode: Key.Escape })
-        { if (!_ready) Skip(); GetViewport().SetInputAsHandled(); }
-        else if (_ready && !_leaving && Time.GetTicksMsec() >= _armedAt && input is InputEventKey key)
-        {
-            if (key.Pressed && !key.Echo)
-            {
-                if (key.Keycode == Key.Tab)
-                {
-                    if (GetViewport().GuiGetFocusOwner() == _depart) _stay.GrabFocus(); else _depart.GrabFocus();
-                }
-                else if (key.Keycode is Key.Enter or Key.Space && GetViewport().GuiGetFocusOwner() is Button focused)
-                {
-                    if (focused == _depart) Leave(StableIds.Cities.Wuhan);
-                    else if (focused == _stay) Leave(StableIds.Cities.Tianjin);
-                }
-            }
-            GetViewport().SetInputAsHandled();
-        }
-        else if ((!_ready && input is InputEventKey) || _leaving || (_ready && Time.GetTicksMsec() < _armedAt))
-            GetViewport().SetInputAsHandled();
+        if (!_ready && input is InputEventKey { Pressed: true, Echo: false, Keycode: Key.Escape }) Skip();
+        GetViewport().SetInputAsHandled();
     }
+
     public override void _Notification(int what)
     {
         if (what == NotificationApplicationFocusOut) { _focused = false; _audio?.Stop(); _timeline?.Pause(); }

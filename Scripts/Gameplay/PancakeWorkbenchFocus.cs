@@ -64,7 +64,7 @@ public partial class PancakeWorkstation
             return Step("deliver:" + payload, FocusPayload == payload ? $"松手交给亮起的顾客。" : $"把{name}拖给需要它的顾客。",
                 FocusPayload == payload ? customers : TutorialFocusTarget.Artwork(source == _storedYoutiao ? _finishedYoutiaoSlot : source));
         }
-        TutorialFocusStep? AddYoutiaoToPancake(bool dragging) => Step(UnlockLessonAction ?? "take:youtiao",
+        TutorialFocusStep? AddYoutiaoToPancake(bool dragging) => Step("take:youtiao",
             dragging ? "把熟油条拖入饼面后松手。" : "把熟油条拖入饼面。",
             dragging ? new[] { Surface() } : TutorialFocusTarget.Artwork(_finishedYoutiaoSlot));
         if (FocusPayload == TrashPayload) return Step("discard", "拖入垃圾桶，松手丢弃。", Painted(TianjinPaintedObject.Trash));

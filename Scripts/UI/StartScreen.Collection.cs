@@ -50,8 +50,6 @@ public partial class StartScreen
             MouseFilter = MouseFilterEnum.Stop,
         };
         _body.AddChild(_collectionContent);
-        var back = Button(_collectionContent, "Back", "", new(80, 105, 44, 55), ReturnFromBreakfastCollection, bare: true);
-        Art(back, "账本翻页箭头｜左", new(0, 6, 40, 42));
         Text(_collectionContent, "CollectionTitle", "旅途收藏", new(143, 104, 390, 86), 62);
         CollectionSectionTabs();
         if (_showCustomerCollection) { RenderCustomerCollection(); return; }

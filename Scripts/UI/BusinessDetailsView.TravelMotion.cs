@@ -89,6 +89,8 @@ public partial class BusinessDetailsView
             .SetDelay(opening + incomeStart).SetTrans(Tween.TransitionType.Expo).SetEase(Tween.EaseType.Out);
         // Emphasize the settled amount, after the counter has reached its exact total.
         const double incomeComplete = incomeStart + .80;
+        // The final pop marks that the displayed coins have settled, distinct from the tally ticks.
+        At(incomeComplete, () => _audio.Play(PancakeSound.CoinCollect));
         _entrance.TweenProperty(_income, "scale", Vector2.One * 1.35f, .20)
             .SetDelay(opening + incomeComplete).SetTrans(Tween.TransitionType.Cubic).SetEase(Tween.EaseType.Out);
         _entrance.TweenProperty(_income, "scale", Vector2.One, .28)
@@ -97,6 +99,20 @@ public partial class BusinessDetailsView
         Group(TravelMotionGroup.Note, noteStart, .25);
         _entrance.TweenProperty(_note, "position", _travelRest[_note].Position, .25)
             .SetDelay(opening + noteStart).SetTrans(Tween.TransitionType.Cubic).SetEase(Tween.EaseType.Out);
+        // A single invitation after the summary finishes; shared restoration also
+        // resets this card when the player skips, turns the page or closes the book.
+        if (_summary.GetNodeOrNull<Button>("NewCityUnlock") is { } unlock)
+        {
+            _travelRest[unlock] = (unlock.Modulate, unlock.Position, unlock.Scale, unlock.PivotOffset);
+            // Keep the right edge clear of the adjacent page-turn button.
+            At(noteStart + .35, () => unlock.PivotOffset = new(unlock.Size.X, unlock.Size.Y / 2));
+            At(noteStart + .35, PlayNewCityCelebration);
+            double unlockStart = opening + noteStart + .35;
+            _entrance.TweenProperty(unlock, "scale", Vector2.One * 1.075f, .20)
+                .SetDelay(unlockStart).SetTrans(Tween.TransitionType.Cubic).SetEase(Tween.EaseType.Out);
+            _entrance.TweenProperty(unlock, "scale", Vector2.One, .34)
+                .SetDelay(unlockStart + .20).SetTrans(Tween.TransitionType.Sine).SetEase(Tween.EaseType.InOut);
+        }
         _entrance.Chain().TweenCallback(Callable.From(() =>
         {
             _income.Text = $"¥{totalIncome}";

@@ -19,9 +19,11 @@ public partial class StartScreen
         }
         RenderHome(); Focus("BreakfastRecords");
     }
-    private void PresentDemoWuhanOpening()
+    public void PresentWuhanOpening(bool animate = true)
     {
-        Begin(JourneyPage.Opening); Chrome(() => PresentCity(StableIds.Cities.Wuhan), showBack: false); BookFrame(StableIds.Cities.Wuhan);
+        _city = StableIds.Cities.Wuhan; _homeBookPalette = true;
+        Show();
+        Begin(JourneyPage.Opening, animate); Chrome(() => PresentCity(StableIds.Cities.Wuhan), showBack: false); BookFrame(StableIds.Cities.Wuhan);
         var city = JourneyModel.City(StableIds.Cities.Wuhan);
         Text(_body, "WuhanOpeningTitle", "江城过早", new(350, 277, 530, 75), 44, true);
         var postcard = HomeArt(_body, "武汉旅行明信片", new(335, 370, 550, 350));
@@ -57,7 +59,17 @@ public partial class StartScreen
                 i == 0 ? new(1220, 463, 278, 99) : new(1180, 680, 330, 65), 22);
             story.VerticalAlignment = VerticalAlignment.Top;
         }
-        var depart = Button(_body, "WuhanOpeningContinue", "开始武汉之旅", new(1050, 798, 460, 65), () => PresentCity(StableIds.Cities.Wuhan), bare: true);
+        Text(_body, "WuhanBreakfastAvailability", "首日经营", new(1220, 367, 150, 30), 19)
+            .AddThemeColorOverride("font_color", new Color("#896345"));
+        Text(_body, "WuhanBreakfastPreviewHeading", "后续早餐预览", new(1140, 584, 270, 30), 20, true)
+            .AddThemeColorOverride("font_color", new Color("#896345"));
+        Text(_body, "WuhanReturnHint", "天津的早餐铺随时等你回访。", new(1010, 751, 530, 36), 23, true);
+        var depart = Button(_body, "WuhanOpeningContinue", "开始武汉之旅", new(1050, 798, 460, 65), () =>
+        {
+            // The introduction is the departure action: both editions open Wuhan Day 1 directly.
+            // StartCityBusiness records the visit only after it has validated and initialized the shift.
+            RequestBusiness(1);
+        }, bare: true);
         var plate = HomeArt(depart, "首页地图按钮底板", new(Vector2.Zero, depart.Size), stretch: true);
         plate.Name = "WuhanOpeningButtonPlate";
         plate.ShowBehindParent = true;

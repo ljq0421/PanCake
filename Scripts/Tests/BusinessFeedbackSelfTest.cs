@@ -144,6 +144,9 @@ public partial class BusinessFeedbackSelfTest : Node
         Check(played.Count == 1, "error throttled for 400ms"); clock++; source.Reject(); Check(played.Count == 2, "error allowed at 400ms");
         played.Clear(); source.Warn("a"); source.Warn("b"); clock += 500; source.Warn("c"); source.Warn("a");
         Check(played.Count == 2, "warnings throttled globally and deduplicated by customer");
+        var warning = audio.GetNode<AudioStreamPlayer>("LowPatience");
+        Check(warning.VolumeDb > -16 && warning.MaxPolyphony == 1,
+            "angry warning is louder with bounded overlapping voices");
         played.Clear(); source.TimedOut("a"); source.TimedOut("b"); clock += 500; source.TimedOut("c");
         Check(played.Count == 2, "timeout chorus throttled for 500ms");
         played.Clear(); source.Delivery("final", new(DeliveryGrade.Perfect, 20, 2, 100, "")); source.Credit(22);
@@ -159,7 +162,19 @@ public partial class BusinessFeedbackSelfTest : Node
         foreach (BusinessCue cue in Enum.GetValues<BusinessCue>())
         {
             var wave = BusinessFeedbackAudio.Make(cue);
-            Check(wave.Data.Any(b => b != 0) && wave.GetLength() is > .15 and < .5, cue + " nonempty short PCM"); wave.Dispose();
+            bool validLength = cue == BusinessCue.LowPatience ? wave.GetLength() is > .65 and < .9 : wave.GetLength() is > .15 and < .5;
+            Check(wave.Data.Any(b => b != 0) && validLength, cue + " nonempty bounded PCM");
+            if (cue == BusinessCue.LowPatience)
+            {
+                byte[] pcm = wave.Data;
+                int peak = Enumerable.Range(0, pcm.Length / 2).Max(i => Math.Abs((int)BitConverter.ToInt16(pcm, i * 2)));
+                Check(peak is > 8000 and < 30000 && pcm[0] == 0 && pcm[1] == 0
+                    && Math.Abs((int)BitConverter.ToInt16(pcm, pcm.Length - 2)) < 100,
+                    "grumble has signal headroom and smooth endpoints");
+                string preview = OS.GetEnvironment("CAKE_ANGRY_AUDIO_PREVIEW");
+                if (!string.IsNullOrEmpty(preview)) Check(wave.SaveToWav(preview) == Error.Ok, "export angry audio preview");
+            }
+            wave.Dispose();
         }
     }
     private void TestApprovedActions()
@@ -173,7 +188,9 @@ public partial class BusinessFeedbackSelfTest : Node
                 && imported.Data.SequenceEqual(original.GetBuffer((long)original.GetLength() - 44)), path + " preserves approved PCM");
         }
         var pancake = new PancakeAudio(); AddChild(pancake);
-        var voice = pancake.GetChildren().OfType<AudioStreamPlayer>().Single();
+        pancake.Play(PancakeSound.PickUp);
+        var voice = pancake.GetChildren().OfType<AudioStreamPlayer>()
+            .Single(p => p.Stream?.ResourcePath == CartoonActionClips.PickUp);
         foreach (var (cue, path) in new[] { (PancakeSound.PickUp, CartoonActionClips.PickUp),
             (PancakeSound.SoftDrop, CartoonActionClips.Drop), (PancakeSound.CrispDrop, CartoonActionClips.Drop),
             (PancakeSound.Stroke, CartoonActionClips.Mix), (PancakeSound.Error, CartoonActionClips.Error) })
@@ -239,10 +256,11 @@ public partial class BusinessFeedbackSelfTest : Node
             switch (screen)
             {
                 case TianjinDayScreen s:
-                    s.ConnectController(controller); s.Initialize(_catalog, save, controller, 2); s.BeginDay(); controller.Tick(3.1); s.RefreshForCapture(true);
+                    // Exercise business audio directly, without opening unlock celebrations or teaching.
+                    s.ConnectController(controller); s.Initialize(_catalog, save, controller, 2); controller.TryStartDay(out _); controller.Tick(3.1); s.RefreshForCapture(true);
                     book = s.BusinessDetails; entry = s.CashPendant; break;
                 case WuhanDayScreen s:
-                    s.ConnectController(controller); s.Initialize(_catalog, save, controller, 2); s.BeginDay(); controller.Tick(3.1); s.RefreshForCapture();
+                    s.ConnectController(controller); s.Initialize(_catalog, save, controller, 2); controller.TryStartDay(out _); controller.Tick(3.1); s.RefreshForCapture();
                     book = s.BusinessDetails; entry = s.CashPendant; break;
                 case XianDayScreen s:
                     Check(s.Initialize(_catalog, save, controller, 2), "Xian screen initializes"); s.BeginDay(); controller.Tick(3.1); s.Render();

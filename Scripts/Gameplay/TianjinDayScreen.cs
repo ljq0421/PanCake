@@ -116,7 +116,6 @@ public partial class TianjinDayScreen : Control
                 && !_committed && !_controller.IsPaused && _controller.State is DayState.Running or DayState.Closing,
             Runtime = () => _workstation.Machine?.Runtime, Spreading = () => _workstation.IsSpreading,
             FlipProgress = () => _workstation.ToolFlipProgress,
-            FlipEdge = () => _workstation.FlipEdge,
             StopPaymentFeedback = () => { _paymentFeedback.Clear(); _hud.ResetIncomeEmphasis(); } };
         AddChild(_living);
         ((TianjinPendantButton)CashPendant).IndependentArtwork = true;

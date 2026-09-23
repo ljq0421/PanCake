@@ -103,9 +103,6 @@ public partial class PancakeWorkstation : Control
     private PancakeState? _lastPancakeState;
     private FryerState? _lastFryerState;
     private YoutiaoQuality? _lastFryerQuality;
-    // Unlock lessons can use one contextual action without changing normal-business guidance.
-    internal string? UnlockLessonAction { get; set; }
-
     public event Action<string, bool>? Feedback;
     public event Action<int>? YoutiaoConsumed;
     public event Action<int>? YoutiaoBurnt;
@@ -394,7 +391,6 @@ public partial class PancakeWorkstation : Control
     {
         CancelInput();
         _pendingRefillLessons.Clear();
-        UnlockLessonAction = null;
         Tutorial = config?.Tutorial ?? TutorialProtection.None;
         _deferEggRefillToRecipe = false;
         foreach ((Control target, Tween tween) in _interactionTweens)

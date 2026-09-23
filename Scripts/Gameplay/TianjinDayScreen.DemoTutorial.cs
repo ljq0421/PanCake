@@ -47,16 +47,12 @@ public partial class TianjinDayScreen
         _demoLessonReplay = replay;
         if (!_controller.TryPrepareTutorial(StableIds.Cities.Tianjin, _demoTeachingDay, _catalog, out string error)) { ShowFeedback(error, true); return true; }
         _workstation.Initialize(_catalog, 1, 1, _controller.CurrentConfig!.AvailableProductKinds.Contains(ProductKind.Youtiao) ? 1 : 0, _controller.CurrentConfig!, _art);
-        // 新配料只练习新增的操作：薄脆/葱花沿用已有的单项提示；油条组合
-        // 则只提示把熟油条夹进饼面，不再从摊饼等已会的基础步骤重新教学。
-        bool extendsKnownPancakeFlow = unlock?.DefinitionId is StableIds.Recipes.ScallionCrispy or StableIds.Recipes.Youtiao;
+        // 新配料只练习新增的操作；薄脆/葱花沿用已有的单项提示。
+        bool extendsKnownPancakeFlow = unlock?.DefinitionId == StableIds.Recipes.ScallionCrispy;
         IEnumerable<string>? learnedForLesson = extendsKnownPancakeFlow
             ? PancakeWorkstation.AllWorkbenchActions.Except(unlock!.Actions, StringComparer.Ordinal)
             : null;
         _workstation.ConfigureTutorial(learnedForLesson);
-        _workstation.UnlockLessonAction = unlock?.DefinitionId == StableIds.Recipes.Youtiao
-            ? unlock.Actions.Single()
-            : null;
         _workstation.ResetForDay();
         if (_demoTeachingDay == 1 && _demoBusinessDay == 1)
             _workstation.ConfigureFirstPancakeEggLesson(1);

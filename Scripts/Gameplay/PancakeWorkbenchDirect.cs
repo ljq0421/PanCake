@@ -24,7 +24,6 @@ public partial class PancakeWorkstation
     internal bool IsDirectDragging => _directGesture != DirectGesture.None;
     private bool DirectBusy => IsDirectDragging || _directBag?.Animating == true;
     internal float ToolFlipProgress => _canvas.FlipPickup > 0 ? .08f + .12f * _canvas.FlipPickup : FlipProgress;
-    internal float FlipEdge => _canvas.FlipEdge;
     internal Rect2 BagStackBounds => _directBag?.StackBounds ?? default;
     private bool CanDirectGesture => IsTianjinWorkbench && _initialized && CanInteract && IsVisibleInTree()
         && !IsFlipping && !_foldHeld && !_drag.IsDragging && !_rightPressed;

@@ -9,6 +9,7 @@ public partial class BusinessDetailsView
     private const float ArtRowRight = ArtPageRight - ArtPageLeft, ArtRowWidth = 1200;
     private const float BookContentScale = 5f / 6f;
     private const float TravelBookContentScale = 1.10f;
+    private const int TravelUpgradeActionFontSize = 28;
     private Control _plainPaper = null!, _illustratedPaper = null!;
     private bool UsesBookArt => _model.CityId is "tianjin" or "wuhan" or "xian";
     private bool UsesTravelBook => _model.CityId is "tianjin" or "wuhan";
@@ -225,9 +226,9 @@ public partial class BusinessDetailsView
         if (travelUpgrade)
         {
             label.Text = "店铺升级";
-            label.Position = paper.Position + new Vector2(16, (paper.Size.Y - 32) / 2);
-            label.Size = new(paper.Size.X - 72, 32);
-            label.AddThemeFontSizeOverride("font_size", TravelActionFontSize);
+            label.Position = paper.Position + new Vector2(16, (paper.Size.Y - 36) / 2);
+            label.Size = new(paper.Size.X - 72, 36);
+            label.AddThemeFontSizeOverride("font_size", TravelUpgradeActionFontSize);
             label.HorizontalAlignment = HorizontalAlignment.Center;
         }
         label.MaxLinesVisible = 1; label.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;

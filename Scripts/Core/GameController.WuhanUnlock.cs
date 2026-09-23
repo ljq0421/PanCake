@@ -14,27 +14,20 @@ public partial class GameController
             using var frame = GetViewport().GetTexture().GetImage();
             if (frame is not null && !frame.IsEmpty()) presentation.SourceFrame = ImageTexture.CreateFromImage(frame);
         }
-        book.SetProcessInput(false);
-        presentation.TreeExited += () => { if (IsInstanceValid(book)) book.SetProcessInput(true); };
+        var previousProcessMode = _startScreen.ProcessMode;
+        _startScreen.PresentWuhanOpening(animate: false);
+        JourneyTransition.For(this).Finish();
+        _startScreen.ProcessMode = ProcessModeEnum.Disabled;
+        GetViewport().GuiReleaseFocus();
+        book.Hide();
+        foreach (Control page in GetNode("UI").GetChildren().OfType<Control>())
+            page.Visible = page == _startScreen;
+        GetNode<Node2D>("ShopRoot").Visible = false;
+        presentation.TreeExited += () => _startScreen.ProcessMode = previousProcessMode;
         AddChild(presentation);
-        presentation.Begin(_save, city =>
+        presentation.Begin(_save, error =>
         {
-            if (city == StableIds.Cities.Wuhan)
-            {
-                if (!StartCityBusiness(city, 1)) return "武汉开张失败，请检查配置或存档写入权限后重试。";
-                book.Hide();
-                return "";
-            }
-            // Prepare the destination behind the opaque paper, then persist the selected city.
-            _startScreen.PresentCity(city);
-            _startScreen.PresentLedger();
-            JourneyTransition.For(this).Finish();
-            if (!_save.TryRecordCityVisit(city, out string error)) return error;
-            book.Hide();
-            foreach (Control page in GetNode("UI").GetChildren().OfType<Control>())
-                page.Visible = page == _startScreen;
-            GetNode<Node2D>("ShopRoot").Visible = false;
-            return "";
+            if (error.Length > 0) _startScreen.ShowError(error);
         });
     }
 }

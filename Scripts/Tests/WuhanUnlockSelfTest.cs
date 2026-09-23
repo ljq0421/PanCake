@@ -16,11 +16,19 @@ public partial class WuhanUnlockSelfTest : Node
         try
         {
             _dir = ProjectSettings.GlobalizePath("res://.tmp/wuhan-unlock/" + (ExperienceProfile.IsDemo ? "demo" : "formal") + (OS.GetCmdlineUserArgs().Contains("--small") ? "-small" : ""));
+            _dir = OS.GetCmdlineUserArgs().FirstOrDefault(a => a.StartsWith("--capture-dir=", StringComparison.Ordinal))?[14..] ?? _dir;
             Directory.CreateDirectory(_dir);
             string fixture = Path.Combine(_dir, Guid.NewGuid().ToString("N")); Directory.CreateDirectory(fixture);
             _save = GetNode<SaveService>("/root/SaveService"); _save.UsePathForTests(Path.Combine(fixture, "save.json"));
             var settings = GetNode<JourneySettings>("/root/JourneySettings"); settings.UsePathForTests(Path.Combine(fixture, "settings.cfg")); InterfaceLessons.MarkAllSeen(settings);
             Check(_save.ResetProgress(out _), "isolated progress");
+            if (OS.GetCmdlineUserArgs().Contains("--unlock-audio-only"))
+            {
+                CheckUnlockAudio();
+                await Frames(); GC.Collect(); GC.WaitForPendingFinalizers(); await Frames();
+                GD.Print($"WUHAN_UNLOCK_AUDIO_TEST_PASS checks={_checks} demo={ExperienceProfile.IsDemo}");
+                GetTree().Quit(); return;
+            }
             _save.Data.UpgradeTeachingCompleted = true; _save.Data.Tianjin.HighestUnlockedDay = 7; _save.TrySave(out _);
             GetWindow().Size = OS.GetCmdlineUserArgs().Contains("--small") ? new(1280, 720) : new(1920, 1080);
             var main = GD.Load<PackedScene>("res://Scenes/Main/Main.tscn").Instantiate<GameController>(); AddChild(main); await Frames();
@@ -52,6 +60,48 @@ public partial class WuhanUnlockSelfTest : Node
             day.AbandonDay(); var book = screen.BusinessDetails; book.Open(model);
             Check(book.CloseButton.Text == "开始第 8 天", "unlock keeps next-day primary caption");
             Check(book.Descendants<Button>().Any(b => b.Name == "NewCityUnlock"), "new city has a dedicated clickable notice");
+            var unlock = book.Descendants<Button>().Single(b => b.Name == "NewCityUnlock");
+            var entranceField = typeof(BusinessDetailsView).GetField("_entrance",
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+            Tween PauseEntrance()
+            {
+                var tween = (Tween)entranceField.GetValue(book)!;
+                tween.Pause(); return tween;
+            }
+            var entrance = PauseEntrance();
+            await Frames();
+            entrance.CustomStep(3.04);
+            Check(unlock.Scale == Vector2.One, "unlock waits for summary content");
+            Check(book.GetNodeOrNull<AudioStreamPlayer>("NewCityCelebrationAudio") is null, "celebration waits for unlock emphasis");
+            entrance.CustomStep(.29);
+            Check(unlock.Scale.X > 1.04f, "unlock pops once after summary");
+            var celebration = book.GetNode<AudioStreamPlayer>("NewCityCelebrationAudio");
+            Check(celebration.Playing && celebration.Bus == JourneySettings.EffectsBus, "unlock celebration plays on effects bus");
+            var nextPage = book.Descendants<Button>().Single(b => b.Name == "NextBookPage");
+            Check(!unlock.GetGlobalRect().Intersects(nextPage.GetGlobalRect())
+                && !unlock.GetGlobalRect().Intersects(book.CloseButton.GetGlobalRect()), "enlarged unlock leaves navigation clear at peak");
+            JourneyTransition.For(this).Finish();
+            await Capture("settlement-unlock-pop");
+            entrance.CustomStep(.4);
+            Check(unlock.Scale == Vector2.One && unlock.PivotOffset == Vector2.Zero, "unlock returns to original bounds");
+            await Delay(celebration.Stream.GetLength() + .25);
+            Check(unlock.Scale == Vector2.One, "unlock does not loop");
+            Check(!celebration.Playing, "celebration finishes without looping");
+            book.Open(model); entrance = PauseEntrance(); entrance.CustomStep(3.33);
+            unlock = book.Descendants<Button>().Single(b => b.Name == "NewCityUnlock");
+            book.FinishAnimation();
+            Check(unlock.Scale == Vector2.One && !entrance.IsValid(), "skip cancels unlock pop and restores bounds");
+            Check(!celebration.Playing, "skip stops celebration");
+            ProjectSettings.SetSetting("accessibility/reduce_motion", true);
+            book.Open(model);
+            Check(book.Descendants<Button>().Single(b => b.Name == "NewCityUnlock").Scale == Vector2.One
+                && entranceField.GetValue(book) is null, "reduced motion keeps unlock static");
+            Check(celebration.Playing, "reduced motion retains celebration sound");
+            book.Notification((int)NotificationApplicationFocusOut);
+            Check(!celebration.Playing, "focus loss stops celebration");
+            book.Notification((int)NotificationApplicationFocusIn);
+            Check(!celebration.Playing, "focus return does not replay celebration");
+            ProjectSettings.SetSetting("accessibility/reduce_motion", false);
             book.SelectPage(true, false);
             Check(!book.Descendants<Button>().Single(b => b.Name == "NewCityUnlock").IsVisibleInTree(), "notice belongs to summary only");
             book.SelectPage(false, false);
@@ -74,29 +124,39 @@ public partial class WuhanUnlockSelfTest : Node
             Check(show.FinalVisible && _save.Data.WuhanUnlockPresentationSeen, "Escape lands on final postcard and persists seen state");
             show.Notification((int)NotificationApplicationFocusOut); show.Notification((int)NotificationApplicationFocusIn);
             Check(show.FinalVisible, "focus changes after skip retain the final postcard");
-            show.Descendants<Button>().Single(b => b.Text == "前往武汉").EmitSignal(BaseButton.SignalName.Pressed);
-            Check(_save.Data.LastVisitedCityId == StableIds.Cities.Tianjin, "skip cannot click through into Wuhan");
-            await Delay(.4); await Capture("postcard");
-            show.Descendants<Button>().Single(b => b.Text == "留在天津").EmitSignal(BaseButton.SignalName.Pressed); await Delay(1);
-            Check(home.SelectedDay == 8 && home.Page == JourneyPage.Ledger && _save.Data.UnlockedCityIds.Contains(StableIds.Cities.Wuhan), "postcard stay retains both cities");
-            // Replay the visual fixture to test natural completion and the real departure callback.
-            home.Hide(); screen.Show(); book.Open(model); book.FinishAnimation(); JourneyTransition.For(this).Finish(); OpenNewJourney(book);
-            show = main.GetNode<WuhanUnlockPresentation>("WuhanUnlockPresentation");
-            await Delay(4.9); Check(show.FinalVisible && _save.Data.LastVisitedCityId == StableIds.Cities.Tianjin, "natural ending waits for player");
-            show.Notification((int)NotificationApplicationFocusOut); show.Notification((int)NotificationApplicationFocusIn);
-            await Capture("natural-postcard");
-            GetViewport().PushInput(new InputEventKey { Keycode = Key.Tab, Pressed = true }, true);
-            Check(GetViewport().GuiGetFocusOwner() is Button { Text: "前往武汉" }, "Tab focuses postcard action without reaching underlying ledger");
             GetViewport().PushInput(new InputEventKey { Keycode = Key.Enter, Pressed = true }, true);
-            await Delay(.38); await Capture("departure"); await Delay(.6);
-            Check(!home.Visible && main.GetNode<WuhanDayScreen>("UI/WuhanDayScreen").Visible, "departure opens Wuhan business without the calendar");
-            Check(_save.Data.LastVisitedCityId == StableIds.Cities.Wuhan && day.CurrentConfig?.Day == 1
-                && day.State == DayState.Running, "visit saved and Wuhan Day1 starts immediately");
-            Check(_save.Data.Tianjin.HighestUnlockedDay == 8 && _save.Data.Coins == 100, "departure preserves Tianjin progress and earnings");
+            Check(_save.Data.LastVisitedCityId == StableIds.Cities.Tianjin && home.Page == JourneyPage.Opening,
+                "skip cannot click through into Wuhan");
+            await Delay(.4); await Capture("postcard");
+            Check(home.Visible && home.ProcessMode != ProcessModeEnum.Disabled
+                && home.Descendants<Label>().Any(l => l.Text == "江城过早"), "shared Wuhan introduction replaces the final postcard");
+            Check(!home.Descendants<Button>().Any(b => b.Text is "前往武汉" or "留在天津"),
+                "old departure and stay actions are absent");
+            home.Descendants<Button>().Single(b => b.Name == "WuhanOpeningContinue").EmitSignal(BaseButton.SignalName.Pressed);
+            JourneyTransition.For(this).Finish(); await Frames();
+            Check(!home.Visible && main.GetNode<WuhanDayScreen>("UI/WuhanDayScreen").Visible,
+                "start Wuhan journey opens Day 1 business directly");
+            Check(_save.Data.LastVisitedCityId == StableIds.Cities.Wuhan, "journey action saves the selected city");
+            _save.TryRecordCityVisit(StableIds.Cities.Tianjin, out _);
+            // Replay the fixture to check natural completion and keyboard navigation.
+            home.Hide(); screen.Show(); book.Open(model); book.FinishAnimation(); JourneyTransition.For(this).Finish(); OpenNewJourney(book);
+            await Delay(4.9);
+            Check(home.Page == JourneyPage.Opening && home.ProcessMode != ProcessModeEnum.Disabled
+                && _save.Data.LastVisitedCityId == StableIds.Cities.Tianjin, "natural ending waits on the introduction");
+            await Capture("natural-postcard");
+            var continueButton = home.Descendants<Button>().Single(b => b.Name == "WuhanOpeningContinue");
+            continueButton.GrabFocus();
+            GetViewport().PushInput(new InputEventKey { Keycode = Key.Enter, PhysicalKeycode = Key.Enter, Pressed = true }, true);
+            GetViewport().PushInput(new InputEventKey { Keycode = Key.Enter, PhysicalKeycode = Key.Enter, Pressed = false }, true);
+            JourneyTransition.For(this).Finish(); await Frames();
+            Check(!home.Visible && main.GetNode<WuhanDayScreen>("UI/WuhanDayScreen").Visible,
+                "keyboard action starts Wuhan Day 1 directly");
+            Check(_save.Data.Tianjin.HighestUnlockedDay == 8 && _save.Data.Coins == 100, "journey preserves Tianjin progress and earnings");
             await Capture("wuhan-business");
             ProjectSettings.SetSetting("accessibility/reduce_motion", true);
-            var reduced = new WuhanUnlockPresentation(); AddChild(reduced); reduced.Begin(_save, _ => ""); await Delay(.25);
+            var reduced = new WuhanUnlockPresentation(); AddChild(reduced); reduced.Begin(_save, _ => { }); await Delay(.25);
             Check(reduced.FinalVisible, "reduced motion reaches full information with short fade"); reduced.QueueFree();
+            CheckUnlockAudio();
             _save.Load(); Check(_save.Data.WuhanUnlockPresentationSeen, "seen flag survives reload");
             GD.Print($"WUHAN_UNLOCK_TEST_PASS checks={_checks} demo={ExperienceProfile.IsDemo}"); GetTree().Quit();
         }
@@ -121,15 +181,14 @@ public partial class WuhanUnlockSelfTest : Node
         screen.BusinessDetails.Open(model);
         await Delay(6);
         OpenNewJourney(screen.BusinessDetails);
-        var show = main.GetNode<WuhanUnlockPresentation>("WuhanUnlockPresentation");
         await Delay(7.8);
-        Check(show.FinalVisible, "recording reaches final postcard");
-        show.Descendants<Button>().Single(b => b.Text == "前往武汉").EmitSignal(BaseButton.SignalName.Pressed);
-        day.SetProcess(true);
-        await Delay(8);
-        Check(!main.GetNode<StartScreen>("UI/StartScreen").Visible
-            && main.GetNode<WuhanDayScreen>("UI/WuhanDayScreen").Visible
-            && day.CurrentConfig?.Day == 1 && day.State is DayState.Opening or DayState.Running, "recording starts Wuhan Day1 business");
+        var home = main.GetNode<StartScreen>("UI/StartScreen");
+        Check(home.Visible && home.Page == JourneyPage.Opening, "recording reaches Wuhan introduction");
+        home.Descendants<Button>().Single(b => b.Name == "WuhanOpeningContinue").EmitSignal(BaseButton.SignalName.Pressed);
+        await Delay(2);
+        Check(!home.Visible && main.GetNode<WuhanDayScreen>("UI/WuhanDayScreen").Visible
+            && day.CurrentConfig?.Day == 1 && day.State is DayState.Opening or DayState.Running,
+            "recording starts Wuhan Day 1 business directly");
         GD.Print("WUHAN_UNLOCK_MOVIE_COMPLETE");
     }
     private static void OpenNewJourney(BusinessDetailsView book) => book.Descendants<Button>().Single(b => b.Name == "NewCityUnlock").EmitSignal(BaseButton.SignalName.Pressed);

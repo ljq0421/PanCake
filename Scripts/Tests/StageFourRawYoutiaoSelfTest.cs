@@ -57,8 +57,12 @@ public partial class StageFourSelfTest
                 Check(fryer.Runtime.Quantity == 0, $"Lv{level}/{scale} 装满停止后清空炸篮不会自动重新装料");
 
                 Press(point); station.Tick(.45);
+                gesture.EmitSignal(Control.SignalName.MouseExited);
+                station.Tick(.15);
+                Check(fryer.Runtime.Quantity == 2, $"Lv{level}/{scale} 鼠标离开控件但左键仍按住时继续装料");
                 Move(point + new Vector2(400, 0)); Move(point); station.Tick(1); Release(point);
-                Check(fryer.Runtime.Quantity == 1 && !drag.IsDragging, $"Lv{level}/{scale} 移出再移回不会恢复连装或变成拖拽");
+                Check(fryer.Runtime.Quantity == fryer.Level.Capacity && !drag.IsDragging,
+                    $"Lv{level}/{scale} 移出再移回时左键未松开仍连续装至容量上限");
                 station.ResetForDay();
                 Press(point); Release(point + new Vector2(400, 0)); station.Tick(1);
                 Check(fryer.Runtime.Quantity == 0, $"Lv{level}/{scale} 区域外松手取消短按");

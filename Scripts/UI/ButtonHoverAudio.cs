@@ -37,7 +37,7 @@ public partial class ButtonHoverAudio : Node
     public override void _Ready()
     {
         ProcessMode = ProcessModeEnum.Always;
-        _player = new AudioStreamPlayer { Bus = JourneySettings.EffectsBus, VolumeDb = -4, MaxPolyphony = 1, Stream = Make() };
+        _player = new AudioStreamPlayer { Bus = JourneySettings.EffectsBus, VolumeDb = 0, MaxPolyphony = 1, Stream = Make() };
         AddChild(_player);
     }
 

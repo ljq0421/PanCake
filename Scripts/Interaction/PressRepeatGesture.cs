@@ -20,7 +20,6 @@ public partial class PressRepeatGesture : Control
 
     public override void _Ready()
     {
-        MouseExited += Cancel;
         VisibilityChanged += () => { if (!IsVisibleInTree()) Cancel(); };
     }
 
@@ -41,11 +40,7 @@ public partial class PressRepeatGesture : Control
     {
         if (!_pressed) return;
         if (!CanActivate() || !IsVisibleInTree()) { Cancel(); return; }
-        if (input is InputEventMouseMotion motion)
-        {
-            if (!_HasPoint(GetGlobalTransformWithCanvas().AffineInverse() * motion.Position)) Cancel();
-        }
-        else if (input is InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: false } release)
+        if (input is InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: false } release)
         {
             bool tap = !_repeating && _HasPoint(GetGlobalTransformWithCanvas().AffineInverse() * release.Position);
             Cancel();

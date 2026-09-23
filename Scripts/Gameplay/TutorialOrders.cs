@@ -19,7 +19,6 @@ internal static class TutorialOrders
         if (config.CityId == StableIds.Cities.Tianjin)
         {
             if (ids.Contains("product:youtiao")) return new("油条 · 炸锅练习", ProductKind.Youtiao, StableIds.Products.Youtiao, "deliver:stored_youtiao");
-            if (ids.Contains("recipe:pancake_youtiao")) return new("煎饼夹油条", ProductKind.Pancake, StableIds.Recipes.Youtiao, "lesson:pancake_youtiao");
             if (ids.Contains("product:soy_milk")) return new("豆浆 · 交付练习", ProductKind.SoyMilk, StableIds.Products.SoyMilk, "deliver:soy_milk_cup");
             if (ids.Contains("ingredient:ham")) return new("火腿煎饼", ProductKind.Pancake, StableIds.Recipes.Ham, "take:ham");
             if (ids.Contains("ingredient:crispy")) return new("薄脆与葱花", ProductKind.Pancake, StableIds.Recipes.ScallionCrispy, "take:crispy", "take:scallion");

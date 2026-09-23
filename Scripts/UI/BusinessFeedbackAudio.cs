@@ -64,8 +64,9 @@ public partial class BusinessFeedbackAudio : Node
             else if (cartoonCompletion) stream = GD.Load<AudioStreamWav>(CartoonCompletionPath);
             else if (!Streams.TryGetValue(feedback.Cue, out stream!)) Streams[feedback.Cue] = stream = Make(feedback.Cue);
             player = new AudioStreamPlayer { Name = feedback.Cue.ToString(), Stream = stream,
-                Bus = ProjectCake.Core.JourneySettings.EffectsBus, VolumeDb = cartoonCoin ? 0 : cartoonError ? -6 : cartoonCompletion ? -4 : -16,
-                MaxPolyphony = cartoonError ? 1 : 3 };
+                Bus = ProjectCake.Core.JourneySettings.EffectsBus,
+                VolumeDb = feedback.Cue == BusinessCue.LowPatience ? -8 : cartoonCoin ? 0 : cartoonError ? -6 : cartoonCompletion ? -4 : -16,
+                MaxPolyphony = cartoonError || feedback.Cue == BusinessCue.LowPatience ? 1 : 3 };
             AddChild(player); _players.Add(feedback.Cue, player);
         }
         player.Play(); Played?.Invoke(feedback);
@@ -81,13 +82,13 @@ public partial class BusinessFeedbackAudio : Node
 
     internal static AudioStreamWav Make(BusinessCue cue)
     {
+        if (cue == BusinessCue.LowPatience) return MakeAngryGrumble();
         // Soft attack and exponential release avoid clicks; short melodic contours convey intent.
         double[] notes = cue switch
         {
             BusinessCue.ItemAccepted => new[] { 659.25, 880.0 },
             BusinessCue.OrderCompleted => new[] { 659.25, 880.0, 1108.73 },
             BusinessCue.DeliveryError => new[] { 349.23, 293.66 },
-            BusinessCue.LowPatience => new[] { 783.99, 783.99 },
             BusinessCue.CustomerLeft => new[] { 440.0, 349.23, 261.63 },
             _ => new[] { 1046.5, 1318.51, 1567.98 },
         };
@@ -106,6 +107,37 @@ public partial class BusinessFeedbackAudio : Node
                 double envelope = Math.Min(1, local / .005) * Math.Exp(-local * 28) * Math.Min(1, (.16 - local) / .025);
                 value += (Math.Sin(phase) + (cue == BusinessCue.CoinCredited ? .3 * Math.Sin(phase * 2.76) : .12 * Math.Sin(phase * 2))) * envelope * .28;
             }
+            short sample = (short)(Math.Clamp(value, -1, 1) * short.MaxValue);
+            data[i * 2] = (byte)(sample & 255); data[i * 2 + 1] = (byte)(sample >> 8);
+        }
+        return new AudioStreamWav { Format = AudioStreamWav.FormatEnum.Format16Bits, MixRate = rate, Data = data };
+    }
+
+    private static AudioStreamWav MakeAngryGrumble()
+    {
+        // Original synthesized cartoon "hm-HMM": two voiced grumbles, not a reward chime.
+        // Harmonics and pitch wobble keep it audible without a sharp alarm-like attack.
+        const int rate = 22050;
+        const double duration = .76;
+        byte[] data = new byte[(int)(rate * duration) * 2];
+        double phase = 0;
+        for (int i = 0; i < data.Length / 2; i++)
+        {
+            double t = i / (double)rate;
+            bool second = t >= .31;
+            double local = second ? t - .31 : t;
+            double length = second ? .45 : .23;
+            if (local >= length) { phase = 0; continue; }
+            double progress = local / length;
+            double frequency = (second ? 265 : 235) - 85 * progress
+                + 10 * Math.Sin(Math.Tau * 17 * local);
+            phase += Math.Tau * frequency / rate;
+            double envelope = Math.Min(1, local / .018) * Math.Min(1, (length - local) / .085)
+                * (1 - .25 * progress);
+            double voice = Math.Sin(phase) + .48 * Math.Sin(2 * phase)
+                + .32 * Math.Sin(3 * phase) + .18 * Math.Sin(5 * phase);
+            double flutter = .88 + .12 * Math.Sin(Math.Tau * 31 * local);
+            double value = .38 * voice * envelope * flutter * (second ? 1 : .85);
             short sample = (short)(Math.Clamp(value, -1, 1) * short.MaxValue);
             data[i * 2] = (byte)(sample & 255); data[i * 2 + 1] = (byte)(sample >> 8);
         }

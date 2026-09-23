@@ -226,8 +226,10 @@ public partial class CustomerCollectionSelfTest : Node
         Check(screen.Descendants<Label>().Single(l => l.Name == "CustomerStory").Text.Contains("再正确接待 2 次"), "anecdote locked below threshold");
         save.Data.CustomerRecords["xiangsheng_performer"].Served = 3; screen.PresentBreakfastCollection(); await Frames(); await Capture("story-unlocked");
         await Click("BreakfastSection"); Check(screen.Descendants<Control>().Any(c => c.Name == "CollectionDetail"), "breakfast section preserved");
-        await Click("CustomerSection"); await Click("Back");
-        Check(screen.Page == JourneyPage.Home, "back returns home"); screen.PresentBreakfastCollection(); await Frames();
+        await Click("CustomerSection");
+        Check(!screen.Descendants<Button>().Any(b => b.Name == "Back"), "collection has no back button");
+        screen._Input(new InputEventKey { Keycode = Key.Escape, Pressed = true }); await Frames();
+        Check(screen.Page == JourneyPage.Home, "Escape returns home"); screen.PresentBreakfastCollection(); await Frames();
         Check(!screen.Descendants<Control>().Any(c => c.Name == "CustomerDetail") && File.ReadAllText(path) == saved, "reopen defaults to breakfast and browsing never saves");
         await Click("CustomerSection");
         screen._Input(new InputEventKey { Keycode = Key.Escape, Pressed = true }); await Frames();
@@ -236,8 +238,8 @@ public partial class CustomerCollectionSelfTest : Node
         screen.PresentCustomerCollectionOverWorkbench(() => restoredWorkbench = true); await Frames();
         Check(screen.Page == JourneyPage.Collection && !screen.GetNode<Control>("Canvas/Background").Visible,
             "workbench customer collection hides only start screen background");
-        screen.Descendants<Button>().First(b => b.Name == "Back" && b.IsVisibleInTree()).EmitSignal(Button.SignalName.Pressed); await Frames();
-        Check(restoredWorkbench && !screen.Visible, "workbench customer collection returns to its source");
+        screen._Input(new InputEventKey { Keycode = Key.Escape, Pressed = true }); await Frames();
+        Check(restoredWorkbench && !screen.Visible, "Escape returns workbench customer collection to its source");
         screen.QueueFree(); await Frames();
         if (OS.GetCmdlineUserArgs().Contains("--visual-only")) return;
         InterfaceLessons.MarkAllSeen(GetNode<JourneySettings>("/root/JourneySettings"));

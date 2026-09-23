@@ -112,14 +112,11 @@ public partial class BusinessDetailsView
         CaptureTravelMotion(TravelMotionGroup.Challenge, _summary, () =>
         {
             string result = _model.Challenge is null ? "今日暂无挑战" : _model.ChallengeCaption;
-            bool hasChallenge = _model.Challenge is not null;
-            if (hasChallenge)
-            {
-                string asset = _model.Challenge!.Achieved(r) ? "挑战完成" : "挑战失败";
-                var icon = Picture(_summary, GD.Load<Texture2D>($"res://resource/art/Global/StartPage/{asset}.png"), new(914, 318, 105, 105));
-                icon.Name = "ChallengeResultIcon";
-            }
-            var challenge = Text(_summary, result, hasChallenge ? new(1035, 320, 390, 96) : new(925, 326, 490, 76), 24, wrap: true);
+            string asset = _model.Challenge is null ? "没有挑战-人物"
+                : _model.Challenge.Achieved(r) ? "挑战成功-人物" : "挑战失败-人物";
+            var icon = Picture(_summary, GD.Load<Texture2D>($"res://resource/art/Global/StartPage/{asset}.png"), new(914, 318, 105, 105));
+            icon.Name = "ChallengeResultIcon";
+            var challenge = Text(_summary, result, new(1035, 320, 390, 96), 24, wrap: true);
             challenge.Name = "ChallengeSettlement";
         });
 

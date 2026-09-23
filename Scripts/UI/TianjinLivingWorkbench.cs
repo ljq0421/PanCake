@@ -10,7 +10,6 @@ public partial class TianjinLivingWorkbench : Control
     public Func<PancakeRuntime?> Runtime { get; set; } = () => null;
     public Func<bool> Spreading { get; set; } = () => false;
     public Func<float> FlipProgress { get; set; } = () => 1;
-    public Func<float> FlipEdge { get; set; } = () => 1;
     public Action? StopPaymentFeedback { get; set; }
     private TextureRect _pendant = null!, _scraper = null!, _spatula = null!;
     private Tween? _pendantTween;
@@ -26,7 +25,7 @@ public partial class TianjinLivingWorkbench : Control
     public int CompletedPaperCount => _papers.Count;
     public float SteamRemaining => _steamLeft;
     public float PendantRotation => _pendant.RotationDegrees;
-    public bool ToolsAtRest => _scraper.Visible && _spatula.Position.IsEqualApprox(SpatulaRect.Position);
+    public bool ToolsAtRest => _scraper.Visible && _spatula.Visible && _spatula.Position.IsEqualApprox(SpatulaRect.Position);
     public void BindPendantHighlight(Func<InteractionHighlightState> state) => ArtContourHighlight.Attach(_pendant, state);
     public void BindPendantHover(BaseButton button)
     {
@@ -83,14 +82,10 @@ public partial class TianjinLivingWorkbench : Control
         _steamLeft = Math.Max(0, _steamLeft - (float)delta);
         if (state is PancakeState.Empty or PancakeState.Burnt or PancakeState.Folded or PancakeState.Bagged) _steamLeft = 0;
         _scraper.Visible = !Spreading();
-        float progress = FlipProgress();
-        float reach = progress < .2f ? Mathf.SmoothStep(0, 1, progress / .2f)
-            : 1 - Mathf.SmoothStep(0, 1, (progress - .48f) / .52f);
-        float lift = Mathf.Sin(PancakeCanvas.FlipFlight(progress) * Mathf.Pi);
-        Vector2 contact = TianjinWorkbenchLayout.EmbeddedSurface.GetCenter() + new Vector2(125 * FlipEdge(), -12 - 30 * lift);
-        _spatula.Position = SpatulaRect.Position.Lerp(contact, reach);
-        _spatula.FlipH = reach > 0 && FlipEdge() < 0;
-        _spatula.RotationDegrees = -12 * reach * FlipEdge();
+        // The player-operated cursor is the only spatula shown while flipping.
+        // Keep the resting tool out of that interaction instead of animating a
+        // second copy alongside the food.
+        _spatula.Visible = FlipProgress() >= 1;
         QueueRedraw();
     }
 

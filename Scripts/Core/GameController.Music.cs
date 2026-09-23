@@ -22,6 +22,7 @@ public partial class GameController
                 return (StableIds.Cities.Yangzhou, _yangzhouDay.Session?.Paused == true);
             string key = business ? controller.CurrentConfig?.CityId ?? "home"
                 : _startScreen.Page is JourneyPage.City or JourneyPage.Ledger or JourneyPage.Upgrades or JourneyPage.Collection
+                    || _startScreen.Page == JourneyPage.Opening && _startScreen.SelectedCityId == StableIds.Cities.Wuhan
                     ? _startScreen.SelectedCityId : "home";
             return (key, business ? controller.IsPaused : _startScreen.ModalOpen);
         });

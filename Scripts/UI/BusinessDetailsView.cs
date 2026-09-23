@@ -170,7 +170,7 @@ public partial class BusinessDetailsView : Control
         _previousPage.Visible = details; _nextPage.Visible = !details;
         if (UsesTravelBook)
         {
-            SetButtonBounds(CloseButton, details ? new(1145, 776, 280, 70) : new(1184, 625, 260, 64));
+            SetButtonBounds(CloseButton, details ? new(1145, 776, 280, 70) : new(1184, _model.NewWuhanUnlock ? 685 : 625, 260, 64));
             CloseButton.AddThemeFontSizeOverride("font_size", details ? 30 : TravelActionFontSize);
         }
         // Continuing a business day belongs to the settlement summary.  The
@@ -253,7 +253,11 @@ public partial class BusinessDetailsView : Control
     private void StartAnimation()
     {
         StopIncomeAudio();
-        if (ProjectSettings.GetSetting("accessibility/reduce_motion", false).AsBool()) return;
+        if (ProjectSettings.GetSetting("accessibility/reduce_motion", false).AsBool())
+        {
+            PlayNewCityCelebration();
+            return;
+        }
         _audio.Play(PancakeSound.BookOpen);
         if (UsesTravelBook)
         {
@@ -277,6 +281,7 @@ public partial class BusinessDetailsView : Control
     }
     internal void FinishAnimation()
     {
+        _newCityAudio?.Stop();
         StopIncomeAudio();
         FinishPageAnimation();
         _entrance?.Kill(); _entrance = null;

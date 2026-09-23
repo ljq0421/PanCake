@@ -95,10 +95,11 @@ public partial class TianjinFlipSelfTest : Node
                 {
                     if (frame > 0) station.Tick(1.0 / 60);
                     await Frames();
-                    if (frame == 8) Check(!living.ToolsAtRest, $"spatula accompanies the rising pancake (active={living.Active()}, state={controller.State}, paused={controller.IsPaused}, progress={station.FlipProgress})");
+                    if (frame == 8) Check(!living.GetNode<TextureRect>("spatula").Visible,
+                        $"resting spatula stays hidden during the flip (active={living.Active()}, state={controller.State}, paused={controller.IsPaused}, progress={station.FlipProgress})");
                     await Shot($"frame-{width}-{frame:D2}");
                 }
-                Check(!station.IsFlipping && living.ToolsAtRest, "food and spatula finish together at 0.35 seconds");
+                Check(!station.IsFlipping && living.ToolsAtRest, "food lands and the resting spatula returns at 0.35 seconds");
                 Check(station.Machine.Runtime.HasEgg, "egg state survives the flip");
                 sauce.EmitSignal(Button.SignalName.Pressed);
                 Check(station.Machine.Runtime.State == PancakeState.Saucing, "sauce becomes available after landing");

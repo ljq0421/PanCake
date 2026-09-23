@@ -47,7 +47,7 @@ public partial class ButtonHoverSelfTest
         Move(new(1918, 1078)); await Frames(); Move(home.GetGlobalRect().GetCenter()); await Frames();
         Require(plays == 3, "fresh entry resumes audio");
         var player = audio.GetChildren().OfType<AudioStreamPlayer>().Single();
-        Require(player.Bus == JourneySettings.EffectsBus && player.VolumeDb == -4 && player.MaxPolyphony == 1,
+        Require(player.Bus == JourneySettings.EffectsBus && player.VolumeDb == 0 && player.MaxPolyphony == 1,
             "clear single voice uses effects bus");
         Require(player.Stream.GetLength() < .06, "hover cue stays short");
         var book = new BusinessDetailsView();

@@ -29,6 +29,9 @@ public partial class WuhanIntroductionSelfTest : Node
             InterfaceLessons.MarkAllSeen(settings);
             var screen = GD.Load<PackedScene>("res://Scenes/UI/StartScreen.tscn").Instantiate<StartScreen>();
             AddChild(screen); screen.Initialize(save);
+            string? requestedCity = null;
+            int requestedDay = 0;
+            screen.BusinessRequested += (city, day) => { requestedCity = city; requestedDay = day; };
             await Settle();
             foreach (bool reduced in new[] { false, true })
             {
@@ -60,7 +63,9 @@ public partial class WuhanIntroductionSelfTest : Node
                 }
                 screen.Descendants<Button>().Single(b => b.Name == "WuhanOpeningContinue").EmitSignal(Button.SignalName.Pressed);
                 await Settle();
-                Check(screen.Page == JourneyPage.City && screen.SelectedCityId == StableIds.Cities.Wuhan, "departure opens Wuhan city");
+                Check(requestedCity == StableIds.Cities.Wuhan && requestedDay == 1,
+                    "departure requests Wuhan Day 1 directly");
+                requestedCity = null; requestedDay = 0;
             }
             GD.Print("WUHAN_INTRODUCTION_SELF_TEST_OK checks=" + _checks);
             GetTree().Quit();

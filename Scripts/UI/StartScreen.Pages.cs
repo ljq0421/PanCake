@@ -165,7 +165,7 @@ public partial class StartScreen
         if (_completedCity is null) return;
         _completionContinueBusiness = null;
         if (_save?.IsDemo == true && _completedCity == StableIds.Cities.Tianjin)
-        { _completedCity = null; PresentDemoWuhanOpening(); return; }
+        { _completedCity = null; PresentWuhanOpening(); return; }
         var next = JourneyModel.Next(_completedCity); _completedCity = null;
         if (next is not null && _save!.Data.UnlockedCityIds.Contains(next.Id)) { PresentCity(next.Id, RenderMap); } else RenderMap();
     }

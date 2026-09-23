@@ -57,6 +57,7 @@ public partial class TianjinDirectFoodSelfTest : Node
                     "flip and fold use the pancake spatula cursor");
                 station.ConfigureTutorial(null);
                 var living = screen.GetNode<TianjinLivingWorkbench>("LivingWorkbench");
+                var restingSpatula = living.GetNode<TextureRect>("spatula");
                 int flips = 0, bags = 0;
                 station.WorkbenchActionLearned += action => { if (action == "flip") flips++; if (action == "bag") bags++; };
                 Vector2 Point(float x, float y = .5f) => GetViewport().GetFinalTransform() * canvas.GetGlobalTransformWithCanvas()
@@ -100,7 +101,8 @@ public partial class TianjinDirectFoodSelfTest : Node
                 foreach (float edge in new[] { .9f, .1f })
                 {
                     Ready(); Mouse(Point(edge), true); Move(Point(.5f)); await Frames();
-                    Check(!living.ToolsAtRest, "spatula follows picked edge");
+                    Check(!living.ToolsAtRest && !restingSpatula.Visible,
+                        "only the mouse-operated spatula is shown while lifting the pancake edge");
                     Mouse(Point(.5f), false); Check(station.IsFlipping, "inward release flips");
                     station.Tick(.1); await Frames(); await Shot($"flip-air-{edge}-{width}");
                     station.Tick(.3); await Frames();

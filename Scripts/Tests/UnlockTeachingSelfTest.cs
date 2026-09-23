@@ -56,6 +56,7 @@ public partial class UnlockTeachingSelfTest : Node
                 Control screen = GD.Load<PackedScene>($"res://Scenes/Gameplay/{item.Item1}DayScreen.tscn").Instantiate<Control>();
                 _viewport.AddChild(screen); screen.SetProcess(false);
                 var t = screen as TianjinDayScreen; var w = screen as WuhanDayScreen;
+                EquipmentUpgradeCelebration? effect = null;
                 if (t is not null) t.ConnectController(controller); else w!.ConnectController(controller);
                 void Start()
                 {
@@ -63,7 +64,7 @@ public partial class UnlockTeachingSelfTest : Node
                     Check(ok, $"{item} initializes");
                     if (t is not null) t.BeginDay(); else w!.BeginDay();
                     screen._Notification((int)NotificationApplicationFocusIn);
-                    var effect = screen.GetNode<EquipmentUpgradeCelebration>("UpgradeCelebration");
+                    effect = screen.GetNode<EquipmentUpgradeCelebration>("UpgradeCelebration");
                     effect.SetProcess(false);
                     effect._Notification((int)NotificationApplicationFocusIn);
                     int unlockCount = DayUnlockPresentation.ForDay(catalog, controller.CurrentConfig!).Count;
@@ -83,6 +84,16 @@ public partial class UnlockTeachingSelfTest : Node
                 void Finish() { if (t is not null) t.FinishDemoLesson(); else w!.FinishWuhanDemoLesson(); }
                 void Retry() { if (t is not null) t.RetryDemoLesson(); else w!.RetryWuhanDemoLesson(); }
                 Start();
+                if (item == ("Tianjin", 4))
+                {
+                    Check(TutorialOrders.UnlockFor(controller.CurrentConfig!) is null,
+                        "youtiao pancake unlock has no lesson");
+                    effect!._Process(3);
+                    Check(!controller.TutorialActive && controller.CurrentPlan!.Customers.Count == controller.CurrentConfig!.CustomerCount,
+                        "youtiao pancake unlock starts the full business day directly");
+                    screen.QueueFree(); controller.QueueFree(); await Frames();
+                    continue;
+                }
                 var lesson = TutorialOrders.UnlockFor(controller.CurrentConfig!)
                     ?? (tianjin
                         ? new TutorialOrders.UnlockLesson("第一张煎饼", ProductKind.Pancake, StableIds.Recipes.Basic, "deliver:finished_pancake")
@@ -112,27 +123,6 @@ public partial class UnlockTeachingSelfTest : Node
                     focus.Refresh();
                     Check(focus.CurrentAction is "take:crispy" or "take:scallion",
                         $"crispy and scallion lesson first guides one of the newly unlocked toppings: {focus.CurrentAction}");
-                    controller.AbandonDay(); Start();
-                    focus = t.TeachingFocus; focus.Refresh();
-                }
-                else if (item == ("Tianjin", 4))
-                {
-                    Check(focus.CurrentAction is null, "youtiao pancake lesson skips the familiar pancake-spreading guidance");
-                    var station = t!.GetNode<PancakeWorkstation>("PancakeWorkstation");
-                    var machine = station.Machine;
-                    Check(machine.TryExecute(PancakeCommand.PlaceBatter).Success && machine.TryExecute(PancakeCommand.BeginSpread).Success
-                        && machine.TryExecute(PancakeCommand.CompleteSpread).Success && machine.TryExecute(PancakeCommand.AddEgg).Success,
-                        "youtiao pancake lesson allows the familiar pancake setup without guidance");
-                    station.Tick(100);
-                    Check(machine.TryExecute(PancakeCommand.Flip).Success, "youtiao pancake lesson flips familiar pancake");
-                    station.Tick(100);
-                    Check(machine.TryExecute(PancakeCommand.BeginSauce).Success, "youtiao pancake lesson starts familiar sauce step");
-                    machine.SetSauceCoverage(1);
-                    Check(machine.TryExecute(PancakeCommand.CompleteSauce).Success, "youtiao pancake lesson completes familiar sauce step");
-                    station.FryerMachine!.Inventory.TryStore(1, YoutiaoQuality.Golden);
-                    focus.Refresh();
-                    Check(focus.CurrentAction == "lesson:pancake_youtiao",
-                        "youtiao pancake lesson only guides inserting the newly unlocked filling");
                     controller.AbandonDay(); Start();
                     focus = t.TeachingFocus; focus.Refresh();
                 }

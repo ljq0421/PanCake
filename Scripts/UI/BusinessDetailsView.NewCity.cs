@@ -4,6 +4,23 @@ namespace ProjectCake.UI;
 
 public partial class BusinessDetailsView
 {
+    private AudioStreamPlayer? _newCityAudio;
+
+    private void PlayNewCityCelebration()
+    {
+        if (!_model.NewWuhanUnlock || !_incomeAudioFocused || !IsVisibleInTree()) return;
+        if (_newCityAudio is null)
+        {
+            _newCityAudio = new AudioStreamPlayer
+            {
+                Name = "NewCityCelebrationAudio", Bus = ProjectCake.Core.JourneySettings.EffectsBus,
+                VolumeDb = -8, Stream = EquipmentUpgradeCelebration.MakeChime()
+            };
+            AddChild(_newCityAudio);
+        }
+        _newCityAudio.Play();
+    }
+
     private void BuildNewCitySummary()
     {
         var r = _model.Result;
@@ -29,16 +46,14 @@ public partial class BusinessDetailsView
         CaptureTravelMotion(TravelMotionGroup.Challenge, _summary, () =>
         {
             bool hasChallenge = _model.Challenge is not null;
-            if (hasChallenge)
-            {
-                string asset = _model.Challenge!.Achieved(r) ? "挑战完成" : "挑战失败";
-                Picture(_summary, GD.Load<Texture2D>(JourneyModel.ArtRoot + asset + ".png"), new(910, 174, 62, 62)).Name = "ChallengeResultIcon";
-            }
+            string asset = !hasChallenge ? "没有挑战-人物"
+                : _model.Challenge!.Achieved(r) ? "挑战成功-人物" : "挑战失败-人物";
+            Picture(_summary, GD.Load<Texture2D>(JourneyModel.ArtRoot + asset + ".png"), new(910, 174, 62, 62)).Name = "ChallengeResultIcon";
             Text(_summary, hasChallenge ? _model.ChallengeCaption : "今日暂无挑战",
-                new(hasChallenge ? 985 : 915, 177, hasChallenge ? 445 : 510, 58), 23, wrap: true).Name = "ChallengeSettlement";
+                new(985, 177, 445, 58), 23, wrap: true).Name = "ChallengeSettlement";
         });
 
-        var unlock = ButtonAt(_summary, "", new(890, 254, 560, 198), RequestNewJourney);
+        var unlock = ButtonAt(_summary, "", new(890, 254, 560, 250), RequestNewJourney);
         unlock.Name = "NewCityUnlock";
         unlock.TooltipText = "展开新旅程 · 查看武汉解锁";
         unlock.Disabled = !_model.CanClose;
@@ -48,13 +63,14 @@ public partial class BusinessDetailsView
             box.BorderColor = new("#C08335");
             unlock.AddThemeStyleboxOverride(state, box);
         }
-        Picture(unlock, GD.Load<Texture2D>(JourneyModel.ArtRoot + "武汉旅行明信片.png"), new(8, 40, 232, 148));
-        Picture(unlock, GD.Load<Texture2D>(JourneyModel.ArtRoot + "Dayx背景.png"), new(232, 0, 320, 94));
-        TravelValue(unlock, "新城市解锁！", new(263, 24, 240, 42), 34, HorizontalAlignment.Center, new Color("#AA4926"));
-        TravelValue(unlock, "武汉", new(247, 91, 290, 51), 42);
-        TravelValue(unlock, "点击展开新旅程", new(247, 155, 295, 32), 25, color: new Color("#875323"));
+        Picture(unlock, GD.Load<Texture2D>(JourneyModel.ArtRoot + "Dayx背景.png"), new(42, -3, 476, 112));
+        TravelValue(unlock, "新城市解锁！", new(75, 24, 410, 59), 48, HorizontalAlignment.Center, new Color("#AA4926"));
+        Picture(unlock, GD.Load<Texture2D>(JourneyModel.ArtRoot + "武汉旅行明信片.png"), new(8, 88, 268, 156));
+        TravelValue(unlock, "武汉", new(291, 104, 250, 80), 66);
+        TravelValue(unlock, "点击展开新旅程", new(291, 199, 250, 36), 28, color: new Color("#875323"));
 
         AddTravelUpgradeButton();
+        _summary.GetNode<Control>("UpgradeSticker").Position += new Vector2(0, 60);
         if (_upgradeEntry is not null)
         {
             unlock.FocusNext = unlock.GetPathTo(_upgradeEntry);

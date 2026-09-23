@@ -84,6 +84,8 @@ public partial class BusinessBookSelfTest
                 sound = view.GetNodeOrNull<AudioStreamPlayer>("IncomeCountAudio");
                 Check(sound?.Playing == true && sound.Bus == JourneySettings.EffectsBus,
                     city + " income count plays on effects bus");
+                Check(sound?.Stream.ResourcePath == BusinessFeedbackAudio.CartoonCoinPath && sound.VolumeDb == -10,
+                    city + " income count uses the dedicated coin-credit clip at a readable level");
                 if (travel)
                 {
                     StepMotion(soundTween, .25);
@@ -98,6 +100,14 @@ public partial class BusinessBookSelfTest
                 view._Notification((int)NotificationApplicationFocusIn);
                 view.FinishAnimation();
                 Check(!sound.Playing, city + " skip stops counting sound");
+                if (travel)
+                {
+                    view.Open(soundModel); soundTween = PauseMotion(view);
+                    StepMotion(soundTween, 2.20);
+                    var emphasis = view.Descendants<PancakeAudio>().Single().GetChildren().OfType<AudioStreamPlayer>().First();
+                    Check(emphasis.Playing, city + " settled income emphasis plays a coin accent");
+                    view.FinishAnimation();
+                }
 
                 view.Open(soundModel); soundTween = PauseMotion(view);
                 StepMotion(soundTween, travel ? 1.60 : .75);

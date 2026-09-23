@@ -112,9 +112,9 @@ public partial class TianjinLivingWorkbenchSelfTest : Node
                 Check(living.SteamRemaining > 0, "ready transition emits steam once");
                 await Shot($"steam-{width}");
                 await Delay(.95); Check(living.SteamRemaining == 0, "mature pancake does not loop steam");
-                Flip(station); await Frames(2); Check(!living.ToolsAtRest, "flip leaves the tool slot empty");
+                Flip(station); await Frames(2); Check(!living.ToolsAtRest, "flip hides the resting spatula");
                 await Shot($"flip-{width}");
-                await Delay(.4); Check(living.ToolsAtRest && !station.IsFlipping, "pancake lands and spatula returns to its fixed slot");
+                await Delay(.4); Check(living.ToolsAtRest && !station.IsFlipping, "pancake lands and the resting spatula returns to its fixed slot");
 
                 var stock = station.Descendants<SoyMilkStockView>().Single();
                 var drag = station.Descendants<DragService>().Single();

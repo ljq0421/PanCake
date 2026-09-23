@@ -64,10 +64,13 @@ public partial class PancakeWorkstation
             return Step("deliver:" + payload, FocusPayload == payload ? $"松手交给亮起的顾客。" : $"把{name}拖给需要它的顾客。",
                 FocusPayload == payload ? customers : TutorialFocusTarget.Artwork(source == _storedYoutiao ? _finishedYoutiaoSlot : source));
         }
+        TutorialFocusStep? AddYoutiaoToPancake(bool dragging) => Step(UnlockLessonAction ?? "take:youtiao",
+            dragging ? "把熟油条拖入饼面后松手。" : "把熟油条拖入饼面。",
+            dragging ? new[] { Surface() } : TutorialFocusTarget.Artwork(_finishedYoutiaoSlot));
         if (FocusPayload == TrashPayload) return Step("discard", "拖入垃圾桶，松手丢弃。", Painted(TianjinPaintedObject.Trash));
         if (FocusPayload == StoredYoutiaoPayload && r.State is PancakeState.Sauced or PancakeState.Toppings
             && !r.ExtraIngredients.Contains("youtiao") && orders.Any(o => o.Kind == ProductKind.Pancake && o.Toppings.Contains("youtiao") && r.ExtraIngredients.All(o.Toppings.Contains)))
-            return Step("take:youtiao", "把熟油条拖入饼面后松手。", Surface());
+            return AddYoutiaoToPancake(dragging: true);
         if (FocusPayload is "finished_pancake" or SoyMilkPayload or StoredYoutiaoPayload)
             return FocusPayload switch {
                 "finished_pancake" => Deliver("finished_pancake", ProductKind.Pancake, _finished, "装袋的煎饼", FinishedRecipe()),
@@ -112,8 +115,7 @@ public partial class PancakeWorkstation
                 if (id == "youtiao")
                 {
                     if (FryerMachine?.Inventory.Count > 0)
-                        return Step("take:youtiao", FocusPayload == StoredYoutiaoPayload ? "把熟油条拖入饼面后松手。" : "把熟油条拖入饼面。",
-                            FocusPayload == StoredYoutiaoPayload ? new[] { Surface() } : TutorialFocusTarget.Artwork(_finishedYoutiaoSlot));
+                        return AddYoutiaoToPancake(FocusPayload == StoredYoutiaoPayload);
                     return FryerFocus();
                 }
                 if (!_enabledIngredients.Contains(id)) continue;
@@ -126,12 +128,12 @@ public partial class PancakeWorkstation
             PancakeState.BatterPlaced or PancakeState.Spreading => Step("spread", "按住左键在面糊上划动，摊成一张饼。", Surface()),
             PancakeState.Spread or PancakeState.SideACooking when !r.HasEgg => Take("egg", "点击鸡蛋，把蛋打到饼上。"),
             PancakeState.SideACooking => Step("flip", "等第一面成熟，再翻面。", Surface()),
-            PancakeState.SideAReady or PancakeState.SideAOverdone => Step("flip", "按住饼边向饼心短拖，松手翻面；也可按 F。", Surface()),
+            PancakeState.SideAReady or PancakeState.SideAOverdone => Step("flip", "用小铲子从饼边向饼心短推，松手翻面；也可按 F。", Surface()),
             PancakeState.SideBCooking => Step("take:sauce", "等第二面成熟，再拿刷子刷酱。", Surface()),
             PancakeState.SideBReady => Take("sauce", "点击酱碗拿刷子。"),
             PancakeState.Saucing => Step("sauce", "在饼面刷酱；达到订单酱量后短按右键收刷，或按 F。", Surface()),
-            PancakeState.Sauced or PancakeState.Toppings => Step("fold", "配料已齐，按住左侧或右侧饼边，向对侧拖动后松手；也可按 F。", Surface()),
-            PancakeState.Folded => Step("bag", _directGesture == DirectGesture.Bag ? "把纸袋拖到煎饼上，松手套袋。" : "取左侧纸袋，拖到煎饼上套袋；也可按 F。", _directGesture == DirectGesture.Bag ? new[] { Surface() } : new[] { new TutorialFocusTarget(this, _directBag!.FocusOutline) }),
+            PancakeState.Sauced or PancakeState.Toppings => Step("fold", "配料已齐，用小铲子从左侧或右侧推向对侧后松手；也可按 F。", Surface()),
+            PancakeState.Folded => Step("bag", _directGesture == DirectGesture.Bag ? "用小铲子把纸袋推到煎饼上，松手套袋。" : "用小铲子取左侧纸袋，推到煎饼上套袋；也可按 F。", _directGesture == DirectGesture.Bag ? new[] { Surface() } : new[] { Painted(TianjinPaintedObject.BagStack) }),
             PancakeState.Bagged => Deliver("finished_pancake", ProductKind.Pancake, _finished, "装袋的煎饼", FinishedRecipe()),
             PancakeState.Burnt => Step("discard", "在焦饼上长按右键 0.45 秒，再拖入垃圾桶。", Surface()),
             _ => null,

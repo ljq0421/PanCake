@@ -69,7 +69,8 @@ public partial class TutorialFocusSelfTest : Node
             var catalog = GetNode<DataCatalog>("/root/DataCatalog");
             string savePath = Path.Combine(_directory, Guid.NewGuid() + ".json");
             var save = new SaveService(); save.UsePathForTests(savePath); AddChild(save);
-            if (OS.GetCmdlineUserArgs().Contains("--sesame-only")) await WuhanSesame(catalog, save);
+            if (OS.GetCmdlineUserArgs().Contains("--bag-only")) await TianjinBag(catalog, save);
+            else if (OS.GetCmdlineUserArgs().Contains("--sesame-only")) await WuhanSesame(catalog, save);
             else if (OS.GetCmdlineUserArgs().Contains("--order-paper-only")) await OrderPaper(catalog, save);
             else if (OS.GetCmdlineUserArgs().Contains("--sauce-only")) await TianjinSauce(catalog, save);
             else if (OS.GetCmdlineUserArgs().Contains("--beef-only")) await WuhanBeef(catalog, save);

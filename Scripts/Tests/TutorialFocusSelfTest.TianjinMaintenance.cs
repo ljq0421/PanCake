@@ -13,6 +13,12 @@ public partial class TutorialFocusSelfTest
 {
     private async Task TianjinMaintenance(DataCatalog catalog, SaveService save)
     {
+        var settings = GetNode<JourneySettings>("/root/JourneySettings");
+        settings.UsePathForTests(Path.Combine(_directory, "maintenance-settings.cfg"));
+        InterfaceLessons.MarkAllSeen(settings);
+        // Exercise ordinary business maintenance rather than the separate first-meal/unlock lessons.
+        save.Data.Tianjin.LearnedWorkbenchActions.UnionWith(PancakeWorkstation.AllWorkbenchActions
+            .Where(a => a != "discard" && a != PancakeWorkstation.RefillLessonAction));
         var controller = new DayController(); AddChild(controller);
         var screen = SceneFactory.Instantiate<TianjinDayScreen>("res://Scenes/Gameplay/TianjinDayScreen.tscn");
         _viewport.AddChild(screen); screen.ConnectController(controller); screen.SetProcess(false);
@@ -45,7 +51,7 @@ public partial class TutorialFocusSelfTest
         Focus(); Check(focus.CurrentAction is null, "full stock does not prompt unnecessary maintenance");
         station.Inventory.TryConsume("egg", station.Inventory.GetCapacity("egg") - 2);
         Focus(); Check(focus.CurrentAction == "refill:egg" && focus.CurrentText.Contains("左键") && focus.CurrentText.Contains("0.45"),
-            "low stock prompts restock before it is empty, even between customers");
+            $"low stock prompts restock before it is empty, even between customers: action={focus.CurrentAction}, text={focus.CurrentText}, paused={controller.IsPaused}, state={controller.State}, tutorial={controller.TutorialActive}");
         double refillLessonTime = controller.DayElapsedSeconds;
         screen._Process(1);
         Check(controller.DayElapsedSeconds == refillLessonTime, "refill lesson freezes the business clock while its instruction is active");
@@ -114,6 +120,41 @@ public partial class TutorialFocusSelfTest
         station.Inventory.TryConsume("egg", station.Inventory.GetCapacity("egg"));
         station.Machine.Runtime.State = PancakeState.SideACooking; Focus();
         Check(focus.CurrentAction == "refill:egg", "missing ingredient has priority over last-used fryer's next step");
+        station.FryerMachine.Runtime.State = ProjectCake.Fryer.FryerState.Frying;
+        double cookingTime = station.Machine.Runtime.CookingSeconds;
+        double fryingTime = station.FryerMachine.Runtime.FrySeconds;
+        double businessTime = controller.DayElapsedSeconds;
+        var guests = controller.CustomerQueue!.Slots.Select(guest => (Guest: guest, Wait: guest.WaitSeconds)).ToArray();
+        void CheckFrozen(string phase)
+        {
+            Check(station.Machine.Runtime.CookingSeconds == cookingTime
+                && station.FryerMachine.Runtime.FrySeconds == fryingTime
+                && station.Machine.Runtime.State == PancakeState.SideACooking
+                && station.FryerMachine.Runtime.State == ProjectCake.Fryer.FryerState.Frying,
+                phase + " freezes pancake and fryer without burning food");
+            Check(controller.DayElapsedSeconds == businessTime && guests.All(g => g.Guest.WaitSeconds == g.Wait),
+                phase + " freezes business and customer patience");
+        }
+        screen._Process(100); CheckFrozen("refill instruction");
+        stock = station.Descendants<StockGesture>().Single(g => g.Name == "StockGesture_egg");
+        HoldEgg(.45); ReleaseEgg(); Focus(); CheckFrozen("refill long hold");
+        Check(station.Inventory.IsRefilling("egg"), "frozen cooking still permits starting refill");
+        screen._Process(station.Inventory.LevelData.RefillSeconds / 2); Focus(); CheckFrozen("refill progress");
+        Check(station.Inventory.IsRefilling("egg") && station.Inventory.GetRefillProgress("egg") > 0,
+            "refill itself advances while cooking is frozen");
+        screen._Process(station.Inventory.LevelData.RefillSeconds); Focus(); CheckFrozen("refill completion frame");
+        Check(!station.Inventory.IsRefilling("egg") && focus.CurrentAction != "refill:egg", "completed refill ends the freeze");
+        screen._Process(.05);
+        Check(station.Machine.Runtime.CookingSeconds > cookingTime && station.FryerMachine.Runtime.FrySeconds > fryingTime
+            && controller.DayElapsedSeconds > businessTime, "all clocks resume after refill without catching up paused time");
+        station.ConfigureTutorial(PancakeWorkstation.AllWorkbenchActions.Where(a => a != "discard" && a != PancakeWorkstation.RefillLessonAction));
+        station.Inventory.TryConsume("egg", station.Inventory.GetCapacity("egg")); Focus();
+        Check(focus.CurrentAction == "refill:egg", "unlearned refill can be skipped");
+        focus.Dismiss(); cookingTime = station.Machine.Runtime.CookingSeconds; fryingTime = station.FryerMachine.Runtime.FrySeconds;
+        businessTime = controller.DayElapsedSeconds; screen._Process(.05);
+        Check(station.Machine.Runtime.CookingSeconds > cookingTime && station.FryerMachine.Runtime.FrySeconds > fryingTime
+            && controller.DayElapsedSeconds > businessTime, "skipping refill guidance releases every clock");
+        focus.ResetSession();
         station.Machine.Runtime.State = PancakeState.Burnt; Focus();
         Check(focus.CurrentAction == "discard" && focus.CurrentText.Contains("焦饼"), "burnt pancake wins even after using fryer");
         station.ResetForDay(); station.FryerMachine.Runtime.State = ProjectCake.Fryer.FryerState.Burnt; station.FryerMachine.Runtime.Quantity = 1; Focus();

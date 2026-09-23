@@ -115,6 +115,27 @@ public partial class UnlockTeachingSelfTest : Node
                     controller.AbandonDay(); Start();
                     focus = t.TeachingFocus; focus.Refresh();
                 }
+                else if (item == ("Tianjin", 4))
+                {
+                    Check(focus.CurrentAction is null, "youtiao pancake lesson skips the familiar pancake-spreading guidance");
+                    var station = t!.GetNode<PancakeWorkstation>("PancakeWorkstation");
+                    var machine = station.Machine;
+                    Check(machine.TryExecute(PancakeCommand.PlaceBatter).Success && machine.TryExecute(PancakeCommand.BeginSpread).Success
+                        && machine.TryExecute(PancakeCommand.CompleteSpread).Success && machine.TryExecute(PancakeCommand.AddEgg).Success,
+                        "youtiao pancake lesson allows the familiar pancake setup without guidance");
+                    station.Tick(100);
+                    Check(machine.TryExecute(PancakeCommand.Flip).Success, "youtiao pancake lesson flips familiar pancake");
+                    station.Tick(100);
+                    Check(machine.TryExecute(PancakeCommand.BeginSauce).Success, "youtiao pancake lesson starts familiar sauce step");
+                    machine.SetSauceCoverage(1);
+                    Check(machine.TryExecute(PancakeCommand.CompleteSauce).Success, "youtiao pancake lesson completes familiar sauce step");
+                    station.FryerMachine!.Inventory.TryStore(1, YoutiaoQuality.Golden);
+                    focus.Refresh();
+                    Check(focus.CurrentAction == "lesson:pancake_youtiao",
+                        "youtiao pancake lesson only guides inserting the newly unlocked filling");
+                    controller.AbandonDay(); Start();
+                    focus = t.TeachingFocus; focus.Refresh();
+                }
                 else Check(focus.CurrentAction is not null, $"{item} has actionable guidance");
                 await Capture($"{item.Item1}-{item.Item2}-practice");
                 var beforeSkip = learned.ToHashSet();

@@ -25,6 +25,11 @@ internal static class InterfaceLessons
         new InterfaceLesson("挂件里有营业明细", "天津、武汉收到付款后会自动入账。\n点击收银挂件可暂停营业，查看本次营业明细。", "CashPendant")
     };
     internal const string PendantKey = "interface.pendant.v1";
+    internal const string ChallengeKey = "interface.challenge.v1";
+    internal static InterfaceLesson[] Challenge => new[]
+    {
+        new InterfaceLesson("完成挑战，赚取额外收入", "完成每日挑战，可获得额外金币收入。\n挑战奖金会在营业结算时发放。", "DailyChallengePendant")
+    };
     internal static InterfaceLesson[] Book => new[]
     {
         new InterfaceLesson("完成率怎么算", "完成率 = 完成 ÷（完成 + 流失）。\n只统计已结束的客单，错误完成也计入完成。", "BookCompletionRate"),
@@ -35,6 +40,6 @@ internal static class InterfaceLessons
         .Concat(city is "city:tianjin" or "city:wuhan" ? Pendant : Array.Empty<InterfaceLesson>()).Concat(Book).ToArray();
     internal static void MarkAllSeen(JourneySettings settings)
     {
-        foreach (string key in Keys.Append(PendantKey)) settings.MarkInterfaceLessonSeen(key);
+        foreach (string key in Keys.Append(PendantKey).Append(ChallengeKey)) settings.MarkInterfaceLessonSeen(key);
     }
 }

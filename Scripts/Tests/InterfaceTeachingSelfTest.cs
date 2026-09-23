@@ -83,6 +83,11 @@ public partial class InterfaceTeachingSelfTest : Node
             _viewport = new SubViewport { Size = new(1920, 1080), GuiEmbedSubwindows = true, RenderTargetUpdateMode = SubViewport.UpdateMode.Always };
             AddChild(_viewport); _viewport.NotifyMouseEntered();
             _main = GD.Load<PackedScene>("res://Scenes/Main/Main.tscn").Instantiate<GameController>(); _viewport.AddChild(_main);
+            if (OS.GetCmdlineUserArgs().Contains("--challenge-only"))
+            {
+                await CheckChallengeTeaching();
+                GD.Print($"CHALLENGE_TEACHING_PASS checks={_checks}"); GetTree().Quit(); return;
+            }
             var start = _main.GetNode<StartScreen>("UI/StartScreen"); start.PresentHome(); await Frames(10);
             await NoHover(Find<Button>(start, "Continue")); await Shot("01-home-no-tooltip");
             start.PresentCity(StableIds.Cities.Tianjin); start.PresentLedger(); await Frames(10);
@@ -225,5 +230,63 @@ public partial class InterfaceTeachingSelfTest : Node
             GD.Print($"INTERFACE_TEACHING_PASS checks={_checks}"); GetTree().Quit();
         }
         catch (Exception e) { GD.PushError(e.ToString()); GD.Print("INTERFACE_TEACHING_FAIL"); GetTree().Quit(1); }
+    }
+
+    private async Task CheckChallengeTeaching()
+    {
+        await Frames(10);
+        var controller = _main.GetNode<DayController>("DayController"); controller.SetProcess(false);
+        foreach (string city in new[] { StableIds.Cities.Tianjin, StableIds.Cities.Wuhan })
+        {
+            string path = Output + "/challenge-" + Guid.NewGuid().ToString("N") + ".cfg";
+            _settings.UsePathForTests(path);
+            foreach (string key in InterfaceLessons.Keys.Append(InterfaceLessons.PendantKey)) _settings.MarkInterfaceLessonSeen(key);
+            var screen = city == StableIds.Cities.Tianjin
+                ? (Control)_main.GetNode<TianjinDayScreen>("UI/TianjinDayScreen")
+                : _main.GetNode<WuhanDayScreen>("UI/WuhanDayScreen");
+            screen.SetProcess(false);
+            void Refresh()
+            {
+                screen._Notification((int)NotificationApplicationFocusIn);
+                if (screen is TianjinDayScreen t) t.RefreshForCapture(true);
+                else ((WuhanDayScreen)screen).RefreshForCapture();
+            }
+            Check(_main.StartCityBusiness(city, 3), city + " start Day 3");
+            await Frames();
+            controller.Tick(4); Refresh(); await Frames(10);
+            Check(Guide(screen) is null, "challenge lesson does not appear after Day 2");
+            Check(_main.StartCityBusiness(city, 2), city + " start Day 2");
+            await Frames();
+            Refresh();
+            var unlockCue = Find<EquipmentUpgradeCelebration>(screen, "UpgradeCelebration");
+            unlockCue._Notification((int)NotificationApplicationFocusIn);
+            unlockCue._Process(5);
+            Refresh(); await Frames();
+            if (controller.TutorialActive)
+            {
+                Check(Guide(screen) is null, "challenge lesson waits for independent cooking tutorial");
+                Find<Button>(screen, "SkipLesson").EmitSignal(Button.SignalName.Pressed);
+            }
+            controller.Tick(4); Refresh(); await Frames(10);
+            foreach (var focus in screen.Descendants<TutorialFocusLayer>()) focus.Dismiss();
+            await Frames(10);
+            var guide = Guide(screen);
+            Check(guide?.LessonKey == InterfaceLessons.ChallengeKey, city + $" Day 2 challenge teaching appears (state={controller.State}, paused={controller.IsPaused}, tutorial={controller.TutorialActive})");
+            Check(Find<DailyChallengePendant>(screen, "DailyChallengePendant").IsVisibleInTree(), "challenge is visible before teaching");
+            Check(Find<Label>(guide!, "TeachingText").Text.Contains("额外金币收入"), "lesson explains extra income");
+            double elapsed = controller.DayElapsedSeconds; controller.Tick(10);
+            Check(controller.IsPaused && elapsed == controller.DayElapsedSeconds, "challenge teaching pauses business");
+            await Shot(city.Split(':')[1] + "-challenge-teaching-1920");
+            _viewport.Size = new(1280, 720); await Shot(city.Split(':')[1] + "-challenge-teaching-1280");
+            _viewport.Size = new(1920, 1080); await Frames();
+            await Finish(guide!); Refresh(); await Frames();
+            Check(Guide(screen) is null && !controller.IsPaused, "acknowledging resumes business without repeating");
+            _settings.UsePathForTests(path);
+            Check(_settings.HasSeenInterfaceLesson(InterfaceLessons.ChallengeKey), "challenge acknowledgement persists");
+            Check(_main.StartCityBusiness(city, 2), "reenter Day 2");
+            await Frames(); Refresh(); unlockCue._Process(5);
+            controller.Tick(4); Refresh(); await Frames(10);
+            Check(Guide(screen) is null, "challenge lesson does not repeat on reentry");
+        }
     }
 }

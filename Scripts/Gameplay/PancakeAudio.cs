@@ -19,12 +19,14 @@ public enum PancakeSound
     SoftDrop,
     CrispDrop,
     PaperBag,
+    SpreadComplete,
 }
 
 public partial class PancakeAudio : Node
 {
     private readonly Dictionary<PancakeSound, AudioStreamWav> _sounds = new();
     private AudioStreamPlayer _player = null!;
+    private AudioStreamPlayer _spreadPlayer = null!;
     private bool _paused;
 
     public override void _Ready()
@@ -32,6 +34,14 @@ public partial class PancakeAudio : Node
         SceneNodeBinder.Bind(this);
         if (_player is null) { _player = new AudioStreamPlayer { VolumeDb = -12 }; AddChild(_player); }
         _player.Bus = ProjectCake.Core.JourneySettings.EffectsBus;
+        _spreadPlayer = new AudioStreamPlayer
+        {
+            Name = "SpreadCompletePlayer",
+            Bus = ProjectCake.Core.JourneySettings.EffectsBus,
+            VolumeDb = -5,
+            Stream = MakeChord(new[] { 880.0, 1320.0 }, .22, .38),
+        };
+        AddChild(_spreadPlayer);
         _sounds[PancakeSound.BookOpen] = MakeNoise(.18, .10);
         _sounds[PancakeSound.BookStamp] = MakeNoise(.07, .18);
         _sounds[PancakeSound.SoftDrop] = CartoonActionClips.Load(CartoonActionClips.Drop);
@@ -50,6 +60,12 @@ public partial class PancakeAudio : Node
 
     public void Play(PancakeSound sound)
     {
+        // Keep the completion cue audible even when the next ingredient is used immediately.
+        if (sound == PancakeSound.SpreadComplete)
+        {
+            if (!_paused) _spreadPlayer.Play();
+            return;
+        }
         if (_paused || !_sounds.TryGetValue(sound, out AudioStreamWav? stream))
         {
             return;
@@ -63,7 +79,11 @@ public partial class PancakeAudio : Node
     }
 
     public void SetPaused(bool paused) { _paused = paused; if (paused) Stop(); }
-    public void Stop() => _player?.Stop();
+    public void Stop()
+    {
+        _player?.Stop();
+        _spreadPlayer?.Stop();
+    }
 
     private static AudioStreamWav MakeCoinChime() => MakeWave(.28, sample =>
     {

@@ -10,8 +10,8 @@ namespace ProjectCake.Tests;
 
 public partial class TianjinDirectFoodSelfTest : Node
 {
-    private bool CaptureCursor => OS.GetCmdlineUserArgs().Contains("--pinch-cursor");
-    private string Output => CaptureCursor ? "res://artifacts/pinch-cursor-20260923/direct" : "res://artifacts/tianjin-bag-stack-20260922";
+    private bool CaptureCursor => OS.GetCmdlineUserArgs().Contains("--spatula-cursor");
+    private string Output => CaptureCursor ? "res://.tmp/spatula-cursor-20260923/direct" : "res://artifacts/tianjin-bag-stack-20260922";
     private int _checks;
     private bool Capture => OS.GetCmdlineUserArgs().Contains("--capture");
     private void Check(bool value, string message)
@@ -52,6 +52,9 @@ public partial class TianjinDirectFoodSelfTest : Node
                 screen._Notification((int)NotificationApplicationFocusIn); screen.RefreshForCapture(true); await Frames();
                 var station = screen.GetChildren().OfType<PancakeWorkstation>().Single();
                 var canvas = station.Descendants<PancakeCanvas>().Single();
+                var spatulaCursor = station.GetNode<PancakeSpatulaCursor>("PancakeSpatulaCursor");
+                Check(spatulaCursor.Texture?.ResourcePath == "res://resource/art/TianJin/煎饼铲子.png",
+                    "flip and fold use the pancake spatula cursor");
                 station.ConfigureTutorial(null);
                 var living = screen.GetNode<TianjinLivingWorkbench>("LivingWorkbench");
                 int flips = 0, bags = 0;
@@ -75,11 +78,11 @@ public partial class TianjinDirectFoodSelfTest : Node
                 {
                     GetWindow().GrabFocus();
                     Move(Point(.9f)); await Frames(8);
-                    Check(station.GetNode<PancakePinchCursor>("PancakePinchCursor").Visible
-                        && Input.MouseMode == Input.MouseModeEnum.Hidden, $"pinch hand appears on grabbable rim (focus={GetWindow().HasFocus()}, pointer={GetViewport().GetMousePosition()}, target={Point(.9f)}, mode={Input.MouseMode}, paused={station.Paused})");
-                    await Shot($"pinch-hover-{width}");
+                    Check(spatulaCursor.Visible
+                        && Input.MouseMode == Input.MouseModeEnum.Hidden, $"spatula appears on the usable pancake rim (focus={GetWindow().HasFocus()}, pointer={GetViewport().GetMousePosition()}, target={Point(.9f)}, mode={Input.MouseMode}, paused={station.Paused})");
+                    await Shot($"spatula-hover-{width}");
                     Move(Point(.5f)); await Frames();
-                    Check(!station.GetNode<PancakePinchCursor>("PancakePinchCursor").Visible
+                    Check(!spatulaCursor.Visible
                         && Input.MouseMode == Input.MouseModeEnum.Visible, "center hover restores regular cursor");
                 }
                 Check(station.GetNode<Control>("DirectPaperBag").IsVisibleInTree(), "paper stack visible before folding");
@@ -88,7 +91,7 @@ public partial class TianjinDirectFoodSelfTest : Node
                 Check(!((Button)station.FindChild("PancakeFlipAction", true, false)).Visible, "flip button removed");
                 Mouse(Point(.9f), true); await Frames(); Move(Point(.82f)); await Frames();
                 Check(station.IsDirectDragging && !station.IsFlipping && station.Machine.Runtime.State == PancakeState.SideAReady, "edge lift does not commit early");
-                if (CaptureCursor) Check(station.GetNode<PancakePinchCursor>("PancakePinchCursor").Visible, "pinch cursor stays visible during flip drag");
+                if (CaptureCursor) Check(spatulaCursor.Visible, "spatula cursor stays visible during flip drag");
                 Check(!station.TryInvokeProductionShortcut(Key.F), "held gesture blocks F");
                 Check(!station.TryBeginTrashDrag(GetViewport().GetFinalTransform().AffineInverse() * Point(.5f)), "held gesture blocks trash pickup");
                 await Shot($"flip-lift-{width}");
@@ -126,6 +129,12 @@ public partial class TianjinDirectFoodSelfTest : Node
                 Check(!station.IsDirectDragging && canvas.FlipPickup == 0 && station.Machine.Runtime.State == PancakeState.Burnt, "burn invalidates gesture");
                 Ready(PancakeState.Folded); await Frames(); await Shot($"bag-ready-{width}");
                 Check(!((Button)station.FindChild("PancakeBagAction", true, false)).Visible, "bag button removed");
+                if (CaptureCursor)
+                {
+                    GetWindow().GrabFocus(); Move(Stack()); await Frames(8);
+                    Check(spatulaCursor.Visible && spatulaCursor.Texture?.ResourcePath == "res://resource/art/TianJin/捏住饼边光标.png",
+                        "paper stack uses the pinch-hand cursor");
+                }
                 Mouse(Food(), true); Move(Stack()); Mouse(Stack(), false);
                 Check(!station.IsDirectDragging && !canvas.DirectFoodHidden && station.Machine.Runtime.State == PancakeState.Folded,
                     "old food-to-stack gesture cannot package or move food");
@@ -133,6 +142,8 @@ public partial class TianjinDirectFoodSelfTest : Node
                 Check(station.Machine.Runtime.State == PancakeState.Folded && !canvas.DirectFoodHidden && bags == 0, "missed food returns paper to stack without consuming food");
                 Mouse(Stack(), true); Move(Food()); await Frames(); await Shot($"bag-mouth-{width}");
                 Check(station.IsDirectDragging && !canvas.DirectFoodHidden && station.Machine.Runtime.State == PancakeState.Folded, "paper hovers over stationary food without committing");
+                if (CaptureCursor) Check(spatulaCursor.Texture?.ResourcePath == "res://resource/art/TianJin/捏住饼边光标.png",
+                    "pinch-hand cursor remains while placing the bag");
                 Check(!station.TryInvokeProductionShortcut(Key.F), "held paper blocks shortcut duplication");
                 Mouse(Food(), false);
                 Check(bags == 1 && station.Machine.Runtime.State == PancakeState.Bagged, "bag release commits once");

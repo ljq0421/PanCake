@@ -3,7 +3,7 @@ using ProjectCake.Core;
 
 namespace ProjectCake.UI;
 
-/// <summary>One quiet interface voice and one cooldown shared across menus.</summary>
+/// <summary>One clear interface voice and one cooldown shared across menus.</summary>
 public partial class ButtonHoverAudio : Node
 {
     private AudioStreamPlayer _player = null!;
@@ -37,7 +37,7 @@ public partial class ButtonHoverAudio : Node
     public override void _Ready()
     {
         ProcessMode = ProcessModeEnum.Always;
-        _player = new AudioStreamPlayer { Bus = JourneySettings.EffectsBus, VolumeDb = -24, MaxPolyphony = 1, Stream = Make() };
+        _player = new AudioStreamPlayer { Bus = JourneySettings.EffectsBus, VolumeDb = -4, MaxPolyphony = 1, Stream = Make() };
         AddChild(_player);
     }
 

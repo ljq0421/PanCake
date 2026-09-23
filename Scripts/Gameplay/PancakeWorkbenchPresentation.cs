@@ -9,17 +9,27 @@ namespace ProjectCake.Gameplay;
 public partial class PancakeWorkstation
 {
     private Control? _fryerBodyInput;
-    private PancakePinchCursor? _pinchCursor;
+    private PancakeSpatulaCursor? _spatulaCursor;
 
-    private bool ShowPinchCursor(Vector2 point)
+    private bool ShowSpatulaCursor(Vector2 point)
     {
         if (!_initialized || !CanInteract || !IsVisibleInTree()) return false;
-        if (_foldHeld || _directGesture == DirectGesture.Flip) return true;
+        if (_foldHeld || _directGesture is DirectGesture.Flip or DirectGesture.Bag) return true;
         Vector2 local = _canvas.GetGlobalTransformWithCanvas().AffineInverse() * point;
-        return CanFoldGesture && IsFoldGrabPoint(local)
-            || CanDirectGesture && !DirectBusy
-                && Machine.Runtime.State is ProjectCake.Pancake.PancakeState.SideAReady or ProjectCake.Pancake.PancakeState.SideAOverdone
-                && IsFlipGrabPoint(local);
+        if (CanFoldGesture && IsFoldGrabPoint(local)) return true;
+        if (CanDirectGesture && !DirectBusy
+            && Machine.Runtime.State is ProjectCake.Pancake.PancakeState.SideAReady or ProjectCake.Pancake.PancakeState.SideAOverdone)
+            return IsFlipGrabPoint(local);
+        return CanDirectGesture && Machine.Runtime.State == ProjectCake.Pancake.PancakeState.Folded
+            && _directBag?.StackBounds.Grow(10).HasPoint(DirectLocal(point)) == true;
+    }
+
+    private bool ShowPinchHandCursor(Vector2 point)
+    {
+        if (!_initialized || !CanInteract || !IsVisibleInTree()) return false;
+        if (_directGesture == DirectGesture.Bag) return true;
+        return CanDirectGesture && !DirectBusy && Machine.Runtime.State == ProjectCake.Pancake.PancakeState.Folded
+            && _directBag?.StackBounds.Grow(10).HasPoint(DirectLocal(point)) == true;
     }
 
     private static void PositionEmbedded(Control control, Rect2 rect)
@@ -33,8 +43,10 @@ public partial class PancakeWorkstation
 
     private void ConfigureTianjinPresentation()
     {
-        _pinchCursor = new PancakePinchCursor { Name = "PancakePinchCursor", ShouldShow = ShowPinchCursor };
-        AddChild(_pinchCursor);
+        _spatulaCursor = new PancakeSpatulaCursor {
+            Name = "PancakeSpatulaCursor", ShouldShow = ShowSpatulaCursor,
+            ShouldUsePinchHand = ShowPinchHandCursor };
+        AddChild(_spatulaCursor);
         foreach (DropZone zone in this.Descendants<DropZone>())
             zone.HideInteractionFrame();
         foreach (WorkstationSlotView slot in this.Descendants<WorkstationSlotView>())

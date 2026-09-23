@@ -6,6 +6,7 @@ namespace ProjectCake.Gameplay;
 public partial class PancakeWorkstation
 {
     public TutorialProtection Tutorial { get; set; } = TutorialProtection.None;
+    internal Func<bool>? IsRefillTeachingActive { get; set; }
 
     private double TutorialCookingDelta(double delta)
     {

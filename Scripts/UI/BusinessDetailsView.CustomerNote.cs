@@ -18,16 +18,19 @@ public partial class BusinessDetailsView
         note.MouseFilter = MouseFilterEnum.Stop;
         _notePortraitArt ??= new WuhanArtCatalog();
         const int visibleLimit = 5;
+        const float portraitScale = 1.5f;
+        var portraitOffset = new Vector2(0, -20);
         float gap = portraitSize + 3;
         foreach (var (card, index) in cards.Take(visibleLimit).Select((card, index) => (card, index)))
         {
             var bounds = new Rect2(firstPortrait + new Vector2(index * gap, 0), Vector2.One * portraitSize);
-            Panel(note, bounds, new("#F8EACF"), Mathf.RoundToInt(portraitSize / 2), 1);
+            Panel(note, new Rect2(bounds.Position + portraitOffset, bounds.Size), new("#F8EACF"), Mathf.RoundToInt(portraitSize / 2), 1);
             var head = _notePortraitArt.CustomerPortrait(card.Id, CustomerExpression.Normal).Head;
             using var pixels = head.GetImage();
             var used = pixels.GetUsedRect();
+            var enlargedSize = (bounds.Size - new Vector2(6, 3)) * portraitScale;
             var portrait = Picture(note, new AtlasTexture { Atlas = head, Region = new Rect2(used.Position, used.Size) },
-                new(bounds.Position + new Vector2(3, 1.5f), bounds.Size - new Vector2(6, 3)));
+                new(bounds.GetCenter() - enlargedSize / 2 + portraitOffset, enlargedSize));
             portrait.Name = "NewCustomerPortrait_" + card.Id;
         }
 

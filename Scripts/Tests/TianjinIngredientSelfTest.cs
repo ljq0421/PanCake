@@ -74,6 +74,17 @@ public partial class TianjinIngredientSelfTest : Node
                 Release();
                 _station.Machine.SetSpreadCoverage(1); stroke.StrokeCompleted?.Invoke(StrokeMode.Spread);
                 Check(stroke.SpreadCompletionVisible, "spread completion keeps a full green ring visible");
+                var audio = _station.Descendants<PancakeAudio>().Single();
+                var completionPlayer = audio.GetNode<AudioStreamPlayer>("SpreadCompletePlayer");
+                Check(completionPlayer.Playing, "spread completion starts audio in the same input callback");
+                audio.Play(PancakeSound.SoftDrop);
+                Check(completionPlayer.Playing, "next ingredient sound does not interrupt spread completion");
+                audio.SetPaused(true);
+                Check(!completionPlayer.Playing, "pause stops spread completion audio");
+                audio.Play(PancakeSound.SpreadComplete);
+                Check(!completionPlayer.Playing, "paused completion cannot play");
+                audio.SetPaused(false);
+                Check(!completionPlayer.Playing, "resume does not replay spread completion");
                 await Shot($"{width}-spread-complete");
                 int eggStock = _station.Inventory.GetQuantity("egg");
                 if (Capture) Engine.TimeScale = .2;

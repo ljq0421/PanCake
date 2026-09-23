@@ -96,6 +96,7 @@ public partial class BusinessHud : Control
         PauseButton.Disabled = !allowPause;
         bool claimed = GetNodeOrNull<SaveService>("/root/SaveService")?.Data.GetCity(config.CityId).ClaimedChallenges.ContainsKey(config.Day) == true;
         _challenge.Render(controller, allowPause, claimed);
+        OfferChallengeTeaching(controller, allowPause);
         if (_city is "天津" or "武汉" or "西安") OfferInterfaceTeaching(controller, allowPause);
     }
 
@@ -115,6 +116,20 @@ public partial class BusinessHud : Control
         Font font = label.GetThemeFont("font");
         while (fontSize > 12 && font.GetStringSize(label.Text, fontSize: fontSize).X > label.Size.X - 4) fontSize--;
         label.AddThemeFontSizeOverride("font_size", fontSize);
+    }
+
+    private void OfferChallengeTeaching(DayController controller, bool allowPause)
+    {
+        if (!allowPause || controller.CurrentConfig?.Day != 2 || !_challenge.IsVisibleInTree()
+            || controller.TutorialActive || controller.State != DayState.Running) return;
+        var owner = GetParent<Control>();
+        bool Eligible() => owner.IsVisibleInTree() && _challenge.IsVisibleInTree()
+            && controller.CurrentConfig?.Day == 2 && controller.CurrentPlan?.Challenge is not null
+            && !controller.IsPaused && !controller.TutorialActive && controller.State == DayState.Running
+            && !owner.Descendants<TutorialFocusLayer>().Any(layer => layer.Visible)
+            && !owner.Descendants<Control>().Any(control => control.Name == "DemoLesson" && control.IsVisibleInTree());
+        InterfaceTeaching.Offer(owner, InterfaceLessons.ChallengeKey, InterfaceLessons.Challenge, Eligible,
+            value => controller.SetPauseReason("challenge-teaching", value));
     }
 
     private void OfferInterfaceTeaching(DayController controller, bool allowPause)

@@ -17,6 +17,7 @@ public partial class TianjinDayScreen
             DismissAtScreenEdge = true, ShowDismiss = () => !_controller.TutorialActive,
             PresentationCard = () => _demoLesson?.IsVisibleInTree() == true ? _demoLesson : null };
         AddChild(TeachingFocus);
+        _workstation.IsRefillTeachingActive = () => TeachingFocus.CurrentAction?.StartsWith("refill:", StringComparison.Ordinal) == true;
     }
     private IEnumerable<TutorialFocusTarget> TeachingClearAreas()
     {

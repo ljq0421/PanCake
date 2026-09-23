@@ -12,10 +12,12 @@ public partial class PancakeFoldVisual : Node2D
     private int _direction;
     private float _grabY;
     private float _progress;
+    private float _drapeProgress;
     private int _warmup;
     private bool _finishing;
     private bool _commit;
     private float _from;
+    private float _drapeFrom;
     private float _time;
     private bool _disposed;
     private const int Strips = 36, Rows = 12;
@@ -55,7 +57,7 @@ public partial class PancakeFoldVisual : Node2D
     {
         if (_disposed) return;
         if (reducedMotion || _warmup < 3) { DisposePreview(); return; }
-        _finishing = true; _commit = commit; _from = _progress; _time = 0;
+        _finishing = true; _commit = commit; _from = _progress; _drapeFrom = _drapeProgress; _time = 0;
     }
 
     public override void _Process(double delta)
@@ -72,8 +74,12 @@ public partial class PancakeFoldVisual : Node2D
             _time += (float)delta;
             float t = Mathf.Clamp(_time / (_commit ? .22f : .18f), 0, 1);
             _progress = Mathf.Lerp(_from, _commit ? 1 : 0, 1 - Mathf.Pow(1 - t, 3));
+            // The held edge arrives first; the loose skin settles behind it.
+            _drapeProgress = Mathf.Lerp(_drapeFrom, _commit ? 1 : 0, t * t * (3 - 2 * t));
             if (t >= 1) { DisposePreview(); return; }
         }
+        else
+            _drapeProgress = Mathf.Lerp(_drapeProgress, _progress, 1 - Mathf.Exp(-(float)delta / .065f));
         QueueRedraw();
     }
 
@@ -141,9 +147,12 @@ public partial class PancakeFoldVisual : Node2D
     {
         // The grabbed part leads; unsupported corners lag and the outer rim curls
         // more than the material near the crease. Both ends flatten naturally.
-        float p = Mathf.Clamp(_progress - .14f * Mathf.Sin(_progress * Mathf.Pi)
-            * Math.Abs(across - _grabY), 0, 1);
-        return Mathf.Clamp(Mathf.Pi * p + 1.9f * Mathf.Sin(Mathf.Pi * p) * (distance - .42f), 0, Mathf.Pi);
+        float unsupported = Mathf.SmoothStep(0, .65f, Math.Abs(across - _grabY));
+        float follow = Mathf.Lerp(_progress, _drapeProgress, .7f * unsupported);
+        float p = Mathf.Clamp(follow - .21f * Mathf.Sin(follow * Mathf.Pi) * unsupported, 0, 1);
+        // A rounded crease spreads the bend through the skin instead of hinging
+        // the entire half at once. Curvature disappears at both resting poses.
+        return Mathf.Clamp(Mathf.Pi * p + 2.5f * Mathf.Sin(Mathf.Pi * p) * (distance - .42f), 0, Mathf.Pi);
     }
 
     private Vector2 BendPoint(float distance, float across)
@@ -159,9 +168,11 @@ public partial class PancakeFoldVisual : Node2D
             height += Mathf.Sin(angle) * distance / steps;
         }
         float radius = _bounds.Size.X * .5f;
-        float slack = Mathf.Sin(_progress * Mathf.Pi) * Mathf.Sin(distance * Mathf.Pi)
-            * Mathf.Sin(across * Mathf.Pi);
+        float unsupported = Mathf.SmoothStep(0, .65f, Math.Abs(across - _grabY));
+        float slack = Mathf.Sin(Mathf.Lerp(_progress, _drapeProgress, unsupported) * Mathf.Pi)
+            * Mathf.Sin(distance * Mathf.Pi);
         return new Vector2(_bounds.GetCenter().X - _direction * radius * travel,
-            _bounds.Position.Y + _bounds.Size.Y * across - radius * .48f * height + 13 * slack);
+            _bounds.Position.Y + _bounds.Size.Y * across - radius * .48f * height
+            + radius * .11f * slack * (.25f + .75f * unsupported));
     }
 }

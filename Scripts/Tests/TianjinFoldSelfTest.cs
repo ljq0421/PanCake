@@ -9,8 +9,8 @@ namespace ProjectCake.Tests;
 
 public partial class TianjinFoldSelfTest : Node
 {
-    private bool CaptureCursor => OS.GetCmdlineUserArgs().Contains("--pinch-cursor");
-    private string Output => CaptureCursor ? "res://artifacts/pinch-cursor-20260923/fold" : "res://artifacts/tianjin-fold-20260922";
+    private bool CaptureCursor => OS.GetCmdlineUserArgs().Contains("--spatula-cursor");
+    private string Output => CaptureCursor ? "res://.tmp/spatula-cursor-20260923/fold" : "res://artifacts/tianjin-fold-20260922";
     private int _checks;
     private bool Capture => OS.GetCmdlineUserArgs().Contains("--capture");
     private void Check(bool value, string message)
@@ -83,14 +83,14 @@ public partial class TianjinFoldSelfTest : Node
                 Ready(); await Frames(); await Shot($"ready-{width}");
                 if (CaptureCursor) { GetWindow().GrabFocus(); await Frames(8); }
                 var guidance = station.ResolveFocus(Array.Empty<TutorialOrder>(), (_, _) => Array.Empty<TutorialFocusTarget>());
-                Check(guidance is { ActionId: "fold" } && guidance.Text.Contains("拖动")
-                    && guidance.Targets.Single().Owner == station, "fold guidance targets the stove and explains dragging");
+                Check(guidance is { ActionId: "fold" } && guidance.Text.Contains("小铲子")
+                    && guidance.Targets.Single().Owner == station, "fold guidance targets the stove and explains the spatula");
                 Check(!((Button)station.FindChild("PancakeFoldAction", true, false)).Visible, "Tianjin fold button replaced");
                 Mouse(.1f, true); await Frames();
                 Check(station.IsFoldDragging, "real left input grabs the pancake edge");
                 Move(.3f); await Frames(); await Shot($"lift-{width}");
-                if (CaptureCursor) Check(station.GetNode<PancakePinchCursor>("PancakePinchCursor").Visible
-                    && Input.MouseMode == Input.MouseModeEnum.Hidden, $"fold drag uses the cartoon pinch cursor (focus={GetWindow().HasFocus()}, pointer={GetViewport().GetMousePosition()}, mode={Input.MouseMode}, paused={station.Paused}, held={station.IsFoldDragging})");
+                if (CaptureCursor) Check(station.GetNode<PancakeSpatulaCursor>("PancakeSpatulaCursor").Visible
+                    && Input.MouseMode == Input.MouseModeEnum.Hidden, $"fold drag uses the spatula cursor (focus={GetWindow().HasFocus()}, pointer={GetViewport().GetMousePosition()}, mode={Input.MouseMode}, paused={station.Paused}, held={station.IsFoldDragging})");
                 if (Capture)
                 {
                     var snapshot = (SubViewport)canvas.FindChild("FoldFoodSnapshot", true, false);

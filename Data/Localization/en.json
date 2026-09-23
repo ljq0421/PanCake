@@ -77,6 +77,8 @@
   "需要歇一会儿": "Take a short break",
   "点击暂停按钮，或按 Esc 暂停营业。\n在暂停菜单中选择继续营业即可返回。": "Click the pause button or press Esc to pause service.\nChoose Resume in the pause menu when you are ready.",
   "挂件里有营业明细": "The pendant opens your book",
+  "完成挑战，赚取额外收入": "Complete challenges for extra income",
+  "完成每日挑战，可获得额外金币收入。\n挑战奖金会在营业结算时发放。": "Complete the daily challenge to earn extra coins.\nYour bonus is paid when the business day ends.",
   "天津、武汉收到付款后会自动入账。\n点击收银挂件可暂停营业，查看本次营业明细。": "Payments are recorded automatically in Tianjin and Wuhan.\nClick the cash pendant to pause and review this shift's orders.",
   "完成率怎么算": "How completion rate works",
   "完成率 = 完成 ÷（完成 + 流失）。\n只统计已结束的客单，错误完成也计入完成。": "Completion rate = completed / (completed + lost).\nOnly finished visits count. Incorrect orders also count as completed.",

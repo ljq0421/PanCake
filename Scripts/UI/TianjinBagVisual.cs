@@ -14,7 +14,6 @@ public partial class TianjinBagVisual : Control
     public bool Animating { get; private set; }
     public bool OverFood { get; private set; }
     public Rect2 StackBounds => TianjinWorkbenchLayout.EmbeddedBagStack;
-    internal Vector2[] FocusOutline => Wall.Select(p => StackPoint(p, StackBounds.GetCenter())).ToArray();
     private static readonly Vector2 PaperPivot = new(647, 765);
     private static readonly Vector2[] Rim = new Vector2[] { new(293, 533), new(329, 546), new(373, 560),
         new(412, 582), new(507, 558), new(630, 535), new(757, 517), new(792, 523),

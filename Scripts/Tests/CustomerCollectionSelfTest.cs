@@ -257,7 +257,7 @@ public partial class CustomerCollectionSelfTest : Node
             bool hasOverflow = book.Descendants<Label>().Any(l => l.Text == "等 6 位");
             int resolvable = book.Model.NewCustomerIds.Count(id => CustomerCollection.Find(id) is not null);
             Check(portraitCount == 5 && hasOverflow, city + $" settlement shows five new-customer portraits and overflow (new={book.Model.NewCustomerIds.Length}, resolvable={resolvable}, portraits={portraitCount}, overflow={hasOverflow})");
-            Vector2 portraitSize = city is "tianjin" or "wuhan" or "xian" ? new(45, 48) : new(51, 54);
+            Vector2 portraitSize = (city is "tianjin" or "wuhan" or "xian" ? new Vector2(45, 48) : new Vector2(51, 54)) * 1.5f;
             var portraits = book.Descendants<TextureRect>().Where(p => p.Name.ToString().StartsWith("NewCustomerPortrait_")).ToArray();
             var collectionButton = book.Descendants<Button>().Single(b => b.Name == "OpenCustomerCollection");
             Check(portraits.All(p => Mathf.IsEqualApprox(p.Size.X, portraitSize.X) && Mathf.IsEqualApprox(p.Size.Y, portraitSize.Y))

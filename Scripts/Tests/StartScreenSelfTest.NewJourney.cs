@@ -31,17 +31,22 @@ public partial class StartScreenSelfTest
         await Until(() => _screen.JourneyStage == FirstJourneyStage.Ready);
         await Delay(.5);
         Check(_screen.Page == JourneyPage.NewJourney && Find<Button>("Depart").HasFocus(), "automatic show ends ready to depart");
+        Check(Find<BookFoodIcon>("BreakfastFood1").Size == new Vector2(118, 112)
+            && Find<BookFoodIcon>("BreakfastFood2").Size == new Vector2(118, 112),
+            "Tianjin youtiao and soy milk use the enlarged journey-page food scale");
+        Check(Find<TextureRect>("BreakfastFood1Backing").Size.DistanceTo(new Vector2(208, 203)) < .01f
+            && Find<TextureRect>("BreakfastFood2Backing").Size.DistanceTo(Find<TextureRect>("BreakfastFood0Backing").Size) < .01f,
+            "Tianjin breakfast backings share the pancake illustration field in both editions");
+        Check(Find<ColorRect>("NewJourneyBackdropShade").Color == new Color(.16f, .09f, .04f, .46f)
+            && Find<ColorRect>("NewJourneyBackdropShade").GetIndex() < Find<Control>("SharedBook").GetIndex(),
+            "Tianjin first-station book dims the restaurant backdrop beneath all page controls");
         Check(cues.SequenceEqual(new[] { OpeningCue.Locate, OpeningCue.Paper, OpeningCue.Postcard }), "material sounds play once in order");
         for (int i = 0; i < 3; i++)
         {
             Check(!string.IsNullOrWhiteSpace(Find<Label>("BreakfastStory" + i).Text), "culture copy visible " + i);
         }
-        if (ExperienceProfile.IsDemo)
-            Check(!_screen.Descendants<Label>().Any(l => l.Name.ToString() is "BreakfastAvailability0" or "BreakfastPreviewHeading" or "DepartureHint"),
-                "Demo entry omits day and preview copy");
-        else
-            Check(Find<Label>("BreakfastAvailability0").Text == "首日经营"
-                && Find<Label>("BreakfastPreviewHeading").Text == "后续早餐预览", "first-day feature and shared future preview");
+        Check(!_screen.Descendants<Label>().Any(l => l.Name.ToString() is "BreakfastAvailability0" or "BreakfastPreviewHeading" or "DepartureHint"),
+            "Tianjin entry omits day and preview copy");
         Check(Find<Label>("PostcardCity").Text == "天津" && Find<TextureRect>("TianjinSkyline").Texture is not null, "Tianjin destination and skyline visible");
         await JourneyCapture("new-journey-tianjin");
         settings.SetLanguage("en"); await Frames(); await JourneyCapture("new-journey-tianjin-en");

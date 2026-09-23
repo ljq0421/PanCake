@@ -8,6 +8,7 @@ namespace ProjectCake.UI;
 public partial class BusinessDetailsView
 {
     private const int TravelActionFontSize = 24;
+    private const int TravelCloseActionFontSize = 28;
 
     private void ApplyTravelLayout()
     {
@@ -107,16 +108,16 @@ public partial class BusinessDetailsView
             bonus.Name = "ChallengeRewardAmount";
         });
 
-        TravelPanel(_summary, new(890, 276, 560, 160));
+        TravelPanel(_summary, new(890, 276, 560, 200));
         TravelHeading(_summary, "挑战结果", new(905, 258, 245, 51));
         CaptureTravelMotion(TravelMotionGroup.Challenge, _summary, () =>
         {
             string result = _model.Challenge is null ? "今日暂无挑战" : _model.ChallengeCaption;
             string asset = _model.Challenge is null ? "没有挑战-人物"
                 : _model.Challenge.Achieved(r) ? "挑战成功-人物" : "挑战失败-人物";
-            var icon = Picture(_summary, GD.Load<Texture2D>($"res://resource/art/Global/StartPage/{asset}.png"), new(914, 318, 105, 105));
+            var icon = Picture(_summary, GD.Load<Texture2D>($"res://resource/art/Global/StartPage/{asset}.png"), new(1248, 286, 190, 190));
             icon.Name = "ChallengeResultIcon";
-            var challenge = Text(_summary, result, new(1035, 320, 390, 96), 24, wrap: true);
+            var challenge = Text(_summary, result, new(920, 324, 305, 120), 24, wrap: true);
             challenge.Name = "ChallengeSettlement";
         });
 
@@ -201,14 +202,20 @@ public partial class BusinessDetailsView
             paper.StretchMode = TextureRect.StretchModeEnum.Scale;
             Text(_note, "营业手记", new(64, 10, 430, 34), 26);
             bool hasNewCustomers = _model.NewCustomerIds.Length > 0;
-            Text(_note, _model.DailyNote, new(34, 50, hasNewCustomers ? 220 : 488, hasNewCustomers ? 46 : 68), hasNewCustomers ? 18 : 21, wrap: true);
+            float noteTextWidth = hasNewCustomers ? 220 : ShouldShowRegularCustomerStamp ? 245 : 488;
+            Text(_note, _model.DailyNote, new(34, 50, noteTextWidth, hasNewCustomers ? 46 : 68), hasNewCustomers ? 18 : 21, wrap: true);
+            AddRegularCustomerStamp(_note, new(350, -42.5f), 205);
             if (hasNewCustomers) AddNewCustomerNote(_note, new(270, 45), 51, new(300, 96, 206, 26), new(194, 96, 96, 26), 15);
         });
     }
 
     private void AddTravelUpgradeButton()
     {
-        AddSummarySticker(new[] { "店铺升级" }, "可升级提示贴片", "UpgradeSticker", new(912, 470, 235, 64), false);
+        // The sticker artwork has substantial transparent top and bottom padding.
+        // At the shared 1.2x emphasis scale, an 88 px canvas produces the same
+        // 64 px visible button height as the adjacent continue action. This control
+        // sits inside the summary, whose 155 px top inset is included in the y value.
+        AddSummarySticker(new[] { "店铺升级" }, "可升级提示贴片", "UpgradeSticker", new(912, 451, 235, 88), false);
         var sticker = _summary.GetNode<Control>("UpgradeSticker");
         sticker.PivotOffset = sticker.Size / 2;
         sticker.Scale = Vector2.One * 1.2f;

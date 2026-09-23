@@ -49,21 +49,17 @@ public partial class StartScreen
         {
             var food = city.Foods[i];
             _body.AddChild(new BookFoodIcon { Name = "WuhanBreakfastFood" + i,
-                Position = i == 0 ? new(1025, 389) : new(1030, 632),
+                Position = i == 0 ? new(1025, 389) : new(1052, 632),
                 Size = i == 0 ? new(172, 167) : new(118, 112),
                 CropTransparentMargins = true, Product = new(food.Visual, food.Name, 1, food.Visual) });
             Text(_body, "WuhanBreakfastName" + i, food.Name,
-                i == 0 ? new(1220, 409, 278, 44) : new(1180, 628, 330, 44), i == 0 ? 32 : 28);
+                i == 0 ? new(1220, 409, 278, 44) : new(1220, 628, 278, 44), i == 0 ? 32 : 28);
             var story = Text(_body, "WuhanBreakfastStory" + i,
-                i == 0 ? "热干面拌开芝麻酱的香气。" : "三鲜豆皮在锅里慢慢定型。",
-                i == 0 ? new(1220, 463, 278, 99) : new(1180, 680, 330, 65), 22);
+                i == 0 ? "碱水面烫热沥干，趁热拌上芝麻酱；快捷顶饱，是武汉“过早”的晨间符号。"
+                    : "蛋皮裹进糯米与馅料，外脆内糯，是老武汉“过早”的传统味。",
+                i == 0 ? new(1220, 463, 278, 110) : new(1220, 680, 278, 90), 22);
             story.VerticalAlignment = VerticalAlignment.Top;
         }
-        Text(_body, "WuhanBreakfastAvailability", "首日经营", new(1220, 367, 150, 30), 19)
-            .AddThemeColorOverride("font_color", new Color("#896345"));
-        Text(_body, "WuhanBreakfastPreviewHeading", "后续早餐预览", new(1140, 584, 270, 30), 20, true)
-            .AddThemeColorOverride("font_color", new Color("#896345"));
-        Text(_body, "WuhanReturnHint", "天津的早餐铺随时等你回访。", new(1010, 751, 530, 36), 23, true);
         var depart = Button(_body, "WuhanOpeningContinue", "开始武汉之旅", new(1050, 798, 460, 65), () =>
         {
             // The introduction is the departure action: both editions open Wuhan Day 1 directly.
@@ -74,7 +70,7 @@ public partial class StartScreen
         plate.Name = "WuhanOpeningButtonPlate";
         plate.ShowBehindParent = true;
         depart.AddThemeFontSizeOverride("font_size", 32);
-        DecorateDemoIntroduction(true);
+        DecorateJourneyIntroduction(true);
         FitWuhanIntroduction();
         Focus("WuhanOpeningContinue");
     }

@@ -48,7 +48,7 @@ public partial class SaveSlotChoice : Button
             int index = i;
             var row = new Button { Name = "LoadSlot" + (i + 1), Text = (i == _selected ? "● " : "○ ") + _items[i],
                 Position = new(8, 5 + i * 48), Size = new(Size.X - 60, 48), ClipText = true,
-                Alignment = HorizontalAlignment.Left, Disabled = IsItemDisabled(i), TooltipText = _items[i] };
+                Alignment = HorizontalAlignment.Left, Disabled = IsItemDisabled(i) };
             JournalSettingsTheme.Apply(row, i == _selected, 6);
             row.AddThemeFontSizeOverride("font_size", 21);
             row.AddThemeStyleboxOverride("normal", JournalSettingsTheme.Box(Colors.Transparent, 6, 0));

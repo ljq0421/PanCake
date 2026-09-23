@@ -8,6 +8,8 @@ internal sealed record TutorialOrder(string CustomerId, ProductKind Kind, string
 
 internal static class TutorialOrders
 {
+    internal const string WuhanBaseNoodlesLesson = "lesson:wuhan_base_hot_dry_noodles";
+
     internal sealed record UnlockLesson(string Title, ProductKind Kind, string DefinitionId, params string[] Actions)
     {
         internal bool IsLearned(IReadOnlySet<string> learned) => Actions.All(learned.Contains);
@@ -25,6 +27,11 @@ internal static class TutorialOrders
         }
         if (config.CityId == StableIds.Cities.Wuhan)
         {
+            // Day one opens three noodle recipes together, but the first course must
+            // establish the unseasoned base recipe before introducing toppings.
+            if (config.Day == 1)
+                return new("基础热干面", ProductKind.HotDryNoodles, StableIds.Recipes.HotDryNoodlesClassic,
+                    "deliver:hot_dry_noodles", WuhanBaseNoodlesLesson);
             if (ids.Contains("product:doupi")) return new("三鲜豆皮 · 新锅练习", ProductKind.Doupi, StableIds.Products.Doupi, "deliver:doupi");
             if (ids.Contains("recipe:hot_dry_noodles_beef")) return new("牛肉热干面 · 先拌后加", ProductKind.HotDryNoodles, StableIds.Recipes.HotDryNoodlesBeef, "take:" + StableIds.Ingredients.WuhanBraisedBeef);
             if (ids.Contains("recipe:hot_dry_noodles_scallion_chili") && config.Day > 1)

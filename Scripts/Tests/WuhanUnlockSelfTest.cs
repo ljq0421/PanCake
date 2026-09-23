@@ -69,17 +69,24 @@ public partial class WuhanUnlockSelfTest : Node
                 tween.Pause(); return tween;
             }
             var entrance = PauseEntrance();
+            Check(!unlock.Visible, "unlock card is hidden when the book opens");
             await Frames();
             entrance.CustomStep(3.04);
+            Check(!unlock.Visible, "unlock stays hidden until all summary content is shown");
+            JourneyTransition.For(this).Finish();
+            await Capture("settlement-before-unlock");
             Check(unlock.Scale == Vector2.One, "unlock waits for summary content");
             Check(book.GetNodeOrNull<AudioStreamPlayer>("NewCityCelebrationAudio") is null, "celebration waits for unlock emphasis");
             entrance.CustomStep(.29);
+            Check(unlock.Visible, "unlock is revealed at the final celebration");
             Check(unlock.Scale.X > 1.04f, "unlock pops once after summary");
             var celebration = book.GetNode<AudioStreamPlayer>("NewCityCelebrationAudio");
             Check(celebration.Playing && celebration.Bus == JourneySettings.EffectsBus, "unlock celebration plays on effects bus");
             var nextPage = book.Descendants<Button>().Single(b => b.Name == "NextBookPage");
+            await Frames(); // Let the newly visible button settle its control layout.
             Check(!unlock.GetGlobalRect().Intersects(nextPage.GetGlobalRect())
-                && !unlock.GetGlobalRect().Intersects(book.CloseButton.GetGlobalRect()), "enlarged unlock leaves navigation clear at peak");
+                && !unlock.GetGlobalRect().Intersects(book.CloseButton.GetGlobalRect()),
+                $"enlarged unlock leaves navigation clear at peak: card={unlock.GetGlobalRect()}, next={nextPage.GetGlobalRect()}, close={book.CloseButton.GetGlobalRect()}");
             JourneyTransition.For(this).Finish();
             await Capture("settlement-unlock-pop");
             entrance.CustomStep(.4);
@@ -92,6 +99,12 @@ public partial class WuhanUnlockSelfTest : Node
             book.FinishAnimation();
             Check(unlock.Scale == Vector2.One && !entrance.IsValid(), "skip cancels unlock pop and restores bounds");
             Check(!celebration.Playing, "skip stops celebration");
+            book.Open(model); entrance = PauseEntrance();
+            unlock = book.Descendants<Button>().Single(b => b.Name == "NewCityUnlock");
+            Check(!unlock.Visible, "reopening starts with a hidden unlock card");
+            book.FinishAnimation();
+            Check(unlock.Visible && unlock.Scale == Vector2.One && !celebration.Playing,
+                "early skip reveals the complete card without delayed celebration");
             ProjectSettings.SetSetting("accessibility/reduce_motion", true);
             book.Open(model);
             Check(book.Descendants<Button>().Single(b => b.Name == "NewCityUnlock").Scale == Vector2.One
@@ -109,6 +122,11 @@ public partial class WuhanUnlockSelfTest : Node
             book.CloseButton.EmitSignal(BaseButton.SignalName.Pressed); await Delay(1);
             Check(screen.Visible && day.CurrentConfig?.Day == 8, "settlement continues Tianjin Day8 directly");
             Check(_save.HasUnseenWuhanUnlock, "continuing Tianjin preserves unseen city reminder");
+            if (OS.GetCmdlineUserArgs().Contains("--settlement-only"))
+            {
+                GD.Print($"WUHAN_UNLOCK_SETTLEMENT_TEST_PASS checks={_checks} demo={ExperienceProfile.IsDemo}");
+                GetTree().Quit(); return;
+            }
             day.AbandonDay();
             home.PresentMap(); JourneyTransition.For(this).Finish(); await Frames();
             Check(home.Descendants<Button>().Any(b => b.Name == "Node1" && !b.Disabled), "unlocked Wuhan remains accessible on map");

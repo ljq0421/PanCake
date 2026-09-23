@@ -6,7 +6,20 @@ namespace ProjectCake.UI;
 
 public partial class BusinessDetailsView
 {
+    private const string RegularCustomerStampMilestone = "获得熟客印章";
+    private const string RegularCustomerStampArt = "res://resource/art/Global/StartPage/熟客印章.png";
     private WuhanArtCatalog? _notePortraitArt;
+
+    private bool ShouldShowRegularCustomerStamp => _model.NewCustomerIds.Length == 0
+        && _model.CustomerMilestones.Any(message => message.StartsWith(RegularCustomerStampMilestone, StringComparison.Ordinal));
+
+    private void AddRegularCustomerStamp(Control note, Vector2 position, float size)
+    {
+        if (!ShouldShowRegularCustomerStamp) return;
+        var stamp = Picture(note, GD.Load<Texture2D>(RegularCustomerStampArt),
+            new Rect2(position, Vector2.One * size));
+        stamp.Name = "RegularCustomerStamp";
+    }
 
     private void AddNewCustomerNote(Control note, Vector2 firstPortrait, float portraitSize, Rect2 collectionButtonBounds,
         Rect2 overflowBounds, int actionFontSize)

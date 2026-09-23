@@ -255,6 +255,15 @@ public partial class CustomerCollectionSelfTest : Node
             // The paper-spread shader has its own entrance, independent of the count-up tween.
             await ToSignal(GetTree().CreateTimer(.8), SceneTreeTimer.SignalName.Timeout); await Frames();
             Check(book.Descendants<Label>().Any(l => l.IsVisibleInTree() && l.Text == model.DailyNote), city + " visible settlement milestones");
+            if (city is "tianjin" or "wuhan")
+            {
+                var challengeIcon = book.Descendants<TextureRect>().Single(p => p.Name == "ChallengeResultIcon");
+                var challengeLabel = book.Descendants<Label>().Single(l => l.Name == "ChallengeSettlement");
+                Check(challengeIcon.Size == Vector2.One * 190 && challengeIcon.GetGlobalRect().Position.X >= challengeLabel.GetGlobalRect().End.X,
+                    city + " challenge icon is enlarged at the right edge of its result panel");
+            }
+            bool regularStampVisible = book.Descendants<TextureRect>().Any(p => p.Name == "RegularCustomerStamp" && p.IsVisibleInTree());
+            Check(!regularStampVisible, city + " new-customer note hides the regular-customer stamp");
             int portraitCount = book.Descendants<TextureRect>().Count(p => p.Name.ToString().StartsWith("NewCustomerPortrait_"));
             bool hasOverflow = book.Descendants<Label>().Any(l => l.Text == "等 6 位");
             int resolvable = book.Model.NewCustomerIds.Count(id => CustomerCollection.Find(id) is not null);
@@ -268,6 +277,25 @@ public partial class CustomerCollectionSelfTest : Node
             collectionButton.EmitSignal(Button.SignalName.Pressed); await Frames();
             Check(collectionRequested, city + " settlement customer collection button requests direct navigation");
             await Capture(city + "-settlement"); book.QueueFree(); await Frames();
+        }
+        foreach (var city in new[] { "tianjin", "wuhan", "xian" })
+        {
+            var book = new BusinessDetailsView(); AddChild(book);
+            var model = new BusinessBookModel { CityId = city, Closing = true,
+                Result = new DayResult { Day = 9, PlannedCustomers = 5, CompletedCustomers = 5, SaleRevenue = 80, Tips = 8, Satisfaction = 94 },
+                CustomerMilestones = new[] { "获得熟客印章 · 1 位" } };
+            book.Open(model); book.FinishAnimation();
+            await ToSignal(GetTree().CreateTimer(.8), SceneTreeTimer.SignalName.Timeout); await Frames();
+            var stamp = book.Descendants<TextureRect>().Single(p => p.Name == "RegularCustomerStamp");
+            var note = book.Descendants<Control>().Single(c => c.Name == "DailyNote");
+            Check(stamp.Texture is not null && note.GetGlobalRect().HasPoint(stamp.GetGlobalRect().GetCenter()),
+                city + " regular-customer stamp centers over the milestone note");
+            await Capture(city + "-regular-stamp-settlement");
+            book.Open(new BusinessBookModel { CityId = city, Closing = true, Result = model.Result }); book.FinishAnimation();
+            await ToSignal(GetTree().CreateTimer(.8), SceneTreeTimer.SignalName.Timeout); await Frames();
+            Check(!book.Descendants<TextureRect>().Any(p => p.Name == "RegularCustomerStamp" && p.IsVisibleInTree()),
+                city + " regular-customer stamp stays hidden without the milestone");
+            book.QueueFree(); await Frames();
         }
     }
 }

@@ -41,19 +41,19 @@ public partial class BusinessDetailsView
             }
         });
 
-        TravelPanel(_summary, new(890, 145, 560, 95));
+        TravelPanel(_summary, new(890, 145, 560, 120));
         TravelHeading(_summary, "挑战结果", new(905, 127, 245, 47));
         CaptureTravelMotion(TravelMotionGroup.Challenge, _summary, () =>
         {
             bool hasChallenge = _model.Challenge is not null;
             string asset = !hasChallenge ? "没有挑战-人物"
                 : _model.Challenge!.Achieved(r) ? "挑战成功-人物" : "挑战失败-人物";
-            Picture(_summary, GD.Load<Texture2D>(JourneyModel.ArtRoot + asset + ".png"), new(910, 174, 62, 62)).Name = "ChallengeResultIcon";
+            Picture(_summary, GD.Load<Texture2D>(JourneyModel.ArtRoot + asset + ".png"), new(900, 172, 93, 93)).Name = "ChallengeResultIcon";
             Text(_summary, hasChallenge ? _model.ChallengeCaption : "今日暂无挑战",
-                new(985, 177, 445, 58), 23, wrap: true).Name = "ChallengeSettlement";
+                new(1005, 180, 415, 72), 23, wrap: true).Name = "ChallengeSettlement";
         });
 
-        var unlock = ButtonAt(_summary, "", new(890, 254, 560, 250), RequestNewJourney);
+        var unlock = ButtonAt(_summary, "", new(890, 274, 560, 250), RequestNewJourney);
         unlock.Name = "NewCityUnlock";
         unlock.TooltipText = "展开新旅程 · 查看武汉解锁";
         unlock.Disabled = !_model.CanClose;
@@ -70,7 +70,7 @@ public partial class BusinessDetailsView
         TravelValue(unlock, "点击展开新旅程", new(291, 199, 250, 36), 28, color: new Color("#875323"));
 
         AddTravelUpgradeButton();
-        _summary.GetNode<Control>("UpgradeSticker").Position += new Vector2(0, 60);
+        _summary.GetNode<Control>("UpgradeSticker").Position += new Vector2(0, 75);
         if (_upgradeEntry is not null)
         {
             unlock.FocusNext = unlock.GetPathTo(_upgradeEntry);

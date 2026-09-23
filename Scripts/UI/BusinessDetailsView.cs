@@ -170,8 +170,9 @@ public partial class BusinessDetailsView : Control
         _previousPage.Visible = details; _nextPage.Visible = !details;
         if (UsesTravelBook)
         {
-            SetButtonBounds(CloseButton, details ? new(1145, 776, 280, 70) : new(1184, _model.NewWuhanUnlock ? 685 : 625, 260, 64));
-            CloseButton.AddThemeFontSizeOverride("font_size", details ? 30 : TravelActionFontSize);
+            SetButtonBounds(CloseButton, details ? new(1145, 776, 280, 70) : new(1184, _model.NewWuhanUnlock ? 695 : 625, 260, 64));
+            CloseButton.AddThemeFontSizeOverride("font_size", details ? 30
+                : CanContinueBusiness ? TravelActionFontSize : TravelCloseActionFontSize);
         }
         // Continuing a business day belongs to the settlement summary.  The
         // detail spread offers only its return-page affordance, so it does not

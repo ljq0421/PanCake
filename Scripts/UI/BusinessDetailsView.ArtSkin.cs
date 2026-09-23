@@ -198,7 +198,9 @@ public partial class BusinessDetailsView
         var notePaper = FittedArtBounds(Art(_note, "今日手记便签底板", new(0, 0, ArtPageWidth, 122)));
         Text(_note, "营业手记", new(notePaper.Position + new Vector2(52, 10), new(notePaper.Size.X - 80, 30)), 21);
         bool hasNewCustomers = _model.NewCustomerIds.Length > 0;
-        Text(_note, _model.DailyNote, new(notePaper.Position + new Vector2(28, 50), new(hasNewCustomers ? 220 : notePaper.Size.X - 56, hasNewCustomers ? 46 : 62)), hasNewCustomers ? 18 : 20, wrap: true);
+        float noteTextWidth = hasNewCustomers ? 220 : ShouldShowRegularCustomerStamp ? 245 : notePaper.Size.X - 56;
+        Text(_note, _model.DailyNote, new(notePaper.Position + new Vector2(28, 50), new(noteTextWidth, hasNewCustomers ? 46 : 62)), hasNewCustomers ? 18 : 20, wrap: true);
+        AddRegularCustomerStamp(_note, notePaper.Position + new Vector2(350, -42.5f), 205);
         if (hasNewCustomers) AddNewCustomerNote(_note, notePaper.Position + new Vector2(275, 45), 51,
             new(notePaper.Position + new Vector2(305, 96), new Vector2(notePaper.Size.X - 325, 26)),
             new(notePaper.Position + new Vector2(195, 96), new Vector2(100, 26)), 15);

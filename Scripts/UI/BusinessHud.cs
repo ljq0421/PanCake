@@ -120,11 +120,11 @@ public partial class BusinessHud : Control
 
     private void OfferChallengeTeaching(DayController controller, bool allowPause)
     {
-        if (!allowPause || controller.CurrentConfig?.Day != 2 || !_challenge.IsVisibleInTree()
+        if (!allowPause || controller.CurrentConfig is not { CityId: "city:tianjin", Day: 2 } || !_challenge.IsVisibleInTree()
             || controller.TutorialActive || controller.State != DayState.Running) return;
         var owner = GetParent<Control>();
         bool Eligible() => owner.IsVisibleInTree() && _challenge.IsVisibleInTree()
-            && controller.CurrentConfig?.Day == 2 && controller.CurrentPlan?.Challenge is not null
+            && controller.CurrentConfig is { CityId: "city:tianjin", Day: 2 } && controller.CurrentPlan?.Challenge is not null
             && !controller.IsPaused && !controller.TutorialActive && controller.State == DayState.Running
             && !owner.Descendants<TutorialFocusLayer>().Any(layer => layer.Visible)
             && !owner.Descendants<Control>().Any(control => control.Name == "DemoLesson" && control.IsVisibleInTree());

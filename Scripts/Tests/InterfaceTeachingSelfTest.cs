@@ -271,6 +271,11 @@ public partial class InterfaceTeachingSelfTest : Node
             foreach (var focus in screen.Descendants<TutorialFocusLayer>()) focus.Dismiss();
             await Frames(10);
             var guide = Guide(screen);
+            if (city == StableIds.Cities.Wuhan)
+            {
+                Check(guide is null, "Wuhan Day 2 does not repeat Tianjin's daily challenge teaching");
+                continue;
+            }
             Check(guide?.LessonKey == InterfaceLessons.ChallengeKey, city + $" Day 2 challenge teaching appears (state={controller.State}, paused={controller.IsPaused}, tutorial={controller.TutorialActive})");
             Check(Find<DailyChallengePendant>(screen, "DailyChallengePendant").IsVisibleInTree(), "challenge is visible before teaching");
             Check(Find<Label>(guide!, "TeachingText").Text.Contains("额外金币收入"), "lesson explains extra income");

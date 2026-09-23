@@ -4,14 +4,13 @@ namespace ProjectCake.UI;
 
 public partial class StartScreen
 {
-    private void DecorateDemoIntroduction(bool wuhan)
+    private void DecorateJourneyIntroduction(bool wuhan)
     {
         // Keep the entry composition inside the printed page, including the button's hover scale.
         foreach (var control in _body.GetChildren().OfType<Control>())
         {
             string name = control.Name;
             if (name.StartsWith(wuhan ? "WuhanBreakfast" : "Breakfast", StringComparison.Ordinal)
-                || name == (wuhan ? "WuhanReturnHint" : "DepartureHint")
                 || name == (wuhan ? "WuhanOpeningContinue" : "Depart"))
                 control.Position -= new Vector2(0, 44);
         }
@@ -45,9 +44,11 @@ public partial class StartScreen
 
         foreach (var icon in _body.GetChildren().OfType<BookFoodIcon>().ToArray())
         {
-            float padding = icon.Size.X > 150 ? 18 : 10;
+            // The three Tianjin breakfasts share one illustration field, so the
+            // youtiao and soy milk feel like peers to the featured pancake.
+            Vector2 backingSize = new(208, 203);
             var backing = Art(_body, "res://resource/art/Global/UpgradeUI/设备涂鸦背景-v1.png",
-                new(icon.Position - Vector2.One * padding, icon.Size + Vector2.One * padding * 2));
+                new(icon.Position + (icon.Size - backingSize) / 2, backingSize));
             backing.Name = icon.Name + "Backing";
             _body.MoveChild(backing, icon.GetIndex());
         }

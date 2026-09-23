@@ -9,6 +9,7 @@ public partial class BusinessDetailsView
     private readonly Dictionary<TravelMotionGroup, List<Control>> _travelGroups = new();
     private readonly Dictionary<Control, (Color Color, Vector2 Position, Vector2 Scale, Vector2 Pivot)> _travelRest = new();
     private bool _travelAnimating, _skipSpaceRelease;
+    private Button? _pendingTravelUnlock;
 
     // Register only newly created content, leaving section paper and headings visible.
     // Keep controls in their original parents so layout, tooltips and hit targets stay unchanged.
@@ -104,8 +105,15 @@ public partial class BusinessDetailsView
         if (_summary.GetNodeOrNull<Button>("NewCityUnlock") is { } unlock)
         {
             _travelRest[unlock] = (unlock.Modulate, unlock.Position, unlock.Scale, unlock.PivotOffset);
+            // Hide the entire card, including its hit target, until the final reveal.
+            _pendingTravelUnlock = unlock;
+            unlock.Hide();
             // Keep the right edge clear of the adjacent page-turn button.
-            At(noteStart + .35, () => unlock.PivotOffset = new(unlock.Size.X, unlock.Size.Y / 2));
+            At(noteStart + .35, () =>
+            {
+                unlock.PivotOffset = new(unlock.Size.X, unlock.Size.Y / 2);
+                unlock.Show();
+            });
             At(noteStart + .35, PlayNewCityCelebration);
             double unlockStart = opening + noteStart + .35;
             _entrance.TweenProperty(unlock, "scale", Vector2.One * 1.075f, .20)
@@ -123,6 +131,8 @@ public partial class BusinessDetailsView
     private void RestoreTravelMotion()
     {
         _travelAnimating = false;
+        if (IsInstanceValid(_pendingTravelUnlock)) _pendingTravelUnlock!.Show();
+        _pendingTravelUnlock = null;
         foreach (var (item, rest) in _travelRest)
             if (IsInstanceValid(item))
             {

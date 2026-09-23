@@ -118,7 +118,7 @@ public partial class StartScreen
             string name = control.Name;
             bool isBook = name == "SharedBook";
             bool postcard = name is "JourneyPostcard" or "StationTitle" or "IntroductionTitleBacking";
-            bool depart = name is "Depart" or "DepartureHint";
+            bool depart = name == "Depart";
             float progress = isBook ? book : Ease(Beat(time, postcard ? 1.9f : depart ? 2.3f : 2.05f, depart ? .4f : .5f));
             var color = _introColors[control];
             control.Modulate = new(color.R, color.G, color.B, color.A * progress);

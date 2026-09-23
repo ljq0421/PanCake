@@ -47,8 +47,8 @@ public partial class TianjinDayScreen
         _demoLessonReplay = replay;
         if (!_controller.TryPrepareTutorial(StableIds.Cities.Tianjin, _demoTeachingDay, _catalog, out string error)) { ShowFeedback(error, true); return true; }
         _workstation.Initialize(_catalog, 1, 1, _controller.CurrentConfig!.AvailableProductKinds.Contains(ProductKind.Youtiao) ? 1 : 0, _controller.CurrentConfig!, _art);
-        // 新配料只练习新增的操作；薄脆/葱花沿用已有的单项提示。
-        bool extendsKnownPancakeFlow = unlock?.DefinitionId == StableIds.Recipes.ScallionCrispy;
+        // 新配料只练习新增的操作；薄脆、葱花和火腿沿用已有的单项提示。
+        bool extendsKnownPancakeFlow = unlock?.DefinitionId is StableIds.Recipes.ScallionCrispy or StableIds.Recipes.Ham;
         IEnumerable<string>? learnedForLesson = extendsKnownPancakeFlow
             ? PancakeWorkstation.AllWorkbenchActions.Except(unlock!.Actions, StringComparer.Ordinal)
             : null;

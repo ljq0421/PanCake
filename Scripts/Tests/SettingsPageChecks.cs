@@ -115,6 +115,8 @@ internal static class SettingsPageChecks
             "save selector directly switches the active save without reopening the book");
         Find<SaveSlotChoice>(screen, "SaveSlot").ShowPopup(); await Frames(screen);
         Check(!screen.FindChildren("DeleteSlot3", "Button", true, false).Any(), "empty slot has no delete action");
+        Check(string.IsNullOrEmpty(Find<Button>(screen, "LoadSlot1").TooltipText)
+            && string.IsNullOrEmpty(Find<Button>(screen, "LoadSlot3").TooltipText), "save entries and blank journal have no hover explanation");
         Check(string.IsNullOrEmpty(Find<Button>(screen, "DeleteSlot1").TooltipText), "trash has no hover explanation");
         var settingsBook = Find<TextureRect>(screen, "SettingsBook");
         await Click(Find<Button>(screen, "DeleteSlot1"));

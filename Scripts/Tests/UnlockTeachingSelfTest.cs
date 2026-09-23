@@ -97,8 +97,8 @@ public partial class UnlockTeachingSelfTest : Node
                 var lesson = TutorialOrders.UnlockFor(controller.CurrentConfig!)
                     ?? (tianjin
                         ? new TutorialOrders.UnlockLesson("第一张煎饼", ProductKind.Pancake, StableIds.Recipes.Basic, "deliver:finished_pancake")
-                        : new TutorialOrders.UnlockLesson("第一碗热干面", ProductKind.HotDryNoodles,
-                            controller.CurrentPlan!.Customers.Single().Order.Lines.Single().DefinitionId, "deliver:hot_dry_noodles"));
+                        : new TutorialOrders.UnlockLesson("基础热干面", ProductKind.HotDryNoodles,
+                            StableIds.Recipes.HotDryNoodlesClassic, "deliver:hot_dry_noodles", TutorialOrders.WuhanBaseNoodlesLesson));
                 Check(controller.TutorialActive && controller.CurrentPlan!.Customers.Count == 1, $"{item} starts one isolated guest");
                 var guest = controller.CustomerQueue!.Slots.Single();
                 Check(guest.Order.Lines.Single() == new OrderLineData(lesson.Kind, lesson.DefinitionId, 1), $"{item} practices the unlocked food");
@@ -106,23 +106,23 @@ public partial class UnlockTeachingSelfTest : Node
                 Check(controller.DayElapsedSeconds == 0 && guest.WaitSeconds == 0 && controller.CustomerQueue.Slots.Count == 1,
                     $"{item} no extra arrivals or patience loss during long practice");
                 var focus = t?.TeachingFocus ?? w!.TeachingFocus; focus.Refresh();
-                if (item == ("Tianjin", 2))
+                if (item.Item1 == "Tianjin" && item.Item2 is 2 or 6)
                 {
-                    Check(focus.CurrentAction is null, "crispy and scallion lesson skips the earlier pancake-spreading guidance");
+                    Check(focus.CurrentAction is null, $"{lesson.Title} skips the earlier pancake-spreading guidance");
                     var station = t!.GetNode<PancakeWorkstation>("PancakeWorkstation");
                     var machine = station.Machine;
                     Check(machine.TryExecute(PancakeCommand.PlaceBatter).Success && machine.TryExecute(PancakeCommand.BeginSpread).Success
                         && machine.TryExecute(PancakeCommand.CompleteSpread).Success && machine.TryExecute(PancakeCommand.AddEgg).Success,
-                        "crispy and scallion lesson allows the familiar pancake setup without guidance");
+                        $"{lesson.Title} allows the familiar pancake setup without guidance");
                     station.Tick(100);
-                    Check(machine.TryExecute(PancakeCommand.Flip).Success, "crispy and scallion lesson flips familiar pancake");
+                    Check(machine.TryExecute(PancakeCommand.Flip).Success, $"{lesson.Title} flips familiar pancake");
                     station.Tick(100);
-                    Check(machine.TryExecute(PancakeCommand.BeginSauce).Success, "crispy and scallion lesson starts familiar sauce step");
+                    Check(machine.TryExecute(PancakeCommand.BeginSauce).Success, $"{lesson.Title} starts familiar sauce step");
                     machine.SetSauceCoverage(1);
-                    Check(machine.TryExecute(PancakeCommand.CompleteSauce).Success, "crispy and scallion lesson completes familiar sauce step");
+                    Check(machine.TryExecute(PancakeCommand.CompleteSauce).Success, $"{lesson.Title} completes familiar sauce step");
                     focus.Refresh();
-                    Check(focus.CurrentAction is "take:crispy" or "take:scallion",
-                        $"crispy and scallion lesson first guides one of the newly unlocked toppings: {focus.CurrentAction}");
+                    Check(focus.CurrentAction is not null && lesson.Actions.Contains(focus.CurrentAction),
+                        $"{lesson.Title} first guides a newly unlocked topping: {focus.CurrentAction}");
                     controller.AbandonDay(); Start();
                     focus = t.TeachingFocus; focus.Refresh();
                 }

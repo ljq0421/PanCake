@@ -63,6 +63,18 @@ public partial class EquipmentProgressView : Control
             DrawString(font, baseline, caption, HorizontalAlignment.Left, -1, fontSize, Ink);
         }
         DrawStyleBox(_track, new Rect2(0, 28, Size.X, 12));
+        if (Presentation.HeatPosition is double heatPosition)
+        {
+            // Yellow: heating; green: usable; the short final red segment means burnt.
+            float width = Size.X - 4;
+            DrawRect(new Rect2(2, 30, width * .3f, 8), WorkingColor);
+            DrawRect(new Rect2(2 + width * .3f, 30, width * .6f, 8), ReadyColor);
+            DrawRect(new Rect2(2 + width * .9f, 30, width * .1f, 8), FailedColor);
+            float x = 2 + width * (float)Math.Clamp(heatPosition, 0, 1);
+            DrawLine(new Vector2(x, 27), new Vector2(x, 41), Ink, 6, true);
+            DrawLine(new Vector2(x, 27), new Vector2(x, 41), Paper, 2, true);
+            return;
+        }
         float filled = (Size.X - 4) * (float)Math.Clamp(Presentation.Progress, 0, 1);
         if (filled <= 0) return;
         _fill.BgColor = FillColor(Presentation);
@@ -107,7 +119,7 @@ public partial class EquipmentProgressView : Control
 }
 
 internal readonly record struct EquipmentProgressState(bool Visible, double Progress, string Caption,
-    bool Ready = false, double Risk = 0, bool Failed = false)
+    bool Ready = false, double Risk = 0, bool Failed = false, double? HeatPosition = null)
 {
     internal static EquipmentProgressState Working(double elapsed, double duration, string caption) =>
         new(true, Math.Clamp(elapsed / Math.Max(.0001, duration), 0, 1), caption);

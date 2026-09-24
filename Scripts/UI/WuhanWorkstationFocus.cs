@@ -46,10 +46,10 @@ public partial class WuhanWorkstationView
     {
         foreach (var progress in _basketProgress.Append(_doupiProgress).OfType<EquipmentProgressView>())
             if (progress.IsVisibleInTree()) yield return TutorialFocusTarget.Area(progress, new Rect2(0, 28, progress.Size.X, 12), false);
-        if (HasProductionGesture || IsKnifeHeld || _mixHeld)
+        if (HasProductionGesture || _mixHeld)
         {
-            Vector2 at = IsKnifeHeld && !HasProductionGesture ? _pointer : _gesturePoint;
-            string sprite = IsKnifeHeld ? "cut_tool" : _gesture is "flip" or "filling" ? "flip_tool"
+            Vector2 at = _gesturePoint;
+            string sprite = _gesture is "flip" or "filling" ? "flip_tool"
                 : _gesture == "raw" ? "raw_noodles" : _gesture == "batter" ? "doupi_ladle" : "basket";
             if (_mixHeld) yield break;
             Texture2D texture = _art.Texture(sprite);

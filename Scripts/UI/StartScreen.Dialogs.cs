@@ -6,11 +6,12 @@ namespace ProjectCake.UI;
 public partial class StartScreen
 {
     private bool _preserveModalBackdrop;
+    private bool _bookHandoffPending;
 
     private void OpenModal(string kind)
     {
-        bool switchingUtilityBook = _modal.Visible
-            && (_modalKind is "settings" or "help") && (kind is "settings" or "help");
+        bool switchingUtilityBook = (_modal.Visible && _modalKind is not ("confirm" or "developer")
+            || IsBookPage(Page)) && kind is not ("confirm" or "developer");
         // A utility dialog opened from a home-book overlay returns to the unchanged
         // home backdrop first; utility dialogs are not nested inside journey books.
         CloseModal(); _previousFocus = GetViewport().GuiGetFocusOwner(); _modalKind = kind;
@@ -20,6 +21,10 @@ public partial class StartScreen
         _preserveModalBackdrop = switchingUtilityBook;
         try { _modal.Show(); }
         finally { _preserveModalBackdrop = false; }
+        if (switchingUtilityBook)
+            JourneyTransition.For(this).Play(JourneyTransition.Effect.BookPage,
+                bounds: new Rect2(_canvas.GetGlobalTransformWithCanvas() * BookBounds.Position, BookBounds.Size * _canvas.Scale));
+        _bookHandoffPending = switchingUtilityBook && kind == "home-overlay";
         _modal.AddChild(new ColorRect { Size = new(1920, 1080), Color = new Color(.15f, .1f, .06f, .65f) });
         if (kind == "confirm")
             AddConfirmationPanel(_modal, "Confirmation");
@@ -88,6 +93,9 @@ public partial class StartScreen
         bool restoreHomeBody = _homeOverlayOpen;
         CloseSettingsPopups();
         _settings.RevertDisplay(); _modal.Hide(); _modalKind = "";
+        if (!restoreHomeBody && IsBookPage(Page))
+            JourneyTransition.For(this).Play(JourneyTransition.Effect.BookPage,
+                bounds: new Rect2(_canvas.GetGlobalTransformWithCanvas() * BookBounds.Position, BookBounds.Size * _canvas.Scale));
         _settingsMessage = null; _countdown = null; _displayConfirmation = null;
         foreach (var button in _buttons) if (GodotObject.IsInstanceValid(button)) button.FocusMode = FocusModeEnum.All;
         if (restoreHomeBody) RestoreHomeBody();

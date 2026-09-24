@@ -44,6 +44,17 @@ public partial class EquipmentProgressSelfTest : Node
             Check(EquipmentProgressPresentation.Pancake(pancake) == paused, "暂停不改变进度");
             pancake.Tick(stove.SideAReadySeconds / 2);
             Check(EquipmentProgressPresentation.Pancake(pancake).Ready, "第一面完成");
+            if (stove.CanBurn)
+            {
+                Check(Math.Abs(stove.SideABurnSeconds - stove.SideAReadySeconds - 5) < .001
+                    && Math.Abs(stove.SideBBurnSeconds - stove.SideBReadySeconds - 5) < .001, "两面熟后均有5秒操作期");
+                Check(Math.Abs(EquipmentProgressPresentation.Pancake(pancake).HeatPosition!.Value - .3) < .001, "刚熟游标进入绿区");
+                pancake.Tick(4);
+                Check(EquipmentProgressPresentation.Pancake(pancake).Caption.Contains("快焦了"), "最后1秒预警");
+                pancake.Tick(.99);
+                Check(pancake.Runtime.State != PancakeState.Burnt
+                    && EquipmentProgressPresentation.Pancake(pancake).HeatPosition < .9, "焦糊前不进入红区");
+            }
             pancake.TryExecute(PancakeCommand.Flip);
             Check(EquipmentProgressPresentation.Pancake(pancake).Progress == 0, "翻面重置");
             pancake.Tick(100);
@@ -51,6 +62,7 @@ public partial class EquipmentProgressSelfTest : Node
                 : EquipmentProgressPresentation.Pancake(pancake) is { Ready: true, Risk: 0, Failed: false }, "烧焦或教学防焦");
             pancake.TryExecute(PancakeCommand.Discard);
             Check(!EquipmentProgressPresentation.Pancake(pancake).Visible, "丢弃隐藏");
+            if (OS.GetCmdlineUserArgs().Contains("--tianjin-only")) continue;
 
             catalog.TryGetFryer(level, out var fryerData);
             var fryer = new FryerStateMachine(fryerData);
@@ -115,6 +127,7 @@ public partial class EquipmentProgressSelfTest : Node
             soup.TryTake(); Check(!EquipmentProgressPresentation.Soup(soup, soupData).Visible, "端汤隐藏");
             soup.Stock.TryRefill(); Check(!EquipmentProgressPresentation.Soup(soup, soupData).Visible, "补锅不显示制作进度");
         }
+        if (OS.GetCmdlineUserArgs().Contains("--tianjin-only")) return;
         Check(EquipmentProgressView.FillColor(EquipmentProgressState.Working(1, 2, "")) == new Color("#E8B650"), "制作暖黄");
         Check(EquipmentProgressView.FillColor(EquipmentProgressState.Done("")) == new Color("#78A65A"), "完成绿色");
         Check(EquipmentProgressView.FillColor(EquipmentProgressState.Done("", failed: true)) == new Color("#C95343"), "失败红色");
@@ -154,9 +167,14 @@ public partial class EquipmentProgressSelfTest : Node
         station.FryerMachine!.TryExecute(FryerCommand.LoadOne); station.FryerMachine.TryExecute(FryerCommand.LowerBasket);
         station.FryerMachine.Tick(station.FryerMachine.Level.GoldenStartSeconds / 2); station.RefreshForCapture();
         await Shot(tianjin, "tianjin-cooking", 2);
+        station.Machine.Tick(station.Machine.Stove.SideAReadySeconds / 2);
+        station.RefreshForCapture(); await Shot(tianjin, "tianjin-ready", 2);
+        station.Machine.Tick(4);
+        station.RefreshForCapture(); await Shot(tianjin, "tianjin-warning", 2);
         station.Machine.Tick(100); station.FryerMachine.Tick(station.FryerMachine.Level.GoldenStartSeconds / 2);
         station.RefreshForCapture(); await Shot(tianjin, "tianjin-ready-burnt", 2);
         controller.AbandonDay(); tianjin.Free(); controller.Free();
+        if (OS.GetCmdlineUserArgs().Contains("--tianjin-only")) return;
         controller = new DayController(); AddChild(controller);
 
         var wuhan = SceneFactory.Instantiate<WuhanDayScreen>("res://Scenes/Gameplay/WuhanDayScreen.tscn");

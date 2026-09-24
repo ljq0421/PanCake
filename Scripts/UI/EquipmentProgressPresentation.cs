@@ -13,7 +13,23 @@ internal static class EquipmentProgressPresentation
         if (machine is null) return default;
         var r = machine.Runtime; var d = machine.Stove;
         bool first = r.State is PancakeState.SideACooking or PancakeState.SideAReady or PancakeState.SideAOverdone;
-        if (r.State == PancakeState.Burnt) return EquipmentProgressState.Done("已焦糊", failed: true);
+        if (r.State == PancakeState.Burnt)
+            return EquipmentProgressState.Done("已焦糊 · 请丢弃", failed: true) with { HeatPosition = .95 };
+        if (d.CanBurn && r.State is (PancakeState.SideACooking or PancakeState.SideBCooking
+            or PancakeState.SideAReady or PancakeState.SideAOverdone or PancakeState.SideBReady))
+        {
+            double readyAt = first ? d.SideAReadySeconds : d.SideBReadySeconds;
+            double burnAt = first ? d.SideABurnSeconds : d.SideBBurnSeconds;
+            bool ready = r.State is not (PancakeState.SideACooking or PancakeState.SideBCooking);
+            double remaining = Math.Max(0, burnAt - r.CookingSeconds);
+            string action = first ? "请翻面" : "请刷酱";
+            string caption = !ready ? first ? "正面煎制中" : "反面煎制中"
+                : remaining <= 1.0001 ? $"快焦了 · {action}" : first ? "可翻面" : "可刷酱";
+            double position = ready ? .3 + .6 * EquipmentProgressState.Heat(r.CookingSeconds, readyAt, burnAt)
+                : .3 * Math.Clamp(r.CookingSeconds / readyAt, 0, 1);
+            return new(true, Math.Clamp(r.CookingSeconds / readyAt, 0, 1), caption, ready,
+                HeatPosition: Math.Min(position, .8999));
+        }
         if (r.State is PancakeState.SideACooking or PancakeState.SideBCooking)
             return EquipmentProgressState.Working(r.CookingSeconds, first ? d.SideAReadySeconds : d.SideBReadySeconds, first ? "正面煎制中" : "反面煎制中");
         if (r.State is PancakeState.SideAReady or PancakeState.SideAOverdone or PancakeState.SideBReady)

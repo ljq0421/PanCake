@@ -128,7 +128,7 @@ public partial class PancakeWorkstation
             PancakeState.BatterPlaced or PancakeState.Spreading => Step("spread", "按住左键在面糊上划动，摊成一张饼。", Surface()),
             PancakeState.Spread or PancakeState.SideACooking when !r.HasEgg => Take("egg", "点击鸡蛋，把蛋打到饼上。"),
             PancakeState.SideACooking => Step("flip", "等第一面成熟，再翻面。", Surface()),
-            PancakeState.SideAReady or PancakeState.SideAOverdone => Step("flip", "用小铲子从饼边向饼心短推，松手翻面；也可按 F。", Surface()),
+            PancakeState.SideAReady or PancakeState.SideAOverdone => Step("flip", "点击饼皮翻面；也可按 F。", Surface()),
             PancakeState.SideBCooking => Step("take:sauce", "等第二面成熟，再拿刷子刷酱。", Surface()),
             PancakeState.SideBReady => Take("sauce", "点击酱碗拿刷子。"),
             PancakeState.Saucing => Step("sauce", "在饼面刷酱；达到订单酱量后短按右键收刷，或按 F。", Surface()),

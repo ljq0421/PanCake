@@ -25,7 +25,7 @@ public partial class StageFourSelfTest
             && Close(machine.Runtime.CookingSeconds, 1), "中途加蛋不重置火候计时");
         Check(!machine.TryExecute(PancakeCommand.AddEgg, tryConsume: _ => { eggs++; return true; }).Success
             && eggs == 1, "重复打蛋不扣库存");
-        machine.Tick(3.3);
+        machine.Tick(machine.Stove.SideAOverdoneSeconds - 1);
         Check(machine.Runtime.Quality == PancakeQuality.Overdone, "加蛋后保留已累计的偏焦判定");
         machine.TryExecute(PancakeCommand.Discard);
         Spread();

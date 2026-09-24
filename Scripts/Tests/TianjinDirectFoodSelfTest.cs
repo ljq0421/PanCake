@@ -11,7 +11,7 @@ namespace ProjectCake.Tests;
 public partial class TianjinDirectFoodSelfTest : Node
 {
     private bool CaptureCursor => OS.GetCmdlineUserArgs().Contains("--spatula-cursor");
-    private string Output => CaptureCursor ? "res://.tmp/spatula-cursor-20260923/direct" : "res://artifacts/tianjin-bag-stack-20260922";
+    private string Output => "res://.tmp/tianjin-click-flip-20260923";
     private int _checks;
     private bool Capture => OS.GetCmdlineUserArgs().Contains("--capture");
     private void Check(bool value, string message)
@@ -68,6 +68,8 @@ public partial class TianjinDirectFoodSelfTest : Node
                 void Move(Vector2 at) { Input.ParseInputEvent(new InputEventMouseMotion { Position = at, ButtonMask = MouseButtonMask.Left }); Input.FlushBufferedEvents(); }
                 void Ready(PancakeState state = PancakeState.SideAReady)
                 {
+                    // Offscreen capture windows can lose OS focus between screenshots.
+                    screen._Notification((int)NotificationApplicationFocusIn);
                     station.CancelInput(); station.Machine.TryExecute(PancakeCommand.Discard);
                     station.Machine.Runtime.State = state; station.Machine.Runtime.HasEgg = true;
                     station.Machine.Runtime.HasSauce = state == PancakeState.Folded;
@@ -83,52 +85,41 @@ public partial class TianjinDirectFoodSelfTest : Node
                         && Input.MouseMode == Input.MouseModeEnum.Hidden, $"spatula appears on the usable pancake rim (focus={GetWindow().HasFocus()}, pointer={GetViewport().GetMousePosition()}, target={Point(.9f)}, mode={Input.MouseMode}, paused={station.Paused})");
                     await Shot($"spatula-hover-{width}");
                     Move(Point(.5f)); await Frames();
-                    Check(!spatulaCursor.Visible
-                        && Input.MouseMode == Input.MouseModeEnum.Visible, "center hover restores regular cursor");
+                    Check(spatulaCursor.Visible, "center hover offers the flip cursor");
                 }
                 Check(station.GetNode<Control>("DirectPaperBag").IsVisibleInTree(), "paper stack visible before folding");
                 Mouse(Stack(), true); Mouse(Stack(), false);
                 Check(!station.IsDirectDragging && station.Machine.Runtime.State == PancakeState.SideAReady, "paper pickup requires folded food");
                 Check(!((Button)station.FindChild("PancakeFlipAction", true, false)).Visible, "flip button removed");
-                Mouse(Point(.9f), true); await Frames(); Move(Point(.82f)); await Frames();
-                Check(station.IsDirectDragging && !station.IsFlipping && station.Machine.Runtime.State == PancakeState.SideAReady, "edge lift does not commit early");
-                if (CaptureCursor) Check(spatulaCursor.Visible, "spatula cursor stays visible during flip drag");
-                Check(!station.TryInvokeProductionShortcut(Key.F), "held gesture blocks F");
-                Check(!station.TryBeginTrashDrag(GetViewport().GetFinalTransform().AffineInverse() * Point(.5f)), "held gesture blocks trash pickup");
-                await Shot($"flip-lift-{width}");
-                Mouse(Point(.82f), false); station.Tick(.2); await Frames();
-                Check(station.Machine.Runtime.State == PancakeState.SideAReady && canvas.FlipPickup == 0 && flips == 0, $"short drag returns without teaching (state={station.Machine.Runtime.State}, pickup={canvas.FlipPickup}, flips={flips}, held={station.IsDirectDragging})");
-                foreach (float edge in new[] { .9f, .1f })
+                await Shot($"flip-ready-{width}");
+                foreach (float edge in new[] { .5f, .9f, .1f, .74f, 1.06f })
                 {
-                    Ready(); Mouse(Point(edge), true); Move(Point(.5f)); await Frames();
+                    Ready(); Mouse(Point(edge), true); Mouse(Point(edge), false); await Frames();
+                    Check(!station.IsDirectDragging && station.IsFlipping && station.Machine.Runtime.State == PancakeState.SideBCooking,
+                        "single click flips center and edges without dragging");
                     Check(!living.ToolsAtRest && !restingSpatula.Visible,
-                        "only the mouse-operated spatula is shown while lifting the pancake edge");
-                    Mouse(Point(.5f), false); Check(station.IsFlipping, "inward release flips");
+                        "resting spatula hides during flip animation");
+                    float progress = station.FlipProgress;
+                    Mouse(Point(edge), true); Mouse(Point(edge), false);
+                    Check(station.FlipProgress == progress && !station.TryInvokeProductionShortcut(Key.F), "repeat click and shortcut cannot restart flip");
                     station.Tick(.1); await Frames(); await Shot($"flip-air-{edge}-{width}");
                     station.Tick(.3); await Frames();
                     Check(!station.IsFlipping && station.Machine.Runtime.HasEgg && living.ToolsAtRest, "soft flip lands with egg intact");
                 }
                 Check(flips == 1, "successful flips record the tutorial once");
-                // Previously rejected: a grip slightly inside the narrow rim,
-                // a short deliberate inward pull, or a release beyond the stove.
-                Ready(); Mouse(Point(.74f), true); Move(Point(.64f)); Mouse(Point(.64f), false);
-                Check(station.IsFlipping, "inner edge grip and short inward pull flip"); station.Tick(.4);
-                Ready(); Mouse(Point(1.06f), true); Move(Point(.96f)); Mouse(Point(.96f), false);
-                Check(station.IsFlipping, "near-rim grip tolerates painted edge padding"); station.Tick(.4);
-                Ready(); Mouse(Point(.9f), true); Move(Point(.65f, 1.2f)); Mouse(Point(.65f, 1.2f), false);
-                Check(station.IsFlipping, "diagonal inward drag can release beyond stove"); station.Tick(.4);
-                Ready(); Mouse(Point(.5f), true); Mouse(Point(.5f), false);
-                Check(!station.IsDirectDragging && !station.IsFlipping, "center click does not accidentally flip");
-                Ready(); Mouse(Point(.9f), true); Move(Point(1.1f)); Mouse(Point(1.1f), false);
-                Check(station.Machine.Runtime.State == PancakeState.SideAReady, "outward drag does not flip");
-                Ready(); Mouse(Point(.9f), true); Mouse(Point(.9f), false);
-                Check(station.Machine.Runtime.State == PancakeState.SideAReady, "edge click without drag does not flip");
-                Ready(); Mouse(Point(.9f), true); Move(Point(.5f)); Move(Point(.9f)); Mouse(Point(.9f), false); station.Tick(.2);
-                Check(station.Machine.Runtime.State == PancakeState.SideAReady, "drag back cancels");
-                Ready(PancakeState.SideACooking); Mouse(Point(.9f), true); Move(Point(.5f)); Mouse(Point(.5f), false);
-                Check(!station.IsDirectDragging && station.Machine.Runtime.State == PancakeState.SideACooking, "uncooked food cannot flip");
-                Ready(); Mouse(Point(.9f), true); Move(Point(.5f)); station.Machine.Runtime.State = PancakeState.Burnt; station.Tick(0); Mouse(Point(.5f), false);
-                Check(!station.IsDirectDragging && canvas.FlipPickup == 0 && station.Machine.Runtime.State == PancakeState.Burnt, "burn invalidates gesture");
+                Ready(); Mouse(Point(1.3f), true); Mouse(Point(1.3f), false);
+                Check(station.Machine.Runtime.State == PancakeState.SideAReady, "click outside pancake does not flip");
+                foreach (var blocked in new[] { PancakeState.Empty, PancakeState.SideACooking, PancakeState.Burnt, PancakeState.SideBCooking })
+                {
+                    Ready(blocked); Mouse(Point(.5f), true); Mouse(Point(.5f), false);
+                    Check(!station.IsFlipping && station.Machine.Runtime.State == blocked, "click cannot flip in " + blocked);
+                }
+                Ready(); station.Paused = true; Mouse(Point(.5f), true); Mouse(Point(.5f), false);
+                Check(station.Machine.Runtime.State == PancakeState.SideAReady, "paused click cannot flip"); station.Paused = false;
+                Ready(); station.InteractionEnabled = false; Mouse(Point(.5f), true); Mouse(Point(.5f), false);
+                Check(station.Machine.Runtime.State == PancakeState.SideAReady, "disabled click cannot flip"); station.InteractionEnabled = true;
+                Ready(PancakeState.SideAOverdone); Mouse(Point(.5f), true); Mouse(Point(.5f), false);
+                Check(station.IsFlipping && station.Machine.Runtime.State == PancakeState.SideBCooking, "overdone first side can still flip"); station.Tick(.4);
                 Ready(PancakeState.Folded); await Frames(); await Shot($"bag-ready-{width}");
                 Check(!((Button)station.FindChild("PancakeBagAction", true, false)).Visible, "bag button removed");
                 if (CaptureCursor)
@@ -168,7 +159,8 @@ public partial class TianjinDirectFoodSelfTest : Node
                     "successful handoff clears stove for next pancake");
                 Check(station.GetNode<Control>("DirectPaperBag").Visible, "stack persists after handoff");
                 Ready(); Mouse(Point(.9f), true); Move(Point(.5f)); screen.OpenBusinessDetails(); await Frames();
-                Check(!station.IsDirectDragging && canvas.FlipPickup == 0, "details cancel uncommitted flip");
+                Check(!station.IsDirectDragging && !station.IsFlipping && station.Machine.Runtime.State == PancakeState.SideBCooking,
+                    "details settle the committed click flip");
                 screen.CloseBusinessDetails(); screen.RefreshForCapture(true);
                 Ready(PancakeState.Folded); Mouse(Stack(), true); Move(Food()); screen._Notification((int)NotificationApplicationFocusOut);
                 Check(!station.IsDirectDragging && !canvas.DirectFoodHidden && station.Machine.Runtime.State == PancakeState.Folded, "focus loss returns paper and keeps food on stove");
@@ -187,8 +179,7 @@ public partial class TianjinDirectFoodSelfTest : Node
                 Check(station.Machine.Runtime.State == PancakeState.Folded && !station.IsDirectDragging && !canvas.DirectFoodHidden,
                     "right click returns paper without discarding food");
                 Ready(); ProjectSettings.SetSetting("accessibility/reduce_motion", true); await Frames();
-                Mouse(Point(.9f), true); Check(station.IsDirectDragging, "reduced motion still starts gesture");
-                Move(Point(.5f)); Mouse(Point(.5f), false);
+                Mouse(Point(.5f), true); Mouse(Point(.5f), false);
                 Check(!station.IsFlipping && station.Machine.Runtime.State == PancakeState.SideBCooking, $"reduced motion flips immediately (state={station.Machine.Runtime.State}, paused={station.Paused}, held={station.IsDirectDragging})");
                 Ready(PancakeState.Folded); Mouse(Stack(), true); Move(Food()); Mouse(Food(), false);
                 Check(station.CanDeliverProduct("finished_pancake") && !canvas.DirectFoodHidden, "reduced motion bags immediately and releases stove visual");

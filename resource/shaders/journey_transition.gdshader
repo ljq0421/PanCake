@@ -42,7 +42,7 @@ void fragment() {
             cloth = mix(cloth, vec3(0.72, 0.52, 0.28), hem);
             result = vec4(cloth, 1.0);
         }
-    } else if (effect == 4 || effect == 5) {
+    } else if (effect == 4 || effect == 5 || effect == 8) {
         // A bounded paper curl crosses the spread and its spine. Closing mirrors
         // the turn, without folding the workbench or the full-screen dimmer.
         vec2 local = (uv - area.xy) / max(area.zw, vec2(0.001));

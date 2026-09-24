@@ -85,7 +85,7 @@ public partial class WuhanWorkstationView
         if (_doupi is not null)
         {
             SourcePath(EquipmentSilhouette("stock"), State("stock"), radius: 2);
-            SourcePath(EquipmentSilhouette("knife"), IsKnifeHeld ? InteractionHighlightState.Selected : State("knife"), radius: 2);
+            SourcePath(EquipmentSilhouette("knife"), InteractionHighlightState.None, radius: 2);
             SourcePath(EquipmentSilhouette("filling"), State("filling"));
             SourcePath(EquipmentSilhouette("doupi_egg"), State("doupi_egg"), radius: 2);
             SourcePath(EquipmentSilhouette("batter"), State("batter"), radius: 2);

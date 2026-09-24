@@ -1080,7 +1080,7 @@ public partial class PancakeWorkstation : Control
             : DirectCustomerDelivery && Machine.Runtime.State == PancakeState.Bagged ? "拖给顾客"
             : PancakeStatus(Machine.Runtime);
         if (IsTianjinWorkbench && Machine.Runtime.State is PancakeState.SideAReady or PancakeState.SideAOverdone)
-            _state.Text = _directGesture == DirectGesture.Flip ? _flipDragAmount >= FlipCommitAmount ? "松手翻面" : "用小铲子向饼心短推" : "用小铲子从饼边向内推 · 翻面";
+            _state.Text = "点击饼皮 · 翻面";
         if (IsTianjinWorkbench && Machine.Runtime.State == PancakeState.Folded)
             _state.Text = _directGesture == DirectGesture.Bag ? _directBag!.OverFood ? "松手套袋" : "用小铲子把纸袋推到煎饼上" : "用小铲子取左侧纸袋，推到煎饼上";
         if (IsTianjinWorkbench && Machine.Runtime.State == PancakeState.SideACooking)

@@ -65,7 +65,7 @@ public partial class WuhanWorkstationView : Control
 
     private void OnDragStarted(string payload)
     {
-        IsKnifeHeld = false;
+        CancelAutoCutHold();
         _draggedProduct = DeliveryProduct(payload);
         if (_draggedProduct is ProductKind kind) FinishPresentation(DeliveryChannel(kind));
         EndMix(); ResetFoodMotion(); QueueRedraw();
@@ -76,7 +76,7 @@ public partial class WuhanWorkstationView : Control
         ClearTrashSource();
         RefreshDeliverySources(); QueueRedraw();
     }
-    public void CancelInput() { IsKnifeHeld = false; CancelTrashPress(); _drag?.CancelDrag(); CancelGesture(); EndMix(); ResetFoodMotion(); _cooker?.CancelPendingPour(); }
+    public void CancelInput() { CancelAutoCutHold(); CancelTrashPress(); _drag?.CancelDrag(); CancelGesture(); EndMix(); ResetFoodMotion(); _cooker?.CancelPendingPour(); }
 
     public void RefreshDeliverySources()
     {
@@ -318,8 +318,12 @@ public partial class WuhanWorkstationView : Control
     {
         PlaySound(WuhanSound.Cut);
         Motion m = Play("cut", .36, "pan"); m.Line = line;
-        if (_gesture == "cut") m.Origin = _gesturePoint;
-        if (!CanHoldKnife) IsKnifeHeld = false;
+        RememberStates();
+    }
+    public void PlayAutomaticCut()
+    {
+        PlaySound(WuhanSound.Cut);
+        Play("auto_cut", .72, "pan");
         RememberStates();
     }
     private void PlayFlipReturn(float lift, Vector2 origin)
@@ -357,7 +361,7 @@ public partial class WuhanWorkstationView : Control
         TickMixProgress(delta);
         TickLoopFeedback(delta);
         TickFoodMotion(delta);
-        if (!CanHoldKnife) IsKnifeHeld = false;
+        TickAutoCutHold(delta);
         TickTrashPress(delta);
         _cookingAudio?.Update(_cooker, _doupi);
         if (_doupi is not null && _doupi.State != _previousDoupi)
@@ -416,13 +420,7 @@ public partial class WuhanWorkstationView : Control
         {
             if (!mb.Pressed) { EndMix(); return; }
             string hit = HitTarget(mb.Position);
-            if (hit == "knife")
-            {
-                if (CanHoldKnife) { IsKnifeHeld = true; _pointer = mb.Position; }
-                else GestureRejected?.Invoke("制作豆皮时可提前拿刀，煎好后再切块。");
-                AcceptEvent(); QueueRedraw(); return;
-            }
-            if (hit != "pan") IsKnifeHeld = false;
+            if (hit == "pan" && TryBeginAutoCutHold(mb.Position)) { AcceptEvent(); return; }
             if (TryBeginGesture(hit, mb.Position)) { AcceptEvent(); return; }
             if (hit.StartsWith("ingredient")) IngredientPressed?.Invoke(IngredientIds[int.Parse(hit[^1..])]);
             else if (hit == "doupi_egg") EggRequested?.Invoke();
@@ -467,7 +465,6 @@ public partial class WuhanWorkstationView : Control
         if (_doupi is not null && StockRect.HasPoint(p)) return "stock";
         if (_doupi is not null)
         {
-            if (_layout.Knife.HasPoint(p)) return "knife";
             if (DoupiEggRect.HasPoint(p)) return "doupi_egg";
             if (BatterRect.HasPoint(p)) return "batter";
             if (FillingRect.HasPoint(p)) return "filling";

@@ -14,12 +14,12 @@ public partial class PancakeWorkstation
     private bool ShowSpatulaCursor(Vector2 point)
     {
         if (!_initialized || !CanInteract || !IsVisibleInTree()) return false;
-        if (_foldHeld || _directGesture is DirectGesture.Flip or DirectGesture.Bag) return true;
+        if (_foldHeld || _directGesture == DirectGesture.Bag) return true;
         Vector2 local = _canvas.GetGlobalTransformWithCanvas().AffineInverse() * point;
         if (CanFoldGesture && IsFoldGrabPoint(local)) return true;
         if (CanDirectGesture && !DirectBusy
             && Machine.Runtime.State is ProjectCake.Pancake.PancakeState.SideAReady or ProjectCake.Pancake.PancakeState.SideAOverdone)
-            return IsFlipGrabPoint(local);
+            return IsFlipClickPoint(local);
         return CanDirectGesture && Machine.Runtime.State == ProjectCake.Pancake.PancakeState.Folded
             && _directBag?.StackBounds.Grow(10).HasPoint(DirectLocal(point)) == true;
     }
@@ -119,7 +119,7 @@ public partial class PancakeWorkstation
             TianjinWorkbenchLayout.EmbeddedOpening.Position - _fryerVisual.Position,
             TianjinWorkbenchLayout.EmbeddedOpening.Size);
         EquipmentProgressView.Attach(this, "PancakeCookingProgress", new Rect2(700, 893, 240, 42),
-            () => EquipmentProgressPresentation.Pancake(Machine), showCaption: false);
+            () => EquipmentProgressPresentation.Pancake(Machine));
         EquipmentProgressView.Attach(_fryerPanel, "FryerCookingProgress", new Rect2(
                 new Vector2(196, 767) + TianjinWorkbenchLayout.FryerDisplayOffset, new Vector2(240, 42)),
             () => EquipmentProgressPresentation.Fryer(FryerMachine), showCaption: false).ZIndex = 3;

@@ -16,7 +16,7 @@ public partial class JourneyTransitionSelfTest
         foreach (string destination in new[] { "Help", "Settings" })
         {
             _home.GetNode<Button>("Canvas/Modal/ModalUtilities/" + destination).EmitSignal(BaseButton.SignalName.Pressed);
-            CheckEffect(JourneyTransition.Effect.SpreadOpen, destination + " retains book motion");
+            CheckEffect(JourneyTransition.Effect.BookPage, destination + " retains book motion");
             foreach (float progress in new[] { 0f, .25f, .5f, .9f, .99f })
             {
                 await Sample($"utility-{destination}-{progress:0.00}", progress);
@@ -33,6 +33,21 @@ public partial class JourneyTransitionSelfTest
         await Complete();
         Check(!_home.ModalOpen && !_motion.Active, "closing restores home navigation");
         await Capture("utility-home-after");
+        FindButton("Help").EmitSignal(BaseButton.SignalName.Pressed);
+        await Complete();
+        _home.PresentCity(ProjectCake.Data.StableIds.Cities.Tianjin, fromHome: true);
+        CheckEffect(JourneyTransition.Effect.BookPage, "utility book to journey book turns once");
+        await Complete();
+        _home.PresentHome(); await Complete();
+        _home.PresentCity(ProjectCake.Data.StableIds.Cities.Tianjin);
+        await Complete();
+        FindButton("Settings").EmitSignal(BaseButton.SignalName.Pressed);
+        CheckEffect(JourneyTransition.Effect.BookPage, "chapter to settings turns once");
+        await Complete();
+        GetViewport().PushInput(new InputEventKey { Keycode = Key.Escape, Pressed = true }, true);
+        CheckEffect(JourneyTransition.Effect.BookPage, "settings returns to chapter with one turn");
+        await Complete();
+        Check(!_home.ModalOpen && !_motion.Active, "chapter return releases transition");
     }
 
     private void CheckBackdropPixels(Image expected, Image actual, string state)

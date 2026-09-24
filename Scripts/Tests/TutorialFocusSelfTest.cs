@@ -448,17 +448,12 @@ public partial class TutorialFocusSelfTest : Node
         Drag(view, view.PanCenter, view.PanCenter - new Vector2(0, 60)); Step(.8); focus.Refresh();
         Check(save.Data.Wuhan.LearnedWorkbenchActions.Contains("doupi:flip") && focus.CurrentAction == "doupi:filling", "flip succeeds then targets filling"); await Shot("wuhan-doupi-filling");
         Drag(view, view.FillingCenter, view.PanCenter); Step(.5); Step(catalog.DoupiGriddlesByLevel[1].SecondStageReadySeconds + .1); focus.Refresh();
-        Check(focus.CurrentAction == "doupi:cut", "cooked doupi targets knife"); await Shot("wuhan-knife");
-        Click(view, view.KnifeCenter); focus.Refresh(); Check(view.IsKnifeHeld && focus.CurrentText.Contains("横划"), "held knife targets pan"); await Shot("wuhan-held-knife");
-        view.CancelInput(); Check(!save.Data.Wuhan.LearnedWorkbenchActions.Contains("doupi:cut"), "picking up then cancelling knife is not mastery");
-        foreach (bool horizontal in new[] { true, false })
-        {
-            if (!view.IsKnifeHeld) Click(view, view.KnifeCenter);
-            Drag(view, horizontal ? view.PanPoint(.05f, .5f) : view.PanPoint(.5f, .05f), horizontal ? view.PanPoint(.95f, .5f) : view.PanPoint(.5f, .95f));
-            Step(.4);
-        }
-        Step(.6); focus.Refresh();
-        Check(save.Data.Wuhan.LearnedWorkbenchActions.Contains("doupi:cut") && screen.DoupiStock.Count == 8, "complete cut gesture teaches and transfers eight pieces"); await Shot("wuhan-doupi-ready");
+        Check(focus.CurrentAction == "doupi:cut" && focus.CurrentText.Contains("长按"), "cooked doupi targets the long hold"); await Shot("wuhan-cut-hold");
+        Button(view, view.PanCenter, true); Step(.44); Button(view, view.PanCenter, false);
+        Check(!save.Data.Wuhan.LearnedWorkbenchActions.Contains("doupi:cut"), "short hold is not mastery");
+        Button(view, view.PanCenter, true); Step(.45); Button(view, view.PanCenter, false);
+        Step(.8); focus.Refresh();
+        Check(save.Data.Wuhan.LearnedWorkbenchActions.Contains("doupi:cut") && screen.DoupiStock.Count == 8, "long hold teaches and transfers eight pieces"); await Shot("wuhan-doupi-ready");
         controller.AbandonDay();
         Check(screen.Initialize(catalog, save, controller, 1), "Wuhan replay initializes");
         screen.ForceDemoTutorial = true; screen.BeginDay(); Step(.5); focus.Refresh();

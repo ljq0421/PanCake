@@ -162,7 +162,7 @@ public partial class BusinessDetailsView : Control
     internal void SelectPage(bool details, bool animate = true)
     {
         bool changed = IsVisibleInTree() && DetailVisible != details;
-        if (changed && animate) PlayBookSpread();
+        if (changed && animate) PlayBookPage();
         FinishAnimation(); _summary.Visible = !details; _details.Visible = details;
         if (changed) PageChanged?.Invoke();
         if (UsesBookArt) PaintBookPaper();

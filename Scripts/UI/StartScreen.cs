@@ -126,12 +126,15 @@ public partial class StartScreen : Control
         {
             bool openingBook = IsBookPage(page), closingBook = IsBookPage(Page);
             paperTransition = openingBook || !closingBook;
-            JourneyTransition.For(this).Play(openingBook ? JourneyTransition.Effect.SpreadOpen
+            JourneyTransition.For(this).Play(openingBook && (closingBook || _bookHandoffPending) ? JourneyTransition.Effect.BookPage
+                : openingBook ? JourneyTransition.Effect.SpreadOpen
                 : closingBook ? JourneyTransition.Effect.SpreadClose : JourneyTransition.Effect.Page,
                 reverse: page == JourneyPage.Home,
                 bounds: openingBook || closingBook ? new Rect2(_canvas.GetGlobalTransformWithCanvas() * BookBounds.Position, BookBounds.Size * _canvas.Scale) : null,
                 dimBackdrop: false);
         }
+        // Reconciliation may synchronously refresh Home before the target book renders.
+        if (IsBookPage(page)) _bookHandoffPending = false;
         _hasPresentedPage = true; _presentedCity = _city;
         KillAnimations(); Clear(_body); if (!_homeOverlayOpen) _buttons.Clear(); _audioButton = null;
         if (paperTransition) OpeningSound(OpeningCue.Paper);

@@ -77,12 +77,9 @@ public partial class TianjinDirectFoodCapture : Node
             _caption.AddThemeFontSizeOverride("font_size", 26); panel.AddChild(_caption);
             _pointer = new CapturePointer(); overlay.AddChild(_pointer);
             _caption.Text = "天津煎饼 · 实际操作演示\n光圈表示鼠标位置，实心表示按住左键";
-            Move(Food(.94f)); await Wait(100);
-            _caption.Text = "① 翻面：按住饼边，向内短拖\n距离不足时松手，饼皮回落";
-            Press(true); await Travel(Food(.86f), 35); await Wait(18); Press(false); await Wait(65);
-            await Travel(Food(.94f), 25); Press(true); await Travel(Food(.62f), 55); await Wait(20);
-            _caption.Text = "达到翻面距离后松手\n铲子托起，软饼翻转落回";
-            Press(false); await Wait(80); Require(PancakeState.SideBReady);
+            Move(Food(.5f)); await Wait(100);
+            _caption.Text = "① 翻面：点击饼皮\n铲子托起，软饼翻转落回";
+            Press(true); Press(false); await Wait(80); Require(PancakeState.SideBReady);
             if (OS.GetCmdlineUserArgs().Contains("--flip-only"))
             {
                 _caption.Text = "新版翻面：饼边先起，中间自然下垂\n落锅时中间先接触，边缘随后回落";

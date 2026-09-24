@@ -241,6 +241,13 @@ public partial class BusinessBookSelfTest : Node
             view.SelectPage(false,false);view.SelectPage(true,false);await Frames();
             Check(scroll.ScrollVertical==offset&&scroll.GetChild<VBoxContainer>(0).GetChild<Control>(0).Name=="OrderRow5",city+" page return preserves filter and scroll");
             view.SelectFilter(BookFilter.All);await Frames();Check(scroll.ScrollVertical==0,city+" filter resets scroll");
+            var backCenter = previous.GetGlobalRect().GetCenter();
+            Check(previous.GetGlobalRect().End.X <= scroll.GetGlobalRect().Position.X,
+                city+" previous page arrow stays outside the order scroller");
+            GetViewport().PushInput(new InputEventMouseMotion { Position=backCenter, GlobalPosition=backCenter },true);await Frames();
+            Check(GetViewport().GuiGetHoveredControl()==previous,city+" previous page arrow receives pointer input");
+            Click(previous);view.FinishAnimation();await Frames();
+            Check(!view.DetailVisible,city+" previous page arrow returns to summary by mouse");
         }
         foreach(string city in new[]{"tianjin","wuhan","xian","guangzhou","yangzhou"})
         {

@@ -53,7 +53,7 @@ public partial class StageOneSelfTest : Node
             }
         }
 
-        CheckStove(catalog, 1, true, 2.2f, 1.1f, 4.2f, 5.2f, 3.3f, 0);
+        CheckStove(catalog, 1, true, 2.2f, 1.1f, 6.2f, 7.2f, 6.1f, 0);
         CheckStove(catalog, 2, false, 2.2f, 1.1f, 0, 0, 0, 120);
         CheckStove(catalog, 3, false, 1.65f, 0.8f, 0, 0, 0, 300);
 

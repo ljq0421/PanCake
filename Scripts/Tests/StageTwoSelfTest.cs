@@ -193,10 +193,10 @@ public partial class StageTwoSelfTest : Node
         Check(!machine.TryExecute(PancakeCommand.Flip).Success, "第一面未熟拒绝翻面");
         machine.Tick(2.2);
         Check(machine.Runtime.State == PancakeState.SideAReady && machine.Runtime.Quality == PancakeQuality.Perfect, "Lv1 第一面 2.2 秒进入熟成");
-        machine.Tick(2.0);
-        Check(machine.Runtime.State == PancakeState.SideAOverdone && machine.Runtime.Quality == PancakeQuality.Overdone, "Lv1 第一面 4.2 秒进入偏焦");
+        machine.Tick(4.0);
+        Check(machine.Runtime.State == PancakeState.SideAOverdone && machine.Runtime.Quality == PancakeQuality.Overdone, "Lv1 第一面 6.2 秒进入偏焦");
         machine.Tick(1.0);
-        Check(machine.Runtime.State == PancakeState.Burnt && machine.Runtime.Quality == PancakeQuality.Burnt, "Lv1 第一面 5.2 秒进入焦糊");
+        Check(machine.Runtime.State == PancakeState.Burnt && machine.Runtime.Quality == PancakeQuality.Burnt, "Lv1 第一面 7.2 秒进入焦糊");
         Check(!machine.TryExecute(PancakeCommand.AddIngredient, StableIds.Ingredients.Crispy).Success, "焦糊后拒绝继续加料");
 
         var sideB = new PancakeStateMachine(levelOne);
@@ -205,8 +205,10 @@ public partial class StageTwoSelfTest : Node
         sideB.TryExecute(PancakeCommand.Flip);
         sideB.Tick(1.1);
         Check(sideB.Runtime.State == PancakeState.SideBReady, "第二面 1.1 秒进入熟成");
-        sideB.Tick(2.2);
-        Check(sideB.Runtime.State == PancakeState.Burnt, "第二面 3.3 秒直接焦糊，无未定义偏焦态");
+        sideB.Tick(4.99);
+        Check(sideB.Runtime.State == PancakeState.SideBReady, "第二面熟后不足5秒仍可操作");
+        sideB.Tick(.01);
+        Check(sideB.Runtime.State == PancakeState.Burnt, "第二面 6.1 秒直接焦糊，无未定义偏焦态");
 
         foreach (int level in new[] { 2, 3 })
         {
@@ -252,7 +254,7 @@ public partial class StageTwoSelfTest : Node
         catalog.TryGetStove(1, out PancakeStoveLevelData burnable);
         var overdoneMachine = new PancakeStateMachine(burnable);
         AdvanceToSideACooking(overdoneMachine);
-        overdoneMachine.Tick(4.2);
+        overdoneMachine.Tick(burnable.SideAOverdoneSeconds);
         overdoneMachine.TryExecute(PancakeCommand.Flip);
         overdoneMachine.Tick(1.1);
         FinishFromSideBReady(overdoneMachine, Array.Empty<string>());

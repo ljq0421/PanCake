@@ -6,19 +6,16 @@ namespace ProjectCake.Gameplay;
 
 public partial class PancakeWorkstation
 {
-    private enum DirectGesture { None, Flip, Bag }
+    private enum DirectGesture { None, Bag }
     private DirectGesture _directGesture;
     private long _directGeneration;
-    private Vector2 _directOrigin, _directInward, _bagGrabOffset;
-    private float _flipDragAmount;
-    private const float FlipCommitAmount = .65f;
-    private const float FlipDragDistance = 55;
-    private bool IsFlipGrabPoint(Vector2 local)
+    private Vector2 _bagGrabOffset;
+    private bool IsFlipClickPoint(Vector2 local)
     {
         Rect2 bounds = _canvas.GetSurfaceRect();
         Vector2 unit = (local - bounds.GetCenter()) / (bounds.Size * .5f);
-        // Allow a little space outside the painted rim, and a wider inner grip.
-        return unit.LengthSquared() is >= .16f and <= 1.44f;
+        // Include the whole pancake and retain the forgiving painted-rim padding.
+        return unit.LengthSquared() <= 1.44f;
     }
     private TianjinBagVisual? _directBag;
     internal bool IsDirectDragging => _directGesture != DirectGesture.None;
@@ -50,10 +47,7 @@ public partial class PancakeWorkstation
         {
             if (!IsDirectDragging) return false;
             MoveDirectGesture(mouse.Position);
-            bool success = _directGesture == DirectGesture.Flip
-                ? _flipDragAmount >= FlipCommitAmount
-                : _directBag!.OverFood;
-            ReleaseDirectGesture(success);
+            ReleaseDirectGesture(_directBag!.OverFood);
             return true;
         }
         if (!CanDirectGesture || DirectBusy) return false;
@@ -62,13 +56,14 @@ public partial class PancakeWorkstation
             Rect2 bounds = _canvas.GetSurfaceRect();
             Vector2 local = _canvas.GetGlobalTransformWithCanvas().AffineInverse() * mouse.Position;
             Vector2 unit = (local - bounds.GetCenter()) / (bounds.Size * .5f);
-            if (!IsFlipGrabPoint(local)) return false;
-            _directGesture = DirectGesture.Flip;
-            _directOrigin = local;
-            _directInward = (bounds.GetCenter() - local).Normalized();
+            if (!IsFlipClickPoint(local)) return false;
             _canvas.FlipEdge = unit.X < 0 ? -1 : 1;
-            _flipDragAmount = 0;
-            _canvas.FlipPickup = ReducedMotion ? 0 : .08f;
+            _stroke.CancelStroke();
+            _loopMotion?.Reset();
+            _canvas.ResetIngredientMotion();
+            Execute(PancakeCommand.Flip);
+            RenderLive();
+            return true;
         }
         else if (Machine.Runtime.State == PancakeState.Folded)
         {
@@ -92,14 +87,7 @@ public partial class PancakeWorkstation
 
     private void MoveDirectGesture(Vector2 point)
     {
-        if (_directGesture == DirectGesture.Flip)
-        {
-            Vector2 local = _canvas.GetGlobalTransformWithCanvas().AffineInverse() * point;
-            _flipDragAmount = Mathf.Clamp((local - _directOrigin).Dot(_directInward) / FlipDragDistance, 0, 1);
-            _canvas.FlipPickup = ReducedMotion ? 0 : .08f + .92f * _flipDragAmount;
-            _canvas.QueueRedraw();
-        }
-        else _directBag!.MoveBag(DirectLocal(point) + _bagGrabOffset, ReducedMotion);
+        _directBag!.MoveBag(DirectLocal(point) + _bagGrabOffset, ReducedMotion);
         RenderLive();
     }
 
@@ -107,16 +95,7 @@ public partial class PancakeWorkstation
     {
         DirectGesture gesture = _directGesture;
         _directGesture = DirectGesture.None;
-        if (gesture == DirectGesture.Flip)
-        {
-            if (success && CanDirectGesture)
-            {
-                _canvas.FlipPickup = 0;
-                if (Execute(PancakeCommand.Flip) && !ReducedMotion) _canvas.SetFlipProgress(.2f);
-            }
-            // An incomplete lift relaxes in TickDirectGesture without committing.
-        }
-        else if (gesture == DirectGesture.Bag)
+        if (gesture == DirectGesture.Bag)
         {
             _directBag!.Release(success, ReducedMotion);
             if (success)
@@ -142,7 +121,6 @@ public partial class PancakeWorkstation
         if (!IsTianjinWorkbench) return;
         if ((IsDirectDragging || _directBag?.Animating == true || _canvas.FlipPickup > 0)
             && (!CanInteract || !IsVisibleInTree() || Machine.Runtime.Generation != _directGeneration
-                || (_directGesture == DirectGesture.Flip && Machine.Runtime.State is not (PancakeState.SideAReady or PancakeState.SideAOverdone))
                 || (_directGesture == DirectGesture.Bag && Machine.Runtime.State != PancakeState.Folded)
                 || (_directBag?.Animating == true && Machine.Runtime.State is not (PancakeState.Folded or PancakeState.Bagged))))
             CancelDirectGesture();
@@ -159,12 +137,6 @@ public partial class PancakeWorkstation
     {
         if (!IsTianjinWorkbench) return;
         SyncDirectGesture();
-        if (ReducedMotion && _directGesture == DirectGesture.Flip) { _canvas.FlipPickup = 0; _canvas.QueueRedraw(); }
-        if (_directGesture != DirectGesture.Flip && _canvas.FlipPickup > 0)
-        {
-            _canvas.FlipPickup = ReducedMotion ? 0 : Mathf.MoveToward(_canvas.FlipPickup, 0, (float)delta * 8);
-            _canvas.QueueRedraw();
-        }
         if (_directBag?.Tick((float)delta, ReducedMotion) == true)
         {
             _canvas.DirectFoodHidden = false;
@@ -175,7 +147,6 @@ public partial class PancakeWorkstation
     private void CancelDirectGesture()
     {
         _directGesture = DirectGesture.None;
-        _flipDragAmount = 0;
         _directBag?.Cancel();
         if (_canvas is not null) { _canvas.FlipPickup = 0; _canvas.DirectFoodHidden = false; _canvas.QueueRedraw(); }
         if (_initialized && IsTianjinWorkbench) _finished.Visible = HasFinishedPancake && !IsTransferringBag;

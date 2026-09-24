@@ -87,7 +87,7 @@ public partial class JourneyTransitionSelfTest : Node
             CheckEffect(JourneyTransition.Effect.SpreadOpen, "help uses soft spread");
             await Sample("help-opening", .4f); _motion.Finish(); await Frames();
             FindButton("MusicCredits").EmitSignal(BaseButton.SignalName.Pressed);
-            CheckEffect(JourneyTransition.Effect.SpreadOpen, "music credits uses soft spread");
+            CheckEffect(JourneyTransition.Effect.BookPage, "music credits uses page turn");
             await Complete(); Check(!_motion.Active, "paper turn finishes automatically");
             GetViewport().PushInput(new InputEventKey { Keycode = Key.Escape, Pressed = true }, true);
             await Complete(); Check(!_home.ModalOpen && !_motion.Active, "help closes and releases overlay");
@@ -184,7 +184,8 @@ public partial class JourneyTransitionSelfTest : Node
     {
         if (DisplayServer.GetName() == "headless") return;
         var material = (ShaderMaterial)_motion.GetNode<TextureRect>("TransitionFrame").Material;
-        Check(_motion.Active && material.GetShaderParameter("effect").AsInt32() == (int)expected, message);
+        Check(_motion.Active && material.GetShaderParameter("effect").AsInt32() == (int)expected,
+            message + $" (expected={expected}, actual={(JourneyTransition.Effect)material.GetShaderParameter("effect").AsInt32()}, active={_motion.Active})");
     }
     private async Task HomeBookChecks(SaveService save)
     {
@@ -204,11 +205,12 @@ public partial class JourneyTransitionSelfTest : Node
                 if (_home.Page != entry.Item2)
                 {
                     FindButton(entry.Item1).EmitSignal(BaseButton.SignalName.Pressed);
-                    CheckEffect(JourneyTransition.Effect.SpreadOpen, city.Id + " unfolds " + entry.Item2);
+                    CheckEffect(JourneyTransition.Effect.BookPage, city.Id + " turns " + entry.Item2);
+                    if (city.Id == StableIds.Cities.Tianjin) { await Sample("home-page-" + entry.Item2, .5f); _motion.Finish(); }
                     await Complete();
                 }
                 Check(_home.Page == entry.Item2 && _home.SelectedCityId == city.Id, city.Id + " tab reaches " + entry.Item2);
-                var book = _home.GetNode<TextureRect>("Canvas/Page/SharedBook");
+                var book = _home.Descendants<TextureRect>().Single(b => b.Name == "SharedBook" && b.IsVisibleInTree());
                 Check(book.Material is ShaderMaterial homeMaterial
                     && homeMaterial.Shader.ResourcePath == "res://resource/shaders/settings_book_decor.gdshader",
                     city.Id + " home book uses settings background " + entry.Item2);
@@ -218,7 +220,7 @@ public partial class JourneyTransitionSelfTest : Node
             }
             _home.PresentCity(city.Id); await Complete();
             if (city.Id is StableIds.Cities.Tianjin or StableIds.Cities.Wuhan or StableIds.Cities.Xian)
-                Check(_home.GetNode<TextureRect>("Canvas/Page/SharedBook").Material is ShaderMaterial, "city chapter retains its palette " + city.Id);
+                Check(_home.Descendants<TextureRect>().Single(b => b.Name == "SharedBook" && b.IsVisibleInTree()).Material is ShaderMaterial, "city chapter retains its palette " + city.Id);
         }
         _home.PresentHome(); await Complete();
         foreach (string entry in new[] { "BreakfastRecords" })
@@ -244,17 +246,18 @@ public partial class JourneyTransitionSelfTest : Node
             CheckEffect(JourneyTransition.Effect.SpreadOpen, city + " business book unfolds");
             await Complete(); book.FinishAnimation(); await Frames();
             book.SelectPage(true);
-            CheckEffect(JourneyTransition.Effect.SpreadOpen, city + " detail page unfolds");
+            CheckEffect(JourneyTransition.Effect.BookPage, city + " detail page turns");
+            if (city == "tianjin") { await Sample("business-page-turn", .5f); _motion.Finish(); }
             await Complete();
             book.SelectPage(false);
-            CheckEffect(JourneyTransition.Effect.SpreadOpen, city + " summary unfolds");
+            CheckEffect(JourneyTransition.Effect.BookPage, city + " summary turns");
             await Complete();
             book.Descendants<Button>().Single(b => b.Name == "UpgradeSticker" || b.Name == "OpenBookUpgrades").EmitSignal(BaseButton.SignalName.Pressed);
-            CheckEffect(JourneyTransition.Effect.SpreadOpen, city + " upgrades unfold");
+            CheckEffect(JourneyTransition.Effect.BookPage, city + " upgrades turn");
             if (city == "yangzhou") { await Sample("shared-yangzhou-upgrades-fold", .5f); _motion.Finish(); }
             await Complete();
             GetViewport().PushInput(new InputEventKey { Keycode = Key.Escape, Pressed = true }, true);
-            CheckEffect(JourneyTransition.Effect.SpreadOpen, city + " Escape return from upgrades unfolds");
+            CheckEffect(JourneyTransition.Effect.BookPage, city + " Escape return from upgrades turns");
             await Complete();
             book.Hide();
             CheckEffect(JourneyTransition.Effect.SpreadClose, city + " business book closes");

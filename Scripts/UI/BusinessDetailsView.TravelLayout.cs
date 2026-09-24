@@ -33,11 +33,13 @@ public partial class BusinessDetailsView
         closeFocus.BorderColor = CityTheme.Primary;
         closeFocus.ExpandMarginLeft = closeFocus.ExpandMarginRight = closeFocus.ExpandMarginTop = closeFocus.ExpandMarginBottom = 3;
         CloseButton.AddThemeStyleboxOverride("focus", closeFocus);
-        // Keep the return affordance within the left paper's safe area instead of
-        // letting it float in the book's outer margin.
-        SetButtonBounds(_previousPage, new(ArtPageLeft, 431, 72, 72));
+        // Keep the return affordance on the book's left outer edge, clear of the
+        // order scroller.  It must also draw and receive input above page content.
+        SetButtonBounds(_previousPage, new(145, 502, 72, 72));
+        _previousPage.ZIndex = 1;
         // Leave room for hover growth inside the paper after the content's 1.1x scale.
         SetButtonBounds(_nextPage, new(1450, 502, 72, 72));
+        _nextPage.ZIndex = 1;
         for (int i = 0; i < _filters.Count; i++)
         {
             SetButtonBounds(_filters[i], new(ArtPageRight + i * 142, -24, 134, 52));

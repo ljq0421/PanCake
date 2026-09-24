@@ -43,8 +43,8 @@ public partial class StageFourSelfTest
                 && !((Control)station.FindChild("FryerStatusTag", true, false)).Visible
                 && !((Control)station.FindChild("DirectDeliveryHint", true, false)).Visible,
                 $"{phase}: 工作台状态底板和出餐说明隐藏");
-            Check(station.Descendants<EquipmentProgressView>().All(view => !view.ShowCaption),
-                $"{phase}: 制作进度条不绘制文字");
+            Check(station.Descendants<EquipmentProgressView>().All(view => view.ShowCaption == (view.Name == "PancakeCookingProgress")),
+                $"{phase}: 仅煎饼火候条显示操作及焦糊提示");
             Check(station.Descendants<Control>().All(control => string.IsNullOrEmpty(control.TooltipText)),
                 $"{phase}: 工作台无悬停文字");
             Check(station.Descendants<IngredientStockSlotView>().All(slot => !slot.StockLabel.Visible

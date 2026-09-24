@@ -32,7 +32,6 @@ public partial class WuhanWorkstationView
         {
             "raw" => "生面无限供应，拖进空漏勺",
             "bowl" => "芝麻酱、辣油和葱花在拌面前可任意顺序加入；划动拌匀后可加牛肉，再拖给顾客",
-            "knife" => "制作豆皮时可提前拿刀，煎好后在锅面横划、竖划",
             "stock" => "豆皮拖给顾客，按订单所需数量出餐",
             "pan" when _doupi is null => "豆皮锅 · Day 4 解锁",
             "pan" when _doupi.State == DoupiState.Burnt => "豆皮焦糊；长按右键拖入底部垃圾桶",
@@ -41,7 +40,7 @@ public partial class WuhanWorkstationView
             "filling" => "翻面后拖馅入锅，松手自动铺匀",
             "pan" when _doupi?.State == DoupiState.Batter => "正在煎制，请加蛋液",
             "pan" when _doupi?.State == DoupiState.Flipped => "正在煎制，请加三鲜馅",
-            "pan" when _doupi?.State is DoupiState.ReadyToCut or DoupiState.Cutting or DoupiState.Overbrowned => IsKnifeHeld ? "横一刀、竖一刀；竖划同时切三条，第一刀后收火" : "先点击右下小刀取刀，再在锅面横划、竖划",
+            "pan" when _doupi?.State is DoupiState.ReadyToCut or DoupiState.Overbrowned => "长按锅内豆皮 0.45 秒，自动横切、竖切。",
             "pan" when _doupi?.State == DoupiState.ReadyToFlip => "按住锅面向上划动，松手翻面",
             "pan" when _doupi?.State == DoupiState.Empty => "从浆碗拖一勺浆到空锅",
             "pan" => "正在煎制；观察火候提示",

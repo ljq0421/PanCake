@@ -194,13 +194,15 @@ public partial class WuhanWorkstationView
         float p = motion?.Progress ?? 1;
         if (motion?.Kind == "discard")
             FilledSurface(PanCorners, 1, 1 - Smooth(p), quality: DoupiQuality.Burnt);
+        bool cuttingMotion = motion?.Kind is "cut" or "auto_cut";
         if (state == DoupiState.Cut)
         {
             // Keep the final cutting stroke on the intact surface until it finishes.
-            if (motion?.Kind == "cut" && p < .6f) FilledSurface(PanCorners, 1, quality: _doupi.Quality);
-            else if (motion?.Kind == "cut")
+            float splitAt = motion?.Kind == "auto_cut" ? .82f : .6f;
+            if (cuttingMotion && p < splitAt) FilledSurface(PanCorners, 1, quality: _doupi.Quality);
+            else if (cuttingMotion)
                 for (int i = _doupi.FirstRemainingPiece; i < _doupi.FirstRemainingPiece + _doupi.RemainingPieces; i++)
-                    DrawPiece(i, SeparatedPanPiece(i, Phase(p, .6f, 1)), _doupi.Quality);
+                    DrawPiece(i, SeparatedPanPiece(i, Phase(p, splitAt, 1)), _doupi.Quality);
             else for (int i = _doupi.FirstRemainingPiece; i < _doupi.FirstRemainingPiece + _doupi.RemainingPieces; i++)
                 DrawPiece(i, PanPiece(i), _doupi.Quality);
         }
@@ -278,20 +280,16 @@ public partial class WuhanWorkstationView
         if (state != DoupiState.Empty)
         {
             foreach (DoupiCutLine line in _doupi.CutLines)
-                if (state != DoupiState.Cut || motion?.Kind == "cut")
+                if (state != DoupiState.Cut || cuttingMotion)
                 {
                     float reveal = 1;
-                    if (!ReducedMotion && motion?.Kind == "cut" && motion.Line != DoupiCutLine.Horizontal
+                    if (!ReducedMotion && motion?.Kind == "auto_cut")
+                        reveal = line == DoupiCutLine.Horizontal ? Phase(p, .04f, .34f)
+                            : Phase(p, .46f + (int)line * .05f, .68f + (int)line * .05f);
+                    else if (!ReducedMotion && motion?.Kind == "cut" && motion.Line != DoupiCutLine.Horizontal
                         && line != DoupiCutLine.Horizontal && line != motion.Line)
                         reveal = Phase(p, .08f + (int)line * .08f, .38f + (int)line * .08f);
                     DrawCut((int)line, reveal);
-                }
-            if (IsKnifeHeld && state is (DoupiState.ReadyToCut or DoupiState.Overbrowned or DoupiState.Cutting))
-                foreach (DoupiCutLine line in Enum.GetValues<DoupiCutLine>())
-                {
-                    if (_doupi.CutLines.Contains(line)) continue;
-                    var (from, to) = CutLine((int)line);
-                    DrawDashedLine(from, to, new Color(1, .96f, .8f, .32f), 1.5f, 9, true);
                 }
             if (_doupi.IsHeating) Steam(PanCenter + new Vector2(0, -30), .7f);
             if (motion?.Kind == "flip" && !ReducedMotion && p > .78f)
@@ -404,13 +402,15 @@ public partial class WuhanWorkstationView
         float p = m.Progress;
         if (ReducedMotion) return;
         float toolAlpha = Phase(p, 0, .12f) * (1 - Phase(p, .85f, 1));
-        if (m.Kind is "flip" or "flip_return" or "cut")
+        if (m.Kind is "flip" or "flip_return" or "cut" or "auto_cut")
         {
             Vector2 center;
-            if (m.Kind == "cut")
+            if (m.Kind is "cut" or "auto_cut")
             {
-                var (from, to) = CutLine((int)m.Line);
-                center = (m.Origin ?? to) - new Vector2(0, 10 * Smooth(p));
+                DoupiCutLine line = m.Kind == "cut" || p < .45f ? DoupiCutLine.Horizontal : DoupiCutLine.Center;
+                var (from, to) = CutLine((int)line);
+                float stroke = m.Kind == "cut" ? p : line == DoupiCutLine.Horizontal ? Phase(p, .04f, .34f) : Phase(p, .46f, .72f);
+                center = from.Lerp(to, Smooth(stroke)) - new Vector2(0, 10 * Smooth(stroke));
             }
             else
             {

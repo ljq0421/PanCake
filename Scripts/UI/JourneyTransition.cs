@@ -6,7 +6,7 @@ namespace ProjectCake.UI;
 /// <summary>One transient, captured frame; navigation and save callbacks remain synchronous.</summary>
 public partial class JourneyTransition : CanvasLayer
 {
-    public enum Effect { Page, Curtain, OpenBook, CloseBook, TurnBookOpen, TurnBookClose, SpreadOpen, SpreadClose }
+    public enum Effect { Page, Curtain, OpenBook, CloseBook, TurnBookOpen, TurnBookClose, SpreadOpen, SpreadClose, BookPage }
     private TextureRect _frame = null!;
     private ShaderMaterial _material = null!;
     private ImageTexture? _settingsMask;
@@ -75,7 +75,7 @@ public partial class JourneyTransition : CanvasLayer
         _day = day ?? FindActiveDay(GetTree().Root);
         if (_day is not null) { _day.SetPauseReason("journey-transition", true); _day.DayPrepared += KeepPause; }
         double duration = effect == Effect.Curtain ? .72
-            : effect is Effect.Page or Effect.TurnBookOpen or Effect.TurnBookClose or Effect.SpreadOpen or Effect.SpreadClose ? .52 : .32;
+            : effect is Effect.Page or Effect.BookPage or Effect.TurnBookOpen or Effect.TurnBookClose or Effect.SpreadOpen or Effect.SpreadClose ? .52 : .32;
         _tween = CreateTween();
         _tween.TweenMethod(Callable.From<float>(SetProgress), 0f, 1f, duration)
             .SetTrans(Tween.TransitionType.Sine).SetEase(Tween.EaseType.InOut);

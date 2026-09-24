@@ -79,7 +79,7 @@ public partial class WuhanDayScreen : Control
         BuildBusinessHud();
         Workstation.RaiseRequested = RaiseBasket;
         Workstation.PourRequested = ReservePour;
-        Workstation.CutRequested = CutDoupi;
+        Workstation.AutoCutRequested = CutDoupiAutomatically;
         Workstation.BasketPressed += BasketAction;
         Workstation.IngredientPressed += IngredientAction;
         Workstation.BatterRequested = PourDoupiBatter;
@@ -361,6 +361,13 @@ public partial class WuhanDayScreen : Control
         bool ok = ApplyDoupi(d => d.TryPourBatter(), "空锅才能倒浆；请先处理锅中豆皮。");
         if (ok) GetNode<EquipmentUpgradeCelebration>("UpgradeCelebration").NotifyUse("doupi_griddle");
         return ok;
+    }
+    internal bool CutDoupiAutomatically()
+    {
+        if (!CanInteract || Workstation.Busy("pan") || _doupi is null
+            || !_doupi.TryCut(DoupiCutLine.Horizontal) || !_doupi.TryCut(DoupiCutLine.Center)) return false;
+        LearnTeachingAction("doupi:cut");
+        ClearDoupiFeedback(); Workstation.PlayAutomaticCut(); Feedback("切块完成，将自动补入备餐盘。", false); Render(); return true;
     }
     internal bool AddDoupiEgg() => ApplyDoupi(d => d.TryAddEgg(), "先从浆碗拖浆入锅，再点击蛋液容器。");
     internal bool FlipDoupi() => ApplyDoupi(d => d.TryFlip(), "等面皮定型后，按住锅面向上划。");

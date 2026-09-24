@@ -25,7 +25,11 @@ public partial class StartScreen
             JourneyTransition.For(this).Play(JourneyTransition.Effect.BookPage,
                 bounds: new Rect2(_canvas.GetGlobalTransformWithCanvas() * BookBounds.Position, BookBounds.Size * _canvas.Scale));
         _bookHandoffPending = switchingUtilityBook && kind == "home-overlay";
-        _modal.AddChild(new ColorRect { Size = new(1920, 1080), Color = new Color(.15f, .1f, .06f, .65f) });
+        var backdrop = new ColorRect { Size = new(1920, 1080),
+            Color = new Color(.15f, .1f, .06f, kind == "map-switch" ? .30f : .65f) };
+        if (kind == "map-switch")
+            backdrop.GuiInput += input => { if (input is InputEventMouseButton { Pressed: true }) CloseModal(); };
+        _modal.AddChild(backdrop);
         if (kind == "confirm")
             AddConfirmationPanel(_modal, "Confirmation");
         else if (kind == "developer")

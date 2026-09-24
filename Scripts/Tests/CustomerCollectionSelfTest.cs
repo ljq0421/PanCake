@@ -29,7 +29,8 @@ public partial class CustomerCollectionSelfTest : Node
         {
             bool small = OS.GetCmdlineUserArgs().Contains("--small");
             GetWindow().Size = small ? new(1280, 720) : new(1920, 1080);
-            _dir = ProjectSettings.GlobalizePath("res://.tmp/customer-collection/" + (ExperienceProfile.IsDemo ? "demo-" : "full-") + (small ? "1280" : "1920") + "/" + Guid.NewGuid().ToString("N"));
+            _dir = Path.Combine(Path.GetTempPath(), "project-cake-customer-collection",
+                (ExperienceProfile.IsDemo ? "demo-" : "full-") + (small ? "1280" : "1920"), Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(_dir); _catalog = GetNode<DataCatalog>("/root/DataCatalog");
             var settings = GetNode<JourneySettings>("/root/JourneySettings"); settings.UsePathForTests(Path.Combine(_dir, "settings.cfg")); settings.SetLanguage("zh_CN");
             if (!OS.GetCmdlineUserArgs().Contains("--visual-only"))
@@ -186,6 +187,16 @@ public partial class CustomerCollectionSelfTest : Node
             "direct customer collection entry opens the catalog");
         screen.PresentBreakfastCollection(); await Frames();
         async Task Click(string name) { screen.Descendants<Button>().Single(b => b.Name == name).EmitSignal(Button.SignalName.Pressed); await Frames(); }
+        async Task ClickClose()
+        {
+            while (JourneyTransition.For(screen).Active)
+                await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+            Vector2 point = screen.Descendants<Button>().Single(b => b.Name == "BookClose" && b.IsVisibleInTree()).GetGlobalRect().GetCenter();
+            foreach (bool pressed in new[] { true, false })
+                GetViewport().PushInput(new InputEventMouseButton { Position = point, GlobalPosition = point,
+                    ButtonIndex = MouseButton.Left, Pressed = pressed }, true);
+            await Frames();
+        }
         async Task Capture(string name)
         {
             if (!OS.GetCmdlineUserArgs().Contains("--capture")) return;
@@ -226,10 +237,11 @@ public partial class CustomerCollectionSelfTest : Node
         Check(screen.Descendants<Label>().Single(l => l.Name == "CustomerStory").Text.Contains("再正确接待 2 次"), "anecdote locked below threshold");
         save.Data.CustomerRecords["xiangsheng_performer"].Served = 3; screen.PresentBreakfastCollection(); await Frames(); await Capture("story-unlocked");
         await Click("BreakfastSection"); Check(screen.Descendants<Control>().Any(c => c.Name == "CollectionDetail"), "breakfast section preserved");
-        await Click("CustomerSection");
+        await Capture("breakfast-section-turn");
+        await Click("CustomerSection"); await Capture("customer-section-turn");
         Check(!screen.Descendants<Button>().Any(b => b.Name == "Back"), "collection has no back button");
-        screen._Input(new InputEventKey { Keycode = Key.Escape, Pressed = true }); await Frames();
-        Check(screen.Page == JourneyPage.Home, "Escape returns home"); screen.PresentBreakfastCollection(); await Frames();
+        await ClickClose();
+        Check(screen.Page == JourneyPage.Home, "collection close button returns home by mouse"); screen.PresentBreakfastCollection(); await Frames();
         Check(!screen.Descendants<Control>().Any(c => c.Name == "CustomerDetail") && File.ReadAllText(path) == saved, "reopen defaults to breakfast and browsing never saves");
         await Click("CustomerSection");
         screen._Input(new InputEventKey { Keycode = Key.Escape, Pressed = true }); await Frames();
@@ -238,8 +250,8 @@ public partial class CustomerCollectionSelfTest : Node
         screen.PresentCustomerCollectionOverWorkbench(() => restoredWorkbench = true); await Frames();
         Check(screen.Page == JourneyPage.Collection && !screen.GetNode<Control>("Canvas/Background").Visible,
             "workbench customer collection hides only start screen background");
-        screen._Input(new InputEventKey { Keycode = Key.Escape, Pressed = true }); await Frames();
-        Check(restoredWorkbench && !screen.Visible, "Escape returns workbench customer collection to its source");
+        await ClickClose();
+        Check(restoredWorkbench && !screen.Visible, "collection close button returns workbench to its source by mouse");
         screen.QueueFree(); await Frames();
         if (OS.GetCmdlineUserArgs().Contains("--visual-only")) return;
         InterfaceLessons.MarkAllSeen(GetNode<JourneySettings>("/root/JourneySettings"));

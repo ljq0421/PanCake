@@ -47,7 +47,7 @@ public partial class StartScreen
         {
             var food = city.Foods[i];
             bool featured = i == 0;
-            float x = i == 1 ? 1010 : 1280;
+            float x = i == 1 ? 1010 : 1345;
             var icon = new BookFoodIcon { Name = "BreakfastFood" + i,
                 Position = featured ? new(1025, 389) : new(x + 7, 629),
                 Size = featured ? new(172, 167) : new(118, 112),

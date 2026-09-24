@@ -167,13 +167,11 @@ public partial class StartScreen
     private void RenderNewJourneyMap()
     {
         Begin(JourneyPage.NewJourneyMap);
-        Chrome(RenderHome, "新的旅程");
+        Chrome(RenderHome, showBack: false);
         BuildOpeningMap();
         _openingMap!.Position = new(247, 130); _openingMap.Scale = new(1.32f, 1.32f);
         _openingHalo!.Hide();
         var node = Button(_openingMap, "FirstStationTianjin", "", new(727, 150, 180, 165), () => RenderTianjinIntroduction(), bare: true);
-        Text(_body, "OpeningHint", "点击天津，翻开早餐故事", new(480, 940, 960, 50), 30, true)
-            .AddThemeColorOverride("font_color", StartScreenTheme.Cream);
         Focus("FirstStationTianjin");
     }
 

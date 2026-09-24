@@ -36,6 +36,10 @@ public partial class CityPagesSelfTest
             "first journey starts only after confirming business");
         _main.OpenCity(StableIds.Cities.Tianjin); _screen.PresentMap(); await Frames();
         Check(Find<Button>("Node0").HasFocus(), "map focuses current city");
+        Check(_screen.FindChild("MapCurrentProgress", true, false) is null
+            && _screen.FindChild("WuhanPreparation", true, false) is null
+            && _screen.FindChild("ContinueTianjin", true, false) is null,
+            "map omits the lower-left text and continue button");
         CheckMapLayout(); await CaptureMap(prefix + "initial");
         await CheckMapHover(prefix + "initial");
         string persisted = File.ReadAllText(_path);

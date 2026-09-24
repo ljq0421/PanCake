@@ -105,6 +105,37 @@ public partial class StartScreenSelfTest : Node
             }
             if (args.Contains("--journey-preview")) { await JourneyPreview(); GD.Print($"JOURNEY_PREVIEW_OK {_passed}"); GetTree().Quit(); return; }
             if (args.Contains("--panel-preview")) { await PanelPreview(); GD.Print($"PANEL_PREVIEW_OK {_passed}"); GetTree().Quit(); return; }
+            if (args.Contains("--journey-switch-preview"))
+            {
+                string root = Path.Combine(directory, "journey-switch-preview");
+                _save.UseSlotsForTests(root);
+                for (int id = 1; id <= 3; id++)
+                {
+                    Check(_save.TryCreateSlot(id, out _), "create preview journey " + id);
+                    _save.Data.Coins = id * 100;
+                    _save.Data.Tianjin.HighestUnlockedDay = id;
+                    if (id == 2)
+                    {
+                        _save.Data.UnlockedCityIds.Add(StableIds.Cities.Wuhan);
+                        _save.Data.LastVisitedCityId = StableIds.Cities.Wuhan;
+                        _save.Data.Wuhan.HighestUnlockedDay = id;
+                    }
+                    Check(_save.TrySave(out _), "save preview journey " + id);
+                }
+                _screen.PresentMap(); await Frames();
+                await Capture("journey-switch-map");
+                await Click(Find<Button>("MapSwitchJourney"));
+                Check(_screen.ModalOpen && Enumerable.Range(1, 3).All(id => Find<Button>("MapSwitchSlot" + id).Text.Contains("金币" + id * 100))
+                    && _screen.FindChild("MapSwitchSlot4", true, false) is null
+                    && Find<Button>("MapSwitchArchives") is not null,
+                    "dropdown lists exactly three journeys and archive access");
+                await Capture("journey-switch-dropdown");
+                await Click(Find<Button>("MapSwitchSlot1"));
+                Check(_save.ActiveSlotId == 1 && _screen.Page == JourneyPage.Map
+                    && Find<Label>("MapJourneyTitle").Text == "天津·第1天·金币100",
+                    "dropdown selection switches the current journey and refreshes the hanger");
+                GD.Print($"JOURNEY_SWITCH_PREVIEW_OK {_passed}"); GetTree().Quit(); return;
+            }
             if (args.Contains("--focus-gallery")) { await FocusGallery(); GD.Print("BUTTON_FOCUS_GALLERY_OK"); GetTree().Quit(); return; }
             if (args.Contains("--home-gallery")) { await HomeGallery(); GD.Print("HOME_GALLERY_OK"); GetTree().Quit(); return; }
             if (args.Contains("--gallery")) { await Gallery(); GD.Print("JOURNEY_GALLERY_OK"); GetTree().Quit(); return; }
@@ -129,8 +160,9 @@ public partial class StartScreenSelfTest : Node
         Check(_save.TryCreateSlot(1, out _) && _save.TryCreateSlot(2, out _), "panel fixture creates two isolated slots");
         _save.TryLoadSlot(1, out _);
         _screen.PresentHome(); await Click(Find<Button>("JourneyArchives"));
-        Check(Find<Label>("ArchiveName1").Text.Length > 0 && Find<Button>("ArchiveSlot2") is not null,
+        Check(Find<Label>("ArchiveName1").Text.Length > 0 && Find<Button>("ArchiveSelect2") is not null,
             "home archives lists the available journeys");
+        await Click(Find<Button>("ArchiveSelect2"));
         await Click(Find<Button>("ArchiveSlot2"));
         Check(_save.ActiveSlotId == 2 && _screen.Page == JourneyPage.Map, "archive switches journey and opens its map");
         await Capture("panel-after");
@@ -200,7 +232,8 @@ public partial class StartScreenSelfTest : Node
         await Click(Find<Button>("Back"));
         Check(_screen.Page == JourneyPage.Home, "map returns to home source");
         await Click(Find<Button>("Continue"));
-        Check(_screen.Page == JourneyPage.Map && Find<Label>("MapCurrentProgress").Text.Contains("天津"),
+        Check(_screen.Page == JourneyPage.Map && Find<Label>("MapJourneyTitle").Text.Contains("天津")
+            && _screen.FindChild("MapCurrentProgress", true, false) is null,
             "continue opens map with saved city progress");
         await Click(Find<Button>("Node0"));
         Check(_screen.Page == JourneyPage.City && _screen.SelectedCityId == _save.ContinueCityId,
@@ -372,7 +405,8 @@ public partial class StartScreenSelfTest : Node
         Check(Find<Control>("HomeMap").GetChildren().Count(n => n.Name.ToString().StartsWith("HomeCity")) == 1, "new player sees only Tianjin");
         await Capture("home-first-run");
         await Click(Find<Button>("JourneyArchives"));
-        Check(_screen.ModalOpen && Find<Label>("ArchivesTitle").Text.Contains("旅程档案"), "home archive entry is visible");
+        Check(_screen.ModalOpen && Find<Label>("OtherArchivesTitle").Text.Contains("其他旅程"),
+            "home archive entry is visible");
         KeyPress(Key.Escape); await Frames();
         Check(_screen.FindChildren("WallMap", "Button", true, false).Count == 0, "home wall map is decorative and has no click target");
         _save.ResetProgress(out _);

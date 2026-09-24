@@ -66,7 +66,6 @@ public partial class StartScreen
     private void AddBookClose(Control parent, string? cityId, Action close)
     {
         var button = Button(parent, "BookClose", "", new(1469, 209, 70, 70), close, bare: true);
-        button.TooltipText = "关闭书页，返回上一页";
         button.ZIndex = 2;
         var art = new BookCloseArt { Name = "BookCloseArt", Position = new(-39, -6), Size = new(110, 82), MouseFilter = MouseFilterEnum.Ignore };
         if (!string.IsNullOrEmpty(cityId))

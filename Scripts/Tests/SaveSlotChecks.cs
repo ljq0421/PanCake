@@ -57,24 +57,44 @@ internal static class SaveSlotChecks
         screen.PresentHome(); await Click("JourneyArchives");
         Check(Enumerable.Range(1, SaveService.SlotCount).All(id => Find<Control>("ArchiveCard" + id) is not null),
             "home archives lists all five slots");
+        Check(Find<Control>("ArchiveCard1").Position.Y == 283
+            && Find<Control>("ArchiveCard2").Position.Y == 299
+            && Find<TextureRect>("ArchiveUpperRoute") is not null
+            && Find<TextureRect>("ArchiveLowerRoute") is not null,
+            "right page uses raised cards and travel decorations");
         Check(Find<Label>("ArchiveProgress1").Text.Contains("天津 · 第 4 天")
             && Find<Label>("ArchiveProgress2").Text.Contains("天津 · 第 6 天"),
             "archive shows each journey's city and current day");
+        Check(Find<TextureRect>("ArchiveBreakfastMap1") is not null
+            && Find<TextureRect>("ArchiveBreakfastMap2") is not null,
+            "Tianjin journeys show their breakfast map");
+        Check(Find<TextureRect>("ArchiveJourneyLine") is not null
+            && Find<TextureRect>("ArchiveJourneyStart") is not null
+            && Find<TextureRect>("ArchiveJourneyEnd") is not null
+            && Mathf.Abs(Find<TextureRect>("FeaturedArchiveCover").RotationDegrees + 4) < .01f,
+            "featured journey shows a drawn travel route");
         await capture("slots-archives-two");
+        await Click("ArchiveSelect2");
+        Check(save.ActiveSlotId == 1 && Find<Button>("ArchiveSlot2").Text == "选择这段旅程",
+            "selecting a small journal reveals its action without switching saves");
+        await capture("slots-archives-selected");
         await Click("ArchiveSlot2");
         Check(save.ActiveSlotId == 2 && save.Data.Coins == 654 && screen.Page == JourneyPage.Map && !screen.ModalOpen,
             "archives switch to the selected journey and show its map");
         await capture("slots-map-current");
         Check(File.ReadAllText(Path.Combine(root, "slot-1.json")) == first, "switching preserves the first journey");
         await Click("MapSwitchJourney");
-        Check(screen.ModalOpen && Find<Button>("MapSwitchSlot1").Text.Contains("第 4 天"),
-            "map offers a quick journey switch with progress");
-        Check(Find<Button>("MapSwitchNewJourney") is not null,
-            "map offers a new journey when an empty journal remains");
+        Check(screen.ModalOpen && Find<Button>("MapSwitchSlot1").Text.Contains("第4天")
+            && Find<Button>("MapSwitchSlot1").Text.Contains("金币321")
+            && Find<Button>("MapSwitchSlot2").Text.Contains("金币654")
+            && screen.FindChild("MapSwitchSlot3", true, false) is null
+            && Find<Button>("MapSwitchArchives") is not null,
+            "map dropdown lists occupied journeys with independent city, day, coins and archive access");
         await capture("slots-map-switch");
         await Click("MapSwitchSlot1");
         Check(save.ActiveSlotId == 1 && save.Data.Coins == 321 && screen.Page == JourneyPage.Map
-            && Find<Label>("MapCurrentProgress").Text.Contains("旅程 1"),
+            && Find<Label>("MapJourneyTitle").Text == "天津·第4天·金币321"
+            && screen.FindChild("MapCurrentProgress", true, false) is null,
             "quick switch refreshes the map from the selected journey");
         await Click("MapSwitchJourney"); await Click("MapSwitchSlot2");
         screen.PresentHome(); await Click("JourneyArchives");
@@ -86,8 +106,9 @@ internal static class SaveSlotChecks
         await Click("CloseArchives");
         var settings = host.GetNode<JourneySettings>("/root/JourneySettings");
         settings.SetLanguage("en"); screen.PresentHome(); await Click("JourneyArchives");
-        Check(Find<Label>("ArchivesTitle").Tr("我的旅程档案").ToString() == "My journeys",
-            "archive title has an English translation");
+        Check(screen.FindChild("ArchivesTitle", true, false) is null
+            && screen.FindChild("ArchivesHint", true, false) is null,
+            "archive spread omits the central title and instruction");
         await capture("slots-archives-en");
         await Click("CloseArchives"); settings.SetLanguage("zh_CN"); screen.PresentHome();
         for (int id = 3; id <= 5; id++) Check(save.TryCreateSlot(id, out _), "fill slot " + id);
@@ -108,15 +129,17 @@ internal static class SaveSlotChecks
             : JourneyModel.Cities.Select(c => c.Id).ToArray();
         save.Data.UnlockedCityIds = cities.ToList(); foreach (string city in cities) save.Data.GetCity(city);
         save.TrySave(out _);
-        foreach (string city in cities)
+        if (!OS.GetCmdlineUserArgs().Contains("--archives-only")) foreach (string city in cities)
         {
             Check(main.OpenCity(city) && main.StartCityBusiness(city, 1), "city initializes against active slot " + city);
             main.OpenCity(city); screen.PresentHome(); await Frames();
             Check(save.ContinueCityId == city, "business records resume city " + city);
             string saved = File.ReadAllText(Path.Combine(root, "slot-2.json"));
             await Click("Continue");
-            Check(screen.Page == JourneyPage.Map && Find<Label>("MapCurrentProgress").Text.Contains(JourneyModel.City(city).Name)
-                && Find<Label>("MapCurrentProgress").Text.Contains($"第 {save.Data.GetCity(city).HighestUnlockedDay} 天"),
+            Check(screen.Page == JourneyPage.Map
+                && Find<Label>("MapJourneyTitle").Text.Contains(JourneyModel.City(city).Name)
+                && Find<Label>("MapJourneyTitle").Text.Contains($"·第{save.Data.GetCity(city).HighestUnlockedDay}天·金币{save.Data.Coins}")
+                && screen.FindChild("MapCurrentProgress", true, false) is null,
                 "home continue shows active slot city and day on map " + city);
             await Click("Node" + Array.FindIndex(JourneyModel.Cities, c => c.Id == city));
             Check(screen.Page == JourneyPage.City && screen.SelectedCityId == city
@@ -128,8 +151,17 @@ internal static class SaveSlotChecks
         screen.PresentMap(); await Click("Node1");
         Check(screen.Page == JourneyPage.City && screen.SelectedCityId == StableIds.Cities.Wuhan,
             "another unlocked city remains selectable from the journey map");
+        if (!save.Data.UnlockedCityIds.Contains(StableIds.Cities.Wuhan))
+            save.Data.UnlockedCityIds.Add(StableIds.Cities.Wuhan);
+        save.Data.LastVisitedCityId = StableIds.Cities.Wuhan;
+        save.Data.Wuhan.HighestUnlockedDay = 2;
+        Check(save.TrySave(out _), "save Wuhan as the current archive city");
         screen.PresentHome(); await Click("JourneyArchives");
-        await Click("DeleteSlot1");
+        Check(Find<TextureRect>("ArchiveBreakfastMap2").Texture is AtlasTexture wuhanMap
+            && wuhanMap.Atlas.ResourcePath.EndsWith("早餐地图-武汉.png"),
+            "Wuhan journey shows its own breakfast map");
+        await capture("slots-archives-wuhan");
+        await Click("ArchiveSelect1"); await Click("ArchiveMore1"); await Click("DeleteSlot1");
         Check(screen.ConfirmationOpen && save.GetSlots()[0].Exists, "archive asks before deleting another journey");
         Check(Find<Button>("Home").FocusMode == Control.FocusModeEnum.None,
             "delete confirmation keeps archive navigation out of keyboard focus");
@@ -139,7 +171,7 @@ internal static class SaveSlotChecks
         await Click("DeleteSlot1"); await Click("ConfirmDeleteSave");
         Check(!save.GetSlots()[0].Exists && save.ActiveSlotId == 2,
             "deleting another journey preserves the active journey");
-        await Click("DeleteSlot2"); await Click("ConfirmDeleteSave");
+        await Click("ArchiveMore2"); await Click("DeleteSlot2"); await Click("ConfirmDeleteSave");
         Check(save.ActiveSlotId is null && !save.CanContinue, "deleting current journey clears continuation");
         GD.Print($"SAVE_SLOTS_TEST_RESULT passed={_checks} failed=0");
 

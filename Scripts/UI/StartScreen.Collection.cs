@@ -10,6 +10,14 @@ public partial class StartScreen
     private Action? _collectionReturn;
     private const float CollectionContentScale = 1400f / 1860f;
 
+    private void TurnCollectionPage(bool reverse = false)
+    {
+        if (Page != JourneyPage.Collection || !IsVisibleInTree()) return;
+        JourneyTransition.For(this).Play(JourneyTransition.Effect.BookPage, reverse: reverse,
+            bounds: new Rect2(_canvas.GetGlobalTransformWithCanvas() * BookBounds.Position, BookBounds.Size * _canvas.Scale),
+            dimBackdrop: false);
+    }
+
     private CollectionDecoration CollectionPaper(Control parent, Rect2 rect, string kind = "paper", bool selected = false)
     {
         var paper = new CollectionDecoration { Position = rect.Position, Size = rect.Size, Kind = kind, Selected = selected };
@@ -53,7 +61,6 @@ public partial class StartScreen
         if (Page == JourneyPage.Home && !_collectionOverWorkbench) { _showCustomerCollection = false; OpenHomeOverlay(); }
         Begin(JourneyPage.Collection);
         var book = HomeArt(_body, "旅行手账双页母版", BookBounds); book.Name = "CollectionBook";
-        AddBookClose(_body, null, NavigateBackFromBook);
         _collectionContent = new Control
         {
             Name = "CollectionContent",
@@ -63,6 +70,8 @@ public partial class StartScreen
             MouseFilter = MouseFilterEnum.Stop,
         };
         _body.AddChild(_collectionContent);
+        // Input follows sibling order: keep the close button above the full-page content control.
+        AddBookClose(_body, null, NavigateBackFromBook);
         Text(_collectionContent, "CollectionTitle", "旅途收藏", new(143, 104, 390, 86), 62);
         CollectionSectionTabs();
         if (_showCustomerCollection) { RenderCustomerCollection(); return; }

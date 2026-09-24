@@ -36,8 +36,10 @@ public partial class StartScreen
         {
             var button = Button(_collectionContent, id, "", new(x, 203, 227, 51), () =>
             {
+                if (_showCustomerCollection == customers) return;
+                TurnCollectionPage(reverse: !customers);
                 _showCustomerCollection = customers;
-                PresentBreakfastCollection(); Focus(id);
+                PresentBreakfastCollection(); OpeningSound(OpeningCue.Paper); Focus(id);
             }, bare: true);
             CollectionPaper(button, new(0, 0, 227, 51), selected: _showCustomerCollection == customers);
             Text(button, "Caption", title, new(8, 3, 211, 45), 29, true);
@@ -134,7 +136,9 @@ public partial class StartScreen
 
     private void ChangeCustomerPage(int delta)
     {
-        _customerPage += delta; _selectedCollectionCustomer = ""; PresentBreakfastCollection();
+        if (delta == 0) return;
+        TurnCollectionPage(reverse: delta < 0);
+        _customerPage += delta; _selectedCollectionCustomer = ""; PresentBreakfastCollection(); OpeningSound(OpeningCue.Paper);
     }
 
     private void RenderCustomerDetail(CustomerCard card)

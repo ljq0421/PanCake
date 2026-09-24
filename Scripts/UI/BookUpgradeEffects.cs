@@ -34,6 +34,7 @@ internal static class BookUpgradeEffects
         }
         void Flag(string name, bool a, bool b) { lines.Add(new(name, a ? "开启" : "关闭", b ? "开启" : "关闭")); }
         int from = o.CurrentLevel, to = o.TargetLevel;
+        if (from == 0) return new[] { new EquipmentEffect("新商品", "未供应", o.EquipmentId == "fryer" ? "油条" : "三鲜豆皮") };
         switch (o.EquipmentId)
         {
             case "pancake_stove":

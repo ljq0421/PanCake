@@ -28,21 +28,24 @@ internal static class SaveSlotChecks
         screen.PresentHome(); await Frames();
         Check(Find<Button>("Continue").Disabled, "no active journey cannot continue");
         await capture("slots-home");
-        await Click("WorldMap");
-        Check(screen.Page == JourneyPage.Map && !save.GetSlots().Any(s => s.Exists), "browsing map does not create a save");
-        await Click("Home");
+        await Click("JourneyArchives");
+        Check(screen.ModalOpen && !save.GetSlots().Any(s => s.Exists), "browsing archives does not create a save");
+        await capture("slots-archives-empty");
+        await Click("CloseArchives");
         string blocked = Path.Combine(root, "slot-1.json");
         Directory.CreateDirectory(blocked);
         await Click("NewGame");
+        Check(screen.ModalOpen && !save.CanContinue, "new journey first selects an empty journal");
+        await capture("slots-new-selection");
+        await Click("CreateSlot1");
         Check(screen.Page == JourneyPage.Home && !save.CanContinue && Find<Label>("Status").Text.Length > 0,
             "failed creation stays on home and exposes error");
         Directory.Delete(blocked);
-        var newButton = Find<Button>("NewGame");
-        newButton.EmitSignal(Button.SignalName.Pressed);
-        newButton.EmitSignal(Button.SignalName.Pressed);
+        await Click("NewGame");
+        await Click("CreateSlot1");
         await Frames();
         Check(save.ActiveSlotId == 1 && screen.Page == JourneyPage.NewJourneyMap && save.GetSlots().Count(s => s.Exists) == 1,
-            "new journey uses first empty slot, opens first-station animation, and ignores duplicate activation");
+            "new journey creates the chosen empty slot and opens first-station animation");
         await capture("slots-new-opening");
         save.Data.Coins = 321; save.Data.Tianjin.HighestUnlockedDay = 4;
         save.Data.Tianjin.LearnedWorkbenchActions.Add("flip");
@@ -51,24 +54,53 @@ internal static class SaveSlotChecks
         Check(save.TryCreateSlot(2, out _), "create second journey outside settings");
         save.Data.Coins = 654; save.Data.Tianjin.HighestUnlockedDay = 6; Check(save.TrySave(out _), "save second journey");
         save.TryLoadSlot(1, out _);
-        screen.PresentHome(); await Click("Settings");
-        var selector = Find<SaveSlotChoice>("SaveSlot");
-        Check(selector.ItemCount == SaveService.SlotCount && !selector.IsItemDisabled(0) && !selector.IsItemDisabled(1)
-            && selector.IsItemDisabled(2), "settings selector lists all five slots and disables empty ones");
-        Check(selector.GetItemText(0).Contains("天津 · 第 4 天") && selector.GetItemText(1).Contains("天津 · 第 6 天"),
-            "save selector shows each journey's city and current day");
-        await SelectSaveSlot(1);
-        Check(save.ActiveSlotId == 2 && save.Data.Coins == 654 && screen.Page == JourneyPage.Home && screen.ModalOpen,
-            "settings selector directly switches to the chosen journey");
+        screen.PresentHome(); await Click("JourneyArchives");
+        Check(Enumerable.Range(1, SaveService.SlotCount).All(id => Find<Control>("ArchiveCard" + id) is not null),
+            "home archives lists all five slots");
+        Check(Find<Label>("ArchiveProgress1").Text.Contains("天津 · 第 4 天")
+            && Find<Label>("ArchiveProgress2").Text.Contains("天津 · 第 6 天"),
+            "archive shows each journey's city and current day");
+        await capture("slots-archives-two");
+        await Click("ArchiveSlot2");
+        Check(save.ActiveSlotId == 2 && save.Data.Coins == 654 && screen.Page == JourneyPage.Map && !screen.ModalOpen,
+            "archives switch to the selected journey and show its map");
+        await capture("slots-map-current");
         Check(File.ReadAllText(Path.Combine(root, "slot-1.json")) == first, "switching preserves the first journey");
+        await Click("MapSwitchJourney");
+        Check(screen.ModalOpen && Find<Button>("MapSwitchSlot1").Text.Contains("第 4 天"),
+            "map offers a quick journey switch with progress");
+        Check(Find<Button>("MapSwitchNewJourney") is not null,
+            "map offers a new journey when an empty journal remains");
+        await capture("slots-map-switch");
+        await Click("MapSwitchSlot1");
+        Check(save.ActiveSlotId == 1 && save.Data.Coins == 321 && screen.Page == JourneyPage.Map
+            && Find<Label>("MapCurrentProgress").Text.Contains("旅程 1"),
+            "quick switch refreshes the map from the selected journey");
+        await Click("MapSwitchJourney"); await Click("MapSwitchSlot2");
+        screen.PresentHome(); await Click("JourneyArchives");
+        await Click("RenameSlot2");
+        Find<LineEdit>("ArchiveRename").Text = "清晨武汉";
+        await Click("SaveArchiveName");
+        Check(save.GetSlots()[1].Name == "清晨武汉" && Find<Label>("ArchiveName2").Text == "清晨武汉",
+            "archive renames a journey without changing its progress");
+        await Click("CloseArchives");
+        var settings = host.GetNode<JourneySettings>("/root/JourneySettings");
+        settings.SetLanguage("en"); screen.PresentHome(); await Click("JourneyArchives");
+        Check(Find<Label>("ArchivesTitle").Tr("我的旅程档案").ToString() == "My journeys",
+            "archive title has an English translation");
+        await capture("slots-archives-en");
+        await Click("CloseArchives"); settings.SetLanguage("zh_CN"); screen.PresentHome();
         for (int id = 3; id <= 5; id++) Check(save.TryCreateSlot(id, out _), "fill slot " + id);
         save.TryLoadSlot(2, out _); screen.PresentHome(); await Click("NewGame");
-        Check(screen.Page == JourneyPage.Home && Find<Label>("Status").Text.Contains("已满") && save.ActiveSlotId == 2,
-            "full slots stay on home without replacing current journey");
+        Check(screen.ModalOpen && Find<Label>("ArchivesHint").Text.Contains("写满") && save.ActiveSlotId == 2,
+            "full slots show archive recovery without replacing current journey");
+        await Click("CloseArchives");
         File.WriteAllText(Path.Combine(root, "slot-3.json"), "broken");
-        screen.PresentHome(); await Click("Settings");
-        Check(Find<SaveSlotChoice>("SaveSlot").IsItemDisabled(2) && !Find<SaveSlotChoice>("SaveSlot").IsItemDisabled(1), "corrupt slot does not block other slot choices");
+        screen.PresentHome(); await Click("JourneyArchives");
+        Check(Find<Label>("ArchiveName3").Text.Contains("无法读取") && Find<Button>("ArchiveSlot2") is not null,
+            "corrupt slot does not block other journey choices");
         await capture("slots-corrupt");
+        await Click("CloseArchives");
         save.Load();
         Check(save.ActiveSlotId == 2 && save.CanContinue, "restart restores last selected slot");
         // Exercise actual city initialization and ownership binding, including Yangzhou's separate session.
@@ -83,12 +115,32 @@ internal static class SaveSlotChecks
             Check(save.ContinueCityId == city, "business records resume city " + city);
             string saved = File.ReadAllText(Path.Combine(root, "slot-2.json"));
             await Click("Continue");
+            Check(screen.Page == JourneyPage.Map && Find<Label>("MapCurrentProgress").Text.Contains(JourneyModel.City(city).Name)
+                && Find<Label>("MapCurrentProgress").Text.Contains($"第 {save.Data.GetCity(city).HighestUnlockedDay} 天"),
+                "home continue shows active slot city and day on map " + city);
+            await Click("Node" + Array.FindIndex(JourneyModel.Cities, c => c.Id == city));
             Check(screen.Page == JourneyPage.City && screen.SelectedCityId == city
                 && screen.SelectedDay == save.Data.GetCity(city).HighestUnlockedDay,
-                "home continue opens saved city and day " + city);
+                "continue map opens saved city and day " + city);
             Check(File.ReadAllText(Path.Combine(root, "slot-2.json")) == saved,
                 "opening saved city preserves progress " + city);
         }
+        screen.PresentMap(); await Click("Node1");
+        Check(screen.Page == JourneyPage.City && screen.SelectedCityId == StableIds.Cities.Wuhan,
+            "another unlocked city remains selectable from the journey map");
+        screen.PresentHome(); await Click("JourneyArchives");
+        await Click("DeleteSlot1");
+        Check(screen.ConfirmationOpen && save.GetSlots()[0].Exists, "archive asks before deleting another journey");
+        Check(Find<Button>("Home").FocusMode == Control.FocusModeEnum.None,
+            "delete confirmation keeps archive navigation out of keyboard focus");
+        await Click("CancelDeleteSave");
+        Check(screen.ModalOpen && save.GetSlots()[0].Exists && Find<Button>("DeleteSlot1").HasFocus(),
+            "cancel keeps the journey open and restores its delete action");
+        await Click("DeleteSlot1"); await Click("ConfirmDeleteSave");
+        Check(!save.GetSlots()[0].Exists && save.ActiveSlotId == 2,
+            "deleting another journey preserves the active journey");
+        await Click("DeleteSlot2"); await Click("ConfirmDeleteSave");
+        Check(save.ActiveSlotId is null && !save.CanContinue, "deleting current journey clears continuation");
         GD.Print($"SAVE_SLOTS_TEST_RESULT passed={_checks} failed=0");
 
         async Task Frames()
@@ -104,11 +156,6 @@ internal static class SaveSlotChecks
             host.GetViewport().PushInput(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true, Position = at, GlobalPosition = at }, true);
             await Frames();
             host.GetViewport().PushInput(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Position = at, GlobalPosition = at }, true);
-            await Frames();
-        }
-        async Task SelectSaveSlot(int index)
-        {
-            Find<SaveSlotChoice>("SaveSlot").ActivateItem(index);
             await Frames();
         }
     }

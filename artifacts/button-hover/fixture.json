@@ -1,18 +1,26 @@
 {
+  "UpgradeTeachingCompleted": false,
+  "WuhanUnlockPresentationSeen": false,
   "BreakfastStats": {},
+  "CustomerRecords": {},
   "BreakfastRecords": {},
   "Version": 3,
   "LastVisitedCityId": "city:tianjin",
   "Coins": 10000,
   "Cities": {
     "city:tianjin": {
+      "BasePurchaseRulesVersion": 1,
+      "BaseEquipmentPurchaseDays": {},
+      "PendingUpgradeCelebrations": {},
+      "ClaimedChallenges": {},
       "HighestUnlockedDay": 1,
       "BestStars": 0,
       "Completed": false,
       "EquipmentLevels": {
         "pancake_stove": 1,
         "ingredient_station": 1,
-        "fryer": 0
+        "fryer": 0,
+        "soy_milk_tray": 0
       },
       "UnlockedContentIds": [],
       "UnlockedCollectibleIds": [],
@@ -21,14 +29,17 @@
       "LearnedWorkbenchActions": []
     },
     "city:wuhan": {
+      "BasePurchaseRulesVersion": 1,
+      "BaseEquipmentPurchaseDays": {},
+      "PendingUpgradeCelebrations": {},
+      "ClaimedChallenges": {},
       "HighestUnlockedDay": 1,
       "BestStars": 0,
       "Completed": false,
       "EquipmentLevels": {
         "noodle_cooker": 1,
         "ingredient_station": 1,
-        "doupi_griddle": 0,
-        "egg_rice_wine_station": 0
+        "doupi_griddle": 0
       },
       "UnlockedContentIds": [],
       "UnlockedCollectibleIds": [],
@@ -37,6 +48,10 @@
       "LearnedWorkbenchActions": []
     },
     "city:xian": {
+      "BasePurchaseRulesVersion": 0,
+      "BaseEquipmentPurchaseDays": {},
+      "PendingUpgradeCelebrations": {},
+      "ClaimedChallenges": {},
       "HighestUnlockedDay": 1,
       "BestStars": 0,
       "Completed": false,
@@ -52,6 +67,10 @@
       "LearnedWorkbenchActions": []
     },
     "city:guangzhou": {
+      "BasePurchaseRulesVersion": 0,
+      "BaseEquipmentPurchaseDays": {},
+      "PendingUpgradeCelebrations": {},
+      "ClaimedChallenges": {},
       "HighestUnlockedDay": 1,
       "BestStars": 0,
       "Completed": false,
@@ -67,6 +86,10 @@
       "LearnedWorkbenchActions": []
     },
     "city:yangzhou": {
+      "BasePurchaseRulesVersion": 0,
+      "BaseEquipmentPurchaseDays": {},
+      "PendingUpgradeCelebrations": {},
+      "ClaimedChallenges": {},
       "HighestUnlockedDay": 1,
       "BestStars": 0,
       "Completed": false,

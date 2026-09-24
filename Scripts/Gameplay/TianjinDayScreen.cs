@@ -175,7 +175,7 @@ public partial class TianjinDayScreen : Control
         Array.Fill(_portraitSignatures, string.Empty);
         Array.Fill(_displayedCustomerStates, null);
         Array.Fill(_deliveryCustomerIds, null);
-        if (!controller.TryPrepareDay(day, catalog, out string error))
+        if (!controller.TryPrepareDay(StableIds.Cities.Tianjin, day, catalog, save.Data.Tianjin, out string error))
         {
             ShowFeedback(error, true);
             return false;
@@ -186,8 +186,7 @@ public partial class TianjinDayScreen : Control
             return false;
         }
         int fryerLevel = controller.CurrentConfig!.AvailableProductKinds.Contains(ProductKind.Youtiao)
-            ? Math.Max(1, save.Data.PurchasedFryerLevel)
-            : 0;
+            ? save.Data.PurchasedFryerLevel : 0;
         GetNode<TextureRect>("ShopBackground").Texture = _art.LivingWorkbenchBackground(controller.CurrentConfig.AvailableProductKinds);
         _workstation.Initialize(catalog, save.Data.PurchasedStoveLevel, save.Data.PurchasedIngredientStationLevel, fryerLevel, controller.CurrentConfig, _art);
         _workstation.DirectCustomerDelivery = true;

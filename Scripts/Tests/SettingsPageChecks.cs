@@ -77,74 +77,27 @@ internal static class SettingsPageChecks
         Check(Find<Button>(screen, "Windowed").HasFocus(), "first display option initially focused");
         if (!graphical)
         {
-            foreach (string name in new[] { "Fullscreen", "Resolution", "VSync", "Language", "SaveSlot", "Volumemaster", "Volumemusic", "Volumeeffects", "Mute", "ReduceMotion", "Close" })
+            foreach (string name in new[] { "Fullscreen", "Resolution", "VSync", "Language", "Volumemaster", "Volumemusic", "Volumeeffects", "Mute", "ReduceMotion", "Close" })
             {
                 await KeyPress(screen.GetViewport(), Key.Tab);
                 string actual = screen.GetViewport().GuiGetFocusOwner()?.Name.ToString() ?? "none";
                 Check(actual == name, $"Tab reaches {name} (actual {actual})");
             }
         }
-        var saveSlot = Find<SaveSlotChoice>(screen, "SaveSlot");
-        Check(saveSlot.ItemCount == SaveService.SlotCount && !saveSlot.IsItemDisabled(0) && !saveSlot.IsItemDisabled(1)
-            && saveSlot.IsItemDisabled(2), "save selector lists five slots and disables empty ones");
-        Check(!saveSlot.GetItemText(0).Contains("存档位") && saveSlot.GetRect().Position.X >= 340
-            && saveSlot.GetRect().End.X <= 893,
-            "save selector omits slot prefix and its menu stays within the left page");
+        Check(!screen.FindChildren("SaveSlot", "SaveSlotChoice", true, false).Any(),
+            "settings no longer contains journey management");
         var close = Find<Button>(screen, "Close");
         Check(close.GetThemeStylebox("normal") is StyleBoxTexture { Texture.ResourcePath: "res://resource/art/TianJin/DialogUI/button-secondary-v1.png" },
             "close uses the specified secondary button texture");
         if (graphical && OS.GetCmdlineUserArgs().Contains("--capture"))
         {
             await capture("settings-new-zh");
-            saveSlot.ShowPopup(); await Frames(screen);
-            await capture("settings-save-slot-menu");
-            await Click(Find<Button>(screen, "DeleteSlot2"));
-            await capture("settings-delete-confirmation");
-            await Click(Find<Button>(screen, "CancelDeleteSave"));
             settings.SetLanguage("en"); await Frames(screen);
             await capture("settings-new-en");
             settings.SetLanguage("zh_CN");
             GD.Print("SETTINGS_VISUAL_CAPTURE_OK");
             return;
         }
-        await Click(saveSlot);
-        await Click(Find<Button>(screen, "LoadSlot2"));
-        await Frames(screen);
-        Check(save.ActiveSlotId == 2 && save.Data.Coins == 222 && screen.Page == JourneyPage.Home && screen.ModalOpen
-            && !JourneyTransition.For(screen).Active,
-            "save selector directly switches the active save without reopening the book");
-        Find<SaveSlotChoice>(screen, "SaveSlot").ShowPopup(); await Frames(screen);
-        Check(!screen.FindChildren("DeleteSlot3", "Button", true, false).Any(), "empty slot has no delete action");
-        Check(string.IsNullOrEmpty(Find<Button>(screen, "LoadSlot1").TooltipText)
-            && string.IsNullOrEmpty(Find<Button>(screen, "LoadSlot3").TooltipText), "save entries and blank journal have no hover explanation");
-        Check(string.IsNullOrEmpty(Find<Button>(screen, "DeleteSlot1").TooltipText), "trash has no hover explanation");
-        var settingsBook = Find<TextureRect>(screen, "SettingsBook");
-        await Click(Find<Button>(screen, "DeleteSlot1"));
-        Check(save.ActiveSlotId == 2 && save.GetSlots()[0].Exists, "trash click does not load or delete before confirmation");
-        Check(Find<TextureRect>(screen, "SettingsBook") == settingsBook && screen.ConfirmationOpen,
-            "delete confirmation overlays the original settings book");
-        await KeyPress(screen.GetViewport(), Key.Tab);
-        Check(Find<Button>(screen, "ConfirmDeleteSave").HasFocus(), "confirmation focuses only its own actions");
-        await KeyPress(screen.GetViewport(), Key.Tab);
-        Check(Find<Button>(screen, "CancelDeleteSave").HasFocus(), "confirmation keyboard focus cannot reach settings behind it");
-        bool mutedBeforeConfirmation = settings.Muted;
-        await Click(Find<Button>(screen, "Mute"));
-        Check(settings.Muted == mutedBeforeConfirmation, "overlay blocks clicks on settings behind it");
-        await KeyPress(screen.GetViewport(), Key.Escape);
-        Check(save.GetSlots()[0].Exists && screen.ModalOpen, "Escape cancels deletion and returns to settings");
-        Check(Find<TextureRect>(screen, "SettingsBook") == settingsBook && Find<SaveSlotChoice>(screen, "SaveSlot").HasFocus(),
-            "cancel keeps the settings book and restores save selector focus");
-        Find<SaveSlotChoice>(screen, "SaveSlot").ShowPopup(); await Frames(screen);
-        await Click(Find<Button>(screen, "DeleteSlot1"));
-        await Click(Find<Button>(screen, "ConfirmDeleteSave"));
-        Check(!save.GetSlots()[0].Exists && save.ActiveSlotId == 2 && save.Data.Coins == 222, "deleting another slot preserves active progress");
-        Find<SaveSlotChoice>(screen, "SaveSlot").ShowPopup(); await Frames(screen);
-        await Click(Find<Button>(screen, "DeleteSlot2"));
-        await Click(Find<Button>(screen, "ConfirmDeleteSave"));
-        Check(!save.CanContinue && save.ActiveSlotId is null, "deleting current slot clears continue state");
-        Check(save.TryCreateSlot(1, out _) && save.TryCreateSlot(2, out _), "deleted slots can be reused");
-        save.Data.Coins = 222; save.TrySave(out _);
-        screen.PresentHome(); await Click(Find<Button>(screen, "Settings"));
         string beforeSave = JsonSerializer.Serialize(save.Data);
         Check(Find<Label>(screen, "Labelmusic").Text == "音乐", "music label has no playback-status copy");
         Check(Find<Button>(screen, "Mute").ToggleMode && !Find<Button>(screen, "Mute").ButtonPressed, "mute is an explicit state switch");

@@ -28,9 +28,10 @@ public sealed class WuhanArtCatalog
         Load("empty_bowl", "热干面空碗_v2.png");
         Load("noodles_finished", "热干面完整成品.png");
         Load("noodles_plain_finished", "基础热干面完整成品.png");
+        Load("noodles_order_icon", "基础热干面订单图标.png");
         Load("bowl_noodles", "碗中熟面基础层.png"); Load("unmixed", "芝麻酱未拌匀覆盖层.png"); Load("half_mixed", "半拌匀热干面状态覆盖层.png"); Load("mixed", "拌匀热干面基础层.png"); Load("overcooked", "煮过头热干面覆盖层.png"); Load("chopsticks", "拌面筷子_v2.png");
         Load("raw_noodles", "生热干面面条.png"); Load("basket", "通用热干面漏勺_v2.png"); Load("cooked_basket", "漏勺中的熟面状态.png");
-        Load("base_seasoning", "芝麻酱容器_v2.png"); Load("scallion", "葱花覆盖层.png"); Load("chili", "辣油壶_v2.png"); Load("beef", "卤牛肉片.png");
+        Load("base_seasoning", "芝麻酱容器_v2.png"); Load("scallion", "葱花覆盖层.png"); Load("chili", "辣油壶_v2.png"); Load("order_chili", "辣油订单小碗.png"); Load("beef", "卤牛肉片.png");
         Load("doupi_ladle", "doupi_ladle_v2.png");
         Load("egg_ladle", "蛋液勺-透明-v2.png");
         Load("doupi_batter", "豆皮豆米浆容器_v2.png"); Load("doupi_skin", "豆皮基础层-透明-v1.png"); Load("doupi_egg", "豆皮-鸡蛋覆盖层.png"); Load("doupi_filling", "三鲜糯米馅容器_v2.png"); Load("doupi_finished", "整张三鲜豆皮完成状态.png"); Load("doupi_cut", "切块后的整锅豆皮 .png"); Load("doupi_single", "DoupiPieces_v1/piece-01.png"); Load("doupi_stock", "Trays_v2/stock.png"); Load("doupi_burnt", "豆皮焦糊覆盖层.png");
@@ -57,6 +58,7 @@ public sealed class WuhanArtCatalog
     // Keep each piece's variant stable through refill, delivery and discard.
     public Texture2D DoupiPiece(int tile) => Get($"doupi_piece_{(tile + tile / 4) % 4 + 1}");
     public Texture2D Ingredient(string id) => id switch { StableIds.Ingredients.WuhanBaseSeasoning => Get("base_seasoning"), StableIds.Ingredients.WuhanScallion => Get("scallion"), StableIds.Ingredients.WuhanChiliOil => Get("chili"), StableIds.Ingredients.WuhanBraisedBeef => Get("beef"), _ => Get("raw_noodles") };
+    public Texture2D OrderIngredient(string id) => id == StableIds.Ingredients.WuhanChiliOil ? Get("order_chili") : Ingredient(id);
     public Texture2D Product(ProductKind kind) => kind switch { ProductKind.HotDryNoodles => Get("mixed"), ProductKind.Doupi => Get("doupi_single"), _ => _shared.Product(kind) };
     public TianjinArtCatalog Shared => _shared;
     public CustomerPortraitLayout CustomerLayout(string appearanceId) =>

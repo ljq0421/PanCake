@@ -36,10 +36,6 @@ public partial class StartScreen
         language.AddItem("简体中文", 0); language.AddItem("English", 1);
         language.ItemSelected += index => _settings.SetLanguage(index == 1 ? "en" : "zh_CN");
 
-        SettingsGroup("SaveSlotGroup", new(340, 674, 553, 64));
-        SettingsRowLabel("SaveSlotLabel", "存档管理", "已有旅程手账封面", 350, 679, 185);
-        AddSaveSlotChoice();
-
         SettingsVolume("master", "主音量", 289);
         SettingsVolume("music", "音乐", 364);
         SettingsVolume("effects", "音效", 439);
@@ -135,47 +131,6 @@ public partial class StartScreen
         return choice;
     }
 
-    private void AddSaveSlotChoice()
-    {
-        var choice = new SaveSlotChoice { Name = "SaveSlot", Position = new(546, 680), Size = new(334, 52) };
-        JournalSettingsTheme.Apply(choice);
-        _modal.AddChild(choice); _modalControls.Add(choice);
-        // Keep the popup within the left settings page; option text must not grow it wider.
-        var slots = _save?.GetSlots() ?? Array.Empty<SaveSlotSummary>();
-        foreach (var slot in slots)
-        {
-            string state = slot.Corrupt ? Tr("存档无法读取").ToString()
-                : slot.Exists ? slot.Name : Tr("空白手账").ToString();
-            string progress = slot.Exists && !slot.Corrupt
-                ? string.Format(Tr(" · {0} · 第 {1} 天").ToString(), Tr(JourneyModel.City(slot.CityId).Name), slot.Day)
-                : "";
-            choice.AddItem(state + progress);
-            choice.SetDeletable(choice.ItemCount - 1, slot.Exists);
-            choice.SetItemDisabled(choice.ItemCount - 1, !slot.Exists || slot.Corrupt);
-        }
-        int active = slots.ToList().FindIndex(slot => slot.Id == _save?.ActiveSlotId);
-        choice.Select(active);
-        choice.DeleteRequested += index => RequestDeleteSaveSlot(slots[index]);
-        choice.ItemSelected += index => SwitchSaveSlot(slots[(int)index].Id);
-    }
-
-    private void SwitchSaveSlot(int id)
-    {
-        if (_save is null || _busy || _save.ActiveSlotId == id) return;
-        _busy = true;
-        if (!_save.TryLoadSlot(id, out string error))
-        {
-            _busy = false;
-            if (_settingsMessage is not null) _settingsMessage.Text = error;
-            return;
-        }
-        _selectedEquipment = null; _equipmentCity = null; _completedCity = null;
-        _mapReturn = null; _cityReturn = null;
-        _busy = false;
-        SetStatus();
-        RefreshSettingsControls();
-    }
-
     private void SettingsSwitch(string name, Rect2 bounds, Action action)
     {
         var button = SettingsButton(name, "", bounds, action);
@@ -268,7 +223,6 @@ public partial class StartScreen
     private bool SettingsPopupOpen() => _modalKind == "settings" && _modalControls.OfType<OptionButton>().Any(c => GodotObject.IsInstanceValid(c) && c.GetPopup().Visible);
     private void CloseSettingsPopups()
     {
-        _modal.GetNodeOrNull<SaveSlotChoice>("SaveSlot")?.GetPopup().Hide();
         foreach (var choice in _modalControls.OfType<OptionButton>())
             if (GodotObject.IsInstanceValid(choice)) choice.GetPopup().Hide();
     }

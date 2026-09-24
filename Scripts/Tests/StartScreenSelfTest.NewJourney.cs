@@ -16,6 +16,8 @@ public partial class StartScreenSelfTest
         var newGame = Find<Button>("NewGame");
         newGame.EmitSignal(Button.SignalName.Pressed); newGame.EmitSignal(Button.SignalName.Pressed);
         await Frames();
+        Check(!_save.GetSlots().Any(s => s.Exists) && _screen.ModalOpen, "new journey selection does not create a save");
+        await Click(Find<Button>("CreateSlot1"));
         Check(_save.GetSlots().Count(s => s.Exists) == 1 && _screen.JourneyStage == FirstJourneyStage.Map, "new journey creates one slot and starts automatic map");
         Check(Find<Button>("SkipOpening").HasFocus(), "opening focuses skip");
         Check(!_screen.FindChildren("FirstStationTianjin", "Button", true, false).Any(), "automatic opening requires no Tianjin click");
@@ -62,7 +64,9 @@ public partial class StartScreenSelfTest
         KeyPress(Key.Escape); await Frames();
         Check(_screen.Page == JourneyPage.Home, "map Escape returns home");
         await Click(Find<Button>("Continue"));
-        Check(_screen.Page == JourneyPage.City, "continue retains latest city landing");
+        Check(_screen.Page == JourneyPage.Map, "continue opens the active journey map");
+        await Click(Find<Button>("Node0"));
+        Check(_screen.Page == JourneyPage.City, "active city remains playable from the map");
 
         foreach (float time in new[] { .225f, 1.425f, 2.325f, 3.225f })
         {

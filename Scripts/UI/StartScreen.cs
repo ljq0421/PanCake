@@ -11,6 +11,7 @@ public partial class StartScreen : Control
     public event Action<int>? NewGameRequested;
     public event Action<int>? NewGameCityRequested;
     public event Action? ContinueRequested;
+    public event Action? WuhanDepartureRequested;
     public event Action? QuitRequested;
     public JourneyPage Page { get; private set; }
     public bool ConfirmationOpen => ModalOpen && (_modalKind == "confirm" || _saveDeleteOverlay is not null);
@@ -79,7 +80,7 @@ public partial class StartScreen : Control
         if (_save is not null) _save.Changed -= SaveChanged;
         _save = save; _save.Changed += SaveChanged;
     }
-    private void SaveChanged() { if (!IsVisibleInTree() || _busy) return; if (Page == JourneyPage.Home) RenderHome(); else if (Page is JourneyPage.City or JourneyPage.Ledger or JourneyPage.Upgrades) RefreshCityPage(); }
+    private void SaveChanged() { if (!IsVisibleInTree() || _busy) return; if (Page == JourneyPage.Home && !ModalOpen) RenderHome(); else if (Page is JourneyPage.City or JourneyPage.Ledger or JourneyPage.Upgrades) RefreshCityPage(); }
     public void Present() { Show(); RenderHome(); }
     public void PresentHome() { Show(); RenderHome(); }
     public void PresentMap(Action? returnToSource = null) { Show(); _mapReturn = returnToSource ?? RenderHome; _city = _save?.ContinueCityId ?? JourneyModel.Cities[0].Id; RenderMap(); }
@@ -111,7 +112,7 @@ public partial class StartScreen : Control
     private void SetStatus()
     {
         if (_status is not null) _status.Text = _error.Length > 0 ? _error : _save?.DemoMigrationRetryAvailable == true ? "旧试玩存档升级失败，请检查写入权限后重试。原存档已保留。"
-            : !string.IsNullOrEmpty(_save?.SlotError) ? _save.SlotError : _save?.HasLoadError == true ? "存档无法读取。请打开设置管理存档。" : "";
+            : !string.IsNullOrEmpty(_save?.SlotError) ? _save.SlotError : _save?.HasLoadError == true ? "存档无法读取。请打开旅程档案选择其他旅程。" : "";
     }
     private void Begin(JourneyPage page, bool animate = true)
     {
@@ -232,24 +233,13 @@ public partial class StartScreen : Control
     {
         if (!IsVisibleInTree() || _busy) return;
         if (input is not InputEventKey { Pressed: true, Echo: false } key) return;
-        if (_modalKind == "settings" && _modal.GetNodeOrNull<SaveSlotChoice>("SaveSlot") is { } slots && slots.GetPopup().Visible)
-        {
-            if (slots.HandleKey(key)) GetViewport().SetInputAsHandled();
-            return;
-        }
         if (key.Keycode == Key.Escape && _saveDeleteOverlay is not null)
         { CloseSaveDeleteConfirmation(); GetViewport().SetInputAsHandled(); return; }
         if (SettingsPopupOpen()) return;
         if (key.Keycode == Key.Escape)
         {
             if (ModalOpen) { if (_settings.DisplayPending) _settings.RevertDisplay(); else CloseModal(); }
-            else if (Page == JourneyPage.Opening && _save?.IsDemo == true && _save.Data.UnlockedCityIds.Contains(ProjectCake.Data.StableIds.Cities.Wuhan)) PresentCity(ProjectCake.Data.StableIds.Cities.Wuhan);
-            else if (Page == JourneyPage.Opening) RenderHome();
-            else if (Page == JourneyPage.NewJourney) RenderNewJourneyMap();
-            else if (Page == JourneyPage.Completion) FinishCompletion();
-            else if (Page == JourneyPage.Collection) ReturnFromBreakfastCollection();
-            else if (Page is JourneyPage.Ledger or JourneyPage.Upgrades) RenderCity();
-            else if (Page == JourneyPage.City) (_cityReturn ?? RenderHome)();
+            else if (IsBookPage(Page)) NavigateBackFromBook();
             else if (Page == JourneyPage.Map) (_mapReturn ?? RenderHome)();
             else RenderHome();
             GetViewport().SetInputAsHandled(); return;

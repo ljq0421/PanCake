@@ -48,6 +48,9 @@ public partial class UnlockTeachingSelfTest : Node
                 ("Wuhan", 1), ("Wuhan", 2), ("Wuhan", 3), ("Wuhan", 4) })
             {
                 bool tianjin = item.Item1 == "Tianjin";
+                save.Data.PurchasedFryerLevel = tianjin && item.Item2 >= 3 ? 1 : 0;
+                save.Data.Tianjin.EquipmentLevels["soy_milk_tray"] = tianjin && item.Item2 >= 5 ? 1 : 0;
+                save.Data.Wuhan.EquipmentLevels["doupi_griddle"] = !tianjin && item.Item2 >= 4 ? 1 : 0;
                 var learned = tianjin ? save.Data.Tianjin.LearnedWorkbenchActions : save.Data.Wuhan.LearnedWorkbenchActions;
                 learned.Clear();
                 // Serving a dough stick must not suppress the later filling lesson.

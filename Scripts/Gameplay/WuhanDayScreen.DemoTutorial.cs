@@ -35,7 +35,7 @@ public partial class WuhanDayScreen
         _demoBusinessDay = _controller.CurrentConfig!.Day;
         _demoTeachingDay = retryTeachingDay ?? (ForceDemoTutorial ? 1 : _demoBusinessDay);
         ForceDemoTutorial = false;
-        if (!_controller.TryPrepareTutorial(StableIds.Cities.Wuhan, _demoTeachingDay, _catalog, out var error))
+        if (!_controller.TryPrepareTutorial(StableIds.Cities.Wuhan, _demoTeachingDay, _catalog, _save.Data.Wuhan, out var error))
         { Feedback(error, true); return true; }
         Workstation.CancelAnimations();
         _cooker = new(_catalog.NoodleCookersByLevel[1]) { ProtectTeachingHeat = true };
@@ -94,12 +94,13 @@ public partial class WuhanDayScreen
             _save.Data.Wuhan.LearnedWorkbenchActions = old;
             _demoLessonSaveError = "教学记录未保存，请重试。"; LayoutWuhanDemoLesson(); return;
         }
+        bool completed = _demoLessonComplete;
         _demoLesson!.Hide(); _demoLessonSkipFrame!.Hide(); _sceneFeedback.Clear(); _paymentFeedback.Clear(); Workstation.CancelAnimations();
         _controller.AbandonDay();
         if (Initialize(_catalog, _save, _controller, _demoBusinessDay))
         {
-            _resumeBusinessAfterLesson = true;
-            try { BeginDay(); } finally { _resumeBusinessAfterLesson = false; }
+            _resumeBusinessAfterLesson = !completed;
+            try { if (completed) BeginAfterUnlocks(); else BeginDay(); } finally { _resumeBusinessAfterLesson = false; }
         }
     }
     private void DemoLessonDelivered(DeliveryEvaluation result)

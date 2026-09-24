@@ -14,7 +14,17 @@ public sealed partial class BookUpgradeSource
         {
             if (!SupportsContinue || _catalog is null) return "";
             if (LastPurchased is { } bought) return $"下次营业体验：{bought.Name} Lv{bought.TargetLevel} · {Benefit(bought)}";
-            var candidates = Equipment.Where(e => e.TargetLevel.HasValue && e.Level > 0)
+            foreach (string id in _city == StableIds.Cities.Tianjin
+                ? new[] { BaseEquipmentPurchases.Fryer, BaseEquipmentPurchases.SoyTray }
+                : new[] { BaseEquipmentPurchases.DoupiGriddle })
+            {
+                var item = BaseEquipmentPurchases.Describe(id);
+                if (_save.Data.GetCity(_city).EquipmentLevels.GetValueOrDefault(item.Equipment) > 0) continue;
+                if (NextDay < item.Day) return $"下一目标：{item.Name} · Day {item.Day} 到货 · {item.Price} 金币";
+                return Coins >= item.Price ? $"可以买了：{item.Name} · {item.Price} 金币"
+                    : $"攒钱买{item.Name}：{Coins} / {item.Price} 金币 · 还差 {item.Price - Coins}";
+            }
+            var candidates = Equipment.Where(e => e.TargetLevel.HasValue)
                 .Select(e => new BookUpgradeOffer(_city, e.PurchaseId, e.Id, e.Name, e.Level, e.TargetLevel!.Value, e.Price))
                 .Where(o => _save.Data.GetCity(_city).UnlockedContentIds.Contains(o.PurchaseId))
                 .OrderBy(o => Priority(o)).ThenBy(o => o.Price).ThenBy(o => o.EquipmentId, StringComparer.Ordinal).ToArray();
@@ -44,6 +54,9 @@ public sealed partial class BookUpgradeSource
     public static string Benefit(BookUpgradeOffer o) => (o.EquipmentId, o.TargetLevel) switch
     {
         ("pancake_stove", 2) => "不再煎焦，腾出注意力照顾炸锅",
+        ("fryer", 1) => "开始供应油条",
+        ("soy_milk_tray", 1) => "开始供应豆浆",
+        ("doupi_griddle", 1) => "开始供应三鲜豆皮",
         ("pancake_stove", 3) => "保持防焦，煎饼熟得更快",
         ("fryer", 2) => "一锅容量增加，油条更快炸至金黄",
         ("fryer", 3) => "自动提篮，可以安心处理其他订单",

@@ -11,13 +11,11 @@ public partial class SaveService
         if (!HasSavedGame) return true;
         var snapshot = Clone(Data);
         bool changed = false;
-        bool wuhanWasUnlocked = Data.UnlockedCityIds.Contains(StableIds.Cities.Wuhan, StringComparer.Ordinal);
-        EnsureWuhanUnlocked();
-        changed |= !wuhanWasUnlocked && Data.UnlockedCityIds.Contains(StableIds.Cities.Wuhan, StringComparer.Ordinal);
         foreach (string id in new[] { StableIds.Cities.Tianjin, StableIds.Cities.Wuhan })
         {
             if (!Data.UnlockedCityIds.Contains(id)) continue;
             var city = Data.GetCity(id);
+            bool legacy = city.BasePurchaseRulesVersion == 0;
             int reached = Math.Min(ChapterDays(id), city.HighestUnlockedDay);
             for (int day = 1; day <= reached; day++)
             {
@@ -27,12 +25,14 @@ public partial class SaveService
                     unlocks = unlocks.Concat(config.CompletionUnlocks);
                 foreach (string unlock in unlocks)
                 {
+                    if (!legacy && unlock is "product:youtiao" or "product:soy_milk" or "product:doupi") continue;
                     if (!city.UnlockedContentIds.Contains(unlock)) { city.UnlockedContentIds.Add(unlock); changed = true; }
-                    string? free = unlock switch { "equipment:fryer_lv1" => "fryer", "equipment:doupi_griddle_lv1" => "doupi_griddle", _ => null };
+                    string? free = legacy ? unlock switch { "equipment:fryer_lv1" => "fryer", "equipment:doupi_griddle_lv1" => "doupi_griddle", "product:soy_milk" => "soy_milk_tray", _ => null } : null;
                     if (free is not null && city.EquipmentLevels.GetValueOrDefault(free) < 1)
                     { city.EquipmentLevels[free] = 1; changed = true; }
                 }
             }
+            if (legacy) { city.BasePurchaseRulesVersion = 1; changed = true; }
             city.UnlockedContentIds.Sort(StringComparer.Ordinal);
         }
         if (!changed) return true;

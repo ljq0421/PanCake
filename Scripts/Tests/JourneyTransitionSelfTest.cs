@@ -39,6 +39,17 @@ public partial class JourneyTransitionSelfTest : Node
             await Frames();
             _home.PresentHome(); await Complete();
             Check(!_motion.Active, "automatic completion releases transition");
+            if (OS.GetCmdlineUserArgs().Contains("--book-page-preview"))
+            {
+                _home.PresentCity(StableIds.Cities.Tianjin); await Complete();
+                _home.PresentLedger();
+                CheckEffect(JourneyTransition.Effect.BookPage, "city ledger turns a book leaf");
+                await Sample("book-page-quarter", .25f);
+                await Sample("book-page-spine", .5f);
+                await Sample("book-page-three-quarter", .75f);
+                _motion.Finish(); await Capture("book-page-finished");
+                GD.Print($"BOOK_PAGE_PREVIEW_PASS checks={_checks}"); GetTree().Quit(); return;
+            }
             if (OS.GetCmdlineUserArgs().Contains("--city-backdrop-only"))
             {
                 await CityBackdropChecks(save);

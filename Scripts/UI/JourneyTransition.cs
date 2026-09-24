@@ -58,10 +58,11 @@ public partial class JourneyTransition : CanvasLayer
         _material.Shader = GD.Load<Shader>(effect is Effect.SpreadOpen or Effect.SpreadClose
             ? "res://resource/shaders/settings_book_fold.gdshader"
             : "res://resource/shaders/journey_transition.gdshader");
-        if (effect is Effect.SpreadOpen or Effect.SpreadClose)
+        if (effect is Effect.SpreadOpen or Effect.SpreadClose or Effect.BookPage)
         {
             PrepareBookMask(ledger);
-            _material.SetShaderParameter("backdrop", !dimBackdrop ? Colors.Transparent : ledger ? new Color(.12f, .08f, .04f, .4f) : new Color(.15f, .1f, .06f, .65f));
+            if (effect is Effect.SpreadOpen or Effect.SpreadClose)
+                _material.SetShaderParameter("backdrop", !dimBackdrop ? Colors.Transparent : ledger ? new Color(.12f, .08f, .04f, .4f) : new Color(.15f, .1f, .06f, .65f));
         }
         Vector2 size = GetViewport().GetVisibleRect().Size;
         Rect2 area = bounds ?? new Rect2(Vector2.Zero, size);
@@ -115,6 +116,7 @@ public partial class JourneyTransition : CanvasLayer
         float scale = Math.Min(StartScreen.BookBounds.Size.X / size.X, StartScreen.BookBounds.Size.Y / size.Y);
         Vector2 fit = size * scale / StartScreen.BookBounds.Size;
         _material.SetShaderParameter("book_mask", mask);
+        _material.SetShaderParameter("book_art", mask);
         _material.SetShaderParameter("mask_fit", new Vector4((1 - fit.X) / 2, (1 - fit.Y) / 2, fit.X, fit.Y));
     }
 

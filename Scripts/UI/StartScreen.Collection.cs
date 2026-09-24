@@ -7,6 +7,7 @@ public partial class StartScreen
 {
     private string _selectedBreakfast = "pancake", _collectionCity = "";
     private Control _collectionContent = null!, _collectionDetail = null!;
+    private Action? _collectionReturn;
     private const float CollectionContentScale = 1400f / 1860f;
 
     private CollectionDecoration CollectionPaper(Control parent, Rect2 rect, string kind = "paper", bool selected = false)
@@ -38,9 +39,21 @@ public partial class StartScreen
     public void PresentBreakfastCollection()
     {
         if (_save is null) return;
+        if (Page != JourneyPage.Collection)
+            _collectionReturn = Page switch
+            {
+                JourneyPage.City => RenderCity,
+                JourneyPage.Ledger => RenderLedgerPage,
+                JourneyPage.Upgrades => RenderUpgradePage,
+                JourneyPage.Completion => RenderCompletion,
+                JourneyPage.NewJourney => () => RenderTianjinIntroduction(),
+                JourneyPage.Opening => () => PresentWuhanOpening(),
+                _ => RenderHome,
+            };
         if (Page == JourneyPage.Home && !_collectionOverWorkbench) { _showCustomerCollection = false; OpenHomeOverlay(); }
         Begin(JourneyPage.Collection);
         var book = HomeArt(_body, "旅行手账双页母版", BookBounds); book.Name = "CollectionBook";
+        AddBookClose(_body, null, NavigateBackFromBook);
         _collectionContent = new Control
         {
             Name = "CollectionContent",
@@ -110,9 +123,6 @@ public partial class StartScreen
                 }
             }
         }
-        Text(_collectionContent, "NextCityHint", wuhan ? "美食无国界\n下一站，会遇见怎样的美味呢？" : "下一站武汉，还有新的早餐等你记录。",
-            new(267, 839, 600, 76), 25);
-        Art(_collectionContent, "闭合旅行手账封面｜新旅程入口", new(133, 824, 115, 100));
         if (selected is not null) RenderCollectionDetail(selected);
         Focus(selected is not null ? "Breakfast_" + selected.Id : "Back");
     }
@@ -131,8 +141,7 @@ public partial class StartScreen
         var stats = _save.BreakfastStatsFor(card.Id);
         CollectionPaper(_collectionDetail, new(6, 0, 470, 86));
         Text(_collectionDetail, "BreakfastName", card.Name, new(28, 7, 428, 67), 49);
-        Text(_collectionDetail, "BreakfastCity", city.Name, new(499, 18, 130, 50), 32, true);
-        Art(_collectionDetail, JourneyModel.Stamp(city), new(633, 2, 118, 118));
+        Art(_collectionDetail, JourneyModel.Stamp(city), new(485, 2, 98, 98));
         var photo = CollectionPaper(_collectionDetail, new(11, 135, 322, 312), "photo"); photo.RotationDegrees = -3;
         CollectionFood(photo, card, new(23, 23, 276, 225));
         Text(photo, "PhotoCaption", city.Name + " · 早餐记忆", new(15, 258, 290, 35), 25, true);

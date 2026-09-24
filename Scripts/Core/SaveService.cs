@@ -22,6 +22,8 @@ public sealed class DayBestRecord
 
 public sealed class CityProgressData
 {
+    public int BasePurchaseRulesVersion { get; set; }
+    public Dictionary<string, int> BaseEquipmentPurchaseDays { get; set; } = new(StringComparer.Ordinal);
     public Dictionary<string, int> PendingUpgradeCelebrations { get; set; } = new(StringComparer.Ordinal);
     public Dictionary<int, DailyChallenge> ClaimedChallenges { get; set; } = new();
     public int HighestUnlockedDay { get; set; } = 1;
@@ -166,8 +168,8 @@ public partial class SaveService : Node
         _slotRoot = ProjectSettings.GlobalizePath(IsDemo ? "user://demo/journeys" : "user://journeys");
         Load();
     }
-    public void UsePathForTests(string path) { _explicitTestPath = true; _slotRoot = null; ActiveSlotId = null; _savePath = path; _legacyPath = null; Load(); }
-    public void UsePathsForTests(string currentPath, string legacyPath) { _explicitTestPath = true; _slotRoot = null; ActiveSlotId = null; _savePath = currentPath; _legacyPath = legacyPath; Load(); }
+    public void UsePathForTests(string path) { _explicitTestPath = true; _slotRoot = null; ActiveSlotId = null; SlotError = ""; _savePath = path; _legacyPath = null; Load(); }
+    public void UsePathsForTests(string currentPath, string legacyPath) { _explicitTestPath = true; _slotRoot = null; ActiveSlotId = null; SlotError = ""; _savePath = currentPath; _legacyPath = legacyPath; Load(); }
 
     public void Load()
     {
@@ -182,7 +184,7 @@ public partial class SaveService : Node
             if (legacy is not null) { MigrateLegacy(legacy); Changed?.Invoke(); return; }
             Data = new SaveData(); Changed?.Invoke(); return;
         }
-        try { string json = File.ReadAllText(absolute); if (IsDemo && TryResetLegacyDemo(absolute, json)) { Changed?.Invoke(); return; } SaveData? loaded = JsonSerializer.Deserialize<SaveData>(json, JsonOptions); Validate(loaded); ValidateProfile(loaded!); Data = loaded!; bool retiredEggWine = RetireWuhanEggRiceWine(Data); EnsureWuhanUnlocked(); EnsureXianUnlocked(); EnsureGuangzhouUnlocked(); EnsureYangzhouUnlocked(); Data.LastVisitedCityId = ContinueCityId; HasSavedGame = true; if (retiredEggWine && !TrySave(out string cleanupError)) throw new IOException(cleanupError); }
+        try { string json = File.ReadAllText(absolute); if (IsDemo && TryResetLegacyDemo(absolute, json)) { Changed?.Invoke(); return; } SaveData? loaded = JsonSerializer.Deserialize<SaveData>(json, JsonOptions); Validate(loaded); ValidateProfile(loaded!); Data = loaded!; bool retiredEggWine = RetireWuhanEggRiceWine(Data); EnsureXianUnlocked(); EnsureGuangzhouUnlocked(); EnsureYangzhouUnlocked(); Data.LastVisitedCityId = ContinueCityId; HasSavedGame = true; if (retiredEggWine && !TrySave(out string cleanupError)) throw new IOException(cleanupError); }
         catch (Exception exception) { SetCorruptError(absolute, exception); Data = new SaveData(); }
         Changed?.Invoke();
     }
@@ -198,9 +200,8 @@ public partial class SaveService : Node
         SaveData snapshot = Clone(Data); CityProgressData city = Data.GetCity(config.CityId); bool changed = false;
         foreach (string unlock in config.StartUnlocks)
         {
+            if (unlock is "product:youtiao" or "product:soy_milk" or "product:doupi") continue;
             if (!city.UnlockedContentIds.Contains(unlock, StringComparer.Ordinal)) { city.UnlockedContentIds.Add(unlock); changed = true; }
-            if (unlock == "equipment:fryer_lv1" && config.CityId == StableIds.Cities.Tianjin && Data.PurchasedFryerLevel < 1) { Data.PurchasedFryerLevel = 1; changed = true; }
-            if (unlock == "equipment:doupi_griddle_lv1" && city.EquipmentLevels.GetValueOrDefault("doupi_griddle") < 1) { city.EquipmentLevels["doupi_griddle"] = 1; changed = true; }
         }
         if (config.CityId == StableIds.Cities.Xian)
         {
@@ -249,7 +250,6 @@ public partial class SaveService : Node
         int stars = EvaluateStars(result, config); bool newlyCompleted = false;
         if (stars > city.BestStars) city.BestStars = stars;
         if (result.Day >= chapterDays && stars >= 1 && !city.Completed) { city.Completed = true; newlyCompleted = true; }
-        EnsureWuhanUnlocked();
         if (config.CityId == StableIds.Cities.Wuhan && city.Completed)
             foreach (string id in new[] { "collectible:wuhan_hot_dry_noodles", "collectible:wuhan_doupi", "badge:wuhan_chapter" })
                 if (!city.UnlockedCollectibleIds.Contains(id, StringComparer.Ordinal)) city.UnlockedCollectibleIds.Add(id);
@@ -273,6 +273,13 @@ public partial class SaveService : Node
         var (equipment, target, price, _) = offer;
         CityProgressData city = Data.GetCity(cityId);
         SaveData snapshot = Clone(Data); Data.Coins -= price; city.EquipmentLevels[equipment] = target;
+        var basic = BaseEquipmentPurchases.Describe(upgradeId);
+        if (basic.City.Length > 0)
+        {
+            city.BaseEquipmentPurchaseDays[equipment] = city.HighestUnlockedDay;
+            if (!city.UnlockedContentIds.Contains(basic.Product, StringComparer.Ordinal)) city.UnlockedContentIds.Add(basic.Product);
+            city.UnlockedContentIds.Sort(StringComparer.Ordinal);
+        }
         if (cityId is StableIds.Cities.Tianjin or StableIds.Cities.Wuhan)
             city.PendingUpgradeCelebrations[equipment] = target;
         if (!TrySave(out error)) { Data = snapshot; return false; }
@@ -288,7 +295,19 @@ public partial class SaveService : Node
         offer = default;
         if (IsDemo && (HasLoadError || !CanContinue || ChapterLength(cityId) == 0 || !Data.UnlockedCityIds.Contains(cityId) || !catalog.IsValid))
             return Fail("试玩存档或配置无法读取，请检查后重试。", out error);
+        if (HasLoadError || !catalog.IsValid) return Fail("存档或配置无法读取。", out error);
         CityProgressData city = Data.GetCity(cityId);
+        var basic = BaseEquipmentPurchases.Describe(upgradeId);
+        if (basic.City.Length > 0)
+        {
+            if (basic.City != cityId) return Fail("该设备不属于当前城市。", out error);
+            if (!Data.UnlockedCityIds.Contains(cityId) || city.HighestUnlockedDay < basic.Day)
+                return Fail($"到第 {basic.Day} 天可购买。", out error);
+            if (city.EquipmentLevels.GetValueOrDefault(basic.Equipment) > 0)
+                return Fail($"{basic.Name}已经安装。", out error);
+            if (Data.Coins < basic.Price) return Fail($"金币不足，还差 {basic.Price - Data.Coins} 金币。", out error);
+            offer = (basic.Equipment, 1, basic.Price, basic.Name + " Lv1"); error = ""; return true;
+        }
         if (!city.UnlockedContentIds.Contains(upgradeId, StringComparer.Ordinal)) { error = "该升级尚未开放。"; return false; }
         (string equipment, int target, int price, string display) = cityId == StableIds.Cities.Guangzhou ? ResolveGuangzhouUpgrade(upgradeId, catalog) : cityId == StableIds.Cities.Xian ? ResolveXianUpgrade(upgradeId, catalog) : cityId == StableIds.Cities.Wuhan ? ResolveWuhanUpgrade(upgradeId, catalog) : ResolveTianjinUpgrade(upgradeId, catalog);
         if (equipment.Length == 0) return Fail("不支持该升级。", out error);
@@ -349,14 +368,6 @@ public partial class SaveService : Node
     public const int WuhanUnlockDay = 7;
     public static int ChapterDays(string cityId) => cityId switch { StableIds.Cities.Tianjin => 15, StableIds.Cities.Wuhan or StableIds.Cities.Xian or StableIds.Cities.Guangzhou or StableIds.Cities.Yangzhou => 12, _ => throw new ArgumentException("未知城市") };
     public static CityProgressData NewXianProgress() => new() { EquipmentLevels = new(StringComparer.Ordinal) { ["xian_board"] = 1, ["xian_oven"] = 0, ["xian_soup"] = 0 } };
-    private void EnsureWuhanUnlocked()
-    {
-        if (!IsCityAvailable(StableIds.Cities.Wuhan)
-            || !Data.Cities.TryGetValue(StableIds.Cities.Tianjin, out CityProgressData? tianjin)
-            || !tianjin.DayBestRecords.ContainsKey(WuhanUnlockDay)) return;
-        if (!Data.UnlockedCityIds.Contains(StableIds.Cities.Wuhan, StringComparer.Ordinal)) Data.UnlockedCityIds.Add(StableIds.Cities.Wuhan);
-        Data.GetCity(StableIds.Cities.Wuhan);
-    }
     private void EnsureXianUnlocked()
     {
         if (!IsCityAvailable(StableIds.Cities.Xian)) return;
@@ -371,8 +382,8 @@ public partial class SaveService : Node
         return (string.Empty, 0, 0, string.Empty);
     }
 
-    public static CityProgressData NewTianjinProgress() => new() { EquipmentLevels = new(StringComparer.Ordinal) { ["pancake_stove"] = 1, ["ingredient_station"] = 1, ["fryer"] = 0 } };
-    public static CityProgressData NewWuhanProgress() => new() { EquipmentLevels = new(StringComparer.Ordinal) { ["noodle_cooker"] = 1, ["ingredient_station"] = 1, ["doupi_griddle"] = 0 } };
+    public static CityProgressData NewTianjinProgress() => new() { BasePurchaseRulesVersion = 1, EquipmentLevels = new(StringComparer.Ordinal) { ["pancake_stove"] = 1, ["ingredient_station"] = 1, ["fryer"] = 0, ["soy_milk_tray"] = 0 } };
+    public static CityProgressData NewWuhanProgress() => new() { BasePurchaseRulesVersion = 1, EquipmentLevels = new(StringComparer.Ordinal) { ["noodle_cooker"] = 1, ["ingredient_station"] = 1, ["doupi_griddle"] = 0 } };
 
     private static bool RetireWuhanEggRiceWine(SaveData data)
     {
@@ -397,13 +408,14 @@ public partial class SaveService : Node
             LegacySaveDataV2 legacy = version switch { 2 => JsonSerializer.Deserialize<LegacySaveDataV2>(json, JsonOptions)!, 1 => ConvertV1(JsonSerializer.Deserialize<LegacySaveDataV1>(json, JsonOptions)!), _ => throw new InvalidDataException("旧存档版本无效。") };
             CorruptBackupPath = legacyAbsolute + $".v{version}-backup-{DateTime.Now:yyyyMMdd-HHmmssfff}.bak"; File.Copy(legacyAbsolute, CorruptBackupPath, true);
             CityProgressData tianjin = NewTianjinProgress();
+            // Imported saves used the former free day unlocks. Reconcile them once before applying purchase rules.
+            tianjin.BasePurchaseRulesVersion = 0;
             tianjin.HighestUnlockedDay = Math.Clamp(legacy.HighestUnlockedDay, 1, 15); tianjin.BestStars = legacy.TianjinBestStars; tianjin.Completed = legacy.TianjinCompleted;
             tianjin.EquipmentLevels["pancake_stove"] = legacy.PurchasedStoveLevel; tianjin.EquipmentLevels["ingredient_station"] = legacy.PurchasedIngredientStationLevel; tianjin.EquipmentLevels["fryer"] = legacy.PurchasedFryerLevel;
             tianjin.UnlockedContentIds = legacy.UnlockedUpgradeIds; tianjin.DayBestRecords = legacy.DayBestRecords; tianjin.LastDayPlan = legacy.LastDayPlan;
             if (tianjin.HighestUnlockedDay == 15 && tianjin.DayBestRecords.ContainsKey(15)) tianjin.HighestUnlockedDay = 16;
             Data = new SaveData { Coins = legacy.Coins, Cities = new(StringComparer.Ordinal) { [StableIds.Cities.Tianjin] = tianjin }, UnlockedCityIds = new() { StableIds.Cities.Tianjin } };
             if (legacy.UnlockedCityIds.Contains(StableIds.Cities.Wuhan, StringComparer.Ordinal)) { Data.UnlockedCityIds.Add(StableIds.Cities.Wuhan); Data.Cities[StableIds.Cities.Wuhan] = NewWuhanProgress(); }
-            EnsureWuhanUnlocked();
             if (!TrySave(out string error)) throw new IOException(error); MigratedLegacySave = true;
         }
         catch (Exception exception) { _loadIoFailure = exception is IOException or UnauthorizedAccessException && exception is not InvalidDataException; HasLoadError = true; LoadErrorMessage = $"旧存档迁移失败：{exception.Message}"; Data = new SaveData(); GD.PushError(LoadErrorMessage); }

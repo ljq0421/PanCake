@@ -45,7 +45,7 @@ public partial class TianjinDayScreen
         _demoTeachingDay = retry ? _demoTeachingDay : replay ? 1 : _demoBusinessDay;
         ForceDemoTutorial = false;
         _demoLessonReplay = replay;
-        if (!_controller.TryPrepareTutorial(StableIds.Cities.Tianjin, _demoTeachingDay, _catalog, out string error)) { ShowFeedback(error, true); return true; }
+        if (!_controller.TryPrepareTutorial(StableIds.Cities.Tianjin, _demoTeachingDay, _catalog, _save.Data.Tianjin, out string error)) { ShowFeedback(error, true); return true; }
         _workstation.Initialize(_catalog, 1, 1, _controller.CurrentConfig!.AvailableProductKinds.Contains(ProductKind.Youtiao) ? 1 : 0, _controller.CurrentConfig!, _art);
         // 新配料只练习新增的操作；薄脆、葱花和火腿沿用已有的单项提示。
         bool extendsKnownPancakeFlow = unlock?.DefinitionId is StableIds.Recipes.ScallionCrispy or StableIds.Recipes.Ham;
@@ -142,13 +142,14 @@ public partial class TianjinDayScreen
         }
         int? remainingLessonEggs = _demoLessonComplete && _demoTeachingDay == 1 && _demoBusinessDay == 1
             ? _workstation.Inventory.GetQuantity(StableIds.Ingredients.Egg) : null;
+        bool completed = _demoLessonComplete;
         _demoLesson!.Hide(); _demoLessonSkipFrame!.Hide(); _workstation.Tutorial = TutorialProtection.None;
         _workstation.CancelInput(); _sceneFeedback.Clear(); ClearCoinFlights();
         _controller.AbandonDay();
         if (!Initialize(_catalog, _save, _controller, _demoBusinessDay)) return;
         if (remainingLessonEggs is int eggs) _workstation.ConfigureFirstPancakeEggLesson(eggs);
-        _resumeBusinessAfterLesson = true;
-        try { BeginDay(); } finally { _resumeBusinessAfterLesson = false; }
+        _resumeBusinessAfterLesson = !completed;
+        try { if (completed) BeginAfterUnlocks(); else BeginDay(); } finally { _resumeBusinessAfterLesson = false; }
     }
 
     private void RestDemoLesson()

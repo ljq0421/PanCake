@@ -6,7 +6,13 @@ namespace ProjectCake.Core;
 
 public partial class GameController
 {
-    private void PresentWuhanUnlock(BusinessDetailsView book)
+    private void DepartForWuhan()
+    {
+        if (!_save.TryDepartForWuhan(out string error)) { _startScreen.ShowError(error); return; }
+        PresentWuhanUnlock();
+    }
+
+    private void PresentWuhanUnlock(BusinessDetailsView? book = null)
     {
         var presentation = new WuhanUnlockPresentation { Name = "WuhanUnlockPresentation" };
         if (DisplayServer.GetName() != "headless")
@@ -19,7 +25,7 @@ public partial class GameController
         JourneyTransition.For(this).Finish();
         _startScreen.ProcessMode = ProcessModeEnum.Disabled;
         GetViewport().GuiReleaseFocus();
-        book.Hide();
+        book?.Hide();
         foreach (Control page in GetNode("UI").GetChildren().OfType<Control>())
             page.Visible = page == _startScreen;
         GetNode<Node2D>("ShopRoot").Visible = false;

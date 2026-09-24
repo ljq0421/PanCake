@@ -142,10 +142,10 @@ public partial class SaveService
             if (_slotIndex.ActiveSlotId is int id)
             {
                 try { Activate(id, ReadSlot(id)); }
-                catch { SlotError = "上次使用的存档无法读取，请打开设置中的存档管理选择旅程。"; }
+                catch { SlotError = "上次使用的存档无法读取，请打开旅程档案选择旅程。"; }
             }
         }
-        catch (Exception e) { SlotError = "存档管理无法读取：" + e.Message + "。请打开设置中的存档管理选择旅程或重试。"; }
+        catch (Exception e) { SlotError = "旅程档案无法读取：" + e.Message + "。请打开旅程档案选择旅程或重试。"; }
         Changed?.Invoke();
     }
     private void MigrateSingleSave()
@@ -232,7 +232,7 @@ public partial class SaveService
     }
     private bool SaveActiveSlot(out string error)
     {
-        if (ActiveSlotId is not int id || _activeSlot is null) return Fail("请先在存档管理中新建或选择旅程。", out error);
+        if (ActiveSlotId is not int id || _activeSlot is null) return Fail("请先在旅程档案中新建或选择旅程。", out error);
         try
         {
             ValidateSlotData(Data);

@@ -43,6 +43,8 @@ public sealed record EquipmentUpgradePresentation(string City, bool Fixed, int U
 
     public static string FirstUse(string id, int level) => (id, level) switch
     {
+        ("fryer", 1) => "新锅已经安装，可以开始炸油条",
+        ("doupi_griddle", 1) => "新锅已经安装，可以开始做豆皮",
         ("noodle_cooker", 3) => "另一篮也能下锅！熟面自动提起",
         ("noodle_cooker", _) => "已锁定最佳熟度，煮好记得提篮",
         ("doupi_griddle", 3) => "现在会自动翻面，切块还由你来",
@@ -63,6 +65,6 @@ public sealed record EquipmentUpgradePresentation(string City, bool Fixed, int U
     }
     public string State(CityEquipmentView e) => Fixed ? "已生效" : e.Level == 0 ? "未开放" : e.TargetLevel is null ? "已满级"
         : !DayUnlocked ? $"下一级：完成第 {UnlockAfterDay} 天后开放" : CoinsMissing > 0 ? $"还差 {CoinsMissing} 金币" : e.CanBuy ? "可升级" : e.Notice;
-    public string Action(CityEquipmentView e) => !DayUnlocked ? $"第 {UnlockAfterDay} 天后可升级" : CoinsMissing > 0 ? $"还差 {CoinsMissing} 金币"
+    public string Action(CityEquipmentView e) => !DayUnlocked ? "待解锁" : CoinsMissing > 0 ? $"还差 {CoinsMissing} 金币"
         : e.CanBuy ? e.Id == "noodle_cooker" && e.TargetLevel == 3 ? "升级为双篮锅" : "升级设备" : "暂不可升级";
 }

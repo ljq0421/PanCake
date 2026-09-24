@@ -27,12 +27,13 @@ public partial class EngagementSelfTest : Node
             var args = OS.GetCmdlineUserArgs(); _capture = args.Contains("--capture");
             string locale = args.Contains("--english") ? "en" : "zh_CN";
             GetWindow().Size = args.Contains("--small") ? new(1280,720) : new(1920,1080);
-            _dir = ProjectSettings.GlobalizePath("res://.tmp/engagement/" + locale);
+            _dir = args.FirstOrDefault(a => a.StartsWith("--capture-dir=", StringComparison.Ordinal))?[14..]
+                ?? ProjectSettings.GlobalizePath("res://.tmp/engagement/" + locale);
             Directory.CreateDirectory(_dir);
             var settings = GetNode<JourneySettings>("/root/JourneySettings");
             settings.UsePathForTests(Path.Combine(_dir, "settings.cfg")); settings.SetLanguage(locale); InterfaceLessons.MarkAllSeen(settings);
             var c = GetNode<DataCatalog>("/root/DataCatalog"); Check(c.IsValid, "catalog valid");
-            CheckPlans(c); CheckChallenges(c); CheckMigration(c); CheckEconomy(c);
+            CheckPlans(c); CheckChallenges(c); CheckMigration(c); CheckBasePurchases(c); CheckEconomy(c);
             if (!args.Contains("--logic-only")) await CheckUi(c);
             GD.Print($"ENGAGEMENT_SELF_TEST_OK checks={_checks} locale={locale} demo={ExperienceProfile.IsDemo}");
             GetTree().Quit();
@@ -120,10 +121,12 @@ public partial class EngagementSelfTest : Node
         string path=Path.Combine(_dir,"legacy-save.json");
         using var save=new SaveService(); save.UsePathForTests(path); save.ResetProgress(out _);
         save.Data.Tianjin.HighestUnlockedDay=8; save.Data.Coins=123;
+        save.Data.Tianjin.BasePurchaseRulesVersion=0; // Simulate a save created before paid base equipment.
         save.Data.Tianjin.EquipmentLevels["pancake_stove"]=3;
         save.Data.Tianjin.LearnedWorkbenchActions.Add("test-learned-action");
         save.Data.Tianjin.DayBestRecords[2]=new(){TotalRevenue=57}; save.Data.Tianjin.DayBestRecords[SaveService.WuhanUnlockDay]=new(){TotalRevenue=126}; save.TrySave(out _);
-        save.Load(); Check(save.Data.UnlockedCityIds.Contains(StableIds.Cities.Wuhan), "existing Day 7 completion opens Wuhan on load");
+        save.Load(); Check(!save.Data.UnlockedCityIds.Contains(StableIds.Cities.Wuhan) && !save.CanDepartForWuhan,
+            "existing Day 7 completion still needs 600 current coins and a map departure");
         using(var locked=new FileStream(path+".tmp",FileMode.OpenOrCreate,System.IO.FileAccess.ReadWrite,FileShare.None))
             Check(!save.ReconcileEngagementUnlocks(c,out _) && !save.Data.Tianjin.UnlockedContentIds.Contains("product:soy_milk"), "migration rolls back on failure");
         Check(save.ReconcileEngagementUnlocks(c,out _),"migration retry");
@@ -136,6 +139,56 @@ public partial class EngagementSelfTest : Node
         obj["Cities"]![StableIds.Cities.Tianjin]!.AsObject().Remove("ClaimedChallenges"); File.WriteAllText(path,obj.ToJsonString());
         save.Load(); Check(!save.HasLoadError && save.Data.Tianjin.ClaimedChallenges.Count==0,"old save without field accepted");
     }
+    private void CheckBasePurchases(DataCatalog c)
+    {
+        using var save = new SaveService();
+        string path = Path.Combine(_dir, "base-purchases.json");
+        save.UsePathForTests(path); Check(save.ResetProgress(out _), "fresh base purchase save");
+        var city = save.Data.Tianjin; city.HighestUnlockedDay = 3;
+        c.TryGetDay(StableIds.Cities.Tianjin, 3, out var third);
+        var withoutFryer = BaseEquipmentPurchases.ForOwnedEquipment(third, city);
+        Check(!withoutFryer.AvailableProductKinds.Contains(ProductKind.Youtiao)
+            && Generate(c, withoutFryer).Customers.SelectMany(p => p.Order.Lines).All(l => l.ProductKind != ProductKind.Youtiao),
+            "unbought fryer never creates youtiao orders");
+        save.Data.Coins = 79;
+        Check(!save.TryPurchase(BaseEquipmentPurchases.Fryer, c, out _) && save.Data.Coins == 79, "fryer requires enough money");
+        save.Data.Coins = 80;
+        Check(save.TryPurchase(BaseEquipmentPurchases.Fryer, c, out _) && save.Data.Coins == 0
+            && save.Data.PurchasedFryerLevel == 1 && city.BaseEquipmentPurchaseDays["fryer"] == 3,
+            "fryer bought and saved atomically");
+        Check(!save.TryPurchase(BaseEquipmentPurchases.Fryer, c, out _) && save.Data.Coins == 0, "cannot buy fryer twice");
+        var withFryer = BaseEquipmentPurchases.ForOwnedEquipment(third, city);
+        Check(withFryer.AvailableProductKinds.Contains(ProductKind.Youtiao)
+            && Generate(c, withFryer).Customers.SelectMany(p => p.Order.Lines).Any(l => l.ProductKind == ProductKind.Youtiao),
+            "owned fryer restores youtiao orders");
+        city.HighestUnlockedDay = 5; save.Data.Coins = 100;
+        Check(save.TryPurchase(StableIds.Cities.Tianjin, BaseEquipmentPurchases.SoyTray, c, out _)
+            && city.EquipmentLevels["soy_milk_tray"] == 1 && save.Data.Coins == 0, "soy tray bought");
+        c.TryGetDay(StableIds.Cities.Tianjin, 5, out var fifth);
+        Check(BaseEquipmentPurchases.ForOwnedEquipment(fifth, city).AvailableProductKinds.Contains(ProductKind.SoyMilk), "soy orders available after buying");
+        save.Data.UnlockedCityIds.Add(StableIds.Cities.Wuhan);
+        var wuhan = save.Data.Wuhan; wuhan.HighestUnlockedDay = 4;
+        c.TryGetDay(StableIds.Cities.Wuhan, 4, out var fourth);
+        Check(Generate(c, BaseEquipmentPurchases.ForOwnedEquipment(fourth, wuhan)).Customers
+            .SelectMany(p => p.Order.Lines).All(l => l.ProductKind != ProductKind.Doupi), "unbought doupi never ordered");
+        save.Data.Coins = 280;
+        Check(save.TryPurchase(StableIds.Cities.Wuhan, BaseEquipmentPurchases.DoupiGriddle, c, out _)
+            && wuhan.EquipmentLevels["doupi_griddle"] == 1 && save.Data.Coins == 0, "doupi griddle bought");
+        Check(save.TrySave(out _) && !save.HasLoadError, "base purchases saved");
+        save.Load();
+        Check(save.Data.PurchasedFryerLevel == 1 && save.Data.Tianjin.EquipmentLevels["soy_milk_tray"] == 1
+            && save.Data.Wuhan.EquipmentLevels["doupi_griddle"] == 1, "base purchases survive reload");
+        using var delayed = new SaveService();
+        delayed.UsePathForTests(Path.Combine(_dir,"delayed-base-purchase.json")); delayed.ResetProgress(out _);
+        delayed.Data.Tianjin.HighestUnlockedDay=6; delayed.Data.Coins=100;
+        Check(delayed.TryPurchase(BaseEquipmentPurchases.SoyTray,c,out _),"soy tray can be bought after its arrival day");
+        c.TryGetDay(StableIds.Cities.Tianjin,6,out var sixth);
+        var soyOnly=BaseEquipmentPurchases.ForOwnedEquipment(sixth,delayed.Data.Tianjin);
+        Check(soyOnly.StartUnlocks.Contains("product:soy_milk") && !soyOnly.AvailableProductKinds.Contains(ProductKind.Youtiao)
+            && soyOnly.AvailableProductKinds.Contains(ProductKind.SoyMilk),
+            "late soy purchase introduces its lesson without requiring the fryer");
+    }
+
     private void CheckEconomy(DataCatalog c)
     {
         var lines=new List<string>{"scenario,city,day,baseSales,challengeBonus,balance,purchases"};
@@ -164,8 +217,8 @@ public partial class EngagementSelfTest : Node
     private async Task Shot(string name, Node root)
     {
         await Frames(10);
-        for(int i=0;i<180 && JourneyTransition.For(this).Active;i++) await Frames(1);
-        Check(!JourneyTransition.For(this).Active,"transition finished before screenshot");
+        for(int i=0;i<180 && JourneyTransition.For(root).Active;i++) await Frames(1);
+        Check(!JourneyTransition.For(root).Active,"transition finished before screenshot");
         var captions=root.Descendants<Control>().Where(n=>n.IsVisibleInTree()).Select(n=> n switch{Label l=>l.Tr(l.Text).ToString(),Button b=>b.Tr(b.Text).ToString(),_=>""}).Where(s=>s.Length>0).ToArray();
         File.WriteAllLines(Path.Combine(_dir,name+".txt"),captions);
         if(TranslationServer.GetLocale().StartsWith("en"))
@@ -219,8 +272,9 @@ public partial class EngagementSelfTest : Node
             var compactBuy=book.Descendants<Button>().Single(b=>b.Name=="UpgradeEquipment");
             var next=book.Descendants<Button>().Single(b=>b.Name=="ContinueAfterUpgrade");
             var continueArt=next.GetNode<NinePatchRect>("ContinueButtonArt");
-            Check(compactBuy.Size.X==235 && next.Size==compactBuy.Size && Mathf.IsEqualApprox(next.Position.X,compactBuy.Position.X+compactBuy.Size.X)
-                && continueArt.Texture is AtlasTexture { Atlas: { ResourcePath: var texturePath } } && texturePath.EndsWith("TianJin/DialogUI/button-secondary-v1.png"),"book upgrade actions share the compact secondary-button row");
+            Check(compactBuy.Size.X==277 && next.Size.X==269 && next.Size.Y==compactBuy.Size.Y
+                && next.Position.X>=compactBuy.Position.X+compactBuy.Size.X && Mathf.IsEqualApprox(next.Position.X+next.Size.X,560)
+                && continueArt.Texture is AtlasTexture { Atlas: { ResourcePath: var texturePath } } && texturePath.EndsWith("TianJin/DialogUI/button-secondary-v1.png"),$"book upgrade actions share the compact secondary-button row: buy={compactBuy.Position}/{compactBuy.Size}, continue={next.Position}/{next.Size}");
             next.EmitSignal(Button.SignalName.Pressed);next.EmitSignal(Button.SignalName.Pressed);await Frames();
             Check(controller.CurrentConfig!.Day==day+1 && controller.CurrentConfig.CityId==city && !book.Visible,"direct next day uses current city and next date");
             controller.AbandonDay();screen.Hide();start.Show();
@@ -243,6 +297,25 @@ public partial class EngagementSelfTest : Node
             Check(controller.CurrentConfig!.Day==day+1 && !start.Visible,"chapter milestone continues without day cap");
             controller.AbandonDay();screen.Hide();start.Show();
         }
+        save.Data.Tianjin.HighestUnlockedDay=5;save.Data.Coins=Math.Max(save.Data.Coins,100);save.TrySave(out _);
+        start.PresentCity(StableIds.Cities.Tianjin);start.PresentUpgrades();await Frames();
+        var traySelect=start.Descendants<Button>().Single(b=>b.Name=="Select_soy_milk_tray");
+        Check(traySelect.IsVisibleInTree(),"soy tray purchase is reachable in active journey book");
+        traySelect.EmitSignal(Button.SignalName.Pressed);await Frames();
+        var trayView=start.Descendants<EquipmentUpgradeView>().Single();
+        Check(trayView.SelectedId=="soy_milk_tray","soy tray detail opens from compact card");
+        int soyCoins=save.Data.Coins;
+        var trayBuy=start.Descendants<Button>().Single(b=>b.Name=="UpgradeEquipment");
+        Check(!trayBuy.Disabled,"eligible soy tray has active purchase action");
+        await Shot("tianjin-soy-before-purchase",start);
+        trayBuy.EmitSignal(Button.SignalName.Pressed);await Frames();
+        Check(save.Data.Tianjin.EquipmentLevels.GetValueOrDefault("soy_milk_tray")==1 && save.Data.Coins==soyCoins-100,
+            "journey book buys soy tray for 100 coins");
+        Check(start.Descendants<EquipmentUpgradeView>().Single().IsVisibleInTree()
+            && start.Descendants<EquipmentUpgradeView>().Single().SelectedId=="soy_milk_tray",
+            "soy tray purchase leaves the active book visible");
+        await ToSignal(GetTree().CreateTimer(.6),SceneTreeTimer.SignalName.Timeout);
+        await Shot("tianjin-soy-after-purchase",start);
         main.QueueFree();await Frames();
     }
 }

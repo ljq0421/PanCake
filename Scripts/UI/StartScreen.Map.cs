@@ -1,4 +1,6 @@
 using Godot;
+using ProjectCake.Core;
+using ProjectCake.Data;
 
 namespace ProjectCake.UI;
 
@@ -57,6 +59,17 @@ public partial class StartScreen
         map.Size = nativeSize * mapScale;
         map.Position = artworkBounds.GetCenter() - map.Size / 2;
         _mapArtworkRect = new(map.Position, map.Size);
+        if (!reveal && _save?.CanContinue == true)
+        {
+            var current = JourneyModel.City(_save.ContinueCityId);
+            int day = Math.Max(1, JourneyModel.Progress(_save, current.Id).HighestUnlockedDay);
+            string journey = _save.GetSlots().FirstOrDefault(s => s.Id == _save.ActiveSlotId)?.Name ?? "当前旅程";
+            var progress = Text(_body, "MapCurrentProgress", $"{journey} · {current.Name} · 第 {day} 天", new(345, 142, 825, 46), 30);
+            progress.AddThemeColorOverride("font_outline_color", StartScreenTheme.Cream);
+            progress.AddThemeConstantOverride("outline_size", 4);
+            FitTextWidth(progress, 30, 20);
+            Button(_body, "MapSwitchJourney", "切换旅程", new(1330, 139, 226, 54), OpenMapJourneySwitch);
+        }
         Art(_body, "美洲区域装饰", new(MapArtworkPoint(new(380, 417.5f)) - new Vector2(65, 47.5f), new Vector2(130, 95))).Modulate = new Color(1, 1, 1, .3f);
         Art(_body, "欧洲区域装饰", new(MapArtworkPoint(new(905, 282.5f)) - new Vector2(55, 37.5f), new Vector2(110, 75))).Modulate = new Color(1, 1, 1, .3f);
         if (_save is not null && JourneyModel.Cities.All(c => JourneyModel.Progress(_save, c.Id).Completed))
@@ -150,6 +163,14 @@ public partial class StartScreen
                 caption.AddThemeConstantOverride("outline_size", 4);
                 FitTextWidth(caption, (int)(22 * MapMarkerScale), (int)(16 * MapMarkerScale));
             }
+            if (unlocked && _save?.CanContinue == true && city.Id == _save.ContinueCityId)
+            {
+                var marker = Text(node, "LastStopTag", "上次停留", new(-34, -34, 135, 32), 19, true);
+                marker.MouseFilter = MouseFilterEnum.Ignore;
+                marker.AddThemeColorOverride("font_color", new Color("#983F32"));
+                marker.AddThemeColorOverride("font_outline_color", StartScreenTheme.Cream);
+                marker.AddThemeConstantOverride("outline_size", 4);
+            }
             bool persistentHighlight = ring.Visible;
             void RefreshHighlight() => ring.Visible = persistentHighlight || node.IsHovered() || node.HasFocus();
             node.MouseEntered += RefreshHighlight; node.MouseExited += RefreshHighlight;
@@ -159,6 +180,18 @@ public partial class StartScreen
                     ButtonHoverAudio.For(node).Play(node);
             };
             node.FocusEntered += RefreshHighlight; node.FocusExited += RefreshHighlight;
+        }
+        if (!reveal && _save is { CanContinue: true } && !_save.Data.UnlockedCityIds.Contains(StableIds.Cities.Wuhan))
+        {
+            int coins = _save.Data.Coins;
+            bool dayReady = _save.Data.Tianjin.DayBestRecords.ContainsKey(SaveService.WuhanUnlockDay);
+            string state = dayReady ? $"武汉新店筹备金  {coins} / {SaveService.WuhanDepartureCoins} 金币"
+                : $"先完成天津第 7 天  ·  当前金币 {coins} / {SaveService.WuhanDepartureCoins}";
+            Text(_body, "WuhanPreparation", state, new(350, 855, 890, 62), 30);
+            if (_save.CanDepartForWuhan)
+                Button(_body, "DepartWuhan", "出发武汉！", new(1260, 850, 300, 72), () => WuhanDepartureRequested?.Invoke());
+            else
+                Button(_body, "ContinueTianjin", "继续在天津营业", new(1260, 850, 300, 72), () => OpenMapCity(StableIds.Cities.Tianjin));
         }
     }
 

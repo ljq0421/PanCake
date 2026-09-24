@@ -74,9 +74,9 @@ public partial class StartScreen
             }, bare: true);
         var card = HomeAction("Continue", "继续旅程", "小火车", new(400, 835, 500, 150), RenderContinue);
         card.Disabled = !canContinue; card.Modulate = new Color(1, 1, 1, canContinue ? 1 : .68f);
-        HomeAction("NewGame", "新的旅程", "首页新旅程图标-粗描边-v2", new(940, 835, 500, 150), () => RequestNewGame());
+        HomeAction("NewGame", "新的旅程", "首页新旅程图标-粗描边-v2", new(940, 835, 500, 150), () => OpenJourneyArchives(newJourney: true));
         HomeAction("BreakfastRecords", "旅途收藏", "首页旅途收藏图标-粗描边-v2", new(1475, 855, 170, 145), PresentBreakfastCollection, small: true);
-        HomeAction("WorldMap", "世界地图", "首页世界地图图标-粗描边-v2", new(1655, 855, 170, 145), () => PresentMap(), small: true);
+        HomeAction("JourneyArchives", "旅程档案", "已有旅程手账封面", new(1655, 855, 170, 145), () => OpenJourneyArchives(), small: true);
         Utilities(); Focus(canContinue ? "Continue" : "NewGame");
         HomeEntrance();
         _status.MoveToFront();
@@ -87,7 +87,7 @@ public partial class StartScreen
         int? slot = requestedSlot ?? _save.GetSlots().FirstOrDefault(s => !s.Exists)?.Id;
         if (slot is null)
         {
-            ShowError("五个槽位已满，无法新建旅程。请前往设置页面选择或删除存档。");
+            ShowError("五段旅程已满，请到旅程档案删除不再需要的旅程。");
             return;
         }
         CloseModal(); _busy = true;

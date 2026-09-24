@@ -79,6 +79,7 @@ public partial class GameController : Node
         _cityHubs[Data.StableIds.Cities.Guangzhou] = _guangzhouHub;
         _cityHubs[Data.StableIds.Cities.Yangzhou] = _yangzhouHub;
         _startScreen.Initialize(save);
+        _startScreen.WuhanDepartureRequested += DepartForWuhan;
         _startScreen.ConfigureCities(catalog, yangzhouCatalog);
         _startScreen.BusinessRequested += (city, day) => StartCityBusiness(city, day);
         _startScreen.DemoTutorialRequested += () =>
@@ -105,7 +106,7 @@ public partial class GameController : Node
         _startScreen.ContinueRequested += () =>
         {
             if (!save.CanContinue) { _startScreen.ShowError("存档无法继续，请检查存档状态。"); return; }
-            _startScreen.PresentCity(save.ContinueCityId, fromHome: true);
+            _startScreen.PresentMap();
         };
         _startScreen.QuitRequested += () => GetTree().Quit();
         hub.DayRequested += day =>

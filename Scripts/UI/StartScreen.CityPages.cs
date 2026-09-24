@@ -61,6 +61,35 @@ public partial class StartScreen
             material.SetShaderParameter("note_enabled", withNote && CityPageArtSkin.UsesWuhanPalette(cityId) ? 1f : 0f);
             book.Material = material;
         }
+        AddBookClose(_body, HostedByBook || !_homeBookPalette ? cityId : null, NavigateBackFromBook);
+    }
+    private void AddBookClose(Control parent, string? cityId, Action close)
+    {
+        var button = Button(parent, "BookClose", "", new(1469, 209, 70, 70), close, bare: true);
+        button.TooltipText = "关闭书页，返回上一页";
+        button.ZIndex = 2;
+        var art = new BookCloseArt { Name = "BookCloseArt", Position = new(-39, -6), Size = new(110, 82), MouseFilter = MouseFilterEnum.Ignore };
+        if (!string.IsNullOrEmpty(cityId))
+        {
+            var city = cityId.StartsWith("city:", StringComparison.Ordinal) ? cityId[5..] : cityId;
+            var theme = CitySettlementTheme.For(city);
+            art.Ink = theme.Primary.Darkened(.34f);
+            art.Paper = CitySettlementTheme.Paper.Lerp(theme.Secondary, .18f);
+            art.Sparkle = theme.Secondary.Lightened(.1f);
+        }
+        button.AddChild(art);
+    }
+    private void NavigateBackFromBook()
+    {
+        if (HostedByBook) { _bookUpgradeClose?.Invoke(); return; }
+        if (Page == JourneyPage.Opening && _save?.IsDemo == true && _save.Data.UnlockedCityIds.Contains(StableIds.Cities.Wuhan))
+            PresentCity(StableIds.Cities.Wuhan);
+        else if (Page == JourneyPage.NewJourney) RenderNewJourneyMap();
+        else if (Page == JourneyPage.Completion) FinishCompletion();
+        else if (Page == JourneyPage.Collection) ReturnFromBreakfastCollection();
+        else if (Page is JourneyPage.Ledger or JourneyPage.Upgrades) RenderCity();
+        else if (Page == JourneyPage.City) (_cityReturn ?? RenderHome)();
+        else RenderHome();
     }
     private void CityFrame(JourneyPage page, string title)
     {
@@ -77,6 +106,7 @@ public partial class StartScreen
             var ledger = HomeArt(_body, "旅行手账双页母版-经营手账", BookBounds);
             ledger.Name = "SharedBook";
             CityPageArtSkin.Apply(ledger, BookPaletteCity);
+            AddBookClose(_body, BookPaletteCity, NavigateBackFromBook);
         }
         else BookFrame(_city, page == JourneyPage.City);
         if (!HostedByBook && _homeBookPalette)
@@ -90,8 +120,7 @@ public partial class StartScreen
             bool selected = page == JourneyPage.City && i == 0 || page == JourneyPage.Ledger && i == 1 || page == JourneyPage.Upgrades && i == 2;
             var button = Button(_body, bookmark.Name, "", new(selected ? 1617 : 1607, 290 + i * 170, 140, 155), bookmark.Action, bare: true);
             var tabArt = HomeArt(button, i == 0 ? "书页标签-继续旅程" : "书页标签-" + bookmark.Caption + "-v2", new(0, 0, 140, 155), stretch: true);
-            // The supplied journey tab has its own green artwork and icon; leave it unmodified.
-            if (i != 0) CityPageArtSkin.Apply(tabArt, BookPaletteCity);
+            // Keep the three supplied tab colors distinct across every city palette.
             button.Disabled = selected;
             var caption = Text(button, "Caption", bookmark.Caption.Insert(2, "\n"), new(25, 85, 94, 57), 25, true);
             FitContinueLines(caption, 25, 16, 2);
@@ -245,7 +274,7 @@ public partial class StartScreen
         }
         bool hasRecord = p.DayBestRecords.TryGetValue(SelectedDay, out var best) && SelectedDay <= p.HighestUnlockedDay && !_save!.HasLoadError;
         Text(_body, "RecordTitle", _save.HasLoadError ? "存档无法读取" : hasRecord ? "历史最佳收入" : SelectedDay > p.HighestUnlockedDay ? "营业日尚未解锁" : "等待开店", new(1100, 589, 270, 36), 25);
-        var revenue = Text(_body, "BestRevenue", _save.HasLoadError ? "请打开设置管理存档" : hasRecord ? $"{best!.TotalRevenue} 金币" : SelectedDay > p.HighestUnlockedDay ? $"完成第 {SelectedDay - 1} 天后开放" : "这一天还没有营业记录", new(1100, 630, 250, 48), hasRecord ? 38 : 23);
+        var revenue = Text(_body, "BestRevenue", _save.HasLoadError ? "请打开旅程档案" : hasRecord ? $"{best!.TotalRevenue} 金币" : SelectedDay > p.HighestUnlockedDay ? $"完成第 {SelectedDay - 1} 天后开放" : "这一天还没有营业记录", new(1100, 630, 250, 48), hasRecord ? 38 : 23);
         FitTextWidth(revenue, hasRecord ? 38 : 23, 19);
         var satisfaction = Text(_body, "BestMetrics", hasRecord ? $"满意度 {best!.Satisfaction:0}%" : "满意度 —", new(1100, 710, 235, 38), 28);
         FitTextWidth(satisfaction, 28, 19);
@@ -254,7 +283,7 @@ public partial class StartScreen
         var perfect = Text(_body, "BestPerfect", hasRecord ? $"Perfect {best!.PerfectOrders} 单" : "", new(1335, 687, 108, 60), 18, true);
         FitTextWidth(perfect, 18, 12);
         if (_save.HasLoadError)
-            Text(_body, "ReplayNote", "可打开设置，在存档管理中选择其他旅程。", new(1010, 803, 505, 38), 21, true);
+            Text(_body, "ReplayNote", "可返回首页，在旅程档案中选择其他旅程。", new(1010, 803, 505, 38), 21, true);
         string startCaption = hasRecord ? "再次营业" : "开张";
         var start = Button(_body, "StartSelectedDay", "", new(1110, 795, 340, 48), () => RequestBusiness(SelectedDay), bare: true);
         var plateTexture = Texture("首页地图按钮底板");

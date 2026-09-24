@@ -26,6 +26,7 @@ public partial class GameController
         screen.HubRequested += () => ReturnFromBusiness(StableIds.Cities.Tianjin);
         wuhan.HubRequested += () => ReturnFromBusiness(StableIds.Cities.Wuhan);
         _startScreen.Initialize(_save);
+        _startScreen.WuhanDepartureRequested += DepartForWuhan;
         _startScreen.ConfigureCities(catalog, null);
         _startScreen.BusinessRequested += (city, day) => StartCityBusiness(city, day);
         _startScreen.DemoTutorialRequested += () =>
@@ -46,7 +47,7 @@ public partial class GameController
         _startScreen.FirstStationDepartureRequested += () => StartCityBusiness(StableIds.Cities.Tianjin, 1, firstJourneyDeparture: true);
         _startScreen.ContinueRequested += () =>
         {
-            if (_save.CanContinue && catalog.IsValid) _startScreen.PresentCity(_save.ContinueCityId, fromHome: true);
+            if (_save.CanContinue && catalog.IsValid) _startScreen.PresentMap();
             else _startScreen.ShowError("试玩存档或配置无法读取，请检查后重试。");
         };
         _startScreen.QuitRequested += () => GetTree().Quit();

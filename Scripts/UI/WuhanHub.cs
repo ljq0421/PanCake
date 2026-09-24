@@ -51,7 +51,7 @@ public partial class WuhanHub : Control
         _primary.Disabled = _save.HasLoadError;
         _dayTitle.Text = $"Day {day}";
         _daySubtitle.Text = DaySubtitle(day);
-        _dayRecord.Text = _save.HasLoadError ? "存档无法读取，暂时无法营业。\n请打开设置管理存档。"
+        _dayRecord.Text = _save.HasLoadError ? "存档无法读取，暂时无法营业。\n请返回首页打开旅程档案。"
             : city.DayBestRecords.TryGetValue(day, out DayBestRecord? best)
                 ? $"历史最佳营业额  ¥{best.TotalRevenue}\n满意度  {best.Satisfaction:0}%  ·  Perfect {best.PerfectOrders} 单\n\n设备和食材已经备好，随时可以开门。"
                 : "这是新的营业日，先看订单再安排工作台。\n\n翻开经营手账，可以查看往日记录或重玩。";
@@ -64,7 +64,7 @@ public partial class WuhanHub : Control
     {
         int cooker = city.EquipmentLevels.GetValueOrDefault("noodle_cooker",1), griddle = city.EquipmentLevels.GetValueOrDefault("doupi_griddle"), station = city.EquipmentLevels.GetValueOrDefault("ingredient_station",1);
         UpdateCard("Cooker", "煮面锅", _art.Cooker(1), cooker, Next(city, "equipment:noodle_cooker_lv2", "equipment:noodle_cooker_lv3"));
-        UpdateCard("Griddle", "豆皮锅", _art.Griddle(1), griddle, Next(city, "equipment:doupi_griddle_lv2", "equipment:doupi_griddle_lv3"));
+        UpdateCard("Griddle", "豆皮锅", _art.Griddle(1), griddle, CurrentOffer("griddle"));
         UpdateCard("WuhanStation", "备料台", _art.Texture("raw_noodles"), station, null);
     }
 
@@ -75,26 +75,30 @@ public partial class WuhanHub : Control
         Label note = GetNode<Label>($"%{prefix}Note");
         Button upgrade = GetNode<Button>($"%{prefix}Upgrade");
         note.Visible = offer is null;
-        note.Text = level == 0 ? "完成对应营业日解锁" : "当前最好设备";
+        note.Text = level == 0 ? "Day 4 起可购买 · 280 金币" : "当前最好设备";
         if (prefix == "WuhanStation")
             { note.Text = "生面无限供应"; GetNode<Label>("%WuhanStationTitle").Text = "备料台"; }
         upgrade.Visible = offer is not null;
         if (offer is not null)
         {
             int price = Price(offer);
-            upgrade.Text = $"升级 ¥{price}";
+            upgrade.Text = level == 0 ? _save.Data.Coins < price
+                ? $"豆皮锅 {_save.Data.Coins}/{price} · 还差 {price - _save.Data.Coins}"
+                : $"购买豆皮锅 ¥{price}" : $"升级 ¥{price}";
             upgrade.Disabled = _save.Data.Coins < price;
         }
     }
     private string? CurrentOffer(string station) => station switch
     {
         "cooker" => Next(_save.Data.Wuhan, "equipment:noodle_cooker_lv2", "equipment:noodle_cooker_lv3"),
-        "griddle" => Next(_save.Data.Wuhan, "equipment:doupi_griddle_lv2", "equipment:doupi_griddle_lv3"),
+        "griddle" => _save.Data.Wuhan.EquipmentLevels.GetValueOrDefault("doupi_griddle") == 0
+            ? _save.Data.Wuhan.HighestUnlockedDay >= 4 ? BaseEquipmentPurchases.DoupiGriddle : null
+            : Next(_save.Data.Wuhan, "equipment:doupi_griddle_lv2", "equipment:doupi_griddle_lv3"),
         _ => null,
     };
     private string? Next(CityProgressData city, params string[] ids) => ids.FirstOrDefault(id => city.UnlockedContentIds.Contains(id,StringComparer.Ordinal) && !Owned(city,id));
     private static bool Owned(CityProgressData city,string id) => id.Contains("ingredient_station") ? city.EquipmentLevels.GetValueOrDefault("ingredient_station",1) >= (id.EndsWith("lv3")?3:2) : id.Contains("noodle_cooker") ? city.EquipmentLevels.GetValueOrDefault("noodle_cooker",1) >= (id.EndsWith("lv3")?3:2) : city.EquipmentLevels.GetValueOrDefault("doupi_griddle") >= (id.EndsWith("lv3")?3:2);
-    private static int Price(string id) => id switch { "equipment:wuhan_ingredient_station_lv2"=>120,"equipment:noodle_cooker_lv2"=>220,"equipment:doupi_griddle_lv2"=>280,"equipment:wuhan_ingredient_station_lv3"=>300,"equipment:noodle_cooker_lv3"=>520,"equipment:doupi_griddle_lv3"=>560,_=>0 };
+    private static int Price(string id) => id switch { BaseEquipmentPurchases.DoupiGriddle => 280, "equipment:wuhan_ingredient_station_lv2"=>120,"equipment:noodle_cooker_lv2"=>220,"equipment:doupi_griddle_lv2"=>280,"equipment:wuhan_ingredient_station_lv3"=>300,"equipment:noodle_cooker_lv3"=>520,"equipment:doupi_griddle_lv3"=>560,_=>0 };
     private void Purchase(string id) { bool ok=_save.TryPurchase(StableIds.Cities.Wuhan,id,_catalog,out string error); _message.Text=ok?"新设备已经装好，下次营业生效。":error; _message.Modulate=ok?TianjinUi.Green:TianjinUi.Red; Render(); }
     public static string DaySubtitle(int day) => day switch {1=>"初到武汉",2=>"葱香辣油双加",3=>"卤牛肉上桌",4=>"豆皮开锅",5=>"双线程",6=>"双线熟练",7=>"上班族到店",8=>"完整早餐",9=>"带走大单",10=>"高级豆皮锅",11=>"过早高峰",_=>"最终挑战"};
 }

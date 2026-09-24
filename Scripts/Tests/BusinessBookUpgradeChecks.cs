@@ -102,7 +102,7 @@ public partial class BusinessBookSelfTest
                     city + " settlement and upgrade books share the same on-screen frame");
                 Check(!view.CloseButton.IsVisibleInTree(), city + " original ledger is hidden beneath upgrade book");
                 Check(!page.Descendants<Button>().Any(b => b.Name == "Home" || b.Name == "MapTab" || b.Name == "LedgerTab"), city + " settlement navigation only returns to book");
-                Check(!page.Descendants<Button>().Any(b => b.Name == "CloseUpgrades"), city + " upgrade page has no upper-right return button");
+                Check(page.Descendants<Button>().Any(b => b.Name == "BookClose" && b.IsVisibleInTree()), city + " upgrade page has an upper-right return button");
                 view.CloseButton.EmitSignal(BaseButton.SignalName.Pressed); Check(!closed, city + " modal blocks book close");
                 for (int i = 0; i < 8; i++)
                 {
@@ -129,8 +129,8 @@ public partial class BusinessBookSelfTest
                         city + " return focus leaves sticker artwork and caption visible");
                 if (Capture && size.X == 1920) await Shot(city + "-upgrade-return-focus");
                 Click(Entry()); await Frames();
-                GetViewport().PushInput(new InputEventKey { Keycode = Key.Escape, Pressed = true }, true); await Frames();
-                Check(!closed && Entry().HasFocus() && !view.Descendants<Control>().Any(n => n.Name == "BookUpgradeModal"), city + " Escape restores original book");
+                Click(view.Descendants<Button>().Single(b => b.Name == "BookClose")); await Frames();
+                Check(!closed && Entry().HasFocus() && !view.Descendants<Control>().Any(n => n.Name == "BookUpgradeModal"), city + " close returns to original book");
             }
             if (OS.GetCmdlineUserArgs().Contains("--teaching-only"))
             {

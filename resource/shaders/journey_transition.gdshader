@@ -4,6 +4,14 @@ uniform float progress : hint_range(0.0, 1.0) = 0.0;
 uniform int effect = 0;
 uniform bool reverse_turn = false;
 uniform vec4 area = vec4(0.0, 0.0, 1.0, 1.0);
+uniform sampler2D book_art : source_color, filter_linear;
+uniform vec4 mask_fit = vec4(0.0, 0.0, 1.0, 1.0);
+
+vec4 book_paper(vec2 local) {
+    vec2 fitted = (local - mask_fit.xy) / mask_fit.zw;
+    if (any(lessThan(fitted, vec2(0.0))) || any(greaterThan(fitted, vec2(1.0)))) return vec4(0.0);
+    return texture(book_art, fitted);
+}
 
 void fragment() {
     vec2 uv = UV;
@@ -42,7 +50,59 @@ void fragment() {
             cloth = mix(cloth, vec3(0.72, 0.52, 0.28), hem);
             result = vec4(cloth, 1.0);
         }
-    } else if (effect == 4 || effect == 5 || effect == 8) {
+    } else if (effect == 8) {
+        // The photographed right leaf folds into the spine, then its paper reverse
+        // opens over the left leaf. The real artwork supplies the page silhouette.
+        vec2 local = (uv - area.xy) / max(area.zw, vec2(0.001));
+        bool inside = all(greaterThanEqual(local, vec2(0.0))) && all(lessThanEqual(local, vec2(1.0)));
+        float settle = 1.0 - smoothstep(0.82, 1.0, p);
+        result = vec4(old.rgb, settle);
+        if (inside) {
+            float x = reverse_turn ? 1.0 - local.x : local.x;
+            float spine = 0.5;
+            float y = local.y;
+            float lift = sin(p * 3.14159265);
+            if (p < 0.5) {
+                float turn = smoothstep(0.0, 1.0, p * 2.0);
+                float width = 0.5 * (1.0 - turn);
+                float edge = spine + width + lift * (0.026 * sin(y * 3.14159265) + 0.015 * (y - 0.5));
+                if (x < spine) {
+                    result = old;
+                } else if (x <= edge && width > 0.001) {
+                    float source_x = spine + (x - spine) * 0.5 / max(edge - spine, 0.001);
+                    vec2 source = vec2(reverse_turn ? 1.0 - source_x : source_x, y);
+                    vec4 paper = book_paper(source);
+                    result = texture(TEXTURE, area.xy + source * area.zw);
+                    float rim = smoothstep(0.78, 1.0, (x - spine) / max(edge - spine, 0.001));
+                    result.rgb *= 1.0 - 0.16 * lift + 0.24 * lift * rim;
+                    result.a = paper.a;
+                } else {
+                    float shadow = 0.24 * lift * exp(-max(x - edge, 0.0) * 62.0);
+                    result = vec4(0.18, 0.11, 0.06, shadow * book_paper(local).a);
+                }
+            } else {
+                float turn = smoothstep(0.0, 1.0, (p - 0.5) * 2.0);
+                float width = 0.5 * turn;
+                float edge = spine - width - lift * (0.026 * sin(y * 3.14159265) + 0.015 * (y - 0.5));
+                if (x >= spine) {
+                    result = vec4(0.0);
+                } else if (x >= edge && width > 0.001) {
+                    float source_x = spine + (spine - x) * 0.5 / max(spine - edge, 0.001);
+                    vec2 source = vec2(reverse_turn ? 1.0 - source_x : source_x, y);
+                    vec4 paper = book_paper(source);
+                    vec3 plain_paper = book_paper(vec2(0.65, 0.5)).rgb;
+                    float painted_edge = 1.0 - smoothstep(0.025, 0.11, min(y, 1.0 - y));
+                    vec3 underside = mix(plain_paper, paper.rgb, 0.08 + 0.78 * painted_edge);
+                    underside *= 1.0 - 0.17 * lift * (1.0 - (spine - x) / max(spine - edge, 0.001));
+                    result = vec4(underside, paper.a * settle);
+                } else {
+                    result = vec4(old.rgb, settle);
+                    float shadow = 0.22 * lift * exp(-max(edge - x, 0.0) * 55.0);
+                    result.rgb = mix(result.rgb, vec3(0.19, 0.11, 0.06), shadow);
+                }
+            }
+        }
+    } else if (effect == 4 || effect == 5) {
         // A bounded paper curl crosses the spread and its spine. Closing mirrors
         // the turn, without folding the workbench or the full-screen dimmer.
         vec2 local = (uv - area.xy) / max(area.zw, vec2(0.001));

@@ -26,7 +26,9 @@ public sealed partial class CityPageModel
         if (catalog is null || city is not (StableIds.Cities.Tianjin or StableIds.Cities.Wuhan))
             return JourneyModel.Goal(save, JourneyModel.City(city));
         string goal = new BookUpgradeSource(save, catalog, city).NextGoal;
-        return goal.StartsWith("升级目标：", StringComparison.Ordinal) ? goal : goal.Split('·')[0].Trim();
+        return goal.StartsWith("升级目标：", StringComparison.Ordinal) || goal.StartsWith("下一目标：", StringComparison.Ordinal)
+            || goal.StartsWith("可以买了：", StringComparison.Ordinal) || goal.StartsWith("攒钱买", StringComparison.Ordinal)
+            ? goal : goal.Split('·')[0].Trim();
     }
 
     private IReadOnlyList<CityUnlockView> LatestUnlocks(string city, int highest)
@@ -37,11 +39,13 @@ public sealed partial class CityPageModel
             int latest = available.Select(p => p.UnlockDay).DefaultIfEmpty(0).Max();
             return available.Where(p => p.UnlockDay == latest).Select(p => new CityUnlockView(p.Id, p.Name, p.Id)).ToArray();
         }
+        var progress = JourneyModel.Progress(save, city);
         var seen = new HashSet<string>(StringComparer.Ordinal);
         CityUnlockView[] latestBatch = Array.Empty<CityUnlockView>();
         for (int day = 1; day <= Math.Min(highest, save.ChapterLength(city)); day++)
         {
-            if (catalog is null || !catalog.TryGetDay(city, day, out var config)) continue;
+            if (catalog is null || !catalog.TryGetDay(city, day, out var original)) continue;
+            var config = BaseEquipmentPurchases.ForOwnedEquipment(original, progress);
             IEnumerable<string> ids = config.StartUnlocks.Concat(config.AvailableRecipeIds.Select(id => "recipe:" + id))
                 .Concat(config.AvailableProductKinds.Select(kind => "kind:" + kind));
             var batch = new List<CityUnlockView>();

@@ -255,7 +255,8 @@ public partial class EquipmentUpgradeView
         string originalText = level.Text;
         Vector2 originalSize = level.Size;
         int originalFontSize = level.GetThemeFontSize("font_size");
-        level.Text = $"已升至 Lv{item.Level} · 下次营业生效";
+        bool installed = previous?.Level == 0;
+        level.Text = installed ? $"已安装 Lv{item.Level} · 下次营业生效" : $"已升至 Lv{item.Level} · 下次营业生效";
         level.Size = new(418, originalSize.Y);
         level.AddThemeFontSizeOverride("font_size", 23);
         level.AddThemeColorOverride("font_color", Green);
@@ -270,7 +271,7 @@ public partial class EquipmentUpgradeView
         var check = new Line2D { Width = 2.2f, DefaultColor = Green, Antialiased = true };
         check.Points = new[] { new Vector2(12, 17), new Vector2(17, 22), new Vector2(26, 11) };
         stamp.AddChild(check);
-        LabelAt(stamp, "UpgradeSuccessStamp", "已升级", new(33, 0, 92, 33), 22, Green, true);
+        LabelAt(stamp, "UpgradeSuccessStamp", installed ? "已购买" : "已升级", new(33, 0, 92, 33), 22, Green, true);
 
         // Compare with the purchased offer, never with the next available upgrade.
         var highlighted = new List<Label>();

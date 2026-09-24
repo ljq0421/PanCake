@@ -288,7 +288,7 @@ public partial class OrderBubbleView : PanelContainer
                             ? recipe.ExtraIngredients.OrderBy(WuhanToppingOrder)
                             : recipe.ExtraIngredients.AsEnumerable())
                         {
-                            Texture2D texture = _wuhan is null ? _shared.Ingredient(ingredient) : _wuhan.Ingredient(ingredient);
+                            Texture2D texture = _wuhan is null ? _shared.Ingredient(ingredient) : _wuhan.OrderIngredient(ingredient);
                             TextureRect topping = Icon(texture,
                                 _compactLayout ? CompactToppingSize : new Vector2(44, 40), $"OrderIngredientIcon_{ingredient}");
                             topping.SetMeta("ingredient_id", ingredient);
@@ -445,7 +445,7 @@ public partial class OrderBubbleView : PanelContainer
     private float SimpleProductWidth(ProductKind kind)
     {
         Texture2D source = kind == ProductKind.HotDryNoodles && _wuhan is not null
-            ? _wuhan.Texture("noodles_plain_finished") : _wuhan is null ? _shared.Product(kind) : _wuhan.Product(kind);
+            ? _wuhan.Texture("noodles_order_icon") : _wuhan is null ? _shared.Product(kind) : _wuhan.Product(kind);
         Texture2D prepared = PrepareCompactIcon(source, CompactProductSize);
         return Math.Min(CompactProductSize.X, CompactProductSize.Y * prepared.GetWidth() / prepared.GetHeight());
     }
@@ -494,7 +494,7 @@ public partial class OrderBubbleView : PanelContainer
         if (kind != ProductKind.HotDryNoodles || _wuhan is null)
             return Icon(_wuhan is null ? _shared.Product(kind) : _wuhan.Product(kind), size, "OrderProductIcon");
         // Scale the complete plain dish as one image, including in narrower shared rows.
-        return Icon(_wuhan.Texture("noodles_plain_finished"), size, "OrderProductIcon");
+        return Icon(_wuhan.Texture("noodles_order_icon"), size, "OrderProductIcon");
     }
 
     private TextureRect Icon(Texture2D texture, Vector2 size, string name)

@@ -34,9 +34,10 @@ public partial class StartScreen
             panel.AddThemeStyleboxOverride("panel", StartScreenTheme.Box(StartScreenTheme.Cream, 3, true));
             _modal.AddChild(panel);
         }
-        else if (kind != "home-overlay")
+        else if (kind is not ("home-overlay" or "map-switch"))
         {
             var book = HomeArt(_modal, "旅行手账双页母版", BookBounds);
+            AddBookClose(_modal, null, CloseModal);
             if (kind == "settings")
             {
                 book.Name = "SettingsBook";
@@ -96,7 +97,7 @@ public partial class StartScreen
         if (!restoreHomeBody && IsBookPage(Page))
             JourneyTransition.For(this).Play(JourneyTransition.Effect.BookPage,
                 bounds: new Rect2(_canvas.GetGlobalTransformWithCanvas() * BookBounds.Position, BookBounds.Size * _canvas.Scale));
-        _settingsMessage = null; _countdown = null; _displayConfirmation = null;
+        _settingsMessage = null; _archiveMessage = null; _countdown = null; _displayConfirmation = null;
         foreach (var button in _buttons) if (GodotObject.IsInstanceValid(button)) button.FocusMode = FocusModeEnum.All;
         if (restoreHomeBody) RestoreHomeBody();
         if (GodotObject.IsInstanceValid(_previousFocus) && _previousFocus!.IsInsideTree() && _previousFocus.IsVisibleInTree()) _previousFocus.GrabFocus();
@@ -143,9 +144,9 @@ public partial class StartScreen
                 if (_body.GetNodeOrNull<Button>(name)?.GetNodeOrNull<Label>("Caption") is { } bookmarkCaption)
                     FitContinueLines(bookmarkCaption, 25, 16, 2);
         if (Page == JourneyPage.Home && _body is not null)
-            foreach (string name in new[] { "Continue", "NewGame", "WorldMap" })
+            foreach (string name in new[] { "Continue", "NewGame", "JourneyArchives" })
                 if (_body.FindChild(name, true, false)?.GetNodeOrNull<Label>("Caption") is { } caption)
-                    FitTextWidth(caption, name == "WorldMap" ? 34 : 48, name == "WorldMap" ? 25 : 32);
+                    FitTextWidth(caption, name == "JourneyArchives" ? 30 : 48, name == "JourneyArchives" ? 25 : 32);
         RefreshSettingsControls();
         if (_audioButton is not null && GodotObject.IsInstanceValid(_audioButton))
         {

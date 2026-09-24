@@ -128,12 +128,11 @@ public partial class StartScreenSelfTest : Node
         _save.UseSlotsForTests(root);
         Check(_save.TryCreateSlot(1, out _) && _save.TryCreateSlot(2, out _), "panel fixture creates two isolated slots");
         _save.TryLoadSlot(1, out _);
-        _screen.PresentHome(); await Click(Find<Button>("Settings"));
-        var choice = Find<SaveSlotChoice>("SaveSlot");
-        Check(choice.ItemCount == SaveService.SlotCount && !choice.IsItemDisabled(0) && !choice.IsItemDisabled(1)
-            && choice.IsItemDisabled(2), "settings lists five slots and blocks empty slots");
-        choice.ActivateItem(1); await Frames();
-        Check(_save.ActiveSlotId == 2 && _screen.ModalOpen, "settings selector switches slots without opening a manager page");
+        _screen.PresentHome(); await Click(Find<Button>("JourneyArchives"));
+        Check(Find<Label>("ArchiveName1").Text.Length > 0 && Find<Button>("ArchiveSlot2") is not null,
+            "home archives lists the available journeys");
+        await Click(Find<Button>("ArchiveSlot2"));
+        Check(_save.ActiveSlotId == 2 && _screen.Page == JourneyPage.Map, "archive switches journey and opens its map");
         await Capture("panel-after");
         _screen.PresentHome();
     }
@@ -148,6 +147,8 @@ public partial class StartScreenSelfTest : Node
         await Click(Find<Button>("Depart"));
         Check(_save.CanContinue && _screen.Page == JourneyPage.City, "new departure artwork starts the journey through viewport input");
         _screen.PresentHome(); await Frames(); await Click(Find<Button>("Continue"));
+        Check(_screen.Page == JourneyPage.Map, "continue opens journey map");
+        await Click(Find<Button>("Node0"));
         Check(!_screen.Descendants<Button>().Any(b => b.Name == "MapTab"), "continue journey has no map bookmark");
         await Capture("continue-no-map-tab");
         var settings = GetNode<JourneySettings>("/root/JourneySettings");
@@ -171,12 +172,15 @@ public partial class StartScreenSelfTest : Node
         if (_screen.Page != JourneyPage.Home) _screen.PresentHome();
         if (!_save.UsesSlots) _save.UseSlotsForTests(Path.Combine(Path.GetDirectoryName(_path)!, "gallery-slots"));
         await Frames(); await Click(Find<Button>("NewGame"));
-        Check(_screen.Page == JourneyPage.Map, "new journey opens map");
+        Check(_screen.ModalOpen && !_save.GetSlots().Any(s => s.Exists), "new journey opens empty journal selection");
+        int slot = _save.GetSlots().First(s => !s.Exists).Id;
+        await Click(Find<Button>("CreateSlot" + slot));
+        Check(_screen.Page == JourneyPage.NewJourneyMap, "selected blank journal opens first-station map");
     }
     private async Task TravelChecks()
     {
         _screen.PresentHome(); await Frames();
-        await Click(Find<Button>("WorldMap"));
+        _screen.PresentMap(); await Frames();
         Check(_screen.Page == JourneyPage.Map, "wall opens world map");
         await Capture("map-first");
         string before = File.ReadAllText(_path);
@@ -196,7 +200,11 @@ public partial class StartScreenSelfTest : Node
         await Click(Find<Button>("Back"));
         Check(_screen.Page == JourneyPage.Home, "map returns to home source");
         await Click(Find<Button>("Continue"));
-        Check(_screen.Page == JourneyPage.City && _screen.SelectedCityId == _save.ContinueCityId, "continue opens saved city");
+        Check(_screen.Page == JourneyPage.Map && Find<Label>("MapCurrentProgress").Text.Contains("天津"),
+            "continue opens map with saved city progress");
+        await Click(Find<Button>("Node0"));
+        Check(_screen.Page == JourneyPage.City && _screen.SelectedCityId == _save.ContinueCityId,
+            "saved city can be selected from continue map");
         foreach (var city in JourneyModel.Cities) { if (!_save.Data.UnlockedCityIds.Contains(city.Id)) _save.Data.UnlockedCityIds.Add(city.Id); _save.Data.GetCity(city.Id); }
         _save.Data.GetCity(StableIds.Cities.Tianjin).Completed = true;
         _save.Data.GetCity(StableIds.Cities.Tianjin).BestStars = 1;
@@ -340,7 +348,7 @@ public partial class StartScreenSelfTest : Node
         await Click(Find<Button>("Settings"));
         Find<Button>("Mute").GrabFocus(); await Capture("focus-settings-patch");
         KeyPress(Key.Escape);
-        await Click(Find<Button>("WorldMap"));
+        _screen.PresentMap(); await Frames();
         Find<Button>("Node0").GrabFocus(); await Capture("focus-map-node");
         AuditButtonFocus();
         await Click(Find<Button>("Back"));
@@ -363,8 +371,8 @@ public partial class StartScreenSelfTest : Node
         Check(_screen.GetNodeOrNull("Canvas/Page/Audio") is null, "home exposes no separate mute button");
         Check(Find<Control>("HomeMap").GetChildren().Count(n => n.Name.ToString().StartsWith("HomeCity")) == 1, "new player sees only Tianjin");
         await Capture("home-first-run");
-        await Click(Find<Button>("WorldMap"));
-        Check(_screen.Page == JourneyPage.Map, "tabletop map opens existing map flow");
+        await Click(Find<Button>("JourneyArchives"));
+        Check(_screen.ModalOpen && Find<Label>("ArchivesTitle").Text.Contains("旅程档案"), "home archive entry is visible");
         KeyPress(Key.Escape); await Frames();
         Check(_screen.FindChildren("WallMap", "Button", true, false).Count == 0, "home wall map is decorative and has no click target");
         _save.ResetProgress(out _);
@@ -382,7 +390,7 @@ public partial class StartScreenSelfTest : Node
         Check(markers.All(a => markers.All(b => a == b || !a.GetRect().Intersects(b.GetRect()))), "five city callouts do not overlap");
         Check(_save.ContinueCityId == StableIds.Cities.Wuhan && Find<Button>("Continue").TooltipText.Length == 0, "continue retains saved city without hover text");
         await Capture("home-five-cities");
-        await Click(Find<Button>("WorldMap"));
+        await Click(Find<Button>("Continue"));
         await Capture("home-world-map-five-cities");
         KeyPress(Key.Escape); await Frames();
         await Click(Find<Button>("Settings"));
@@ -409,7 +417,7 @@ public partial class StartScreenSelfTest : Node
         _save.Data.LastVisitedCityId = StableIds.Cities.Wuhan; _save.TrySave(out _);
         _screen.PresentHome(); await Capture("continue");
         await Click(Find<Button>("Continue")); await Capture("journal");
-        _screen.PresentHome(); await Frames(); await Click(Find<Button>("WorldMap")); await Capture("map-progress");
+        _screen.PresentHome(); await Frames(); await Click(Find<Button>("Continue")); await Capture("map-progress");
         foreach (var city in JourneyModel.Cities) { _screen.OpenCard(city.Id); await Capture("city-" + city.Name); }
         _screen.PresentCompletion(StableIds.Cities.Tianjin, () => _screen.PresentHome());
         await ToSignal(GetTree().CreateTimer(.5), SceneTreeTimer.SignalName.Timeout); await Capture("completion-tianjin");
@@ -437,7 +445,7 @@ public partial class StartScreenSelfTest : Node
         KeyPress(Key.Down);
         Check(Find<Button>("BreakfastRecords").HasFocus(), "new journey leads to collection in keyboard order");
         KeyPress(Key.Down);
-        Check(Find<Button>("WorldMap").HasFocus(), "collection leads to world map in keyboard order");
+        Check(Find<Button>("JourneyArchives").HasFocus(), "collection leads to journey archives in keyboard order");
         await Capture("collection-home-new");
         await Click(Find<Button>("BreakfastRecords"));
         Check(_screen.Page == JourneyPage.Collection && Find<Label>("BreakfastOrigin").Text.Contains("正确送出"), "new players can browse uncollected breakfasts");
@@ -476,7 +484,7 @@ public partial class StartScreenSelfTest : Node
     private async Task ModalUtilitiesChecks()
     {
         _save.ResetProgress(out _);
-        foreach (string entry in new[] { "Settings", "Help", "Continue", "BreakfastRecords" })
+        foreach (string entry in new[] { "Settings", "Help", "JourneyArchives", "BreakfastRecords" })
         {
             _screen.PresentHome(); await Frames();
             await Click(Find<Button>(entry));
@@ -486,13 +494,6 @@ public partial class StartScreenSelfTest : Node
                 Check(utilities.GetNode<Button>(name).IsVisibleInTree()
                     && utilities.GetNode<Button>(name).Modulate == Colors.White, entry + " keeps " + name + " visible at full brightness");
             await Capture("modal-utilities-" + entry);
-            if (entry == "Continue")
-                foreach (string tab in new[] { "LedgerTab", "UpgradeTab" })
-                {
-                    await Click(Find<Button>(tab));
-                    Check(utilities.IsVisibleInTree(), tab + " retains navigation");
-                    await Capture("modal-utilities-" + tab);
-                }
             await Click(utilities.GetNode<Button>("Home"));
             Check(!_screen.ModalOpen && _screen.Page == JourneyPage.Home, entry + " home icon returns home");
         }
@@ -514,7 +515,7 @@ public partial class StartScreenSelfTest : Node
         _screen = _main.GetNode<StartScreen>("UI/StartScreen");
         await Frames(3);
         Check(_screen.Page == JourneyPage.Home, "first frame opens home");
-        foreach (string name in new[] { "Continue", "NewGame", "BreakfastRecords", "WorldMap" })
+        foreach (string name in new[] { "Continue", "NewGame", "BreakfastRecords", "JourneyArchives" })
             Check(Find<Button>(name).Visible, "home action visible " + name);
         Check(!_screen.FindChildren("Skip", "Button", true, false).Any(), "splash prompt removed");
         if (_capture && !OS.GetCmdlineUserArgs().Contains("--home-motion-only"))

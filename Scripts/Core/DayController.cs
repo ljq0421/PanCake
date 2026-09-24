@@ -78,9 +78,12 @@ public partial class DayController : Node
         => TryPrepareDay(StableIds.Cities.Tianjin, dayNumber, catalog, out error);
 
     public bool TryPrepareDay(string cityId, int dayNumber, DataCatalog catalog, out string error)
-        => PrepareDay(cityId, dayNumber, catalog, null, out error);
+        => PrepareDay(cityId, dayNumber, catalog, null, null, out error);
 
-    private bool PrepareDay(string cityId, int dayNumber, DataCatalog catalog, TutorialProtection? tutorial, out string error)
+    public bool TryPrepareDay(string cityId, int dayNumber, DataCatalog catalog, CityProgressData progress, out string error)
+        => PrepareDay(cityId, dayNumber, catalog, progress, null, out error);
+
+    private bool PrepareDay(string cityId, int dayNumber, DataCatalog catalog, CityProgressData? progress, TutorialProtection? tutorial, out string error)
     {
         if (!ExperienceProfile.IsCityAvailable(cityId, ExperienceProfile.IsDemo))
         { error = "本次试玩尚未开放该城市。"; return false; }
@@ -95,6 +98,7 @@ public partial class DayController : Node
             error = $"找不到 Day {dayNumber} 配置。";
             return false;
         }
+        if (progress is not null) config = BaseEquipmentPurchases.ForOwnedEquipment(config, progress);
 
         DetachFeedbackQueue();
         _paused = false; _pauseReasons.Clear(); _businessClockFreezeReasons.Clear();
@@ -147,7 +151,10 @@ public partial class DayController : Node
     }
 
     public bool TryPrepareTutorial(string cityId, int dayNumber, DataCatalog catalog, out string error)
-        => PrepareDay(cityId, dayNumber, catalog, TutorialProtection.GuidedExample, out error);
+        => PrepareDay(cityId, dayNumber, catalog, null, TutorialProtection.GuidedExample, out error);
+
+    public bool TryPrepareTutorial(string cityId, int dayNumber, DataCatalog catalog, CityProgressData progress, out string error)
+        => PrepareDay(cityId, dayNumber, catalog, progress, TutorialProtection.GuidedExample, out error);
 
     public void Tick(double deltaSeconds)
     {

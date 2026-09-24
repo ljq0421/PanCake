@@ -10,6 +10,7 @@ public partial class StartScreen
     private Action<string>? _bookUpgradeSelection;
     private Action<CityEquipmentView>? _bookUpgradePurchase;
     private Action? _bookUpgradeContinue;
+    private Action? _bookUpgradeClose;
     private CityEquipmentView? _purchasedEquipment;
     internal void ShowUpgradeSuccess(string equipmentId, CityEquipmentView? previous = null)
     {
@@ -18,11 +19,12 @@ public partial class StartScreen
     }
 
     internal void PresentBookUpgrades(BookUpgradeSource source, string? selected,
-        Action<string> selection, Action<CityEquipmentView> purchase, Action? continueBusiness, string message)
+        Action<string> selection, Action<CityEquipmentView> purchase, Action? continueBusiness, Action close, string message)
     {
         _bookUpgradeSource = source; _city = source.CityId;
         _equipmentCity = _city; _selectedEquipment = selected;
         _bookUpgradeSelection = selection; _bookUpgradePurchase = purchase; _bookUpgradeContinue = continueBusiness;
+        _bookUpgradeClose = close;
         RenderUpgradePage();
         if (source.SupportsContinue && message.Length > 0)
         {

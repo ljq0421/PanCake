@@ -28,6 +28,7 @@ public partial class MorningHub : Control
     private Button _openButton = null!;
     private HBoxContainer _equipment = null!;
     private TianjinLedger _ledger = null!;
+    private Button _soyPurchase = null!;
 
     public override void _Ready()
     {
@@ -41,6 +42,11 @@ public partial class MorningHub : Control
         GetNode<Button>("%StoveUpgrade").Pressed += () => Purchase(NextStoveUpgrade()?.Id ?? string.Empty);
         GetNode<Button>("%FryerUpgrade").Pressed += () => Purchase(NextFryerUpgrade()?.Id ?? string.Empty);
         GetNode<Button>("%StationUpgrade").Pressed += () => Purchase(NextStationUpgrade()?.Id ?? string.Empty);
+        _soyPurchase = new Button { Name = "SoyMilkTrayPurchase", CustomMinimumSize = new(0, 60) };
+        var plan = (VBoxContainer)_dayRecord.GetParent();
+        plan.AddChild(_soyPurchase);
+        plan.MoveChild(_soyPurchase, _dayRecord.GetIndex() + 1);
+        _soyPurchase.Pressed += () => Purchase(BaseEquipmentPurchases.SoyTray);
     }
 
     public void Initialize(DataCatalog catalog, SaveService save)
@@ -71,10 +77,19 @@ public partial class MorningHub : Control
             ? $"历史最佳营业额  ¥{record.TotalRevenue}\n满意度  {record.Satisfaction:0}%  ·  Perfect {record.PerfectOrders} 单\n设备和客流已经准备好，随时可以开门。"
             : $"{DayPlanText(day)}\n这是新的营业日，先看订单再安排工作台。";
         RenderEquipment();
+        bool soyOwned = _save.Data.Tianjin.EquipmentLevels.GetValueOrDefault("soy_milk_tray") > 0;
+        _soyPurchase.Visible = !soyOwned;
+        if (!soyOwned)
+        {
+            _soyPurchase.Text = day < 5 ? $"豆浆托盘 · Day 5 可购买 · ¥100"
+                : _save.Data.Coins < 100 ? $"豆浆托盘 · {_save.Data.Coins} / 100 金币 · 还差 {100 - _save.Data.Coins}"
+                : "购买豆浆托盘 · 100 金币 · 开始供应豆浆";
+            _soyPurchase.Disabled = _save.HasLoadError || day < 5 || _save.Data.Coins < 100;
+        }
         RenderLedger();
         if (_save.HasLoadError)
         {
-            _message.Text = "！ 存档无法读取。请打开设置，在存档管理中选择旅程。";
+            _message.Text = "！ 存档无法读取。请返回首页，在旅程档案中选择旅程。";
             _message.Modulate = TianjinUi.Red;
         }
     }
@@ -96,11 +111,13 @@ public partial class MorningHub : Control
         Label note = GetNode<Label>($"%{prefix}Note");
         Button upgrade = GetNode<Button>($"%{prefix}Upgrade");
         note.Visible = offer is null;
-        note.Text = level == 0 ? "完成对应营业日自动安装" : "当前可用的最好设备";
+        note.Text = level == 0 ? "Day 3 起可购买 · 80 金币" : "当前可用的最好设备";
         upgrade.Visible = offer is not null;
         if (offer is UpgradeOffer value)
         {
-            upgrade.Text = $"{value.Effect}\n¥{value.Price}";
+            upgrade.Text = level == 0 && _save.Data.Coins < value.Price
+                ? $"油条锅 {_save.Data.Coins}/{value.Price}\n还差 {value.Price - _save.Data.Coins} 金币"
+                : $"{value.Effect}\n¥{value.Price}";
             upgrade.Disabled = _save.Data.Coins < value.Price;
         }
     }
@@ -147,6 +164,7 @@ public partial class MorningHub : Control
         ("equipment:pancake_stove_lv2", "恒温不焦", 80, _save.Data.PurchasedStoveLevel >= 2),
         ("equipment:pancake_stove_lv3", "恒温快热", 300, _save.Data.PurchasedStoveLevel >= 3));
     private UpgradeOffer? NextFryerUpgrade() => FirstAvailable(
+        (BaseEquipmentPurchases.Fryer, "购买油条锅 · 开始炸油条", 80, _save.Data.PurchasedFryerLevel >= 1),
         ("equipment:fryer_lv2", "扩容加速", 160, _save.Data.PurchasedFryerLevel >= 2),
         ("equipment:fryer_lv3", "自动抬篮", 320, _save.Data.PurchasedFryerLevel >= 3));
     private UpgradeOffer? NextStationUpgrade() => FirstAvailable(
@@ -156,7 +174,11 @@ public partial class MorningHub : Control
     private UpgradeOffer? FirstAvailable(params (string Id, string Effect, int Price, bool Owned)[] choices)
     {
         foreach ((string id, string effect, int price, bool owned) in choices)
+        {
+            if (id == BaseEquipmentPurchases.Fryer && !owned && _save.Data.HighestUnlockedDay >= 3)
+                return new UpgradeOffer(id, effect, price);
             if (!owned && _save.Data.UnlockedUpgradeIds.Contains(id, StringComparer.Ordinal)) return new UpgradeOffer(id, effect, price);
+        }
         return null;
     }
 

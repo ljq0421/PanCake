@@ -16,12 +16,21 @@ internal sealed record DayUnlockPresentation(string Id, string Name, Rect2 Bound
             if (!catalog.TryGetDay(config.CityId, day, out var earlier)) continue;
             previous.UnionWith(Entities(catalog, earlier));
             // Endless days reuse the final configuration; all its entities are already known.
-            if (previous.IsSupersetOf(Entities(catalog, config))) return Array.Empty<DayUnlockPresentation>();
         }
         var added = Entities(catalog, config);
         added.ExceptWith(previous);
         var result = new List<DayUnlockPresentation>();
-        void Add(string id, string name, Rect2 bounds) { if (added.Contains(id)) result.Add(new(id, name, bounds)); }
+        void Add(string id, string name, Rect2 bounds)
+        {
+            bool purchasedNow = id switch
+            {
+                "Youtiao" => config.StartUnlocks.Contains("product:youtiao"),
+                "SoyMilk" => config.StartUnlocks.Contains("product:soy_milk"),
+                "Doupi" => config.StartUnlocks.Contains("product:doupi"),
+                _ => false,
+            };
+            if (added.Contains(id) || purchasedNow) result.Add(new(id, name, bounds));
+        }
         if (config.CityId == StableIds.Cities.Tianjin)
         {
             Add(StableIds.Ingredients.Crispy, "薄脆", TianjinWorkbenchLayout.EmbeddedIngredient(StableIds.Ingredients.Crispy));
@@ -34,7 +43,7 @@ internal sealed record DayUnlockPresentation(string Id, string Name, Rect2 Bound
         {
             var layout = WuhanWorkbenchLayout.ForStage(config.AvailableProductKinds.Contains(ProductKind.Doupi));
             Add(StableIds.Ingredients.WuhanBraisedBeef, "牛肉", layout.Ingredient(3));
-            if (added.Contains("Doupi"))
+            if (added.Contains("Doupi") || config.StartUnlocks.Contains("product:doupi"))
             {
                 result.Add(new("doupi_pan", "豆皮锅", layout.Pan));
                 result.Add(new("doupi_batter", "豆皮面浆与舀勺", layout.Batter));

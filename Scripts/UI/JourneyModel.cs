@@ -53,7 +53,9 @@ public static class JourneyModel
         string goal;
         if (preview) goal = "下一站预告 · 本次不可营业";
         else if (!unlocked)
-            goal = $"完成{Cities[Math.Max(0, Array.IndexOf(Cities, city) - 1)].Name}章节后开放";
+            goal = city.Id == StableIds.Cities.Wuhan
+                ? $"天津 Day 7 + 当前金币 {save.Data.Coins}/{SaveService.WuhanDepartureCoins} · 地图出发"
+                : $"完成{Cities[Math.Max(0, Array.IndexOf(Cities, city) - 1)].Name}章节后开放";
         else if (playable.Length > 0 && playable.All(c => Progress(save, c.Id).Completed))
             goal = save.IsDemo ? "本站试玩已完成。可回访营业，继续早餐旅程。" : "五城旅程已完成，回访喜欢的早餐铺。";
         // The destination already has its own column; keep the goal line for the actual requirement.
@@ -75,7 +77,9 @@ public static class JourneyModel
         if (!save.IsCityAvailable(city.Id)) return "新城市的早餐，留待下一段旅程。";
         if (city.Id == StableIds.Cities.Tianjin)
             return save.Data.UnlockedCityIds.Contains(StableIds.Cities.Wuhan)
-                ? "下一站：武汉 · 已开放" : "完成第 7 天营业\n下一站：武汉";
+                ? "下一站：武汉 · 已开放"
+                : save.CanDepartForWuhan ? "下一站：武汉 · 筹备完成，请在地图点击出发"
+                : $"下一站：武汉 · 当前金币 {save.Data.Coins}/{SaveService.WuhanDepartureCoins}\n完成第 7 天营业";
         if (ExperienceProfile.HasTwoCityEnding(save.IsDemo) && city.Id == StableIds.Cities.Wuhan)
             return Progress(save, city.Id).Completed ? "本站试玩已完成。可回访营业，继续早餐旅程。"
                 : $"完成第 {city.Days} 天并获得至少一星\n下一站预告 · 西安";

@@ -6,6 +6,8 @@ namespace ProjectCake.UI;
 public partial class StartScreen
 {
     private Control? _saveDeleteOverlay;
+    private int _saveDeleteSlotId;
+    private readonly Dictionary<Control, FocusModeEnum> _saveDeleteFocusModes = new();
 
     private void CloseSaveDeleteConfirmation(bool restoreFocus = true)
     {
@@ -14,19 +16,24 @@ public partial class StartScreen
         _modal.RemoveChild(_saveDeleteOverlay);
         _saveDeleteOverlay.QueueFree();
         _saveDeleteOverlay = null;
-        foreach (var control in _modalControls) control.FocusMode = FocusModeEnum.All;
-        if (restoreFocus) _modal.GetNodeOrNull<SaveSlotChoice>("SaveSlot")?.GrabFocus();
+        foreach (var (control, mode) in _saveDeleteFocusModes)
+            if (GodotObject.IsInstanceValid(control)) control.FocusMode = mode;
+        _saveDeleteFocusModes.Clear();
+        if (restoreFocus) _modal.GetNodeOrNull<Button>("DeleteSlot" + _saveDeleteSlotId)?.GrabFocus();
     }
 
     private void RequestDeleteSaveSlot(SaveSlotSummary slot)
     {
         if (_save is null || !slot.Exists || _busy || _saveDeleteOverlay is not null) return;
+        _saveDeleteSlotId = slot.Id;
         CloseSettingsPopups();
-        foreach (var control in _modalControls) control.FocusMode = FocusModeEnum.None;
+        foreach (var control in _modal.FindChildren("*", "Control", true, false).OfType<Control>())
+            if (control.FocusMode != FocusModeEnum.None)
+            { _saveDeleteFocusModes[control] = control.FocusMode; control.FocusMode = FocusModeEnum.None; }
         _saveDeleteOverlay = new Control { Name = "SaveDeleteOverlay", Size = new(1920, 1080), ZIndex = 10 };
         _modal.AddChild(_saveDeleteOverlay);
         _saveDeleteOverlay.AddChild(new ColorRect { Size = new(1920, 1080), Color = new Color(.12f, .08f, .04f, .22f) });
-        // Reuse the existing dialog art at 65%, centred over the still-open settings book.
+        // Reuse the existing dialog art at 65%, centred over the archive book.
         var dialog = new Control { Name = "SaveDeleteDialog", Position = new(336, 189),
             Scale = new(.65f, .65f), Size = new(1920, 1080), MouseFilter = MouseFilterEnum.Ignore };
         _saveDeleteOverlay.AddChild(dialog);
@@ -47,9 +54,9 @@ public partial class StartScreen
                 _error = "";
                 RenderHome();
             }
-            if (deleted) OpenSettings();
+            if (deleted) OpenJourneyArchives();
             else CloseSaveDeleteConfirmation();
-            if (!deleted && _settingsMessage is not null) _settingsMessage.Text = error;
+            if (!deleted && _archiveMessage is not null) _archiveMessage.Text = error;
         }, true);
     }
 }

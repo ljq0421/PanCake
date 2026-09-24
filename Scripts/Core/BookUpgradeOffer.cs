@@ -1,3 +1,4 @@
+using ProjectCake.Data;
 using ProjectCake.Yangzhou;
 
 namespace ProjectCake.Core;
@@ -11,7 +12,9 @@ public partial class SaveService
     {
         if (HasLoadError) return Array.Empty<BookUpgradeOffer>();
         var result = new List<BookUpgradeOffer>();
-        foreach (string id in Data.GetCity(cityId).UnlockedContentIds.OrderBy(id => id, StringComparer.Ordinal))
+        foreach (string id in Data.GetCity(cityId).UnlockedContentIds
+            .Concat(cityId == StableIds.Cities.Tianjin ? new[] { BaseEquipmentPurchases.Fryer } : cityId == StableIds.Cities.Wuhan ? new[] { BaseEquipmentPurchases.DoupiGriddle } : Array.Empty<string>())
+            .Distinct(StringComparer.Ordinal).OrderBy(id => id, StringComparer.Ordinal))
             if (DescribePurchase(cityId, id, catalog, out var o, out _))
                 result.Add(new(cityId, id, o.Equipment, o.Display[..o.Display.LastIndexOf(" Lv", StringComparison.Ordinal)], o.Target - 1, o.Target, o.Price));
         return result;

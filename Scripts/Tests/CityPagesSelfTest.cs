@@ -286,8 +286,8 @@ public partial class CityPagesSelfTest : Node
                     Check(Find<Button>("OpenBusiness").GetChildren().OfType<TextureRect>().Any(IsWuhanPalette), "Wuhan business button uses city palette");
                     Check(note.FindChildren("*Icon", "TextureRect", true, false).OfType<TextureRect>().Count() == 5
                         && note.FindChildren("*Icon", "TextureRect", true, false).OfType<TextureRect>().All(IsWuhanPalette), "Wuhan five note icons use city palette");
-                    Check(_screen.FindChildren("LedgerTab", "Button", true, false).Single().GetChildren().OfType<TextureRect>().Any(IsWuhanPalette)
-                        && _screen.FindChildren("UpgradeTab", "Button", true, false).Single().GetChildren().OfType<TextureRect>().Any(IsWuhanPalette), "Wuhan page tabs use city palette");
+                    Check(_screen.FindChildren("LedgerTab", "Button", true, false).Single().GetChildren().OfType<TextureRect>().All(art => art.Material is null)
+                        && _screen.FindChildren("UpgradeTab", "Button", true, false).Single().GetChildren().OfType<TextureRect>().All(art => art.Material is null), "Wuhan page tabs retain distinct supplied colors");
                 }
                 foreach (var node in note.FindChildren("*", "Label", true, false))
                 {
@@ -466,6 +466,26 @@ public partial class CityPagesSelfTest : Node
             "Wuhan embeds daily challenge and action below card");
         await ToSignal(GetTree().CreateTimer(.8), SceneTreeTimer.SignalName.Timeout); await Frames();
         await Capture("city-tabs-wuhan");
+        var wuhanClose = Find<Button>("BookClose");
+        Check(wuhanClose.Position.X > StartScreen.BookBounds.GetCenter().X
+            && wuhanClose.GetNode<BookCloseArt>("BookCloseArt").Ink == CitySettlementTheme.For("wuhan").Primary.Darkened(.34f),
+            "Wuhan book close uses city color at the upper right");
+        Click("BookClose"); await Frames();
+        Check(_screen.Page == JourneyPage.Home, "city book close returns to its source page");
+        _screen.PresentCity(StableIds.Cities.Wuhan); _screen.PresentLedger(); await Frames();
+        await Capture("book-close-ledger");
+        Click("BookClose"); await Frames();
+        Check(_screen.Page == JourneyPage.City, "ledger close returns to city overview");
+        _screen.PresentBreakfastCollection(); await Frames();
+        await Capture("book-close-collection");
+        Click("BookClose"); await Frames();
+        Check(_screen.Page == JourneyPage.City, "collection close returns to its source page");
+        _screen.PresentHome(); await Frames();
+        Click("Settings"); await Frames();
+        Check(_screen.ModalOpen && Find<Button>("BookClose").IsVisibleInTree(), "settings book has a visible close button");
+        await Capture("book-close-settings");
+        Click("BookClose"); await Frames();
+        Check(!_screen.ModalOpen && _screen.Page == JourneyPage.Home, "settings close returns to the underlying page");
     }
     private void CheckBookTheme(string city)
     {

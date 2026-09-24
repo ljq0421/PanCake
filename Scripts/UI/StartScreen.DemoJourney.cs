@@ -17,7 +17,10 @@ public partial class StartScreen
             returnToSource?.Invoke();
             return;
         }
-        RenderHome(); Focus("BreakfastRecords");
+        var returnToPage = _collectionReturn ?? RenderHome;
+        _collectionReturn = null;
+        returnToPage();
+        if (Page == JourneyPage.Home) Focus("BreakfastRecords");
     }
     public void PresentWuhanOpening(bool animate = true)
     {

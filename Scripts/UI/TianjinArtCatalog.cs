@@ -118,12 +118,12 @@ public sealed class TianjinArtCatalog
 
     public Texture2D Background => Get("background");
     public Texture2D WorkbenchBackground(IEnumerable<ProjectCake.Data.ProductKind> products) =>
-        Get(products.Contains(ProjectCake.Data.ProductKind.SoyMilk) ? "background_soy"
+        Get(products.Contains(ProjectCake.Data.ProductKind.SoyMilk) && products.Contains(ProjectCake.Data.ProductKind.Youtiao) ? "background_soy"
             : products.Contains(ProjectCake.Data.ProductKind.Youtiao) ? "background_fryer" : "background_pancake");
     public Texture2D EmbeddedBasket => Get("embedded_basket");
     public Texture2D LivingWorkbenchBackground(IEnumerable<ProjectCake.Data.ProductKind> products)
     {
-        string stem = products.Contains(ProjectCake.Data.ProductKind.SoyMilk) ? "天津-煎饼-炸锅-豆浆"
+        string stem = products.Contains(ProjectCake.Data.ProductKind.SoyMilk) && products.Contains(ProjectCake.Data.ProductKind.Youtiao) ? "天津-煎饼-炸锅-豆浆"
             : products.Contains(ProjectCake.Data.ProductKind.Youtiao) ? "天津-煎饼-炸锅" : "天津-煎饼";
         return GD.Load<Texture2D>($"res://resource/art/TianJin/LivingWorkbench/{stem}-clean.png");
     }

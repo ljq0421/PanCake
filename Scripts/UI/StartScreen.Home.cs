@@ -15,7 +15,7 @@ public partial class StartScreen
         _body.AddChild(new HomeEntranceMotion
         {
             Screen = this, Logo = _body.GetNode<Control>("HomeLogo"),
-            Actions = new[] { "Continue", "NewGame", "BreakfastRecords", "WorldMap" }
+            Actions = new[] { "Continue", "NewGame", "BreakfastRecords", "JourneyArchives" }
                 .Select(name => (Control)_body.GetNode<Button>(name)).ToArray()
         });
     }

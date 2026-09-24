@@ -1039,6 +1039,7 @@ public partial class PancakeWorkstation : Control
         _deliveryZone.Visible = !DirectCustomerDelivery;
         _directDeliveryHint.Visible = DirectCustomerDelivery || UseServingTray;
         _soyPanel.Visible = SoyMilkTray is not null;
+        if (IsTianjinWorkbench) _soyPanel.GetNode<TextureRect>("SoyMilkTrayArt").Visible = SoyMilkTray is not null && FryerMachine is null;
         if (SoyMilkTray is not null)
         {
             int shownCups = SoyMilkTray.Quantity;

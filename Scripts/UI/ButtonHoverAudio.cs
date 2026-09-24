@@ -15,8 +15,8 @@ public partial class ButtonHoverAudio : Node
 
     internal static bool InScope(Control source)
     {
-        // Sliders and cooking controls retain their existing feedback.
-        if (source is Godot.Range) return false;
+        // Only buttons play the menu hover cue; other clickable controls keep their visual feedback.
+        if (source is not BaseButton) return false;
         for (Node? node = source; node is not null; node = node.GetParent())
         {
             if (node is EquipmentUpgradeView) return true;

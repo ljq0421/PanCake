@@ -27,11 +27,13 @@ public partial class EquipmentUpgradeView : Control
         _items = items; _purchase = purchase; _selection = selection; _cityId = cityId;
         _continueCaption = continueCaption; _continueBusiness = continueBusiness;
         LabelAt(this, "EquipmentListTitle", "设备一览", new(0, 0, 280, 62), 43);
-        LabelAt(this, "EquipmentListHint", "好的设备，是美味的开始！", new(275, 12, 300, 45), 22, Muted);
+        if (items.Length <= 3)
+            LabelAt(this, "EquipmentListHint", "好的设备，是美味的开始！", new(275, 12, 300, 45), 22, Muted);
         for (int i = 0; i < items.Length; i++)
         {
             var item = items[i];
-            var card = MakeButton(this, "Select_" + item.Id, "", new(0, 84 + i * 180, 565, 167));
+            bool compact = i >= 3;
+            var card = MakeButton(this, "Select_" + item.Id, "", compact ? new(280, 0, 285, 64) : new(0, 84 + i * 180, 565, 167));
             _cards.Add(card);
             foreach (string stateName in new[] { "normal", "hover", "pressed", "disabled" })
                 card.AddThemeStyleboxOverride(stateName, new StyleBoxEmpty());
@@ -43,6 +45,14 @@ public partial class EquipmentUpgradeView : Control
             card.ButtonUp += () => background.SelfModulate = Colors.White;
             var focusBorder = Box(Colors.Transparent, Gold, 2);
             card.AddThemeStyleboxOverride("focus", focusBorder);
+            if (compact)
+            {
+                LabelAt(card, "EquipmentName", item.Name, new(15, 2, 155, 34), 24);
+                LabelAt(card, "EquipmentState", item.Level > 0 ? "已安装" : item.CanBuy ? "可购买" : "待解锁", new(168, 2, 102, 34), 20, item.CanBuy ? Green : Muted, true);
+                LabelAt(card, "EquipmentPrice", item.Level > 0 ? "" : $"{item.Price} 金币", new(15, 33, 250, 27), 18, Muted);
+                card.Pressed += () => { if (!_submitted && card.IsVisibleInTree()) Select(item.Id, true); };
+                continue;
+            }
             if (item.Art == "res://resource/art/TianJin/升级小料.png")
                 Sprite(card, "EquipmentPicture", item.Art, new(18, 20, 263, 127));
             else if (item.Art is not null) Picture(card, item.Art, new(18, 15, 263, 135));
@@ -53,8 +63,8 @@ public partial class EquipmentUpgradeView : Control
                 while (size > 24 && equipmentName.GetThemeFont("font").GetStringSize(equipmentName.Tr(item.Name), fontSize: size).X > 240) size--;
                 equipmentName.AddThemeFontSizeOverride("font_size", size);
             }
-            LabelAt(card, "EquipmentLevel", item.Presentation?.Fixed == true ? "生面无限供应" : item.Level > 0 ? $"Lv{item.Level}" : "未开放", new(308, 65, 225, 36), 26);
-            string state = item.CanBuy ? "可升级" : item.Level >= 3 ? "已满级" : item.Level == 0 ? "未开放"
+            LabelAt(card, "EquipmentLevel", item.Presentation?.Fixed == true ? "生面无限供应" : item.Level > 0 ? $"Lv{item.Level}" : item.TargetLevel == 1 ? "待安装" : "未开放", new(308, 65, 225, 36), 26);
+            string state = item.CanBuy ? item.Level == 0 ? "可购买" : "可升级" : item.Level >= 3 ? "已满级" : item.Level == 0 ? "未开放"
                 : item.Notice.Contains("金币不足") ? "金币不足" : item.Notice.StartsWith("完成第") ? "待解锁" : item.Notice;
             state = item.Presentation?.State(item) ?? state;
             var chip = new Panel { Position = new(303, 103), Size = new(214, 52), MouseFilter = MouseFilterEnum.Ignore };
@@ -95,7 +105,8 @@ public partial class EquipmentUpgradeView : Control
             var benefit = LabelAt(_detail, "UpgradeBenefit", BookUpgradeSource.Benefit(new(_cityId, e.PurchaseId, e.Id, e.Name, e.Level, e.TargetLevel!.Value, e.Price)), new(0, 108, 255, 80), 18, Muted);
             benefit.ZIndex = 1; benefit.ClipText = true;
         }
-        LabelAt(_detail, "LevelTransition", e.TargetLevel is int next ? $"Lv{e.Level}  →  Lv{next}" : e.Level == 0 ? "设备尚未开放" : $"Lv{e.Level} · {(e.Level >= 3 || e.Notice == "已升至最高等级" ? "已满级" : "固定设备")}", new(0, 62, 560, 44), 27, Muted);
+        LabelAt(_detail, "LevelTransition", e.Level == 0 && e.TargetLevel == 1 ? "尚未安装  →  Lv1"
+            : e.TargetLevel is int next ? $"Lv{e.Level}  →  Lv{next}" : e.Level == 0 ? "设备尚未开放" : $"Lv{e.Level} · {(e.Id == "soy_milk_tray" ? "已安装" : e.Level >= 3 || e.Notice == "已升至最高等级" ? "已满级" : "固定设备")}", new(0, 62, 560, 44), 27, Muted);
         var doodle = Sprite(_detail, "EquipmentDoodle", ArtRoot + "设备涂鸦背景-v1.png", new(0, 138, 274, 292));
         CityPageArtSkin.Apply(doodle, _cityId, true);
         if (e.Art is not null) Picture(_detail, e.Art, new(0, hasBenefit ? 198 : 140, 270, hasBenefit ? 222 : 280));
@@ -114,12 +125,12 @@ public partial class EquipmentUpgradeView : Control
             var arrow = Sprite(rows, "UpgradeComparisonArrow", "res://resource/art/Global/StartPage/箭头.png", new(0, 0, 36, 36));
             arrow.CustomMinimumSize = new(36, 36);
             arrow.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
-            EffectPanel(rows, $"升级后  Lv{target}", e, true, _cityId);
+            EffectPanel(rows, e.Level == 0 ? $"购买后  Lv{target}" : $"升级后  Lv{target}", e, true, _cityId);
         }
         MoneyPlate(_detail, "UpgradePriceFrame", "UpgradePrice", e.TargetLevel is not null ? $"{e.Price} 金币" : e.Level >= 3 ? "当前可用的最好设备" : e.Notice,
             new(30, 449, 500, 62), e.TargetLevel is not null, _cityId);
         bool showContinue = _continueCaption is not null && _continueBusiness is not null;
-        var buy = MakeButton(_detail, "UpgradeEquipment", "升级设备", new(45, 519, showContinue ? 235 : 470, 72));
+        var buy = MakeButton(_detail, "UpgradeEquipment", e.Id == "soy_milk_tray" && e.Level > 0 ? "已安装" : e.Level == 0 ? "购买设备" : "升级设备", new(45, 519, showContinue ? 235 : 470, 72));
         buy.Disabled = !e.CanBuy; buy.AddThemeFontSizeOverride("font_size", 34);
         SkinPurchaseButton(buy, _cityId);
         buy.Pressed += () => { if (_submitted || buy.Disabled || !buy.IsVisibleInTree()) return; _submitted = true; buy.Disabled = true; _purchase(e); };

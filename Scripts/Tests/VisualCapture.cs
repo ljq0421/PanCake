@@ -68,8 +68,7 @@ public partial class VisualCapture : Node
         string? temporarySave = null;
         if (phase4Day > 0 || captureMap || captureResult)
         {
-            Directory.CreateDirectory(ProjectSettings.GlobalizePath("res://.tmp"));
-            temporarySave = $"res://.tmp/visual-capture-{Guid.NewGuid():N}.json";
+            temporarySave = $"user://visual-capture-{Guid.NewGuid():N}.json";
             GetNode<SaveService>("/root/SaveService").UsePathForTests(temporarySave);
         }
 
@@ -113,7 +112,8 @@ public partial class VisualCapture : Node
                 captureSave.Data.PurchasedFryerLevel = Math.Clamp(captureLevel, 1, 3);
                 captureSave.Data.PurchasedIngredientStationLevel = Math.Clamp(captureLevel, 1, 3);
             }
-            dayScreen.Initialize(GetNode<DataCatalog>("/root/DataCatalog"), captureSave, controller, day);
+            if (!dayScreen.Initialize(GetNode<DataCatalog>("/root/DataCatalog"), captureSave, controller, day))
+                throw new InvalidOperationException("Tianjin visual capture initialization failed.");
             foreach (Control screen in main.GetNode("UI").GetChildren().OfType<Control>()) screen.Visible = screen == dayScreen;
             if (captureRunning || phase4Day > 0 || captureResult)
             {

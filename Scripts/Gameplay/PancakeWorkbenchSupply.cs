@@ -37,9 +37,9 @@ public partial class PancakeWorkstation
         _supplyBell = new Button
         {
             Name = "SupplyBell",
-            Position = new Vector2(548, 537),
-            Size = new Vector2(156, 150),
-            PivotOffset = new Vector2(78, 75),
+            Position = new Vector2(548, 570),
+            Size = new Vector2(104, 100),
+            PivotOffset = new Vector2(52, 50),
             ZIndex = 35,
             Flat = true,
             FocusMode = FocusModeEnum.None,
@@ -53,7 +53,7 @@ public partial class PancakeWorkstation
             StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
             Texture = bell,
             Position = Vector2.Zero,
-            Size = new Vector2(156, 150),
+            Size = new Vector2(104, 100),
             MouseFilter = MouseFilterEnum.Ignore,
         };
         _supplyBell.AddChild(art);

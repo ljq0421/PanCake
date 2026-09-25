@@ -56,7 +56,7 @@ public partial class EquipmentProgressView : Control
             // The light outline keeps short captions legible on the illustrated counter.
             var font = GetThemeDefaultFont();
             const int fontSize = 20;
-            string caption = Presentation.Caption;
+            string caption = Tr(Presentation.Caption);
             float width = font.GetStringSize(caption, HorizontalAlignment.Left, -1, fontSize).X;
             Vector2 baseline = new((Size.X - width) / 2, 21);
             DrawStringOutline(font, baseline, caption, HorizontalAlignment.Left, -1, fontSize, 5, Paper);
@@ -110,7 +110,7 @@ public partial class EquipmentProgressView : Control
         if (!ShowCaption) return;
         var font = GetThemeDefaultFont();
         const int fontSize = 20;
-        string caption = Presentation.Caption;
+        string caption = Tr(Presentation.Caption);
         float width = font.GetStringSize(caption, HorizontalAlignment.Left, -1, fontSize).X;
         Vector2 baseline = new((Size.X - width) / 2, Size.Y + 22);
         DrawStringOutline(font, baseline, caption, HorizontalAlignment.Left, -1, fontSize, 5, Paper);

@@ -224,6 +224,13 @@ public partial class WuhanAnimationSelfTest : Node
         s.Ingredients.TryConsume(chili); s.Ingredients.TryConsume(scallion); s.Ingredients.TryConsume(beef);
         var bell = s.Workstation.GetNode<Button>("SupplyBell");
         bell.EmitSignal(Button.SignalName.Pressed);
+        var bellPlayer = s.Workstation.GetNode<AudioStreamPlayer>("WuhanCueSupplyBell");
+        var tianjinAudio = new PancakeAudio(); AddChild(tianjinAudio);
+        var tianjinBell = tianjinAudio.GetNode<AudioStreamPlayer>("SupplyBellPlayer");
+        Check(ReferenceEquals(bellPlayer.Stream, tianjinBell.Stream)
+            && bellPlayer.VolumeDb == tianjinBell.VolumeDb && bellPlayer.Bus == tianjinBell.Bus,
+            "天津武汉叫货铃共用同一音色、音量和音效总线");
+        tianjinAudio.QueueFree();
         Check(s.Workstation.SupplySelecting && s.Workstation.FindChildren("SupplyTarget_*", "", false, false).Count == 0,
             "点铃叫出伙计，不显示料盒高亮");
         var npcButton = s.Workstation.GetNode<Button>("SupplyNpcButton");

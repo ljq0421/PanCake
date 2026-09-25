@@ -37,7 +37,7 @@ public partial class PancakeWorkstation
             if (SupplyNpcCalled && SupplyNpcFocusTarget is Control helper)
                 return new(SupplyIntroductionAction, "点击左侧送货员，每次补充一份食材；满库存时送货员会离开。", new[] { TutorialFocusTarget.Control(helper) });
             if (SupplyBellFocusTarget is Control bell)
-                return new(SupplyIntroductionAction, "点击右侧桌面的铃叫来送货员，再点击送货员补充食材。", new[] { TutorialFocusTarget.Control(bell) });
+                return new(SupplyIntroductionAction, "点击煎饼炉左上方的铃叫来送货员，再点击送货员补充食材。", new[] { TutorialFocusTarget.Control(bell) });
         }
         var r = Machine.Runtime;
         string? FinishedRecipe() => PancakeTray.Selected is { } food ? orders.FirstOrDefault(o => o.Kind == ProductKind.Pancake && food.ExtraIngredients.SetEquals(o.Toppings))?.DefinitionId ?? "unmatched" : null;

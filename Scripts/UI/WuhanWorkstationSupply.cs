@@ -15,7 +15,7 @@ public partial class WuhanWorkstationView
     private Tween? _supplyNpcDismissTween;
     private Tween? _supplyBellTween;
     private readonly Dictionary<TextureRect, Tween> _supplyDrops = new();
-    private static readonly Vector2 SupplyNpcPosition = new(-71, 245);
+    private static readonly Vector2 SupplyNpcPosition = new(-20, 340);
     private Vector2 _supplyNpcScale;
     private bool _supplySelecting;
     internal bool SupplySelecting => _supplySelecting;
@@ -24,8 +24,8 @@ public partial class WuhanWorkstationView
     {
         _supplyBell = new Button
         {
-            Name = "SupplyBell", Position = new Vector2(558, 560), Size = new Vector2(99, 105),
-            PivotOffset = new Vector2(49, 52), ZIndex = 35, Flat = true,
+            Name = "SupplyBell", Position = new Vector2(554, 556), Size = new Vector2(70, 70),
+            PivotOffset = new Vector2(35, 35), ZIndex = 35, Flat = true,
             FocusMode = FocusModeEnum.None, MouseDefaultCursorShape = CursorShape.PointingHand,
         };
         AddChild(_supplyBell);
@@ -33,8 +33,8 @@ public partial class WuhanWorkstationView
         _supplyBell.AddChild(new Sprite2D
         {
             Name = "BellArtwork", Texture = bellArt,
-            Position = new Vector2(10, 0), Centered = false,
-            Scale = new Vector2(79f / bellArt.GetWidth(), 78f / bellArt.GetHeight()),
+            Position = Vector2.Zero, Centered = false,
+            Scale = Vector2.One * (70f / bellArt.GetWidth()),
         });
         _supplyBell.Pressed += OpenSupplySelection;
 
@@ -46,11 +46,32 @@ public partial class WuhanWorkstationView
             Scale = new Vector2(260f / npcArt.GetWidth(), 260f / npcArt.GetHeight()),
             ZIndex = 20, Visible = false,
         };
+        // Match the left counter lip and the noodle pot's silhouette. The helper
+        // stands behind them instead of painting its crate over the equipment.
+        _supplyNpc.Material = new ShaderMaterial
+        {
+            Shader = new Shader { Code = """
+                shader_type canvas_item;
+                uniform vec2 supply_origin;
+                uniform vec2 supply_size;
+                void fragment() {
+                    vec2 p = supply_origin + UV * supply_size;
+                    float edge = mix(625.0, 583.0, clamp(p.x / 45.0, 0.0, 1.0));
+                    edge += (566.0 - 583.0) * clamp((p.x - 45.0) / 35.0, 0.0, 1.0);
+                    edge += (560.0 - 566.0) * clamp((p.x - 80.0) / 30.0, 0.0, 1.0);
+                    edge += (537.0 - 560.0) * clamp((p.x - 110.0) / 35.0, 0.0, 1.0);
+                    edge += (516.0 - 537.0) * clamp((p.x - 145.0) / 45.0, 0.0, 1.0);
+                    edge += (502.0 - 516.0) * clamp((p.x - 190.0) / 55.0, 0.0, 1.0);
+                    COLOR.a *= 1.0 - smoothstep(edge - 1.0, edge, p.y);
+                }
+                """ },
+        };
         AddChild(_supplyNpc);
+        UpdateSupplyNpcOcclusion();
         _supplyNpcScale = _supplyNpc.Scale;
         _supplyNpcButton = new Button
         {
-            Name = "SupplyNpcButton", Position = new Vector2(0, 245), Size = new Vector2(189, 260),
+            Name = "SupplyNpcButton", Position = new Vector2(24, 353), Size = new Vector2(165, 158),
             ZIndex = 35, Flat = true, Visible = false, FocusMode = FocusModeEnum.None,
             MouseDefaultCursorShape = CursorShape.PointingHand,
         };
@@ -155,6 +176,14 @@ public partial class WuhanWorkstationView
         if (_supplyBellTween?.IsValid() == true) _supplyBellTween.CustomStep(delta);
         foreach (Tween tween in _supplyDrops.Values.ToArray()) tween.CustomStep(delta);
         if (_supplyNpcDismissTween?.IsValid() == true) _supplyNpcDismissTween.CustomStep(delta);
+        UpdateSupplyNpcOcclusion();
+    }
+
+    private void UpdateSupplyNpcOcclusion()
+    {
+        if (_supplyNpc?.Material is not ShaderMaterial material) return;
+        material.SetShaderParameter("supply_origin", _supplyNpc.Position);
+        material.SetShaderParameter("supply_size", _supplyNpc.Texture.GetSize() * _supplyNpc.Scale);
     }
 
     private void BounceSupplyNpc()

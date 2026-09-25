@@ -22,6 +22,7 @@ public partial class SteamTrailerCapture : Node
     private DataCatalog _catalog = null!;
     private SaveService _save = null!;
     private string _mode = "tianjin";
+    private string? _stillOutput;
     private static object? Invoke(object target, string method, params object?[] args) =>
         target.GetType().GetMethod(method, BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(target, args);
     private void Mark(string name) { string line = $"{_frame / 30.0:F3}\t{name}"; _marks.Add(line); GD.Print("SHOT " + line); }
@@ -32,6 +33,13 @@ public partial class SteamTrailerCapture : Node
             _step?.Invoke(1.0 / 30);
             await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
             _frame++;
+            if (_stillOutput is not null && _frame % 60 == 0)
+            {
+                await ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
+                using var image = GetViewport().GetTexture().GetImage();
+                if (image.SavePng(Path.Combine(_stillOutput, $"{_mode}-{_frame:D4}.png")) != Error.Ok)
+                    throw new IOException("Screenshot save failed");
+            }
         }
     }
     private async Task Until(Func<bool> condition, string label, int max = 600)
@@ -44,20 +52,24 @@ public partial class SteamTrailerCapture : Node
         try
         {
             _mode = OS.GetCmdlineUserArgs().FirstOrDefault(a => a.StartsWith("--shot="))?.Split('=')[1] ?? "tianjin";
+            _stillOutput = OS.GetCmdlineUserArgs().FirstOrDefault(a => a.StartsWith("--stills="))?[9..];
+            if (_stillOutput is not null) Directory.CreateDirectory(_stillOutput);
             GetWindow().Size = new(1920, 1080);
             _catalog = GetNode<DataCatalog>("/root/DataCatalog");
             _save = GetNode<SaveService>("/root/SaveService");
-            _save.UsePathForTests($"res://output/steam-trailer-zh/work/{_mode}-save.json");
+            _save.UsePathForTests(_stillOutput is null ? $"res://output/steam-trailer-zh/work/{_mode}-save.json" : Path.Combine(_stillOutput, $"{_mode}-save.json"));
             _save.ResetProgress(out _);
             var settings = GetNode<JourneySettings>("/root/JourneySettings");
-            settings.UsePathForTests($"res://output/steam-trailer-zh/work/{_mode}-settings.cfg");
+            settings.UsePathForTests(_stillOutput is null ? $"res://output/steam-trailer-zh/work/{_mode}-settings.cfg" : Path.Combine(_stillOutput, $"{_mode}-settings.cfg"));
+            if (_stillOutput is not null)
+                settings.SetLanguage(OS.GetCmdlineUserArgs().Contains("--english") ? "en" : "zh_CN");
             InterfaceLessons.MarkAllSeen(settings);
             if (_mode == "seed") { await Tianjin(7); await Wuhan(); }
             else if (_mode is "journey" or "journey64") await Journey();
             else if (_mode == "wuhan") await Wuhan();
             else if (_mode == "pages") await Pages();
             else await Tianjin(_mode == "rush" ? 15 : 6);
-            File.WriteAllLines(ProjectSettings.GlobalizePath($"res://output/steam-trailer-zh/work/{_mode}-marks.tsv"), _marks);
+            File.WriteAllLines(_stillOutput is null ? ProjectSettings.GlobalizePath($"res://output/steam-trailer-zh/work/{_mode}-marks.tsv") : Path.Combine(_stillOutput, $"{_mode}-marks.tsv"), _marks);
             GD.Print("TRAILER_CAPTURE_OK " + _mode);
             GetTree().Quit();
         }

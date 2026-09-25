@@ -48,6 +48,8 @@ public partial class DailyChallengePendant : Control
         }
         Place(this, artwork, new(Vector2.Zero, DisplaySize));
         Place(this, title, new(158, 18, 163, 36));
+        title.ClipText = true;
+        Fit(title, 26);
         _name.Name = "ChallengeName";
         _requirement.Name = "ChallengeRequirement";
         _reward.Name = "ChallengeReward";
@@ -103,10 +105,17 @@ public partial class DailyChallengePendant : Control
         _stamp.Text = Tr("奖励已领取");
         _stamp.Visible = claimed;
         if (nearly) _requirement.Text = challenge.Kind == DailyChallengeKind.Perfect ? Tr("再完美完成 1 单！") : Tr("再完成 1 单！");
+        bool english = TranslationServer.GetLocale().StartsWith("en");
+        _name.ClipText = _requirement.ClipText = true;
+        _name.Position = english ? new(75, 58) : new(75, 64);
+        _name.Size = english ? new(270, 26) : new(125, 38);
+        _requirement.Position = english ? new(75, 84) : new(205, 64);
+        _requirement.Size = english ? new(270, 26) : new(140, 38);
+        _requirement.Visible = !english || !claimed;
         UpdateNearly(nearly);
         for (int i = 0; i < _stars.Count; i++)
             _stars[i].Modulate = i < progress ? Colors.White : new Color(.65f, .48f, .33f, .35f);
-        Fit(_name, 26); Fit(_requirement, 21); Fit(_stamp, 21);
+        Fit(_name, english ? 20 : 26); Fit(_requirement, english ? 18 : 21); Fit(_stamp, 21);
         if (!CanPresent()) StopAllFeedback();
         else if (!CanAnimate()) StopFeedback();
         else if (!newRun && progress > _lastProgress) AnimateProgress(progress);

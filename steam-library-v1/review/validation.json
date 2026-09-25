@@ -1,0 +1,51 @@
+[
+  {
+    "File": "library-capsule-english-600x900.png",
+    "Width": 600,
+    "Height": 900,
+    "CornerAlpha": 255,
+    "Bytes": 1112484
+  },
+  {
+    "File": "library-capsule-schinese-600x900.png",
+    "Width": 600,
+    "Height": 900,
+    "CornerAlpha": 255,
+    "Bytes": 1088769
+  },
+  {
+    "File": "library-header-english-920x430.png",
+    "Width": 920,
+    "Height": 430,
+    "CornerAlpha": 255,
+    "Bytes": 799294
+  },
+  {
+    "File": "library-header-schinese-920x430.png",
+    "Width": 920,
+    "Height": 430,
+    "CornerAlpha": 255,
+    "Bytes": 746900
+  },
+  {
+    "File": "library-hero-shared-3840x1240.png",
+    "Width": 3840,
+    "Height": 1240,
+    "CornerAlpha": 255,
+    "Bytes": 5169037
+  },
+  {
+    "File": "library-logo-english-1280x640.png",
+    "Width": 1280,
+    "Height": 640,
+    "CornerAlpha": 0,
+    "Bytes": 1027742
+  },
+  {
+    "File": "library-logo-schinese-1280x640.png",
+    "Width": 1280,
+    "Height": 640,
+    "CornerAlpha": 0,
+    "Bytes": 937759
+  }
+]

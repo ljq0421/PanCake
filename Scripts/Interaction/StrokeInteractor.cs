@@ -266,7 +266,7 @@ public partial class StrokeInteractor : Control
             Vector2 origin = finishedGeometry.Center - new Vector2(112, finishedGeometry.Radii.Y + 58);
             DrawStyleBox(_sauceMeterStyle, new Rect2(origin, new Vector2(224, 44)));
             DrawString(GetThemeFont("font"), origin + new Vector2(14, 29),
-                $"{SauceRules.Name(SauceRules.Classify(_completedSauceAmount))}完成 · {_completedSauceAmount * 100:0}%",
+                Tr($"{SauceRules.Name(SauceRules.Classify(_completedSauceAmount))}完成 · {_completedSauceAmount * 100:0}%"),
                 HorizontalAlignment.Center, 196, 20, new Color("#36583B"));
         }
         StrokeMode mode = ResolveMode?.Invoke() ?? StrokeMode.None;
@@ -316,7 +316,7 @@ public partial class StrokeInteractor : Control
         Rect2 bounds = SauceMeterBounds();
         Vector2 position = bounds.Position, size = bounds.Size;
         DrawStyleBox(_sauceMeterStyle, bounds);
-        DrawString(GetThemeFont("font"), position + new Vector2(12, 26), SauceRules.Describe(amount),
+        DrawString(GetThemeFont("font"), position + new Vector2(12, 26), $"{amount * 100:0}% · {Tr(SauceRules.Name(SauceRules.Classify(amount)))}",
             HorizontalAlignment.Left, size.X - 24, 20, new Color("#553322"));
         Rect2 track = new(position + new Vector2(12, 63), new Vector2(size.X - 24, 6));
         SaucePreference current = SauceRules.Classify(amount);
@@ -327,12 +327,15 @@ public partial class StrokeInteractor : Control
             Vector2 segment = track.Position + new Vector2(index * track.Size.X / 3, 0);
             DrawRect(new Rect2(segment, new Vector2(track.Size.X / 3 - 3, track.Size.Y)),
                 new Color(active ? "#A9562D" : "#D8BE99"));
-            DrawString(GetThemeFont("font"), segment + new Vector2(0, -12), SauceRules.Name(bands[index]),
-                HorizontalAlignment.Center, track.Size.X / 3 - 3, 18, new Color(active ? "#713717" : "#725C46"));
+            string bandName = Tr(SauceRules.Name(bands[index]));
+            int bandSize = 18;
+            while (bandSize > 10 && GetThemeFont("font").GetStringSize(bandName, fontSize: bandSize).X > track.Size.X / 3 - 3) bandSize--;
+            DrawString(GetThemeFont("font"), segment + new Vector2(0, -12), bandName,
+                HorizontalAlignment.Center, track.Size.X / 3 - 3, bandSize, new Color(active ? "#713717" : "#725C46"));
         }
         Vector2 pointerTip = track.Position + new Vector2(track.Size.X * (float)(amount / SauceRules.MaximumAmount), 8);
         DrawColoredPolygon(new[] { pointerTip, pointerTip + new Vector2(-5, 7), pointerTip + new Vector2(5, 7) }, new Color("#553322"));
-        DrawString(GetThemeFont("font"), position + new Vector2(12, 96), "到所需档位后收刷",
+        DrawString(GetThemeFont("font"), position + new Vector2(12, 96), Tr("到所需档位后收刷"),
             HorizontalAlignment.Center, size.X - 24, 16, new Color("#725C46"));
     }
 

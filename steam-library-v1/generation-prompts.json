@@ -1,0 +1,30 @@
+[
+  {
+    "name": "capsule-schinese",
+    "prompt": "Adapt image 1 into a finished Steam LIBRARY CAPSULE portrait exactly 600x900 pixels (2:3). Preserve the same established thick dark brown outlined flat cartoon breakfast travel brand, blue globe, orange cream awning, smiling sun, readable title 全世界等我开饭！, steamed buns, egg toast, croissant, folded pancake, noodle bowl and coffee. Use image 2 authoritative Chinese logo to preserve lettering exactly. Recompose naturally for narrower taller format; never stretch or cut the title. Large title in middle-upper area, cheerful globe and clouds above, breakfast spread below. No other text, no new cities or landmarks, no slogan, no frame. Single opaque PNG."
+  },
+  {
+    "name": "capsule-english",
+    "prompt": "Localize image 1 Steam library portrait capsule into English. Preserve exact composition, art, food, globe, flat cartoon style and all colors. Replace ONLY Chinese title with exact 'World, Breakfast Is Served!' on 3 legible lines using authoritative logo image 2, keeping orange awning and smiling sun. No Chinese text remains. No other wording. Finished 600x900 portrait aspect 2:3."
+  },
+  {
+    "name": "header-schinese",
+    "prompt": "Recompose this established game marketing art into Steam LIBRARY HEADER 920x430 pixels, exact wide aspect 92:43. Keep same bold brown outline flat cartoon aesthetic and Chinese title 全世界等我开饭！ exactly, huge clearly legible. Original orange cream awning, smiling sun, globe, plane travel route, balanced breakfast foods retained. Fit ALL title letters and exclamation mark with comfortable margin, simpler food framing left and right to suit wide format. No additional text. No newly invented landmarks. Do not stretch the artwork. Single opaque finished PNG."
+  },
+  {
+    "name": "header-english",
+    "prompt": "Localize image 1 Steam library HEADER into English, target 920x430 wide aspect 92:43. Change only title lettering to exact 'World, Breakfast Is Served!' using image 2 authoritative logo. Three readable lines World, / Breakfast / Is Served! Keep whole title legible with margins, orange cream awning smiling sun and original brown outlined cartoon style. Preserve background and breakfast composition. No Chinese or extra wording. Opaque finished image."
+  },
+  {
+    "name": "hero-shared",
+    "prompt": "Create TEXT-FREE Steam LIBRARY HERO background for same game as reference. Ultra-wide panoramic target 3840x1240 (96:31). STRICT no text, no letters, no logo, no awning signboard or title plaque. Match reference cheerful thick dark brown outlined rounded flat 2D cartoon food, cream orange teal blue palette. Composition: subdued sky blue and cream clouds panorama, soft simplified teal globe motif around center, subtle travel arc. Central focal breakfast group entirely inside central small safe rectangle x1490..2350 y430..810 in target coordinates: small balanced steamer of buns, folded pancake, egg toast, noodle bowl, croissant and coffee; key group compact, no huge food at edges. Entire lower-left quarter is quiet warm cream tabletop and subtle muted foliage at edge, no important food there, reserved for separate logo overlay. Frame distant sides with simple low generic roof silhouettes and soft foliage, NOT specific recognizable landmarks. Rich polished coherent illustration over whole canvas but focal objects in central safe area. No borders or guides. No realistic shading, no photographic texture, no UI, no watermarks. Produce full-width opaque PNG at requested size or closest matching ultra-wide aspect."
+  },
+  {
+    "name": "hero-safe-area-correction",
+    "prompt": "Edit this Steam hero background, preserve style palette and scenery. REQUIRED correction: central food bouquet AND smiling sun must be MUCH SMALLER, approximately HALF current width and half current height. Entire bouquet including sun must fit in central rectangle spanning 39% to 61% canvas width and 35% to 65% canvas height. This is essential crop safe zone. Repaint freed space with existing quiet pale blue river, cream tabletop, distant simple skyline. Large subdued globe may remain behind, but sun face must be tiny inside safe box along with food. No title, no text, no logos, no guides. Maintain ultra-wide 3840x1240 aspect. Make left bottom area quiet for separately placed logo. Single finished opaque background."
+  },
+  {
+    "name": "hero-final-safe-area",
+    "prompt": "Precise edit of this ultra-wide Steam hero: ONLY scale entire central food-and-sun cluster down to 70% of its current size and move it UP so its center is exact canvas center. The whole cluster including steam, sun rays, plates, cup and leaves must lie inside x=41%..59%, y=36%..64% of canvas. Target cluster approximately 350px wide 180px high in this 2048x662 reference. Repaint former footprint seamlessly with river/table. Preserve large globe, plane, sky, distant scenery and quiet lower-left tabletop unchanged. No text no logo. Output ultra-wide same aspect 3840:1240."
+  }
+]

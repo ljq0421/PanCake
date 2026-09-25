@@ -48,8 +48,8 @@ public partial class PancakeAudio : Node
         {
             Name = "SupplyBellPlayer",
             Bus = ProjectCake.Core.JourneySettings.EffectsBus,
-            VolumeDb = -9,
-            Stream = MakeSupplyBell(),
+            VolumeDb = SupplyBellAudio.VolumeDb,
+            Stream = SupplyBellAudio.Stream,
         };
         AddChild(_supplyPlayer);
         _sounds[PancakeSound.BookOpen] = MakeNoise(.18, .10);
@@ -113,15 +113,6 @@ public partial class PancakeAudio : Node
                 * Math.Exp(-local * 30) * Math.Min(1, local * 800) * .24;
         }
         return value;
-    });
-
-    private static AudioStreamWav MakeSupplyBell() => MakeWave(.34, sample =>
-    {
-        double t = sample / 22050.0;
-        double strike = Math.Min(1, t * 1800) * Math.Exp(-t * 10);
-        return strike * (.22 * Math.Sin(Math.Tau * 880 * t)
-            + .09 * Math.Sin(Math.Tau * 1764 * t)
-            + .04 * Math.Sin(Math.Tau * 2652 * t));
     });
 
     private static AudioStreamWav MakePaperRustle()

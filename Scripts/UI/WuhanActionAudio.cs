@@ -33,7 +33,7 @@ internal sealed class WuhanActionAudio
                 Bus = ProjectCake.Core.JourneySettings.EffectsBus,
                 VolumeDb = CartoonPath(sound) is not null
                     ? sound is WuhanSound.Mix or WuhanSound.Spread ? -8 : sound == WuhanSound.Error ? -6 : -4
-                    : sound == WuhanSound.SupplyBell ? -7 : -16,
+                    : sound == WuhanSound.SupplyBell ? SupplyBellAudio.VolumeDb : -16,
                 MaxPolyphony = 1 };
             _owner.AddChild(player);
             _players.Add(sound, player);
@@ -57,6 +57,7 @@ internal sealed class WuhanActionAudio
 
     private static AudioStreamWav Make(WuhanSound sound)
     {
+        if (sound == WuhanSound.SupplyBell) return SupplyBellAudio.Stream;
         if (CartoonPath(sound) is string path) return CartoonActionClips.Load(path);
         (double pitch, double end, double length, double noise) = sound switch
         {
@@ -72,7 +73,6 @@ internal sealed class WuhanActionAudio
             WuhanSound.Flip => (420, 1000, .18, .06),
             WuhanSound.Cut => (1250, 650, .065, .13),
             WuhanSound.Stock => (660, 880, .20, .02),
-            WuhanSound.SupplyBell => (1400, 1040, .31, 0),
             WuhanSound.Ready => (880, 1100, .24, 0),
             WuhanSound.Overdone => (420, 230, .24, .02),
             WuhanSound.Success => (784, 1176, .25, 0),
@@ -94,7 +94,7 @@ internal sealed class WuhanActionAudio
             double envelope = Math.Min(1, t / .005) * Math.Pow(1 - p, 2) * Math.Exp(-p * 2);
             filtered = filtered * .55 + (random.NextDouble() * 2 - 1) * .45;
             double tone = Math.Sin(phase) * .65 + Math.Sin(phase * 2) * .12;
-            if (sound is WuhanSound.Success or WuhanSound.Ready or WuhanSound.Stock or WuhanSound.SupplyBell)
+            if (sound is WuhanSound.Success or WuhanSound.Ready or WuhanSound.Stock)
                 tone += Math.Sin(phase * 1.5) * .18;
             short value = (short)(Math.Clamp((tone + filtered * noise) * envelope * .7, -1, 1) * short.MaxValue);
             data[i * 2] = (byte)(value & 255);

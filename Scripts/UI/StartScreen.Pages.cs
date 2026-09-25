@@ -74,9 +74,9 @@ public partial class StartScreen
             }, bare: true);
         var card = HomeAction("Continue", "继续旅程", "小火车", new(400, 835, 500, 150), RenderContinue);
         card.Disabled = !canContinue; card.Modulate = new Color(1, 1, 1, canContinue ? 1 : .68f);
-        HomeAction("NewGame", "新的旅程", "首页新旅程图标-粗描边-v2", new(940, 835, 500, 150), () => OpenJourneyArchives(newJourney: true));
+        HomeAction("NewGame", "新的旅程", "首页新旅程图标-粗描边-v2", new(940, 835, 500, 150), () => RequestNewGame());
         HomeAction("BreakfastRecords", "旅途收藏", "首页旅途收藏图标-粗描边-v2", new(1475, 855, 170, 145), PresentBreakfastCollection, small: true);
-        HomeAction("JourneyArchives", "旅程档案", "已有旅程手账封面", new(1655, 855, 170, 145), () => OpenJourneyArchives(), small: true);
+        HomeAction("JourneyArchives", "旅程档案", "旅程档案图标", new(1655, 855, 170, 145), () => OpenJourneyArchives(), small: true);
         Utilities(); Focus(canContinue ? "Continue" : "NewGame");
         HomeEntrance();
         _status.MoveToFront();
@@ -87,7 +87,11 @@ public partial class StartScreen
         int? slot = requestedSlot ?? _save.GetSlots().FirstOrDefault(s => !s.Exists)?.Id;
         if (slot is null)
         {
-            ShowError("五段旅程已满，请到旅程档案删除不再需要的旅程。");
+            OpenModal("confirm");
+            ConfirmationTitle(_modal, "ArchivesFullTitle", "旅程档案已满");
+            ConfirmationMessage(_modal, "ArchivesFullMessage", "请前往“旅程档案”，删除不需要的旅程后再开启新的旅程。");
+            ConfirmationAction(_modal, "CloseArchivesFull", "返回", CloseModal).GrabFocus();
+            ConfirmationAction(_modal, "OpenFullArchives", "旅程档案", () => OpenJourneyArchives(), true);
             return;
         }
         CloseModal(); _busy = true;

@@ -16,16 +16,20 @@ public partial class StartScreenSelfTest
         var newGame = Find<Button>("NewGame");
         newGame.EmitSignal(Button.SignalName.Pressed); newGame.EmitSignal(Button.SignalName.Pressed);
         await Frames();
-        Check(!_save.GetSlots().Any(s => s.Exists) && _screen.ModalOpen, "new journey selection does not create a save");
-        await Click(Find<Button>("CreateSlot1"));
+        Check(!_screen.ModalOpen, "new journey starts without archive selection");
         Check(_save.GetSlots().Count(s => s.Exists) == 1 && _screen.JourneyStage == FirstJourneyStage.Map, "new journey creates one slot and starts automatic map");
         Check(Find<Button>("SkipOpening").HasFocus(), "opening focuses skip");
-        Check(!_screen.FindChildren("FirstStationTianjin", "Button", true, false).Any(), "automatic opening requires no Tianjin click");
+        Check(!_screen.FindChildren("FirstStationTianjin", "Button", true, false).Any(), "Tianjin is unavailable before map unfolds");
         var cues = new List<OpeningCue>();
         _screen.GetNode<OpeningAudio>("OpeningAudio").Played += cue => cues.Add(cue);
         await JourneyCapture("opening-map");
         await Until(() => _screen.JourneyStage == FirstJourneyStage.Marker);
         await JourneyCapture("opening-marker");
+        await Until(() => _screen.JourneyStage == FirstJourneyStage.AwaitingTianjin);
+        await Delay(4.5);
+        Check(_screen.JourneyStage == FirstJourneyStage.AwaitingTianjin && !_screen.Descendants<Button>().Any(b => b.Name == "Depart" && b.IsVisibleInTree()), "map waits for manual Tianjin selection");
+        await JourneyCapture("opening-awaiting-tianjin");
+        await Click(Find<Button>("FirstStationTianjin"));
         await Until(() => _screen.JourneyStage == FirstJourneyStage.Book);
         await JourneyCapture("opening-book");
         await Until(() => _screen.JourneyStage == FirstJourneyStage.Content);
@@ -33,6 +37,7 @@ public partial class StartScreenSelfTest
         await Until(() => _screen.JourneyStage == FirstJourneyStage.Ready);
         await Delay(.5);
         Check(_screen.Page == JourneyPage.NewJourney && Find<Button>("Depart").HasFocus(), "automatic show ends ready to depart");
+        CheckHomeBookUtilitiesHidden("completed Tianjin opening");
         Check(Find<BookFoodIcon>("BreakfastFood1").Size == new Vector2(118, 112)
             && Find<BookFoodIcon>("BreakfastFood2").Size == new Vector2(118, 112),
             "Tianjin youtiao and soy milk use the enlarged journey-page food scale");
@@ -57,6 +62,7 @@ public partial class StartScreenSelfTest
         Check(_screen.Page == JourneyPage.NewJourneyMap, "Escape opens static map");
         KeyPress(Key.Enter); await Frames();
         Check(_screen.Page == JourneyPage.NewJourney, "Enter reopens introduction without replay");
+        CheckHomeBookUtilitiesHidden("reopened Tianjin introduction");
         KeyPress(Key.Tab); await Frames();
         Check(GetViewport().GuiGetFocusOwner() is Button focus && focus.Name != "Depart", "Tab moves focus");
         KeyPress(Key.Escape); await Frames();
@@ -71,11 +77,23 @@ public partial class StartScreenSelfTest
         foreach (float time in new[] { .225f, 1.425f, 2.325f, 3.225f })
         {
             _screen.PresentNewJourney(); await Delay(time);
+            if (time > 2)
+            {
+                await Click(Find<Button>("FirstStationTianjin"));
+                await Delay(time - 2);
+            }
             var skip = Find<Button>("SkipOpening");
             int beforeSkip = cues.Count;
             skip.EmitSignal(Button.SignalName.Pressed);
+            if (time < 2)
+            {
+                Check(_screen.JourneyStage == FirstJourneyStage.AwaitingTianjin, "skip preserves Tianjin selection");
+                await Click(Find<Button>("FirstStationTianjin"));
+                Find<Button>("SkipOpening").EmitSignal(Button.SignalName.Pressed);
+            }
             Find<Button>("Depart").EmitSignal(Button.SignalName.Pressed);
             Check(_screen.Visible && _screen.JourneyStage == FirstJourneyStage.Ready, "skip cannot click through to business at " + time);
+            CheckHomeBookUtilitiesHidden("skipped Tianjin opening at " + time);
             await Delay(.7);
             Check(cues.Count == beforeSkip, "skip never replays omitted sounds at " + time);
             Check(_screen.Page == JourneyPage.NewJourney && _save.GetSlots().Count(s => s.Exists) == 1, "skip finishes layout without another save at " + time);
@@ -97,12 +115,20 @@ public partial class StartScreenSelfTest
         settings.LoadPreferences();
         Check(settings.ReduceMotion, "reduced motion preference persists");
         _screen.PresentNewJourney(); await Delay(.3);
-        Check(_screen.JourneyStage == FirstJourneyStage.Ready && _screen.Page == JourneyPage.NewJourney, "reduced opening goes directly to readable page");
+        Check(_screen.JourneyStage == FirstJourneyStage.AwaitingTianjin, "reduced opening waits for Tianjin");
+        await Click(Find<Button>("FirstStationTianjin"));
         int sounds = 0;
         _screen.GetNode<OpeningAudio>("OpeningAudio").Played += _ => sounds++;
         settings.ToggleMute(); _screen.PresentNewJourney(); await Delay(.3);
+        await Click(Find<Button>("FirstStationTianjin"));
         Check(sounds == 0, "muted opening produces no sound events");
         settings.ToggleMute(); settings.SetReduceMotion(false);
+
+        if (OS.GetCmdlineUserArgs().Contains("--selection-only"))
+        {
+            await FullArchiveReminder();
+            return;
+        }
 
         _save.Data.UnlockedCityIds.Remove(StableIds.Cities.Tianjin);
         await Click(Find<Button>("Depart"));
@@ -137,6 +163,7 @@ public partial class StartScreenSelfTest
         Check(_main.OpenCity(StableIds.Cities.Tianjin), "return to isolated city for reduced departure");
         settings.SetReduceMotion(true);
         _screen.PresentNewJourney(); await Delay(.3);
+        await Click(Find<Button>("FirstStationTianjin"));
         Find<Button>("Depart").EmitSignal(Button.SignalName.Pressed);
         Check(transition.PaperDepartureActive && day.State == DayState.Preparing, "reduced departure still protects preparation");
         await Until(() => !transition.Active);
@@ -171,8 +198,22 @@ public partial class StartScreenSelfTest
         _screen.PresentHome(); await Frames(); cues.Clear();
         _screen.PresentMap();
         Check(cues.SequenceEqual(new[] { OpeningCue.Paper }), "home page turn uses one unified paper cue");
+        await FullArchiveReminder();
         _screen.Hide();
         Check(_screen.GetNode<OpeningAudio>("OpeningAudio").GetChildren().OfType<AudioStreamPlayer>().All(p => !p.Playing), "hiding home stops paper tail");
+
+        async Task FullArchiveReminder()
+        {
+            for (int slot = 2; slot <= 5; slot++) Check(_save.TryCreateSlot(slot, out _), "fill archive " + slot);
+            int? active = _save.ActiveSlotId;
+            _screen.PresentHome(); await Frames();
+            await Click(Find<Button>("NewGame"));
+            Check(_screen.ModalOpen && Find<Label>("ArchivesFullMessage").Text.Contains("旅程档案")
+                && _save.ActiveSlotId == active && _save.GetSlots().Count(s => s.Exists) == 5, "full archives preserve saves and show reminder");
+            await JourneyCapture("archives-full");
+            await Click(Find<Button>("OpenFullArchives"));
+            Check(Find<Button>("CloseArchives").IsVisibleInTree(), "reminder opens archives");
+        }
 
         async Task Delay(double seconds) => await ToSignal(GetTree().CreateTimer(seconds), SceneTreeTimer.SignalName.Timeout);
         async Task Until(Func<bool> condition)

@@ -20,6 +20,7 @@ public enum PancakeSound
     CrispDrop,
     PaperBag,
     SpreadComplete,
+    SupplyBell,
 }
 
 public partial class PancakeAudio : Node
@@ -27,6 +28,7 @@ public partial class PancakeAudio : Node
     private readonly Dictionary<PancakeSound, AudioStreamWav> _sounds = new();
     private AudioStreamPlayer _player = null!;
     private AudioStreamPlayer _spreadPlayer = null!;
+    private AudioStreamPlayer _supplyPlayer = null!;
     private bool _paused;
 
     public override void _Ready()
@@ -42,6 +44,14 @@ public partial class PancakeAudio : Node
             Stream = MakeChord(new[] { 880.0, 1320.0 }, .22, .38),
         };
         AddChild(_spreadPlayer);
+        _supplyPlayer = new AudioStreamPlayer
+        {
+            Name = "SupplyBellPlayer",
+            Bus = ProjectCake.Core.JourneySettings.EffectsBus,
+            VolumeDb = -9,
+            Stream = MakeSupplyBell(),
+        };
+        AddChild(_supplyPlayer);
         _sounds[PancakeSound.BookOpen] = MakeNoise(.18, .10);
         _sounds[PancakeSound.BookStamp] = MakeNoise(.07, .18);
         _sounds[PancakeSound.SoftDrop] = CartoonActionClips.Load(CartoonActionClips.Drop);
@@ -66,6 +76,11 @@ public partial class PancakeAudio : Node
             if (!_paused) _spreadPlayer.Play();
             return;
         }
+        if (sound == PancakeSound.SupplyBell)
+        {
+            if (!_paused) _supplyPlayer.Play();
+            return;
+        }
         if (_paused || !_sounds.TryGetValue(sound, out AudioStreamWav? stream))
         {
             return;
@@ -83,6 +98,7 @@ public partial class PancakeAudio : Node
     {
         _player?.Stop();
         _spreadPlayer?.Stop();
+        _supplyPlayer?.Stop();
     }
 
     private static AudioStreamWav MakeCoinChime() => MakeWave(.28, sample =>
@@ -97,6 +113,15 @@ public partial class PancakeAudio : Node
                 * Math.Exp(-local * 30) * Math.Min(1, local * 800) * .24;
         }
         return value;
+    });
+
+    private static AudioStreamWav MakeSupplyBell() => MakeWave(.34, sample =>
+    {
+        double t = sample / 22050.0;
+        double strike = Math.Min(1, t * 1800) * Math.Exp(-t * 10);
+        return strike * (.22 * Math.Sin(Math.Tau * 880 * t)
+            + .09 * Math.Sin(Math.Tau * 1764 * t)
+            + .04 * Math.Sin(Math.Tau * 2652 * t));
     });
 
     private static AudioStreamWav MakePaperRustle()

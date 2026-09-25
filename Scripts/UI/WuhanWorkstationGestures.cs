@@ -53,6 +53,7 @@ public partial class WuhanWorkstationView
 
     public override void _Input(InputEvent input)
     {
+        if (HandleSupplyInput(input)) { GetViewport().SetInputAsHandled(); return; }
         if (input is InputEventKey { Pressed: true, Keycode: Key.Escape })
         {
             bool active = _cutPressed || _trashPressed || _drag?.IsDragging == true || HasProductionGesture || _mixHeld || _cooker?.PendingPourBasket is not null;
@@ -208,5 +209,6 @@ public partial class WuhanWorkstationView
             button.Hide(); button.Disabled = true; button.FocusMode = FocusModeEnum.None;
             button.MouseFilter = MouseFilterEnum.Ignore; button.TooltipText = "";
         }
+        RefreshSupplyControls();
     }
 }

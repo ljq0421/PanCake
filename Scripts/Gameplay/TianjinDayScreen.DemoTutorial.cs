@@ -104,6 +104,13 @@ public partial class TianjinDayScreen
     private void UpdateDemoLesson()
     {
         if (_demoLesson?.Visible != true || !_controller.TutorialActive) return;
+        if (_workstation.LessonSupplyActive && !_demoLessonComplete
+            && _workstation.LearnedWorkbenchActions.Contains(PancakeWorkstation.SupplyIntroductionAction)
+            && _workstation.Inventory.GetQuantity(StableIds.Ingredients.Egg) == _workstation.Inventory.GetCapacity(StableIds.Ingredients.Egg))
+        {
+            _demoLessonComplete = true;
+            _workstation.InteractionEnabled = false;
+        }
         _demoLessonAction!.Disabled = _demoLessonSkip!.Disabled = !DemoLessonControlsEnabled;
         _demoLessonSkipFrame!.Visible = !_demoLessonComplete;
         _demoLessonAction.Visible = _demoLessonComplete || DemoLessonFailed || _demoLessonSaveError.Length > 0;
@@ -140,7 +147,7 @@ public partial class TianjinDayScreen
             _demoLessonSaveError = "教学记录未保存，请重试。";
             UpdateDemoLesson(); return;
         }
-        int? remainingLessonEggs = _demoLessonComplete && _demoTeachingDay == 1 && _demoBusinessDay == 1
+        int? remainingLessonEggs = (_demoLessonComplete || _workstation.LessonSupplyActive) && _demoTeachingDay == 1 && _demoBusinessDay == 1
             ? _workstation.Inventory.GetQuantity(StableIds.Ingredients.Egg) : null;
         bool completed = _demoLessonComplete;
         _demoLesson!.Hide(); _demoLessonSkipFrame!.Hide(); _workstation.Tutorial = TutorialProtection.None;
@@ -172,7 +179,16 @@ public partial class TianjinDayScreen
         if (!_controller.TutorialActive || _demoLessonComplete || DemoLessonFailed || !completedObjective) return;
         if (evaluation.Grade is DeliveryGrade.Correct or DeliveryGrade.Perfect)
         {
-            _demoLessonComplete = true; _workstation.InteractionEnabled = false;
+            if (_demoTeachingDay == 1)
+            {
+                _workstation.BeginLessonSupply();
+                _workstation.InteractionEnabled = true;
+            }
+            else
+            {
+                _demoLessonComplete = true;
+                _workstation.InteractionEnabled = false;
+            }
             UpdateDemoLesson();
         }
         else

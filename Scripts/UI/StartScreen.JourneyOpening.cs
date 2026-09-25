@@ -3,7 +3,7 @@ using ProjectCake.Data;
 
 namespace ProjectCake.UI;
 
-public enum FirstJourneyStage { None, Map, Marker, Book, Content, Ready, Departing }
+public enum FirstJourneyStage { None, Map, Marker, AwaitingTianjin, Book, Content, Ready, Departing }
 
 public partial class StartScreen
 {
@@ -12,6 +12,7 @@ public partial class StartScreen
     private Tween? _openingTween;
     private OpeningAudio? _openingAudio;
     private bool _openingActive, _openingPaused, _journeyInputPending;
+    private bool _tianjinSelected;
     private int _releasedFrames;
     private float _openingTime;
     private Control? _openingSource, _openingMap, _openingMarker, _openingHalo, _openingCover, _openingSheet;
@@ -45,14 +46,14 @@ public partial class StartScreen
         _openingSheet = new ColorRect { Name = "OpeningPaper", Position = new(900, 225), Size = new(32, 625),
             Color = new Color("#FFF5DF"), MouseFilter = MouseFilterEnum.Ignore };
         _body.AddChild(_openingSheet);
-        Button(_body, "SkipOpening", "跳过演出", new(1515, 55, 290, 64), () => CompleteJourneyOpening(true));
+        Button(_body, "SkipOpening", "跳过演出", new(1515, 55, 290, 64), SkipJourneyOpening);
         Button(_body, "OpeningHome", "返回首页", new(72, 48, 220, 64), RenderHome, bare: true);
         _openingCues.Clear(); _openingActive = true; _openingPaused = false; _openingTime = 0;
-        _journeyInputPending = false; JourneyStage = FirstJourneyStage.Map;
+        _journeyInputPending = false; _tianjinSelected = false; JourneyStage = FirstJourneyStage.Map;
         OpeningSound(OpeningCue.Click);
         if (JourneyTransition.Reduced)
         {
-            CompleteJourneyOpening(true);
+            SkipJourneyOpening();
             _body.Modulate = new(1, 1, 1, 0);
             var fade = CreateTween(); _tweens.Add(fade); fade.TweenProperty(_body, "modulate:a", 1f, .2);
             return;
@@ -60,9 +61,46 @@ public partial class StartScreen
         ApplyOpeningTime(0);
         _openingTween = CreateTween();
         // Stretch the shared timeline so visuals, cues and input unlock stay synchronized.
-        _openingTween.TweenMethod(Callable.From<float>(ApplyOpeningTime), 0f, 2.8f, 4.2);
-        _openingTween.TweenCallback(Callable.From(() => CompleteJourneyOpening(false)));
+        _openingTween.TweenMethod(Callable.From<float>(ApplyOpeningTime), 0f, 1.25f, 1.875);
+        _openingTween.TweenCallback(Callable.From(WaitForTianjin));
         Focus("SkipOpening");
+    }
+
+    private void WaitForTianjin()
+    {
+        if (!_openingActive || _tianjinSelected || JourneyStage == FirstJourneyStage.AwaitingTianjin) return;
+        _openingTween?.Kill(); _openingTween = null;
+        ApplyOpeningTime(1.25f);
+        JourneyStage = FirstJourneyStage.AwaitingTianjin;
+        _openingSource?.Hide();
+        _openingHalo!.Scale = Vector2.One;
+        Opacity(_openingHalo, 1);
+        _body.GetNode<Button>("SkipOpening").Hide();
+        Button(_openingMap!, "FirstStationTianjin", "", new(727, 150, 180, 165), ContinueFromTianjin, bare: true);
+        Focus("FirstStationTianjin");
+    }
+
+    private void ContinueFromTianjin()
+    {
+        if (!_openingActive || _openingPaused || JourneyStage != FirstJourneyStage.AwaitingTianjin) return;
+        _tianjinSelected = true;
+        _openingMap!.GetNode<Button>("FirstStationTianjin").Hide();
+        if (JourneyTransition.Reduced) { CompleteJourneyOpening(true); return; }
+        JourneyStage = FirstJourneyStage.Marker;
+        _body.GetNode<Button>("SkipOpening").Show();
+        Focus("SkipOpening");
+        _openingTween = CreateTween();
+        _openingTween.TweenMethod(Callable.From<float>(ApplyOpeningTime), 1.25f, 2.8f, 2.325);
+        _openingTween.TweenCallback(Callable.From(() => CompleteJourneyOpening(false)));
+    }
+
+    private void SkipJourneyOpening()
+    {
+        if (!_openingActive || _openingPaused) return;
+        if (_tianjinSelected) { CompleteJourneyOpening(true); return; }
+        _openingAudio?.Stop();
+        _openingCues.Add(OpeningCue.Locate);
+        WaitForTianjin();
     }
 
     private void BuildOpeningMap()
@@ -121,6 +159,7 @@ public partial class StartScreen
             bool depart = name == "Depart";
             float progress = isBook ? book : Ease(Beat(time, postcard ? 1.9f : depart ? 2.3f : 2.05f, depart ? .4f : .5f));
             var color = _introColors[control];
+            control.Visible = progress > 0;
             control.Modulate = new(color.R, color.G, color.B, color.A * progress);
             control.Position = position + new Vector2(0, isBook ? 32 * (1 - book) : postcard ? -18 * (1 - progress) : 10 * (1 - progress));
             if (name == "JourneyPostcard") { control.PivotOffset = control.Size / 2; control.RotationDegrees = (_save?.IsDemo == true ? -3 : 0) - 2 * (1 - progress); }
@@ -192,7 +231,7 @@ public partial class StartScreen
     {
         if (_journeyInputPending && !Input.IsAnythingPressed()) { if (++_releasedFrames >= 2) _journeyInputPending = false; }
         else if (_journeyInputPending) _releasedFrames = 0;
-        if (_openingActive && JourneyTransition.Reduced) CompleteJourneyOpening(true);
+        if (_openingActive && JourneyTransition.Reduced) SkipJourneyOpening();
     }
     public override void _Notification(int what)
     {

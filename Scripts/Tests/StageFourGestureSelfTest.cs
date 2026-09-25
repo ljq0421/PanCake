@@ -93,132 +93,115 @@ public partial class StageFourSelfTest
 
     private async Task TestStockGestures(DataCatalog catalog)
     {
-        var station = ProjectCake.Core.SceneFactory.Instantiate<PancakeWorkstation>("res://Scenes/Gameplay/PancakeWorkstation.tscn");
+        var station = ProjectCake.Core.SceneFactory.Instantiate<PancakeWorkstation>(
+            "res://Scenes/Gameplay/PancakeWorkstation.tscn");
         AddChild(station);
         station.Initialize(catalog, 1, 1, 1, catalog.DaysByNumber[11]);
         await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
-        var drag = station.GetChildren().OfType<DragService>().Single();
+        var bell = (Control)station.FindChild("SupplyBell", true, false);
+        var npc = (Control)station.FindChild("SupplyHelperClick", true, false);
+        string[] order = { StableIds.Ingredients.Egg, StableIds.Ingredients.Crispy,
+            StableIds.Ingredients.Scallion, StableIds.Ingredients.Ham, "soy_milk" };
+
         foreach (float scale in new[] { 1f, 2f / 3f })
         {
             station.Scale = Vector2.One * scale;
-            foreach (string id in TianjinWorkbenchLayout.IngredientOrder)
-            {
-                station.ResetForDay();
-                var gesture = (StockGesture)station.FindChild($"StockGesture_{id}", true, false);
-                if (station.Inventory.IsUnlimited(id))
-                {
-                    Press(gesture); station.Tick(.6); Release(gesture);
-                    Check(!station.Inventory.IsRefilling(id) && station.Inventory.HasAvailable(id)
-                        && !station.Inventory.CanRefill(id), $"{id}/{scale} 无限原料长按不补货且始终可用");
-                    continue;
-                }
-                int capacity = station.Inventory.GetCapacity(id);
-                station.Inventory.TryConsume(id, capacity);
-                Press(gesture);
-                station.Tick(.449);
-                Check(!station.Inventory.IsRefilling(id) && gesture.HoldProgress > .99, $"{id}/{scale} 长按临界时间前不补货");
-                Release(gesture);
-                Check(!station.Inventory.IsRefilling(id) && station.Inventory.GetQuantity(id) == 0, $"{id}/{scale} 空盘短按不补货");
-                Press(gesture);
-                station.Tick(.45);
-                Check(station.Inventory.IsRefilling(id) && station.Inventory.GetQuantity(id) == 0, $"{id}/{scale} 空盘长按触发且不提前入库");
-                Release(gesture);
-                Press(gesture); station.Tick(.45); Release(gesture);
-                Check(station.Inventory.GetRefillProgress(id) > 0, $"{id}/{scale} 重复长按不重置补货进度");
-                var slot = (IngredientStockSlotView)station.FindChild($"IngredientSlot_{id}", true, false);
-                int previewQuantity = (int)Math.Floor(capacity * station.Inventory.GetRefillProgress(id));
-                bool liquid = id is StableIds.Ingredients.Batter or StableIds.Ingredients.Sauce;
-                Check(liquid ? slot.LiquidTier == slot.StockTier && slot.LiquidTier > 0
-                    : slot.VisibleIngredientVisualCount == previewQuantity,
-                    $"{id}/{scale} 真实长按补货将新增份数同步到盘内实物或液面");
-                int pausedVisualCount = slot.VisibleIngredientVisualCount, pausedLiquidTier = slot.LiquidTier;
-                station.Paused = true; station.Tick(1); station.Paused = false;
-                Check(slot.VisibleIngredientVisualCount == pausedVisualCount && slot.LiquidTier == pausedLiquidTier,
-                    $"{id}/{scale} 暂停冻结盘内补货显示");
-                station.Tick(station.Inventory.LevelData.RefillSeconds);
-                Check(station.Inventory.GetQuantity(id) == capacity && !station.Inventory.IsRefilling(id), $"{id}/{scale} 松手后按原耗时补满");
-                Check(liquid ? slot.LiquidTier == 3 : slot.VisibleIngredientVisualCount == capacity,
-                    $"{id}/{scale} 补满后显示完整容量");
-                Press(gesture); station.Tick(.45); Release(gesture);
-                Check(!station.Inventory.IsRefilling(id) && station.Inventory.GetQuantity(id) == capacity, $"{id}/{scale} 满盘长按不补货也不取料");
-                station.Inventory.TryConsume(id);
-                Press(gesture); station.Tick(.2); station.Paused = true; station.Tick(1); station.Paused = false;
-                station.Tick(1); Release(gesture);
-                Check(!station.Inventory.IsRefilling(id), $"{id}/{scale} 暂停取消蓄力，恢复后不误触");
-                Press(gesture); station.Tick(.2); station.CancelInput(); station.Tick(1); Release(gesture);
-                Check(!station.Inventory.IsRefilling(id), $"{id}/{scale} 失焦或取消输入清除蓄力");
-                Press(gesture); station.Tick(.2); station.ResetForDay(); station.Tick(1); Release(gesture);
-                Check(!station.Inventory.IsRefilling(id), $"{id}/{scale} 重开清除蓄力");
-                station.Inventory.TryConsume(id);
-                Press(gesture); station.Tick(.45); Release(gesture);
-                Check(station.Inventory.IsRefilling(id), $"{id}/{scale} 非当前制作步骤也可以提前补料");
-            }
             station.ResetForDay();
-            var batter = (StockGesture)station.FindChild("StockGesture_batter", true, false);
-            Press(batter);
-            Vector2 origin = batter.GetGlobalTransform() * new Vector2(100, 60);
-            using (var motion = new InputEventMouseMotion { Position = origin + new Vector2(7 * scale, 0) }) batter._Input(motion);
-            Check(!drag.IsDragging, $"缩放{scale} 轻微移动不启动拖动");
-            using (var motion = new InputEventMouseMotion { Position = origin + new Vector2(9 * scale, 0) }) batter._Input(motion);
-            Check(drag.IsDragging && batter.HoldProgress == 0, $"缩放{scale} 超过8设计像素启动拖料并取消长按");
-            station.Tick(.6);
-            Check(!station.Inventory.IsRefilling("batter"), $"缩放{scale} 拖料期间不会触发补货");
+            Check(Click(bell) && station.SupplyNpcCalled && npc.Visible,
+                "满库存点铃仍响铃并叫出可点击 NPC，缩放 " + scale);
+            Check(order.All(id => Count(id) == Capacity(id)), "满库存叫货不改变库存");
+            using (var fryerClick = new InputEventMouseButton
+            {
+                ButtonIndex = MouseButton.Left, Pressed = true,
+                Position = station.GetGlobalTransformWithCanvas() * new Vector2(180, 550),
+            })
+                Check(!station.HandleSupplyInput(fryerClick), "NPC 与炸锅重叠处不拦截炸锅点击");
             station.CancelInput();
 
-            var soy = (StockGesture)station.FindChild("StockGesture_soy_milk", true, false);
-            var tray = station.SoyMilkTray!;
-            tray.TryConsumeForDelivery();
-            Press(soy); soy.Tick(.45); Release(soy);
-            Check(!tray.IsRefilling && tray.IsTaking, "豆浆取杯冷却期间不能补货");
-            tray.Tick(.3);
-            Press(soy); station.Tick(.45); Release(soy);
-            Check(tray.IsRefilling && tray.Quantity == 9, "豆浆长按触发后松手不取杯");
-            station.Tick(.59);
-            Check(tray.Quantity == 9, "豆浆保持0.6秒补货耗时");
-            station.Tick(.01);
-            Check(tray.Quantity == 10 && !tray.IsRefilling, "豆浆完成后恢复十杯");
-            while (tray.Quantity > 0) { tray.TryConsumeForDelivery(); tray.Tick(.3); }
-            Press(soy); station.Tick(.1); Release(soy);
-            Check(!tray.IsRefilling, "豆浆空盘短按不补货");
-            Press(soy); station.Tick(.45); Release(soy);
-            Check(tray.IsRefilling, "豆浆空盘长按补货");
-            var cups = (SoyMilkStockView)station.FindChild("SoyMilkStockArt", true, false);
-            station.Tick(SoyMilkTrayRuntime.RefillSeconds * .5);
-            Check(cups.VisibleCupCount == 5 && tray.Quantity == 0 && !tray.CanStartDrag,
-                "豆浆长按补货半程托盘显示五杯，完成前不能取杯");
-            station.Paused = true; station.Tick(1); station.Paused = false;
-            Check(cups.VisibleCupCount == 5, "暂停冻结豆浆补货杯数");
-            station.Tick(SoyMilkTrayRuntime.RefillSeconds);
-            Check(cups.VisibleCupCount == tray.Capacity && tray.CanStartDrag,
-                "豆浆长按补货结束显示完整十杯并恢复取用");
-        }
-
-        var coins = station.CoinTray!;
-        foreach (float scale in new[] { 1f, 2f / 3f })
-        {
-            station.Scale = Vector2.One * scale;
-            foreach ((int amount, int expected) in new[] { (0, 0), (1, 3), (10, 6), (11, 9), (120, 12), (500, 15) })
+            foreach (string id in order)
             {
-                coins.RenderRevenue(amount);
-                Check(coins.VisibleCoinCount == expected, $"金币托盘收入{amount}显示{expected}枚示意币");
-                Check(coins.Coins.Where(coin => coin.Visible).All(coin => coins.SurfaceBounds.Encloses(coin.GetGlobalRect())),
-                    $"金币{expected}枚/缩放{scale}全部完整位于盘内，不依赖裁切隐藏溢出");
-                Check(coins.SurfaceBounds.HasPoint(coins.LandingPoint), "金币动画落点位于盘面内部");
+                if (id == "soy_milk")
+                {
+                    Check(station.SoyMilkTray!.TryConsumeForDelivery(2), "准备两杯豆浆缺口");
+                    station.SoyMilkTray.Tick(SoyMilkTrayRuntime.TakeSeconds);
+                }
+                else Check(station.Inventory.TryConsume(id, 2), "准备小料缺口 " + id);
             }
+            Check(Click(bell) && station.SupplyNpcCalled && npc.Visible,
+                "原料未满时点铃叫出 NPC，缩放 " + scale);
+            foreach (string id in order)
+            {
+                int before = Count(id);
+                for (int click = 1; click <= 2; click++)
+                {
+                    Check(Click(npc), "NPC 点击由输入路由接收 " + id);
+                    Check(station.GetChildren().OfType<TextureRect>().Any(n => n.Name.ToString().StartsWith("SupplyDrop_" + id)),
+                        "补货显示对应食材落入动画 " + id);
+                    Check(Count(id) == before + click && !station.Inventory.IsAnyRefilling
+                        && station.SoyMilkTray!.IsRefilling == false,
+                        "每点一次只立即补一份 " + id + " #" + click);
+                    TextureRect target = id == "soy_milk"
+                        ? station.Descendants<SoyMilkStockView>().Single().Cups[Count(id) - 1]
+                        : station.Descendants<IngredientStockSlotView>().Single(view => view.Name == "IngredientSlot_" + id)
+                            .IngredientVisuals[Count(id) - 1];
+                    TextureRect falling = station.GetChildren().OfType<TextureRect>().Last(node => !node.IsQueuedForDeletion());
+                    Vector2 offset = new(0, 110 * scale);
+                    Check(target.SelfModulate.A == 0 && falling.Size.DistanceTo(target.Size) < .001f
+                        && (falling.GetGlobalTransform().Origin + offset).IsEqualApprox(target.GetGlobalTransform().Origin)
+                        && falling.Material == target.Material,
+                        "飞行中不重复显示，按实际库存位置与尺寸落入 " + id,
+                        $"alpha={target.SelfModulate.A} size={falling.Size}/{target.Size} origin={falling.GetGlobalTransform().Origin + offset}/{target.GetGlobalTransform().Origin} material={falling.Material == target.Material}");
+                    foreach (string other in order.Where(other => other != id))
+                        Check(Count(other) == Capacity(other) - 2 || Count(other) == Capacity(other),
+                            "本次点击不改变其他食材 " + other);
+                }
+                Check(Count(id) == Capacity(id), "补满后进入下一种 " + id);
+            }
+            Check(order.All(id => Count(id) == Capacity(id)), "五种食材依序补满");
+            station.CancelInput();
+            await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+            Check(!station.GetChildren().OfType<TextureRect>().Any(n => n.Name.ToString().StartsWith("SupplyDrop_")),
+                "中断补货清理全部落入动画");
+            Check(station.Descendants<IngredientStockSlotView>().SelectMany(view => view.IngredientVisuals)
+                .Concat(station.Descendants<SoyMilkStockView>().Single().Cups).All(unit => unit.SelfModulate.A == 1),
+                "中断动画恢复所有已补入食材");
+
+            station.Inventory.TryConsume(StableIds.Ingredients.Egg);
+            var gesture = (StockGesture)station.FindChild("StockGesture_egg", true, false);
+            using (var press = new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true,
+                Position = gesture.Size / 2 }) gesture._GuiInput(press);
+            station.Tick(.6);
+            using (var release = new InputEventMouseButton { ButtonIndex = MouseButton.Left,
+                Position = gesture.GetGlobalRect().GetCenter() }) gesture._Input(release);
+            Check(station.Inventory.GetQuantity(StableIds.Ingredients.Egg)
+                == station.Inventory.GetCapacity(StableIds.Ingredients.Egg) - 1
+                && !station.Inventory.IsRefilling(StableIds.Ingredients.Egg),
+                "料盒长按不再补货");
+            Click(bell);
+            using (var escape = new InputEventKey { Keycode = Key.Escape, Pressed = true })
+                Check(station.HandleSupplyInput(escape), "Esc 关闭 NPC");
+            Check(!station.SupplyNpcCalled && !npc.Visible, "Esc 后 NPC 隐藏");
+            Click(bell);
+            station.Paused = true; station.Tick(.1); station.Paused = false;
+            Check(!station.SupplyNpcCalled && !npc.Visible, "暂停关闭 NPC");
+            Click(bell);
+            station.CancelInput();
+            Check(!station.SupplyNpcCalled && !npc.Visible, "失焦关闭 NPC");
+            Click(bell);
+            station.ResetForDay();
+            Check(!station.SupplyNpcCalled && !npc.Visible, "重开清除 NPC");
         }
-        station.ResetForDay();
-        Check(coins.VisibleCoinCount == 0, "重开清空金币托盘");
         station.Free();
 
-        void Press(StockGesture gesture)
+        bool Click(Control target)
         {
-            using var press = new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true, Position = new Vector2(100, 60) };
-            gesture._GuiInput(press);
+            using var input = new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true,
+                Position = target.GetGlobalTransformWithCanvas() * (target.Size * .5f) };
+            return station.HandleSupplyInput(input);
         }
-        void Release(StockGesture gesture)
-        {
-            using var release = new InputEventMouseButton { ButtonIndex = MouseButton.Left, Position = gesture.GetGlobalTransform() * new Vector2(100, 60) };
-            gesture._Input(release);
-        }
+        int Count(string id) => id == "soy_milk" ? station.SoyMilkTray!.Quantity
+            : station.Inventory.GetQuantity(id);
+        int Capacity(string id) => id == "soy_milk" ? station.SoyMilkTray!.Capacity
+            : station.Inventory.GetCapacity(id);
     }
 }

@@ -240,7 +240,12 @@ public partial class FullJourneyFeaturesSelfTest : Node
                     Do(PancakeCommand.BeginSauce); machine.SetSauceCoverage(1); Do(PancakeCommand.CompleteSauce); Do(PancakeCommand.Fold); Do(PancakeCommand.Bag);
                     station.Tick(1); t.RefreshForCapture(true);
                     Check(t.Descendants<DropZone>().First(z => z.Name.ToString().StartsWith("CustomerDropZone") && z.CanAccept("finished_pancake")).TryAccept("finished_pancake")
-                        && t.DemoLessonComplete, "full pancake replay completes through real drop handler");
+                        && !t.DemoLessonComplete, "pancake replay proceeds to supply practice before opening");
+                    t.RefreshForCapture(true);
+                    station.Descendants<Button>().Single(b => b.Name == "SupplyBell").EmitSignal(Button.SignalName.Pressed);
+                    station.Descendants<Button>().Single(b => b.Name == "SupplyHelperClick").EmitSignal(Button.SignalName.Pressed);
+                    t.RefreshForCapture();
+                    Check(t.DemoLessonComplete, "supply practice completes before opening");
                 }
                 else
                 {

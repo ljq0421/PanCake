@@ -7,7 +7,6 @@ public partial class StartScreen
 {
     private Label? _archiveMessage;
     private int? _selectedArchiveSlotId;
-    private int? _archiveMoreSlotId;
 
     private bool SwitchSaveSlot(int id)
     {
@@ -35,6 +34,27 @@ public partial class StartScreen
         string translated = button.Tr(caption);
         while (size > 16 && font.GetStringSize(translated, fontSize: size).X > bounds.Size.X - 18) size--;
         button.AddThemeFontSizeOverride("font_size", size);
+        return button;
+    }
+
+    private Button ArchiveArtButton(string name, string caption, Rect2 bounds, Action action, bool primary = false)
+    {
+        var button = ArchiveButton(name, caption, bounds, action);
+        foreach (string state in new[] { "normal", "hover", "pressed", "disabled" })
+            button.AddThemeStyleboxOverride(state, new StyleBoxEmpty());
+        var texture = HomeTexture(primary ? "首页地图按钮底板" : "首页地图次级按钮底板");
+        float scale = bounds.Size.Y / texture.GetHeight();
+        button.AddChild(new NinePatchRect
+        {
+            Name = "ButtonBacking", Texture = texture,
+            Size = bounds.Size / scale, Scale = Vector2.One * scale,
+            PatchMarginLeft = texture.GetHeight() / 2,
+            PatchMarginRight = texture.GetHeight() / 2,
+            ShowBehindParent = true,
+            MouseFilter = MouseFilterEnum.Ignore
+        });
+        button.AddThemeColorOverride("font_outline_color", StartScreenTheme.Cream);
+        button.AddThemeConstantOverride("outline_size", 3);
         return button;
     }
 
@@ -73,7 +93,7 @@ public partial class StartScreen
             ?? slots[0];
         if (_selectedArchiveSlotId == featured.Id || !slots.Any(s => s.Id == _selectedArchiveSlotId))
             _selectedArchiveSlotId = null;
-        OpenModal("journey-archives");
+        OpenModal("journey-archives", refresh: _modal.GetNodeOrNull<Button>("CloseArchives") is not null);
         _modal.GetNode<Button>("BookClose").Name = "CloseArchives";
         var upperRoute = HomeArt(_modal, "手绘旅行虚线路径2", new(1176, 211, 235, 62));
         upperRoute.Name = "ArchiveUpperRoute";
@@ -97,15 +117,6 @@ public partial class StartScreen
             ?? _modal.GetNodeOrNull<Button>("CreateSlot" + featured.Id))?.GrabFocus();
     }
 
-    private static Color ArchiveAccent(string cityId) => cityId switch
-    {
-        "city:wuhan" => new Color("#8CB6A4"),
-        "city:xian" => new Color("#B79178"),
-        "city:guangzhou" => new Color("#A4B88E"),
-        "city:yangzhou" => new Color("#B899AB"),
-        _ => new Color("#DBAA65")
-    };
-
     private static string? ArchiveBreakfastMap(string cityId) => cityId switch
     {
         "city:tianjin" => "早餐地图-天津",
@@ -127,20 +138,33 @@ public partial class StartScreen
     private void AddFeaturedArchive(SaveSlotSummary slot)
     {
         const float x = 330, y = 283;
-        ArchivePaper("ArchiveCard" + slot.Id, new(x, y, 550, 505));
-        var cover = HomeArt(_modal, slot.Exists ? "已有旅程手账封面" : "空白存档手账",
-            new(x + 25, y + 103, 215, 235));
-        cover.Name = "FeaturedArchiveCover";
-        cover.PivotOffset = cover.Size / 2;
-        cover.RotationDegrees = -4;
-        HomeArt(_modal, "小星星", new(x + 194, y + 94, 36, 36)).RotationDegrees = 12;
-        var flag = ArchivePaper("CurrentArchiveFlag", new(x - 19, y - 26, 207, 55), true);
-        flag.RotationDegrees = -5;
-        Text(_modal, "CurrentArchiveCaption", slot.Id == _save?.ActiveSlotId ? "旅途中" : "旅行手账",
-            new(x + 18, y - 18, 170, 44), 28);
+        bool hasPostcard = slot.Exists && !slot.Corrupt && JourneyModel.City(slot.CityId).Art is not null;
+        if (hasPostcard)
+            AddArchivePostcard(JourneyModel.City(slot.CityId), new(x, y + 115));
+        else
+        {
+            var cover = HomeArt(_modal, slot.Exists ? "已有旅程手账封面" : "空白存档手账",
+                new(x + 25, y + 103, 215, 235));
+            cover.Name = "FeaturedArchiveCover";
+            cover.PivotOffset = cover.Size / 2;
+            cover.RotationDegrees = -4;
+        }
+        var star = HomeArt(_modal, "小星星", new(x + 342, y + 105, 28, 28));
+        star.RotationDegrees = 12;
+        star.Modulate = new Color(1, 1, 1, .75f);
+        var sparkle = HomeArt(_modal, "城市节点点亮星闪1", new(x + 14, y + 355, 57, 57));
+        sparkle.Modulate = new Color(1, 1, 1, .45f);
+        _modal.AddChild(new TextureRect
+        {
+            Name = "CurrentArchiveFlag", Texture = BookArtCatalog.Get("今日手记便签底板"),
+            ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+            Position = new(x - 12, y - 39), Size = new(340, 96),
+            StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered, MouseFilter = MouseFilterEnum.Ignore
+        });
         string name = slot.Corrupt ? $"旅程 {slot.Id} · 无法读取" : slot.Exists ? slot.Name : $"旅程 {slot.Id}";
-        var heading = Text(_modal, "ArchiveName" + slot.Id, name, new(x + 247, y + 51, 268, 54), 38);
-        FitTextWidth(heading, 38, 23);
+        string caption = slot.Id == _save?.ActiveSlotId ? "旅途中" : "旅行手账";
+        var heading = Text(_modal, "CurrentArchiveCaption", $"{caption}·{name}", new(x + 12, y - 15, 290, 48), 28);
+        FitTextWidth(heading, 28, 20);
         heading.AutowrapMode = TextServer.AutowrapMode.Off;
         heading.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
         heading.TooltipText = name;
@@ -148,41 +172,30 @@ public partial class StartScreen
         {
             var city = JourneyModel.City(slot.CityId);
             if (ArchiveBreakfastMap(slot.CityId) is { } mapArt)
-                HomeArt(_modal, mapArt, new(x + 18, y + 274, 230, 111)).Name = "ArchiveBreakfastMap" + slot.Id;
-            else
-                HomeArt(_modal, JourneyModel.NodeArt(city), new(x + 66, y + 290, 120, 90))
-                    .Name = "ArchiveCitySticker" + slot.Id;
-            var accent = ArchiveAccent(slot.CityId);
-            var dayStamp = ArchivePaper("ArchiveDayStamp" + slot.Id, new(x + 400, y + 104, 112, 82));
-            var dayStyle = JournalSettingsTheme.Box(new Color("#FFF9ED"), 35, 3);
-            dayStyle.BorderColor = accent;
-            dayStamp.AddThemeStyleboxOverride("panel", dayStyle);
-            Text(_modal, "ArchiveDay" + slot.Id, $"DAY {slot.Day}", new(x + 405, y + 119, 102, 53), 22, true);
+            {
+                var skyline = HomeArt(_modal, mapArt, new(x + 160, y + 296, 390, 140));
+                skyline.Name = "ArchiveBreakfastMap" + slot.Id;
+                skyline.Modulate = new Color(1, 1, 1, .42f);
+            }
+            var cityIcon = HomeArt(_modal, JourneyModel.Stamp(city), new(x + 397, y - 39, 150, 150));
+            cityIcon.Name = "ArchiveCitySticker" + slot.Id;
+            cityIcon.RotationDegrees = -10;
             var cityLabel = Text(_modal, "ArchiveProgress" + slot.Id,
                 $"{city.Name} · 第 {slot.Day} 天",
-                new(x + 248, y + 196, 272, 37), 22);
+                new(x + (hasPostcard ? 370 : 248), y + 196, hasPostcard ? 180 : 272, 37), 22);
             FitTextWidth(cityLabel, 22, 17);
-            HomeArt(_modal, JourneyModel.Stamp(city), new(x + 251, y + 255, 91, 91)).RotationDegrees = -10;
-            HomeArt(_modal, "当前金币", new(x + 344, y + 258, 44, 44));
-            Text(_modal, "FeaturedCoins", $"{slot.Coins} 金币", new(x + 391, y + 262, 130, 39), 22);
-            var journeyLine = HomeArt(_modal, "手绘旅行虚线路径2", new(x + 267, y + 310, 218, 45), stretch: true);
-            journeyLine.Name = "ArchiveJourneyLine";
-            journeyLine.Modulate = new Color(1, 1, 1, .66f);
-            HomeArt(_modal, "定位符", new(x + 247, y + 304, 32, 39)).Name = "ArchiveJourneyStart";
-            HomeArt(_modal, "小红旗", new(x + 484, y + 301, 31, 35)).Name = "ArchiveJourneyEnd";
-            Text(_modal, "ArchiveRouteStart", "天津", new(x + 248, y + 342, 94, 37), 22);
-            var destination = Text(_modal, "ArchiveRoute",
-                city.Name == "天津" ? "下一站" : city.Name, new(x + 421, y + 342, 103, 37), 22, true);
-            destination.AddThemeColorOverride("font_color", ArchiveAccent(slot.CityId).Darkened(.36f));
-            var go = ArchiveButton("ArchiveSlot" + slot.Id, "继续旅程  ›",
-                new(x + 80, y + 389, 390, 67), () =>
+            float coinX = x + (hasPostcard ? 370 : 248);
+            HomeArt(_modal, "当前金币", new(coinX, y + 254, 36, 36));
+            var coins = Text(_modal, "FeaturedCoins", $"{slot.Coins} 金币", new(coinX + 43, y + 253, hasPostcard ? 137 : 218, 39), 22);
+            FitTextWidth(coins, 22, 16);
+            var go = ArchiveArtButton("ArchiveSlot" + slot.Id, "继续旅程  ›",
+                new(x + 12, y + 447, 265, 53), () =>
                 {
                     if (slot.Id != _save?.ActiveSlotId && !SwitchSaveSlot(slot.Id)) return;
                     CloseModal(); PresentMap();
-                });
-            JournalSettingsTheme.Apply(go, selected: true, radius: 25);
-            go.AddThemeFontSizeOverride("font_size", 30);
-            ArchiveButton("RenameSlot" + slot.Id, "✎ 改名", new(x + 108, y + 462, 143, 38),
+                }, primary: true);
+            go.AddThemeFontSizeOverride("font_size", 26);
+            ArchiveArtButton("RenameSlot" + slot.Id, "✎ 改名", new(x + 289, y + 447, 119, 53),
                 () => ShowArchiveRename(slot, x + 120, y + 38));
         }
         else
@@ -191,20 +204,36 @@ public partial class StartScreen
                 slot.Corrupt ? "这本手账暂时无法读取" : "尚未出发，写下第一站",
                 new(x + 247, y + 178, 270, 65), 22);
             if (!slot.Exists)
-                ArchiveButton("CreateSlot" + slot.Id, "开启新旅程", new(x + 80, y + 389, 390, 67),
+                ArchiveArtButton("CreateSlot" + slot.Id, "开启新旅程", new(x + 80, y + 372, 390, 67),
                     () => RequestNewGame(slot.Id));
         }
         if (slot.Exists)
         {
-            ArchiveButton("ArchiveMore" + slot.Id, "⋯", new(x + 310, y + 462, 55, 38), () =>
-            {
-                _archiveMoreSlotId = _archiveMoreSlotId == slot.Id ? null : slot.Id;
-                OpenJourneyArchiveSpread();
-            });
-            if (_archiveMoreSlotId == slot.Id)
-                ArchiveButton("DeleteSlot" + slot.Id, "删除旅程", new(x + 371, y + 459, 151, 43),
-                    () => RequestDeleteSaveSlot(slot));
+            ArchiveArtButton("DeleteSlot" + slot.Id, "删除", new(x + 420, y + 447, 119, 53),
+                () => RequestDeleteSaveSlot(slot));
         }
+    }
+
+    private void AddArchivePostcard(JourneyCity city, Vector2 position)
+    {
+        var card = new Control
+        {
+            Name = "FeaturedArchivePostcard", Position = position, Size = new(600, 365),
+            Scale = Vector2.One * .6f,
+            MouseFilter = MouseFilterEnum.Ignore
+        };
+        _modal.AddChild(card);
+        HomeArt(card, city.Art![JourneyModel.ArtRoot.Length..^4], new(0, 0, 600, 365)).Name = "ArchivePostcardArt";
+        var tag = new Control
+        {
+            Name = "ArchivePostcardLocation", Position = city.Name == "天津" ? new(411, 279) : new(399, 286),
+            Size = new(148, 44), MouseFilter = MouseFilterEnum.Ignore
+        };
+        card.AddChild(tag);
+        if (city.Name != "天津") HomeArt(tag, "存档信息小纸签", new(-10, -5, 164, 56));
+        HomeArt(tag, "定位符", new(5, 7, 25, 31)).Name = "ArchivePostcardPin";
+        var label = Text(tag, "ArchivePostcardCity", city.Name, new(35, 0, 106, 44), 28, true);
+        FitTextWidth(label, 28, 20);
     }
 
     private void AddSmallArchive(SaveSlotSummary slot, int index)
@@ -215,7 +244,6 @@ public partial class StartScreen
         var choose = ArchiveButton("ArchiveSelect" + slot.Id, "", new(x, y, 263, 198), () =>
         {
             _selectedArchiveSlotId = slot.Id;
-            _archiveMoreSlotId = null;
             OpenJourneyArchiveSpread();
         });
         foreach (string state in new[] { "normal", "hover", "pressed", "disabled" })
@@ -228,50 +256,41 @@ public partial class StartScreen
         FitTextWidth(label, 25, 18);
         label.AutowrapMode = TextServer.AutowrapMode.Off;
         label.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
-        choose.TooltipText = name;
         string cityName = slot.Corrupt ? "无法读取" : slot.Exists ? JourneyModel.City(slot.CityId).Name : "空白手账";
         Text(choose, "ArchiveProgress" + slot.Id,
-            slot.Exists && !slot.Corrupt ? $"{cityName} · 第 {slot.Day} 天 · {slot.Coins} 金币" : cityName,
-            new(100, 79, 155, 55), 17);
+            slot.Exists && !slot.Corrupt ? $"{cityName} · 第 {slot.Day} 天" : cityName,
+            new(100, 79, 155, 28), 17);
         if (slot.Exists && !slot.Corrupt)
         {
+            HomeArt(choose, "当前金币", new(100, 110, 25, 25)).Name = "ArchiveCoinIcon" + slot.Id;
+            var coins = Text(choose, "ArchiveCoins" + slot.Id, slot.Coins.ToString(), new(131, 108, 118, 28), 18);
+            FitTextWidth(coins, 18, 14);
             if (ArchiveBreakfastMap(slot.CityId) is { } mapArt)
-                HomeArt(choose, mapArt, new(18, 122, 112, 67)).Name = "ArchiveBreakfastMap" + slot.Id;
-            var stamp = ArchivePaper("ArchiveSmallDay" + slot.Id, new(x + 169, y + 141, 82, 42), selected);
-            var style = JournalSettingsTheme.Box(new Color("#FFF9ED"), 20, 2);
-            style.BorderColor = ArchiveAccent(slot.CityId);
-            stamp.AddThemeStyleboxOverride("panel", style);
-            Text(_modal, "ArchiveDay" + slot.Id, $"DAY {slot.Day}", new(x + 173, y + 146, 74, 32), 17, true);
+                HomeArt(choose, mapArt, new(115, 145, 145, 50)).Name = "ArchiveBreakfastMap" + slot.Id;
             if (ArchiveBreakfastMap(slot.CityId) is null)
                 HomeArt(choose, JourneyModel.Stamp(JourneyModel.City(slot.CityId)),
-                    new(24, 130, 44, 44)).RotationDegrees = -13;
+                    new(183, 139, 53, 48)).RotationDegrees = -13;
         }
         else Text(choose, "ArchiveDay" + slot.Id, slot.Corrupt ? "待整理" : "待出发",
             new(157, 148, 90, 30), 17, true);
         if (!selected) return;
         if (slot.Exists && !slot.Corrupt)
         {
-            ArchiveButton("ArchiveSlot" + slot.Id, "选择这段旅程", new(1008, 733, 260, 53), () =>
+            ArchiveArtButton("ArchiveSlot" + slot.Id, "选择这段旅程", new(1008, 733, 260, 53), () =>
             {
                 if (!SwitchSaveSlot(slot.Id)) return;
                 CloseModal(); PresentMap();
             });
-            ArchiveButton("RenameSlot" + slot.Id, "✎ 改名", new(1282, 733, 119, 53),
+            ArchiveArtButton("RenameSlot" + slot.Id, "✎ 改名", new(1282, 733, 119, 53),
                 () => ShowArchiveRename(slot, x - 7, y + 5));
         }
         else if (!slot.Exists)
-            ArchiveButton("CreateSlot" + slot.Id, "开启新旅程", new(1008, 733, 260, 53),
+            ArchiveArtButton("CreateSlot" + slot.Id, "开启新旅程", new(1008, 733, 260, 53),
                 () => RequestNewGame(slot.Id));
         if (slot.Exists)
         {
-            ArchiveButton("ArchiveMore" + slot.Id, "⋯", new(1415, 733, 59, 53), () =>
-            {
-                _archiveMoreSlotId = _archiveMoreSlotId == slot.Id ? null : slot.Id;
-                OpenJourneyArchiveSpread();
-            });
-            if (_archiveMoreSlotId == slot.Id)
-                ArchiveButton("DeleteSlot" + slot.Id, "删除旅程", new(1340, 790, 150, 43),
-                    () => RequestDeleteSaveSlot(slot));
+            ArchiveArtButton("DeleteSlot" + slot.Id, "删除", new(1415, 733, 119, 53),
+                () => RequestDeleteSaveSlot(slot));
         }
     }
 

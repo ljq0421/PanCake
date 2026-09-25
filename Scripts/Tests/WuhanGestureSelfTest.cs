@@ -55,7 +55,7 @@ public partial class WuhanGestureSelfTest : Node
             GetWindow().Size=small?new Vector2I(1280,720):new Vector2I(1920,1080);
             var catalog=GetNode<DataCatalog>("/root/DataCatalog");
             for(int level=1;level<=3;level++) {
-                var save=new SaveService();save.UsePathForTests($"res://.tmp/wuhan-gesture-{level}.json");AddChild(save);
+                var save=new SaveService();save.UsePathForTests($"user://wuhan-gesture-{level}.json");AddChild(save);
                 var city=save.Data.Wuhan;city.HighestUnlockedDay=12;
                 city.EquipmentLevels["noodle_cooker"]=level;city.EquipmentLevels["ingredient_station"]=3;
                 city.EquipmentLevels["doupi_griddle"]=level;
@@ -64,7 +64,7 @@ public partial class WuhanGestureSelfTest : Node
                 async Task Shot(string name) {
                     if (!capture) return;
                     Step(.00001); await Frames(); await ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
-                    string root=ProjectSettings.GlobalizePath($"res://.tmp/wuhan-cooking-update/{(small?720:1080)}-{(WuhanWorkstationView.ReducedMotion?"reduced":"normal")}/lv{level}");
+                    string root=ProjectSettings.GlobalizePath($"user://wuhan-cooking-update/{(small?720:1080)}-{(WuhanWorkstationView.ReducedMotion?"reduced":"normal")}/lv{level}");
                     System.IO.Directory.CreateDirectory(root); GetViewport().GetTexture().GetImage().SavePng(root+"/"+name+".png");
                 }
                 await Shot("01-idle");
@@ -112,7 +112,9 @@ public partial class WuhanGestureSelfTest : Node
                 Click(View.IngredientCenter(0));Step(.5);
                 Check(_screen.Bowl.State == NoodleBowlState.Seasoned, "sesame bowl seasons through viewport input");
                 Click(View.IngredientCenter(0));
-                Check(_screen.Bowl.State == NoodleBowlState.Seasoned && !View.Busy("bowl"), "repeated sesame click does not repeat the action");
+                Check(_screen.Bowl.State == NoodleBowlState.Seasoned && !View.Busy("bowl")
+                    && _screen.Ingredients.Count(StableIds.Ingredients.WuhanBaseSeasoning) == 7,
+                    "repeated sesame click does not repeat the action or consume stock");
                 Click(View.IngredientCenter(1));Step(.5);
                 Vector2 center=View.BowlCenter;Move(center);Button(center,true);for(int i=0;i<6;i++)Move(center+new Vector2(i%2==0?70:-70,0),true);Button(center,false);
                 Check(_screen.Bowl.State==NoodleBowlState.Ready&&!_screen.DeliveryDrag.IsDragging,"mixing requires release before delivery");
@@ -201,7 +203,7 @@ public partial class WuhanGestureSelfTest : Node
                     // Fill all four slots for visual review without changing production fixtures.
                     for(int i=0;i<120&&controller.CustomerQueue!.Slots.Count<4;i++)Step(.2);
                     Move(new Vector2(900,25));Step(.001);await Frames();await ToSignal(RenderingServer.Singleton,RenderingServer.SignalName.FramePostDraw);
-                    string root=ProjectSettings.GlobalizePath($"res://.tmp/wuhan-optimization/{(small?720:1080)}");System.IO.Directory.CreateDirectory(root);
+                    string root=ProjectSettings.GlobalizePath($"user://wuhan-optimization/{(small?720:1080)}");System.IO.Directory.CreateDirectory(root);
                     GetViewport().GetTexture().GetImage().SavePng(root+$"/lv{level}.png");
                 }
                 _screen.Free();controller.Free();save.Free();await Frames();
@@ -243,19 +245,23 @@ public partial class WuhanGestureSelfTest : Node
         // Reuse the same screen in both directions, as returning to an earlier save would do.
         foreach (int day in new[] { 1, 4, 1 })
         {
-            var save = new SaveService(); save.UsePathForTests($"res://.tmp/wuhan-v2-switch-{Guid.NewGuid():N}.json"); AddChild(save);
+            var save = new SaveService(); save.UsePathForTests($"user://wuhan-v2-switch-{Guid.NewGuid():N}.json"); AddChild(save);
+            if (day >= 4) save.Data.Wuhan.EquipmentLevels["doupi_griddle"] = 1;
             _screen.Initialize(catalog, save, controller, day);
+            _screen.BeginDay();
+            if (controller.TutorialActive) _screen.FinishWuhanDemoLesson();
+            if (controller.State == DayState.Preparing) controller.TryStartDay(out _);
             foreach (var planned in controller.CurrentPlan!.Customers)
                 planned.Order = new ProjectCake.Orders.OrderData {
                     OrderId = planned.Order.OrderId, CityId = StableIds.Cities.Wuhan,
                     CustomerTypeId = planned.CustomerTypeId, BasePrice = 30, PatienceSeconds = 1000,
                     Lines = new[] { new ProjectCake.Orders.OrderLineData(ProductKind.HotDryNoodles, StableIds.Recipes.HotDryNoodlesScallion, 1) } };
-            _screen.BeginDay(); Step(6); await Frames();
+            Step(6); await Frames();
             async Task StageShot(string name)
             {
                 if (!OS.GetCmdlineUserArgs().Contains("--capture")) return;
                 await Frames(); await ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
-                string root = ProjectSettings.GlobalizePath($"res://.tmp/wuhan-v2-stage-motion/{GetWindow().Size.Y}");
+                string root = ProjectSettings.GlobalizePath($"user://wuhan-v2-stage-motion/{GetWindow().Size.Y}");
                 Directory.CreateDirectory(root);
                 GetViewport().GetTexture().GetImage().SavePng($"{root}/day-{day}-{name}.png");
             }
@@ -292,7 +298,8 @@ public partial class WuhanGestureSelfTest : Node
             Vector2 basket = View.BasketRect(0).GetCenter(); Move(basket); Button(basket, true);
             Move(basket - new Vector2(0, 65), true); Move(View.BowlCenter, true); Button(View.BowlCenter, false);
             Step(.71); Step(.7);
-            Check(_screen.Bowl.State == NoodleBowlState.Noodles, "current stage supports cooking and pouring");
+            Check(_screen.Bowl.State == NoodleBowlState.Noodles,
+                $"current stage supports cooking and pouring (day={day}, state={controller.State}, tutorial={controller.TutorialActive}, canInteract={View.CanInteract?.Invoke()}, basket={_screen.Cooker.Baskets[0].State})");
             await StageShot("noodles");
             Click(sesame); Step(.5); Click(scallion); Step(.5);
             Vector2 bowl = View.BowlCenter; Move(bowl); Button(bowl, true);
@@ -311,8 +318,9 @@ public partial class WuhanGestureSelfTest : Node
             var zone = _screen.Descendants<ProjectCake.Interaction.DropZone>().First(z => z.CanAccept(WuhanWorkstationView.DeliveryPayload(ProductKind.HotDryNoodles)));
             Vector2 target = View.GetGlobalTransformWithCanvas().AffineInverse() * (zone.GetGlobalTransformWithCanvas() * (zone.Size * .5f));
             Drag(bowl, target);
-            await ToSignal(GetTree().CreateTimer(.4), SceneTreeTimer.SignalName.Timeout); Step(.001);
-            Check(_screen.Bowl.State == NoodleBowlState.Empty && controller.Ledger!.Build().CompletedCustomers == 1, "current stage delivers a real order");
+            await ToSignal(GetTree().CreateTimer(.4), SceneTreeTimer.SignalName.Timeout); Step(1.0);
+            Check(_screen.Bowl.State == NoodleBowlState.Empty && controller.BusinessRecords.Count == 1,
+                $"current stage delivers a real order (bowl={_screen.Bowl.State}, records={controller.BusinessRecords.Count}, state={controller.State})");
             string raw = StableIds.Ingredients.WuhanNoodles;
             Check(Enumerable.Range(0,100).All(_ => _screen.Ingredients.TryConsume(raw)), "stage switching preserves unlimited supply");
             Step(.001);
@@ -386,7 +394,7 @@ public partial class WuhanGestureSelfTest : Node
     private async Task OperationBudget()
     {
         var catalog=GetNode<DataCatalog>("/root/DataCatalog");
-        var save=new SaveService();save.UsePathForTests("res://.tmp/wuhan-operation-budget.json");AddChild(save);
+        var save=new SaveService();save.UsePathForTests("user://wuhan-operation-budget.json");AddChild(save);
         save.Data.Wuhan.HighestUnlockedDay=12;
         foreach(string id in new[]{"noodle_cooker","ingredient_station","doupi_griddle"})save.Data.Wuhan.EquipmentLevels[id]=1;
         var controller=new DayController();AddChild(controller);_screen=ProjectCake.Core.SceneFactory.Instantiate<WuhanDayScreen>("res://Scenes/Gameplay/WuhanDayScreen.tscn");AddChild(_screen);

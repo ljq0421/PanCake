@@ -43,6 +43,14 @@ public sealed class SoyMilkTrayRuntime
         return true;
     }
 
+    public bool TryAddOne()
+    {
+        if (Quantity >= Capacity || IsRefilling || IsTaking) return false;
+        Quantity++;
+        Changed?.Invoke();
+        return true;
+    }
+
     public void Tick(double deltaSeconds)
     {
         if (deltaSeconds <= 0) return;

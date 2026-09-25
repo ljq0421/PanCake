@@ -8,6 +8,7 @@ public partial class StockGesture : Control
     public const double HoldSeconds = .45;
     public const float DragDistance = 8;
     public Func<bool> CanInteract { get; set; } = () => false;
+    public bool EnableHold { get; set; } = true;
     public Func<bool> CanRefill { get; set; } = () => false;
     public Action? Refill { get; set; }
     public Action? Tap { get; set; }
@@ -18,7 +19,7 @@ public partial class StockGesture : Control
     private double _elapsed;
     private bool _pressed;
     private bool _resolved;
-    public double HoldProgress => _pressed && !_resolved ? Math.Clamp(_elapsed / HoldSeconds, 0, 1) : 0;
+    public double HoldProgress => EnableHold && _pressed && !_resolved ? Math.Clamp(_elapsed / HoldSeconds, 0, 1) : 0;
 
     public StockGesture() { MouseDefaultCursorShape = CursorShape.PointingHand; }
     public override bool _HasPoint(Vector2 point) => new Rect2(Vector2.Zero, Size).HasPoint(point) && (Contains?.Invoke(point) ?? true);
@@ -64,6 +65,7 @@ public partial class StockGesture : Control
     {
         if (!_pressed) return;
         if (!CanInteract() || !IsVisibleInTree()) { Cancel(); return; }
+        if (!EnableHold) return;
         if (_resolved) return;
         _elapsed += Math.Max(0, delta);
         if (_elapsed + 1e-9 >= HoldSeconds)

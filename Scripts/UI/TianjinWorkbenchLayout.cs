@@ -84,7 +84,7 @@ internal static class TianjinWorkbenchLayout
     public const float BackEdge = 580;
     public const float FrontEdge = 995;
     public const float CenterX = 960;
-    public static readonly float[] CustomerCenters = { 256, 604, 952, 1300, 1648 };
+    public static readonly float[] CustomerCenters = { 440, 734, 1028, 1322, 1616 };
     public static readonly Rect2 PortraitWindow = new(0, 156, 332, 255);
     public const float OrderCardBottom = 152;
     public static readonly Rect2 RearTrayVisual = new(0, 4, 250, 82);

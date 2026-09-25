@@ -16,6 +16,13 @@ public partial class WuhanAnimationSelfTest : Node
         try
         {
             _catalog = GetNode<DataCatalog>("/root/DataCatalog");
+            if (OS.GetCmdlineUserArgs().Contains("--supply-only"))
+            {
+                TestSupply();
+                GD.Print($"WUHAN_ANIMATION_TEST_RESULT passed={_passed} failed={_failed}");
+                GetTree().Quit(_failed == 0 ? 0 : 1);
+                return;
+            }
             if (OS.GetCmdlineUserArgs().Contains("--loop-only"))
             {
                 TestImmediateLoop();
@@ -42,7 +49,7 @@ public partial class WuhanAnimationSelfTest : Node
 
     private (WuhanDayScreen Screen, DayController Controller, SaveService Save) NewDay(int level=1, int day=8)
     {
-        var save=new SaveService();save.UsePathForTests($"res://.tmp/wuhan-animation-test-{Guid.NewGuid():N}.json");AddChild(save);
+        var save=new SaveService();save.UsePathForTests($"user://wuhan-animation-test-{Guid.NewGuid():N}.json");AddChild(save);
         save.Data.Wuhan.HighestUnlockedDay=12;
         save.Data.Wuhan.EquipmentLevels["noodle_cooker"]=level;
         save.Data.Wuhan.EquipmentLevels["ingredient_station"]=3;
@@ -81,7 +88,8 @@ public partial class WuhanAnimationSelfTest : Node
         s.IngredientAction(StableIds.Ingredients.WuhanBaseSeasoning);
         Check(!v.Busy("basket0")&&!v.Busy("bowl")&&s.Bowl.State==NoodleBowlState.Seasoned,"倒面后立即接受调味，旧倒面表现落定");
         s._Process(.7);Click(v,v.IngredientCenter(0));s.IngredientAction(StableIds.Ingredients.WuhanBaseSeasoning);
-        Check(s.Bowl.State==NoodleBowlState.Seasoned && s.Ingredients.CanUse(StableIds.Ingredients.WuhanBaseSeasoning),"基础调味加入一次后仍持续供应");
+        Check(s.Bowl.State==NoodleBowlState.Seasoned && s.Ingredients.Count(StableIds.Ingredients.WuhanBaseSeasoning)==7,
+            "基础调味成功只消耗一份，重复点击不扣库存");
         s._Process(.5);Click(v,v.IngredientCenter(1));s._Process(.5);
         Check(s.Bowl.Toppings.Contains(StableIds.Ingredients.WuhanScallion),"点击葱花实物加入碗内");
         Click(v,new Vector2(600,320));Move(v,v.BowlCenter+new Vector2(70,0));
@@ -178,14 +186,123 @@ public partial class WuhanAnimationSelfTest : Node
         foreach (int level in new[] { 1, 2, 3 })
         {
             var inventory = new WuhanIngredientInventory(_catalog.WuhanIngredientStationsByLevel[level]);
-            foreach (string id in WuhanWorkstationView.IngredientIds.Append(StableIds.Ingredients.WuhanNoodles))
-                Check(inventory.IsUnlimited(id) && Enumerable.Range(0, 100).All(_ => inventory.TryConsume(id)) && inventory.CanUse(id), $"Lv{level} {id} 连续使用不耗尽");
+            string raw = StableIds.Ingredients.WuhanNoodles;
+            Check(inventory.IsUnlimited(raw) && Enumerable.Range(0, 100).All(_ => inventory.TryConsume(raw))
+                && inventory.CanUse(raw) && !inventory.CanRefill(raw), $"Lv{level} 生面无限且无补货");
+            foreach (string id in WuhanWorkstationView.IngredientIds)
+            {
+                int expected = 8;
+                Check(!inventory.IsUnlimited(id) && inventory.Count(id) == expected
+                    && inventory.Capacity(id) == expected && inventory.VisualStockState(id) == 4,
+                    $"Lv{level} {id} 容量统一8份，开场满库存");
+                Check(!inventory.CanRefill(id), $"Lv{level} {id} 满库存不可叫货");
+                for (int i = 0; i < expected; i++) Check(inventory.TryConsume(id), $"Lv{level} {id} 消耗第{i + 1}份");
+                Check(!inventory.CanUse(id) && !inventory.TryConsume(id) && inventory.CanRefill(id),
+                    $"Lv{level} {id} 用完不能再取");
+                int[] states = { 0, 1, 1, 1, 2, 2, 3, 3, 4 };
+                Check(inventory.VisualStockState(id) == states[0], "空库存显示空碗");
+                for (int portion = 1; portion <= 8; portion++)
+                    Check(inventory.TryRefillOne(id) && inventory.Count(id) == portion
+                        && inventory.CanUse(id) && inventory.VisualStockState(id) == states[portion],
+                        $"Lv{level} {id} 点击立即补第{portion}份并更新档位");
+                Check(!inventory.TryRefillOne(id) && inventory.Count(id) == 8, "满库存不会溢出");
+            }
             Check(!inventory.TryConsume("unknown"), "未知原料不能使用");
         }
         var f = NewDay(3); var s = f.Screen;
         var refill = s.Workstation.GetNode<Button>("RefillNoodles");
         refill.EmitSignal(Button.SignalName.Pressed); s._Process(.3);
         Check(!refill.Visible && !s.Workstation.Busy("refill:" + StableIds.Ingredients.WuhanNoodles), "旧补货事件不会创建补货动作");
+        using (Image npc = GD.Load<Texture2D>("res://resource/art/Wuhan/SupplyCall/supply_helper.png").GetImage())
+            Check(npc.GetPixel(0, 0).A == 0 && npc.GetPixel(npc.GetWidth() / 2, npc.GetHeight() / 2).A > .99f,
+                "武汉后勤角色背景透明且主体不透明");
+        string seasoning = StableIds.Ingredients.WuhanBaseSeasoning;
+        Check(s.Ingredients.TryConsume(seasoning) && s.Ingredients.TryConsume(seasoning), "叫货前基础调味消耗两份");
+        string chili = StableIds.Ingredients.WuhanChiliOil;
+        string scallion = StableIds.Ingredients.WuhanScallion;
+        string beef = StableIds.Ingredients.WuhanBraisedBeef;
+        s.Ingredients.TryConsume(chili); s.Ingredients.TryConsume(scallion); s.Ingredients.TryConsume(beef);
+        var bell = s.Workstation.GetNode<Button>("SupplyBell");
+        bell.EmitSignal(Button.SignalName.Pressed);
+        Check(s.Workstation.SupplySelecting && s.Workstation.FindChildren("SupplyTarget_*", "", false, false).Count == 0,
+            "点铃叫出伙计，不显示料盒高亮");
+        var npcButton = s.Workstation.GetNode<Button>("SupplyNpcButton");
+        var npcArt = s.Workstation.GetNode<Sprite2D>("SupplyHelper");
+        Vector2 npcScale = npcArt.Scale;
+        Check(bell.TooltipText == "" && npcButton.TooltipText == "" && bell.GetNodeOrNull("BellCaption") is null,
+            "铃与伙计没有常驻及悬停补货文字");
+        bell.EmitSignal(Button.SignalName.Pressed);
+        s.Workstation.Tick(.08);
+        Check(npcButton.Visible && npcArt.Scale.X > npcScale.X && npcArt.Scale.Y < npcScale.Y,
+            "再次点铃保留伙计并回弹");
+        s.Workstation._Input(new InputEventMouseButton { ButtonIndex = MouseButton.Right, Pressed = true, Position = new Vector2(1000, 50) });
+        s.Workstation._Input(new InputEventMouseButton { ButtonIndex = MouseButton.Right, Pressed = false, Position = new Vector2(1000, 50) });
+        Check(npcButton.Visible, "右键不收起伙计");
+        Check(npcButton.Visible && s.Ingredients.Count(seasoning) == 6, "点铃本身不增加库存");
+        npcButton.EmitSignal(Button.SignalName.Pressed);
+        Check(s.Workstation.SupplySelecting && s.Ingredients.Count(seasoning) == 7
+            && s.Ingredients.Count(chili) == 7, "点击伙计只加一份基础调味");
+        npcButton.EmitSignal(Button.SignalName.Pressed);
+        Check(s.Ingredients.Count(seasoning) == 8 && s.Ingredients.Count(chili) == 7, "先补满基础调味再轮到辣酱");
+        npcButton.EmitSignal(Button.SignalName.Pressed);
+        Check(s.Ingredients.Count(chili) == 8 && s.Ingredients.Count(scallion) == 7, "第二种为辣酱");
+        npcButton.EmitSignal(Button.SignalName.Pressed);
+        Check(s.Ingredients.Count(scallion) == 8 && s.Ingredients.Count(beef) == 7, "第三种为香葱");
+        TextureRect[] drops = s.Workstation.GetChildren().OfType<TextureRect>().Where(node => node.Name.ToString().StartsWith("SupplyDrop_") && node.Visible).ToArray();
+        Check(drops.Length == 4, "连续点击保留各自落料动画，不等动画完成才加库存");
+        s.Workstation.Tick(.08);
+        Check(npcArt.Scale.X > npcScale.X && drops.All(drop => drop.Visible), "点击伙计回弹并播放落料");
+        f.Controller.IsPaused = true;
+        npcButton.EmitSignal(Button.SignalName.Pressed);
+        Check(s.Ingredients.Count(beef) == 7, "暂停期间点击无效");
+        s._Process(.01);
+        Check(!npcButton.Visible && drops.All(drop => !drop.Visible) && s.Ingredients.Count(seasoning) == 8,
+            "暂停收起伙计和落料，保留已补库存");
+        f.Controller.IsPaused = false;
+        s._Process(.01);
+        bell.EmitSignal(Button.SignalName.Pressed);
+        npcButton.EmitSignal(Button.SignalName.Pressed);
+        Check(s.Ingredients.Count(beef) == 8 && npcButton.Visible, "最后补牛肉，全部满后伙计暂留");
+        s.Workstation.Tick(.99);
+        Check(npcButton.Visible, "补满不足一秒不离开");
+        s.Workstation.Tick(.02);
+        Check(!npcButton.Visible, "补满一秒后离开");
+        s.Ingredients.TryConsume(beef);
+        s.Workstation.AllowedIngredients = new HashSet<string> { seasoning, chili, scallion };
+        bell.EmitSignal(Button.SignalName.Pressed);
+        npcButton.EmitSignal(Button.SignalName.Pressed);
+        Check(s.Workstation.SupplySelecting && s.Ingredients.Count(beef) == 7, "满库存仍叫出伙计，未解锁牛肉缺货也跳过");
+        s.Workstation.Tick(1.01);
+        Check(!npcButton.Visible, "跳过未解锁食材后按满库存离开");
+        s.Workstation.AllowedIngredients = null;
+        bell.EmitSignal(Button.SignalName.Pressed);
+        s._Notification((int)NotificationApplicationFocusOut);
+        npcButton.EmitSignal(Button.SignalName.Pressed);
+        Check(!npcButton.Visible && s.Ingredients.Count(beef) == 7, "失焦关闭伙计且不补货");
+        s._Notification((int)NotificationApplicationFocusIn);
+        bell.EmitSignal(Button.SignalName.Pressed); npcButton.EmitSignal(Button.SignalName.Pressed);
+        s.Workstation.Tick(.7);
+        bell.EmitSignal(Button.SignalName.Pressed);
+        s.Workstation.Tick(.5);
+        Check(s.Workstation.SupplySelecting && bell.Scale.IsEqualApprox(Vector2.One), "满库存重复点铃重新计时且铃回弹完成");
+        s.Workstation.Tick(.51);
+        Check(!npcButton.Visible, "满库存重复点铃一秒后离开");
+        bell.EmitSignal(Button.SignalName.Pressed);
+        Check(npcButton.Visible && bell.Scale.X < 1 && s.Workstation.GetNodeOrNull<AudioStreamPlayer>("WuhanCueSupplyBell") is not null,
+            "满库存重新叫货有角色、铃回弹和铃声");
+        s.Workstation._Input(new InputEventKey { Keycode = Key.Escape, Pressed = true });
+        Check(!npcButton.Visible, "Esc收起伙计");
+        ProjectSettings.SetSetting("accessibility/reduce_motion", true);
+        s.Ingredients.TryConsume(seasoning);
+        bell.EmitSignal(Button.SignalName.Pressed);
+        Check(npcButton.Visible, "减少动态模式仍可叫出伙计");
+        npcButton.EmitSignal(Button.SignalName.Pressed);
+        Check(s.Ingredients.Count(seasoning) == 8 && npcButton.Visible
+            && !s.Workstation.GetChildren().OfType<TextureRect>().Any(node => node.Name.ToString().StartsWith("SupplyDrop_") && node.Visible),
+            "减少动态模式立即补货且没有落料，伙计仍暂留");
+        s.Workstation.Tick(1.01);
+        Check(!npcButton.Visible, "减少动态模式同样一秒后离开");
+        ProjectSettings.SetSetting("accessibility/reduce_motion", false);
         for (int i = 0; i < 30; i++)
         {
             s.BasketAction(0); s.BasketAction(0);

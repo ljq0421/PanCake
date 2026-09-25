@@ -1,0 +1,464 @@
+{
+  "UpgradeTeachingCompleted": false,
+  "WuhanUnlockPresentationSeen": false,
+  "BreakfastStats": {
+    "noodles": {
+      "Delivered": 25,
+      "Perfect": 25
+    }
+  },
+  "CustomerRecords": {
+    "wuhan_grandma": {
+      "Served": 3,
+      "FirstCity": "city:wuhan",
+      "FirstDay": 1
+    },
+    "student": {
+      "Served": 2,
+      "FirstCity": "city:wuhan",
+      "FirstDay": 1
+    },
+    "wuhan_clothing_owner": {
+      "Served": 1,
+      "FirstCity": "city:wuhan",
+      "FirstDay": 2
+    },
+    "wuhan_student": {
+      "Served": 1,
+      "FirstCity": "city:wuhan",
+      "FirstDay": 2
+    },
+    "taxi_driver": {
+      "Served": 1,
+      "FirstCity": "city:wuhan",
+      "FirstDay": 2
+    },
+    "wuhan_engineer": {
+      "Served": 1,
+      "FirstCity": "city:wuhan",
+      "FirstDay": 2
+    },
+    "male_office": {
+      "Served": 2,
+      "FirstCity": "city:wuhan",
+      "FirstDay": 2
+    },
+    "wuhan_cyclist": {
+      "Served": 2,
+      "FirstCity": "city:wuhan",
+      "FirstDay": 2
+    },
+    "wuhan_opera_actress": {
+      "Served": 2,
+      "FirstCity": "city:wuhan",
+      "FirstDay": 3
+    },
+    "wuhan_embroidery_artisan": {
+      "Served": 1,
+      "FirstCity": "city:wuhan",
+      "FirstDay": 3
+    },
+    "wuhan_industry_worker": {
+      "Served": 1,
+      "FirstCity": "city:wuhan",
+      "FirstDay": 3
+    },
+    "young_woman": {
+      "Served": 1,
+      "FirstCity": "city:wuhan",
+      "FirstDay": 3
+    }
+  },
+  "BreakfastRecords": {
+    "noodles": 1
+  },
+  "Version": 3,
+  "LastVisitedCityId": "city:tianjin",
+  "Coins": 348,
+  "Cities": {
+    "city:tianjin": {
+      "BasePurchaseRulesVersion": 1,
+      "BaseEquipmentPurchaseDays": {},
+      "PendingUpgradeCelebrations": {},
+      "ClaimedChallenges": {},
+      "HighestUnlockedDay": 1,
+      "BestStars": 0,
+      "Completed": false,
+      "EquipmentLevels": {
+        "pancake_stove": 1,
+        "ingredient_station": 1,
+        "fryer": 0,
+        "soy_milk_tray": 0
+      },
+      "UnlockedContentIds": [],
+      "UnlockedCollectibleIds": [],
+      "DayBestRecords": {},
+      "LastDayPlan": null,
+      "LearnedWorkbenchActions": []
+    },
+    "city:wuhan": {
+      "BasePurchaseRulesVersion": 1,
+      "BaseEquipmentPurchaseDays": {},
+      "PendingUpgradeCelebrations": {},
+      "ClaimedChallenges": {
+        "2": {
+          "CityId": "city:wuhan",
+          "Day": 2,
+          "Kind": "Service",
+          "Target": 7,
+          "Reward": 20,
+          "Name": "\u7A33\u7A33\u63A5\u5F85",
+          "Requirement": "\u6B63\u786E\u5B8C\u6210 7 \u5355"
+        },
+        "3": {
+          "CityId": "city:wuhan",
+          "Day": 3,
+          "Kind": "Perfect",
+          "Target": 3,
+          "Reward": 20,
+          "Name": "\u62DB\u724C\u54C1\u8D28",
+          "Requirement": "\u5B8C\u7F8E\u5B8C\u6210 3 \u5355"
+        }
+      },
+      "HighestUnlockedDay": 4,
+      "BestStars": 0,
+      "Completed": false,
+      "EquipmentLevels": {
+        "noodle_cooker": 1,
+        "ingredient_station": 1,
+        "doupi_griddle": 0
+      },
+      "UnlockedContentIds": [
+        "equipment:doupi_griddle_lv1",
+        "equipment:noodle_cooker_lv2",
+        "recipe:hot_dry_noodles_beef",
+        "recipe:hot_dry_noodles_beef_chili",
+        "recipe:hot_dry_noodles_chili",
+        "recipe:hot_dry_noodles_classic",
+        "recipe:hot_dry_noodles_scallion",
+        "recipe:hot_dry_noodles_scallion_chili"
+      ],
+      "UnlockedCollectibleIds": [],
+      "DayBestRecords": {
+        "1": {
+          "PerfectGansi": 0,
+          "TotalRevenue": 80,
+          "CompletedCustomers": 7,
+          "PerfectOrders": 7,
+          "IncorrectOrders": 0,
+          "HighestCorrectStreak": 7,
+          "Satisfaction": 100,
+          "YoutiaoUsed": 0,
+          "YoutiaoBurnt": 0
+        },
+        "2": {
+          "PerfectGansi": 0,
+          "TotalRevenue": 96,
+          "CompletedCustomers": 8,
+          "PerfectOrders": 8,
+          "IncorrectOrders": 0,
+          "HighestCorrectStreak": 8,
+          "Satisfaction": 100,
+          "YoutiaoUsed": 0,
+          "YoutiaoBurnt": 0
+        },
+        "3": {
+          "PerfectGansi": 0,
+          "TotalRevenue": 132,
+          "CompletedCustomers": 10,
+          "PerfectOrders": 10,
+          "IncorrectOrders": 0,
+          "HighestCorrectStreak": 10,
+          "Satisfaction": 100,
+          "YoutiaoUsed": 0,
+          "YoutiaoBurnt": 0
+        }
+      },
+      "LastDayPlan": {
+        "Challenge": {
+          "CityId": "city:wuhan",
+          "Day": 3,
+          "Kind": "Perfect",
+          "Target": 3,
+          "Reward": 20,
+          "Name": "\u62DB\u724C\u54C1\u8D28",
+          "Requirement": "\u5B8C\u7F8E\u5B8C\u6210 3 \u5355"
+        },
+        "Day": 3,
+        "RandomSeed": 2003,
+        "Customers": [
+          {
+            "CustomerId": "W03-C001",
+            "CustomerTypeId": "wuhan_normal",
+            "ArrivalTime": 0.9958,
+            "Order": {
+              "OrderId": "W03-O001",
+              "CustomerTypeId": "wuhan_normal",
+              "CityId": "city:wuhan",
+              "OrderTypeId": "hot_dry_noodles",
+              "Lines": [
+                {
+                  "ProductKind": "HotDryNoodles",
+                  "DefinitionId": "hot_dry_noodles_beef",
+                  "Quantity": 1,
+                  "Sauce": "Normal"
+                }
+              ],
+              "CreatedTime": 0.9958,
+              "PatienceSeconds": 50,
+              "BasePrice": 14,
+              "Status": "Completed",
+              "PancakeRecipeId": "",
+              "NoodleRecipeId": "hot_dry_noodles_beef",
+              "IsComplex": false
+            }
+          },
+          {
+            "CustomerId": "W03-C002",
+            "CustomerTypeId": "wuhan_normal",
+            "ArrivalTime": 5.3714,
+            "Order": {
+              "OrderId": "W03-O002",
+              "CustomerTypeId": "wuhan_normal",
+              "CityId": "city:wuhan",
+              "OrderTypeId": "hot_dry_noodles",
+              "Lines": [
+                {
+                  "ProductKind": "HotDryNoodles",
+                  "DefinitionId": "hot_dry_noodles_chili",
+                  "Quantity": 1,
+                  "Sauce": "Normal"
+                }
+              ],
+              "CreatedTime": 5.3714,
+              "PatienceSeconds": 50,
+              "BasePrice": 11,
+              "Status": "Completed",
+              "PancakeRecipeId": "",
+              "NoodleRecipeId": "hot_dry_noodles_chili",
+              "IsComplex": false
+            }
+          },
+          {
+            "CustomerId": "W03-C003",
+            "CustomerTypeId": "wuhan_normal",
+            "ArrivalTime": 12.1147,
+            "Order": {
+              "OrderId": "W03-O003",
+              "CustomerTypeId": "wuhan_normal",
+              "CityId": "city:wuhan",
+              "OrderTypeId": "hot_dry_noodles",
+              "Lines": [
+                {
+                  "ProductKind": "HotDryNoodles",
+                  "DefinitionId": "hot_dry_noodles_scallion",
+                  "Quantity": 1,
+                  "Sauce": "Normal"
+                }
+              ],
+              "CreatedTime": 12.1147,
+              "PatienceSeconds": 50,
+              "BasePrice": 11,
+              "Status": "Completed",
+              "PancakeRecipeId": "",
+              "NoodleRecipeId": "hot_dry_noodles_scallion",
+              "IsComplex": false
+            }
+          },
+          {
+            "CustomerId": "W03-C004",
+            "CustomerTypeId": "wuhan_normal",
+            "ArrivalTime": 13.01,
+            "Order": {
+              "OrderId": "W03-O004",
+              "CustomerTypeId": "wuhan_normal",
+              "CityId": "city:wuhan",
+              "OrderTypeId": "hot_dry_noodles",
+              "Lines": [
+                {
+                  "ProductKind": "HotDryNoodles",
+                  "DefinitionId": "hot_dry_noodles_classic",
+                  "Quantity": 1,
+                  "Sauce": "Normal"
+                }
+              ],
+              "CreatedTime": 13.01,
+              "PatienceSeconds": 50,
+              "BasePrice": 10,
+              "Status": "Completed",
+              "PancakeRecipeId": "",
+              "NoodleRecipeId": "hot_dry_noodles_classic",
+              "IsComplex": false
+            }
+          },
+          {
+            "CustomerId": "W03-C005",
+            "CustomerTypeId": "wuhan_normal",
+            "ArrivalTime": 25.2199,
+            "Order": {
+              "OrderId": "W03-O005",
+              "CustomerTypeId": "wuhan_normal",
+              "CityId": "city:wuhan",
+              "OrderTypeId": "hot_dry_noodles",
+              "Lines": [
+                {
+                  "ProductKind": "HotDryNoodles",
+                  "DefinitionId": "hot_dry_noodles_beef_chili",
+                  "Quantity": 1,
+                  "Sauce": "Normal"
+                }
+              ],
+              "CreatedTime": 25.2199,
+              "PatienceSeconds": 50,
+              "BasePrice": 15,
+              "Status": "Completed",
+              "PancakeRecipeId": "",
+              "NoodleRecipeId": "hot_dry_noodles_beef_chili",
+              "IsComplex": false
+            }
+          },
+          {
+            "CustomerId": "W03-C006",
+            "CustomerTypeId": "wuhan_normal",
+            "ArrivalTime": 28.3447,
+            "Order": {
+              "OrderId": "W03-O006",
+              "CustomerTypeId": "wuhan_normal",
+              "CityId": "city:wuhan",
+              "OrderTypeId": "hot_dry_noodles",
+              "Lines": [
+                {
+                  "ProductKind": "HotDryNoodles",
+                  "DefinitionId": "hot_dry_noodles_scallion_chili",
+                  "Quantity": 1,
+                  "Sauce": "Normal"
+                }
+              ],
+              "CreatedTime": 28.3447,
+              "PatienceSeconds": 50,
+              "BasePrice": 12,
+              "Status": "Completed",
+              "PancakeRecipeId": "",
+              "NoodleRecipeId": "hot_dry_noodles_scallion_chili",
+              "IsComplex": false
+            }
+          },
+          {
+            "CustomerId": "W03-C007",
+            "CustomerTypeId": "wuhan_normal",
+            "ArrivalTime": 35.8579,
+            "Order": {
+              "OrderId": "W03-O007",
+              "CustomerTypeId": "wuhan_normal",
+              "CityId": "city:wuhan",
+              "OrderTypeId": "hot_dry_noodles",
+              "Lines": [
+                {
+                  "ProductKind": "HotDryNoodles",
+                  "DefinitionId": "hot_dry_noodles_scallion_chili",
+                  "Quantity": 1,
+                  "Sauce": "Normal"
+                }
+              ],
+              "CreatedTime": 35.8579,
+              "PatienceSeconds": 50,
+              "BasePrice": 12,
+              "Status": "Completed",
+              "PancakeRecipeId": "",
+              "NoodleRecipeId": "hot_dry_noodles_scallion_chili",
+              "IsComplex": false
+            }
+          },
+          {
+            "CustomerId": "W03-C008",
+            "CustomerTypeId": "wuhan_normal",
+            "ArrivalTime": 47.2328,
+            "Order": {
+              "OrderId": "W03-O008",
+              "CustomerTypeId": "wuhan_normal",
+              "CityId": "city:wuhan",
+              "OrderTypeId": "hot_dry_noodles",
+              "Lines": [
+                {
+                  "ProductKind": "HotDryNoodles",
+                  "DefinitionId": "hot_dry_noodles_beef",
+                  "Quantity": 1,
+                  "Sauce": "Normal"
+                }
+              ],
+              "CreatedTime": 47.2328,
+              "PatienceSeconds": 50,
+              "BasePrice": 14,
+              "Status": "Completed",
+              "PancakeRecipeId": "",
+              "NoodleRecipeId": "hot_dry_noodles_beef",
+              "IsComplex": false
+            }
+          },
+          {
+            "CustomerId": "W03-C009",
+            "CustomerTypeId": "wuhan_normal",
+            "ArrivalTime": 55.1393,
+            "Order": {
+              "OrderId": "W03-O009",
+              "CustomerTypeId": "wuhan_normal",
+              "CityId": "city:wuhan",
+              "OrderTypeId": "hot_dry_noodles",
+              "Lines": [
+                {
+                  "ProductKind": "HotDryNoodles",
+                  "DefinitionId": "hot_dry_noodles_scallion",
+                  "Quantity": 1,
+                  "Sauce": "Normal"
+                }
+              ],
+              "CreatedTime": 55.1393,
+              "PatienceSeconds": 50,
+              "BasePrice": 11,
+              "Status": "Completed",
+              "PancakeRecipeId": "",
+              "NoodleRecipeId": "hot_dry_noodles_scallion",
+              "IsComplex": false
+            }
+          },
+          {
+            "CustomerId": "W03-C010",
+            "CustomerTypeId": "wuhan_normal",
+            "ArrivalTime": 56.769,
+            "Order": {
+              "OrderId": "W03-O010",
+              "CustomerTypeId": "wuhan_normal",
+              "CityId": "city:wuhan",
+              "OrderTypeId": "hot_dry_noodles",
+              "Lines": [
+                {
+                  "ProductKind": "HotDryNoodles",
+                  "DefinitionId": "hot_dry_noodles_chili",
+                  "Quantity": 1,
+                  "Sauce": "Normal"
+                }
+              ],
+              "CreatedTime": 56.769,
+              "PatienceSeconds": 50,
+              "BasePrice": 11,
+              "Status": "Completed",
+              "PancakeRecipeId": "",
+              "NoodleRecipeId": "hot_dry_noodles_chili",
+              "IsComplex": false
+            }
+          }
+        ]
+      },
+      "LearnedWorkbenchActions": [
+        "take:wuhan_base_seasoning",
+        "take:wuhan_scallion",
+        "deliver:hot_dry_noodles",
+        "take:wuhan_chili_oil",
+        "take:wuhan_braised_beef"
+      ]
+    }
+  },
+  "UnlockedCityIds": [
+    "city:tianjin"
+  ]
+}

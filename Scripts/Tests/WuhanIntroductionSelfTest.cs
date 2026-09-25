@@ -41,6 +41,9 @@ public partial class WuhanIntroductionSelfTest : Node
                 screen.Descendants<Button>().Single(b => b.Name == "Skip").EmitSignal(Button.SignalName.Pressed);
                 await Settle();
                 Check(screen.Page == JourneyPage.Opening, "Tianjin completion reaches Wuhan introduction");
+                foreach (string name in new[] { "Home", "Settings", "Help", "Quit" })
+                    Check(!screen.Descendants<Button>().Any(b => b.Name == name && b.IsVisibleInTree()),
+                        "home-backed Wuhan introduction hides " + name);
                 var marker = screen.Descendants<TextureRect>().Single(n => n.Name == "WuhanPostcardMarker");
                 Check(marker.Modulate == Colors.White && marker.Material is null, "location marker retains original colors");
                 Check(!screen.Descendants<Button>().Any(b => b.Name == "Back"), "no extra back action");

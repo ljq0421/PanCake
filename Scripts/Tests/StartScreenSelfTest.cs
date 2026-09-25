@@ -129,6 +129,8 @@ public partial class StartScreenSelfTest : Node
                     && _screen.FindChild("MapSwitchSlot4", true, false) is null
                     && Find<Button>("MapSwitchArchives") is not null,
                     "dropdown lists exactly three journeys and archive access");
+                Check(Find<ColorRect>("ModalBackdrop").Color.A == 0f,
+                    "map journey dropdown leaves the map background undimmed");
                 await Capture("journey-switch-dropdown");
                 await Click(Find<Button>("MapSwitchSlot1"));
                 Check(_save.ActiveSlotId == 1 && _screen.Page == JourneyPage.Map
@@ -160,7 +162,7 @@ public partial class StartScreenSelfTest : Node
         Check(_save.TryCreateSlot(1, out _) && _save.TryCreateSlot(2, out _), "panel fixture creates two isolated slots");
         _save.TryLoadSlot(1, out _);
         _screen.PresentHome(); await Click(Find<Button>("JourneyArchives"));
-        Check(Find<Label>("ArchiveName1").Text.Length > 0 && Find<Button>("ArchiveSelect2") is not null,
+        Check(Find<Label>("CurrentArchiveCaption").Text.Length > 0 && Find<Button>("ArchiveSelect2") is not null,
             "home archives lists the available journeys");
         await Click(Find<Button>("ArchiveSelect2"));
         await Click(Find<Button>("ArchiveSlot2"));
@@ -204,9 +206,7 @@ public partial class StartScreenSelfTest : Node
         if (_screen.Page != JourneyPage.Home) _screen.PresentHome();
         if (!_save.UsesSlots) _save.UseSlotsForTests(Path.Combine(Path.GetDirectoryName(_path)!, "gallery-slots"));
         await Frames(); await Click(Find<Button>("NewGame"));
-        Check(_screen.ModalOpen && !_save.GetSlots().Any(s => s.Exists), "new journey opens empty journal selection");
-        int slot = _save.GetSlots().First(s => !s.Exists).Id;
-        await Click(Find<Button>("CreateSlot" + slot));
+        Check(!_screen.ModalOpen && _save.GetSlots().Count(s => s.Exists) == 1, "new journey automatically uses empty slot");
         Check(_screen.Page == JourneyPage.NewJourneyMap, "selected blank journal opens first-station map");
     }
     private async Task TravelChecks()
@@ -523,21 +523,25 @@ public partial class StartScreenSelfTest : Node
             _screen.PresentHome(); await Frames();
             await Click(Find<Button>(entry));
             Check(_screen.ModalOpen, entry + " opens a home modal");
-            var utilities = _screen.GetNode<Control>("Canvas/Modal/ModalUtilities");
             foreach (string name in new[] { "Home", "Settings", "Help", "Quit" })
-                Check(utilities.GetNode<Button>(name).IsVisibleInTree()
-                    && utilities.GetNode<Button>(name).Modulate == Colors.White, entry + " keeps " + name + " visible at full brightness");
+                Check(!_screen.Descendants<Button>().Any(b => b.Name == name && b.IsVisibleInTree()),
+                    entry + " hides " + name + " above and behind the modal");
             await Capture("modal-utilities-" + entry);
-            await Click(utilities.GetNode<Button>("Home"));
-            Check(!_screen.ModalOpen && _screen.Page == JourneyPage.Home, entry + " home icon returns home");
+            KeyPress(Key.Escape); await Frames();
+            Check(!_screen.ModalOpen && _screen.Page == JourneyPage.Home, entry + " closes back to home");
+            foreach (string name in new[] { "Settings", "Help", "Quit" })
+                Check(Find<Button>(name).IsVisibleInTree(), entry + " restores " + name + " on home");
         }
-        await Click(Find<Button>("Settings"));
-        await Click(_screen.GetNode<Button>("Canvas/Modal/ModalUtilities/Help"));
-        Check(_screen.FindChildren("HelpTitle", "Label", true, false).Any(n => ((Control)n).IsVisibleInTree()), "header switches settings to help");
-        await Click(_screen.GetNode<Button>("Canvas/Modal/ModalUtilities/Home"));
+        await Capture("modal-utilities-closed");
         _screen.PresentCity(StableIds.Cities.Wuhan); await Frames();
         await Click(Find<Button>("Settings"));
         Check(_screen.GetNodeOrNull<Control>("Canvas/Modal/ModalUtilities") is null, "city settings retain their existing navigation");
+    }
+    private void CheckHomeBookUtilitiesHidden(string state)
+    {
+        foreach (string name in new[] { "Home", "Settings", "Help", "Quit" })
+            Check(!_screen.Descendants<Button>().Any(b => b.Name == name && b.IsVisibleInTree()),
+                state + " hides " + name);
     }
     private async Task Launch()
     {

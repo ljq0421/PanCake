@@ -111,6 +111,14 @@ public sealed class IngredientInventory
         return true;
     }
 
+    public bool TryAddOne(string ingredientId)
+    {
+        if (!CanRefill(ingredientId)) return false;
+        _quantities[ingredientId]++;
+        Changed?.Invoke();
+        return true;
+    }
+
     public void Tick(double deltaSeconds)
     {
         if (deltaSeconds <= 0 || _refillRemaining.Count == 0)

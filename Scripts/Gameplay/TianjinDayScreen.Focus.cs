@@ -17,7 +17,8 @@ public partial class TianjinDayScreen
             DismissAtScreenEdge = true, ShowDismiss = () => !_controller.TutorialActive,
             PresentationCard = () => _demoLesson?.IsVisibleInTree() == true ? _demoLesson : null };
         AddChild(TeachingFocus);
-        _workstation.IsRefillTeachingActive = () => TeachingFocus.CurrentAction?.StartsWith("refill:", StringComparison.Ordinal) == true;
+        _workstation.IsRefillTeachingActive = () => TeachingFocus.CurrentAction == PancakeWorkstation.SupplyIntroductionAction
+            || TeachingFocus.CurrentAction?.StartsWith("refill:", StringComparison.Ordinal) == true;
     }
     private IEnumerable<TutorialFocusTarget> TeachingClearAreas()
     {
@@ -42,7 +43,8 @@ public partial class TianjinDayScreen
                 .SelectMany(p => TutorialFocusTarget.Artwork(_customerSlots[p.i])).ToArray();
         }
         var step = _workstation.ResolveFocus(orders, Recipients);
-        _controller.SetBusinessClockFrozen("tianjin-refill-teaching", step?.ActionId.StartsWith("refill:", StringComparison.Ordinal) == true);
+        _controller.SetBusinessClockFrozen("tianjin-refill-teaching", step?.ActionId == PancakeWorkstation.SupplyIntroductionAction
+            || step?.ActionId.StartsWith("refill:", StringComparison.Ordinal) == true);
         // One card owns the current instruction and the lesson action; the focus layer only spotlights it.
         if (_demoLesson?.Visible == true)
         {

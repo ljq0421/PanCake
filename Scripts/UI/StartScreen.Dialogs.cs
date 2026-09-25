@@ -8,14 +8,19 @@ public partial class StartScreen
     private bool _preserveModalBackdrop;
     private bool _bookHandoffPending;
 
-    private void OpenModal(string kind)
+    private void OpenModal(string kind, bool refresh = false)
     {
-        bool switchingUtilityBook = (_modal.Visible && _modalKind is not ("confirm" or "developer")
+        refresh = refresh && _modal.Visible && _modalKind == kind;
+        bool switchingUtilityBook = !refresh && (_modal.Visible && _modalKind is not ("confirm" or "developer")
             || IsBookPage(Page)) && kind is not ("confirm" or "developer");
         // A utility dialog opened from a home-book overlay returns to the unchanged
         // home backdrop first; utility dialogs are not nested inside journey books.
-        CloseModal(); _previousFocus = GetViewport().GuiGetFocusOwner(); _modalKind = kind;
+        if (!refresh)
+        {
+            CloseModal(); _previousFocus = GetViewport().GuiGetFocusOwner(); _modalKind = kind;
+        }
         Clear(_modal); _modalControls.Clear();
+        SetHomeUtilitiesVisible(false);
         // The captured settings/help frame already includes the modal dimmer.
         // VisibilityChanged starts the spread synchronously; keep that backdrop unchanged.
         _preserveModalBackdrop = switchingUtilityBook;
@@ -25,8 +30,8 @@ public partial class StartScreen
             JourneyTransition.For(this).Play(JourneyTransition.Effect.BookPage,
                 bounds: new Rect2(_canvas.GetGlobalTransformWithCanvas() * BookBounds.Position, BookBounds.Size * _canvas.Scale));
         _bookHandoffPending = switchingUtilityBook && kind == "home-overlay";
-        var backdrop = new ColorRect { Size = new(1920, 1080),
-            Color = new Color(.15f, .1f, .06f, kind == "map-switch" ? .30f : .65f) };
+        var backdrop = new ColorRect { Name = "ModalBackdrop", Size = new(1920, 1080),
+            Color = kind == "map-switch" ? Colors.Transparent : new Color(.15f, .1f, .06f, .65f) };
         if (kind == "map-switch")
             backdrop.GuiInput += input => { if (input is InputEventMouseButton { Pressed: true }) CloseModal(); };
         _modal.AddChild(backdrop);
@@ -48,16 +53,13 @@ public partial class StartScreen
                 ApplyHomeBookBackground(book);
             }
         }
-        if (!HostedByBook && _homeBookPalette)
-        {
-            // Keep home navigation above every dimmer and book, including collection overlays.
-            var utilities = new Control { Name = "ModalUtilities", Size = new(1920, 160),
-                MouseFilter = MouseFilterEnum.Ignore, ZIndex = 1 };
-            _modal.AddChild(utilities);
-            NavigationUtilities(includeHome: true, parent: utilities);
-            utilities.CallDeferred(Control.MethodName.MoveToFront);
-        }
         foreach (var button in _buttons) button.FocusMode = FocusModeEnum.None;
+    }
+    private void SetHomeUtilitiesVisible(bool visible)
+    {
+        if (HostedByBook || !_homeBookPalette) return;
+        foreach (string name in new[] { "Home", "Settings", "Help", "Quit" })
+            if (_homeBody.GetNodeOrNull<Button>(name) is { } button) button.Visible = visible;
     }
     private static void ApplyHomeBookBackground(TextureRect book)
         => book.Material = new ShaderMaterial { Shader = GD.Load<Shader>("res://resource/shaders/settings_book_decor.gdshader") };
@@ -104,6 +106,7 @@ public partial class StartScreen
         _settingsMessage = null; _archiveMessage = null; _countdown = null; _displayConfirmation = null;
         foreach (var button in _buttons) if (GodotObject.IsInstanceValid(button)) button.FocusMode = FocusModeEnum.All;
         if (restoreHomeBody) RestoreHomeBody();
+        SetHomeUtilitiesVisible(true);
         if (GodotObject.IsInstanceValid(_previousFocus) && _previousFocus!.IsInsideTree() && _previousFocus.IsVisibleInTree()) _previousFocus.GrabFocus();
         _previousFocus = null;
     }

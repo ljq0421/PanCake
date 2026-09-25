@@ -86,8 +86,7 @@ public partial class StartScreen
         else if (Page == JourneyPage.NewJourney) RenderNewJourneyMap();
         else if (Page == JourneyPage.Completion) FinishCompletion();
         else if (Page == JourneyPage.Collection) ReturnFromBreakfastCollection();
-        else if (Page is JourneyPage.Ledger or JourneyPage.Upgrades) RenderCity();
-        else if (Page == JourneyPage.City) (_cityReturn ?? RenderHome)();
+        else if (Page is JourneyPage.City or JourneyPage.Ledger or JourneyPage.Upgrades) (_cityReturn ?? RenderHome)();
         else RenderHome();
     }
     private void CityFrame(JourneyPage page, string title)
@@ -318,7 +317,7 @@ public partial class StartScreen
     private void RenderUpgradePage()
     {
         CityFrame(JourneyPage.Upgrades, "");
-        var wallet = EquipmentUpgradeView.AddWallet(_body, _bookUpgradeSource?.Coins ?? _save!.Data.Coins, new(1220, 220, 360, 64));
+        var wallet = EquipmentUpgradeView.AddWallet(_body, _bookUpgradeSource?.Coins ?? _save!.Data.Coins, new(_city is StableIds.Cities.Tianjin or StableIds.Cities.Wuhan ? 1040 : 1220, 220, 360, 64));
         wallet.PivotOffset = wallet.Size;
         wallet.Scale = Vector2.One * .49f;
         if (_equipmentCity != _city) { _selectedEquipment = null; _equipmentCity = _city; }

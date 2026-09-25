@@ -274,7 +274,8 @@ public partial class StageFourSelfTest
         var refill = (Button)soyPanel.FindChild("SoyMilkRefill", true, false);
         Check(!refill.IsVisibleInTree() && soyPanel.FindChild("StockGesture_soy_milk", true, false) is StockGesture gesture
             && gesture.GetGlobalRect().Encloses(cupBounds)
-            && gesture.GetGlobalRect().HasPoint(trayBounds.GetCenter()), "豆浆长按区域覆盖全部杯子和盘心且隐藏加号");
+            && gesture.GetGlobalRect().HasPoint(trayBounds.GetCenter()) && !gesture.EnableHold,
+            "豆浆取杯热区覆盖杯子和盘心、隐藏加号且不再长按补货");
         // Starting and cancelling a real drag must not reserve or consume a cup.
         drag.BeginDrag(source, "soy_milk", "豆浆", TianjinUi.Cream, new DragVisualSpec(art.Product(ProductKind.SoyMilk), TianjinWorkbenchLayout.SoyVisual));
         drag.CancelDrag();

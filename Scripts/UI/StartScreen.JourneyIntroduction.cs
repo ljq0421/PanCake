@@ -47,7 +47,9 @@ public partial class StartScreen
         {
             var food = city.Foods[i];
             bool featured = i == 0;
-            float x = i == 1 ? 1010 : 1345;
+            float x = i == 1 ? 1010 : 1285;
+            // Keep a 15px gap after the 118px illustration in each secondary entry.
+            float textX = x + 7 + 118 + 15;
             var icon = new BookFoodIcon { Name = "BreakfastFood" + i,
                 Position = featured ? new(1025, 389) : new(x + 7, 629),
                 Size = featured ? new(172, 167) : new(118, 112),
@@ -56,16 +58,18 @@ public partial class StartScreen
             icon.Modulate = available ? Colors.White : new Color(1, .97f, .91f);
             _body.AddChild(icon);
             Text(_body, "BreakfastName" + i, food.Name,
-                featured ? new(1220, 400, 278, 47) : new(x + 102, 621, 156, 39), featured ? 34 : 27);
+                featured ? new(1220, 400, 278, 47) : new(textX, 621, 156, 39), featured ? 34 : 27);
             var story = Text(_body, "BreakfastStory" + i, TianjinBreakfastStories[i],
-                featured ? new(1220, 456, 278, 109) : new(x + 102, 666, 150, 96), featured ? 22 : 18);
+                featured ? new(1220, 456, 278, 109) : new(textX, 666, 150, 96), featured ? 22 : 18);
             story.VerticalAlignment = VerticalAlignment.Top;
         }
-        var depart = Button(_body, "Depart", "从天津出发", new(1065, 794, 420, 65), DepartFirstStation, bare: true);
+        var depart = Button(_body, "Depart", "出发！", new(1065, 794, 420, 65), DepartFirstStation, bare: true);
         var plate = HomeArt(depart, "首页地图按钮底板", new(Vector2.Zero, depart.Size), stretch: true);
         plate.ShowBehindParent = true;
         depart.AddThemeFontSizeOverride("font_size", 32);
         DecorateJourneyIntroduction(false);
+        // Keep the shifted soy-milk brushwork beneath the neighboring youtiao copy.
+        _body.MoveChild(_body.GetNode("BreakfastFood2Backing"), _body.GetNode("BreakfastFood0").GetIndex());
         FitJourneyIntroduction();
         if (!opening) { JourneyStage = FirstJourneyStage.Ready; Focus("Depart"); }
     }

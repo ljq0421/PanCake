@@ -9,6 +9,57 @@ namespace ProjectCake.Tests;
 
 public partial class CityPagesSelfTest
 {
+    private async Task CheckUpgradeGrid()
+    {
+        var catalog = GetNode<DataCatalog>("/root/DataCatalog");
+        foreach (string city in new[] { StableIds.Cities.Tianjin, StableIds.Cities.Wuhan })
+        {
+            if (!_save.Data.UnlockedCityIds.Contains(city)) _save.Data.UnlockedCityIds.Add(city);
+            var progress = _save.Data.GetCity(city);
+            progress.HighestUnlockedDay = 1;
+            progress.DayBestRecords.Clear(); progress.UnlockedContentIds.Clear();
+            progress.EquipmentLevels.Clear();
+            string primary = city == StableIds.Cities.Tianjin ? "pancake_stove" : "noodle_cooker";
+            progress.EquipmentLevels[primary] = 1; progress.EquipmentLevels["ingredient_station"] = 1;
+            _save.Data.Coins = 0;
+            _screen.PresentCity(city); _screen.PresentUpgrades(); await Frames();
+            var view = _screen.Descendants<EquipmentUpgradeView>().Single();
+            Check(view.SelectedId == (city == StableIds.Cities.Tianjin ? "ingredient_station" : primary), "earliest unlock selected " + city);
+            var cards = view.Buttons.Where(b => b.Name.ToString().StartsWith("Select_")).ToArray();
+            Check(cards.Length == (city == StableIds.Cities.Tianjin ? 4 : 3), "all devices visible " + city);
+            if (city == StableIds.Cities.Tianjin)
+                Check(cards[0].Position.Y == cards[1].Position.Y && cards[2].Position.X == cards[0].Position.X && cards[2].Position.Y > cards[0].Position.Y, "two-column grid " + city);
+            else
+                Check(cards.All(c => c.Position.X == cards[0].Position.X) && cards[0].Position.Y < cards[1].Position.Y && cards[1].Position.Y < cards[2].Position.Y, "single column with three rows " + city);
+            Check(!Find<Control>("UpgradeWallet").GetGlobalRect().Intersects(Find<Control>("BookCloseArt").GetGlobalRect()), "wallet clears close artwork " + city);
+            if (city == StableIds.Cities.Tianjin)
+                Check(Find<Button>("Select_soy_milk_tray").GetNode<Label>("EquipmentName").Text == "豆浆", "soy milk label");
+            await Capture(city.Replace(':', '-') + "-grid-locked");
+            progress.HighestUnlockedDay = 12;
+            for (int day = 1; day <= 12; day++) progress.DayBestRecords[day] = new();
+            progress.UnlockedContentIds = catalog.GetDays(city).Values.SelectMany(d => d.StartUnlocks.Concat(d.CompletionUnlocks)).Distinct().ToList();
+            _screen.PresentUpgrades(); await Frames();
+            var model = new CityPageModel(catalog, _save, YangzhouCatalog.Load());
+            var cheapest = model.Equipment(city).Where(e => e.TargetLevel.HasValue).OrderBy(e => e.Price).First();
+            Check(_screen.Descendants<EquipmentUpgradeView>().Single().SelectedId == cheapest.Id, "smallest coin shortfall selected " + city);
+            await Capture(city.Replace(':', '-') + "-grid-short");
+            _save.Data.Coins = 10000;
+            _screen.PresentUpgrades(); await Frames();
+            var offer = model.Equipment(city).First(e => e.CanBuy);
+            Check(_screen.Descendants<EquipmentUpgradeView>().Single().SelectedId == offer.Id, "purchasable takes priority " + city);
+            Click("Select_" + cheapest.Id);
+            Check(_save.Data.Coins == 10000, "selection does not purchase " + city);
+            Click("UpgradeEquipment"); await Frames();
+            Check(_save.Data.Coins == 10000 - cheapest.Price, "purchase uses selected device " + city);
+            Check(_screen.Descendants<EquipmentUpgradeView>().Single().SelectedId == cheapest.Id, "purchase retains selection " + city);
+            await Capture(city.Replace(':', '-') + "-grid-purchased");
+            foreach (var item in model.Equipment(city)) progress.EquipmentLevels[item.Id] = item.Id == "soy_milk_tray" ? 1 : 3;
+            _screen.PresentUpgrades(); await Frames();
+            Check(Find<Button>("UpgradeEquipment").Disabled, "all complete has safe fallback " + city);
+            await Capture(city.Replace(':', '-') + "-grid-complete");
+        }
+    }
+
     private async Task CheckSharedUpgradePage()
     {
         var catalog = GetNode<DataCatalog>("/root/DataCatalog");

@@ -30,6 +30,11 @@ public partial class CityPagesSelfTest : Node
             _main = GD.Load<PackedScene>("res://Scenes/Main/Main.tscn").Instantiate<GameController>(); AddChild(_main);
             _screen = _main.GetNode<StartScreen>("UI/StartScreen");
             await Frames();
+            if (args.Contains("--upgrade-grid"))
+            {
+                await CheckUpgradeGrid();
+                GD.Print($"UPGRADE_GRID_TEST_RESULT passed={_passed} failed=0"); GetTree().Quit(); return;
+            }
             if (args.Contains("--upgrade-feedback"))
             {
                 await CheckUpgradeFeedback();
@@ -475,7 +480,25 @@ public partial class CityPagesSelfTest : Node
         _screen.PresentCity(StableIds.Cities.Wuhan); _screen.PresentLedger(); await Frames();
         await Capture("book-close-ledger");
         Click("BookClose"); await Frames();
-        Check(_screen.Page == JourneyPage.City, "ledger close returns to city overview");
+        Check(_screen.Page == JourneyPage.Home, "ledger close defaults to home like the city overview");
+        foreach (string tab in new[] { "ContinueTab", "LedgerTab", "UpgradeTab" })
+        {
+            _screen.PresentCity(StableIds.Cities.Wuhan);
+            if (tab != "ContinueTab") Click(tab);
+            await Frames();
+            Click("BookClose"); await Frames();
+            Check(_screen.Page == JourneyPage.Home, tab + " close defaults to home");
+
+            bool returnedToSource = false;
+            _screen.PresentCity(StableIds.Cities.Wuhan, () => { returnedToSource = true; _screen.PresentBreakfastCollection(); });
+            // Switching between tabs must preserve the original entry source.
+            Click("LedgerTab"); Click("UpgradeTab");
+            if (tab != "UpgradeTab") Click(tab);
+            await Frames();
+            Click("BookClose"); await Frames();
+            Check(returnedToSource && _screen.Page == JourneyPage.Collection, tab + " close returns to the original source");
+        }
+        _screen.PresentCity(StableIds.Cities.Wuhan); await Frames();
         _screen.PresentBreakfastCollection(); await Frames();
         await Capture("book-close-collection");
         Click("BookClose"); await Frames();

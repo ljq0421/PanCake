@@ -36,11 +36,14 @@ public partial class StartScreen
         {
             Name = "IntroductionHeadingBacking", Texture = BookArtCatalog.Get("今日手记便签底板"),
             ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
-            Position = new(995, 220), Size = new(555, 104),
-            StretchMode = TextureRect.StretchModeEnum.Scale, MouseFilter = MouseFilterEnum.Ignore
+            Position = new(1005, 220), Size = new(410, 104),
+            StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered, MouseFilter = MouseFilterEnum.Ignore
         };
         _body.AddChild(note);
         _body.MoveChild(note, heading.GetIndex());
+        // Leave the close button and its decorative rays clear; retain the PNG's proportions.
+        heading.Position = new(note.Position.X + 16, heading.Position.Y);
+        heading.Size = new(note.Size.X - 32, heading.Size.Y);
 
         foreach (var icon in _body.GetChildren().OfType<BookFoodIcon>().ToArray())
         {

@@ -23,6 +23,13 @@ public partial class StageFourSelfTest : Node
         try
         {
             DataCatalog catalog = GetNode<DataCatalog>("/root/DataCatalog");
+            if (OS.GetCmdlineUserArgs().Contains("--supply-only", StringComparer.Ordinal))
+            {
+                await TestStockGestures(catalog);
+                GD.Print($"天津叫货铃自测完成：{_passed} 项通过，{_failed} 项失败。");
+                GetTree().Quit(_failed == 0 ? 0 : 1);
+                return;
+            }
             if (OS.GetCmdlineUserArgs().Contains("--customer-art-only"))
             {
                 TestArtCatalog();
@@ -522,6 +529,8 @@ public partial class StageFourSelfTest : Node
     {
         string savePath = $"res://.tmp/direct-delivery-{Guid.NewGuid():N}.json";
         var save = new SaveService(); AddChild(save); save.UsePathForTests(savePath);
+        // Delivery lifecycle is exercised after the one-time supply introduction.
+        save.Data.Tianjin.LearnedWorkbenchActions.Add(PancakeWorkstation.SupplyIntroductionAction);
         var controller = new DayController(); AddChild(controller);
         var screen = ProjectCake.Core.SceneFactory.Instantiate<TianjinDayScreen>("res://Scenes/Gameplay/TianjinDayScreen.tscn"); AddChild(screen);
         screen.ConnectController(controller);
@@ -599,6 +608,9 @@ public partial class StageFourSelfTest : Node
         var firstZone = (DropZone)screen.FindChild("CustomerDropZone2", true, false);
         DragResult? result = null;
         drag.DragEnded += value => result = value;
+        // The cases below exercise the shared deferred-acceptance lifecycle.
+        // Tianjin's normal immediate delivery was checked above.
+        drag.ImmediateAcceptance = false;
         drag.BeginDrag(source!, "finished_pancake", "煎饼", Colors.White);
         ReleaseOn(firstZone);
         next.State = CustomerState.Leaving;

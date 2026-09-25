@@ -1,0 +1,67 @@
+{
+  "UpgradeTeachingCompleted": false,
+  "WuhanUnlockPresentationSeen": false,
+  "BreakfastStats": {},
+  "CustomerRecords": {},
+  "BreakfastRecords": {},
+  "Version": 3,
+  "LastVisitedCityId": "city:tianjin",
+  "Coins": 0,
+  "Cities": {
+    "city:tianjin": {
+      "BasePurchaseRulesVersion": 1,
+      "BaseEquipmentPurchaseDays": {},
+      "PendingUpgradeCelebrations": {},
+      "ClaimedChallenges": {},
+      "HighestUnlockedDay": 1,
+      "BestStars": 0,
+      "Completed": false,
+      "EquipmentLevels": {
+        "pancake_stove": 1,
+        "ingredient_station": 1,
+        "fryer": 0,
+        "soy_milk_tray": 0
+      },
+      "UnlockedContentIds": [],
+      "UnlockedCollectibleIds": [],
+      "DayBestRecords": {},
+      "LastDayPlan": null,
+      "LearnedWorkbenchActions": []
+    },
+    "city:wuhan": {
+      "BasePurchaseRulesVersion": 1,
+      "BaseEquipmentPurchaseDays": {},
+      "PendingUpgradeCelebrations": {},
+      "ClaimedChallenges": {},
+      "HighestUnlockedDay": 12,
+      "BestStars": 0,
+      "Completed": false,
+      "EquipmentLevels": {
+        "noodle_cooker": 1,
+        "ingredient_station": 3,
+        "doupi_griddle": 1
+      },
+      "UnlockedContentIds": [],
+      "UnlockedCollectibleIds": [],
+      "DayBestRecords": {},
+      "LastDayPlan": null,
+      "LearnedWorkbenchActions": [
+        "take:noodles",
+        "raise:noodles",
+        "pour:noodles",
+        "take:wuhan_base_seasoning",
+        "take:wuhan_scallion",
+        "take:wuhan_chili_oil",
+        "take:wuhan_braised_beef",
+        "doupi:batter",
+        "doupi:egg",
+        "doupi:flip",
+        "doupi:filling",
+        "doupi:cut"
+      ]
+    }
+  },
+  "UnlockedCityIds": [
+    "city:tianjin"
+  ]
+}

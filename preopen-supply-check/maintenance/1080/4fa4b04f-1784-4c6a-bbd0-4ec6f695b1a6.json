@@ -1,0 +1,60 @@
+{
+  "UpgradeTeachingCompleted": false,
+  "WuhanUnlockPresentationSeen": false,
+  "BreakfastStats": {},
+  "CustomerRecords": {},
+  "BreakfastRecords": {},
+  "Version": 3,
+  "LastVisitedCityId": "city:tianjin",
+  "Coins": 0,
+  "Cities": {
+    "city:tianjin": {
+      "BasePurchaseRulesVersion": 1,
+      "BaseEquipmentPurchaseDays": {},
+      "PendingUpgradeCelebrations": {},
+      "ClaimedChallenges": {},
+      "HighestUnlockedDay": 1,
+      "BestStars": 0,
+      "Completed": false,
+      "EquipmentLevels": {
+        "pancake_stove": 1,
+        "ingredient_station": 1,
+        "fryer": 0,
+        "soy_milk_tray": 0
+      },
+      "UnlockedContentIds": [
+        "recipe:pancake_basic"
+      ],
+      "UnlockedCollectibleIds": [],
+      "DayBestRecords": {},
+      "LastDayPlan": null,
+      "LearnedWorkbenchActions": [
+        "take:batter",
+        "take:egg",
+        "take:sauce",
+        "take:crispy",
+        "take:ham",
+        "take:scallion",
+        "take:youtiao",
+        "take:soy_milk",
+        "spread",
+        "flip",
+        "sauce",
+        "fold",
+        "bag",
+        "fryer:load",
+        "fryer:lower",
+        "fryer:raise",
+        "supply_intro_20260924",
+        "deliver:finished_pancake",
+        "deliver:stored_youtiao",
+        "deliver:soy_milk_cup",
+        "discard",
+        "refill"
+      ]
+    }
+  },
+  "UnlockedCityIds": [
+    "city:tianjin"
+  ]
+}

@@ -62,7 +62,7 @@ public partial class StartScreen : Control
         _canvas = GetNode<Control>("Canvas");
         _body = _homeBody = GetNode<Control>("Canvas/Page");
         _modal = GetNode<Control>("Canvas/Modal");
-        JourneyTransition.Watch(_modal, bounds: () => new Rect2(
+        JourneyTransition.Watch(_modal, enabled: () => _modalKind != "map-switch", bounds: () => new Rect2(
             _canvas.GetGlobalTransformWithCanvas() * BookBounds.Position, BookBounds.Size * _canvas.Scale),
             book: () => _modalKind is not ("confirm" or "developer"),
             dimBackdrop: () => !_preserveModalBackdrop);
@@ -177,6 +177,9 @@ public partial class StartScreen : Control
     private void NavigationUtilities(bool includeHome = false, Control? parent = null)
     {
         if (_homeOverlayOpen && parent is null) return;
+        // Home-backed books also render as pages (including after the opening
+        // animation), so hiding only modal navigation misses these screens.
+        if (!HostedByBook && _homeBookPalette && IsBookPage(Page)) return;
         if (includeHome) HomeUtility("Home", "首页", "首页", 1416, RenderHome, parent);
         HomeUtility("Settings", "设置", "设置图标", 1540, OpenSettings, parent);
         HomeUtility("Help", "帮助", "帮助图标", 1664, OpenHelp, parent);

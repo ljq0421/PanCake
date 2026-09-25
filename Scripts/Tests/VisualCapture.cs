@@ -38,9 +38,11 @@ public partial class VisualCapture : Node
         bool captureMultiple = args.Contains("--capture-multiple-pancakes", StringComparer.Ordinal);
         bool captureClosingBag = args.Contains("--capture-closing-bag", StringComparer.Ordinal);
         bool captureRefilling = args.Contains("--capture-refilling", StringComparer.Ordinal);
+        bool captureSupplySelect = args.Contains("--capture-supply-select", StringComparer.Ordinal);
+        bool captureSupplyNpc = args.Contains("--capture-supply-npc", StringComparer.Ordinal);
         bool captureDay = captureFryerWorkstation || captureRunning || capturePause || capturePartialOrder
-            || OS.GetCmdlineUserArgs().Contains("--capture-day", StringComparer.Ordinal);
-        int phase4Day = args.Contains("--capture-day11", StringComparer.Ordinal) ? 11
+            || captureSupplySelect || captureSupplyNpc || OS.GetCmdlineUserArgs().Contains("--capture-day", StringComparer.Ordinal);
+        int phase4Day = args.Contains("--capture-day11", StringComparer.Ordinal) || captureSupplySelect || captureSupplyNpc ? 11
             : captureDirectDelivery || captureThreeCustomers || capturePause || capturePartialOrder ? 15
             : captureLowStock || captureInteraction || capturePancakeReady || captureSauceReady ? 9
             : args.Contains("--capture-day1", StringComparer.Ordinal) ? 1
@@ -316,6 +318,26 @@ public partial class VisualCapture : Node
                         controller.Tick(controller.CurrentConfig!.DurationSeconds);
                         controller.Tick(DayController.ClosingDurationSeconds);
                     }
+                    if (captureSupplySelect || captureSupplyNpc)
+                    {
+                        workstation.ConfigureTutorial(PancakeWorkstation.AllWorkbenchActions);
+                        GetWindow().GrabFocus();
+                        dayScreen._Notification((int)NotificationApplicationFocusIn);
+                        ReduceTo(workstation.Inventory, StableIds.Ingredients.Egg, 2);
+                        ReduceTo(workstation.Inventory, StableIds.Ingredients.Crispy, 1);
+                        workstation.RefreshForCapture();
+                        dayScreen.SetProcess(false);
+                        ((Button)workstation.FindChild("SupplyBell", true, false)).EmitSignal(Button.SignalName.Pressed);
+                        if (!workstation.SupplyNpcCalled || ((TextureRect)workstation.FindChild("BellArtwork", true, false)).Texture is null)
+                            throw new InvalidOperationException("叫货截图未唤出 NPC 或铃素材未加载。");
+                        var bellArt = (TextureRect)workstation.FindChild("BellArtwork", true, false);
+                        if (bellArt.Size.X > 156 || bellArt.Size.Y > 150)
+                            throw new InvalidOperationException("叫货铃素材尺寸异常，超出桌沿按钮。");
+                        await ToSignal(GetTree().CreateTimer(captureSupplyNpc ? .12 : .75), SceneTreeTimer.SignalName.Timeout);
+                        dayScreen._Notification((int)NotificationApplicationFocusIn);
+                        if (!workstation.SupplyNpcCalled)
+                            ((Button)workstation.FindChild("SupplyBell", true, false)).EmitSignal(Button.SignalName.Pressed);
+                    }
                 }
             }
         }
@@ -453,6 +475,30 @@ public partial class VisualCapture : Node
             await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
             await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
         }
+        if (captureSupplyNpc)
+        {
+            var workstation = GetNode("../Main").GetNode<TianjinDayScreen>("UI/TianjinDayScreen")
+                .GetChildren().OfType<PancakeWorkstation>().Single();
+            var npcTarget = (Control)workstation.FindChild("SupplyHelperClick", true, false);
+            int eggBefore = workstation.Inventory.GetQuantity(StableIds.Ingredients.Egg);
+            using var click = new InputEventMouseButton
+            {
+                ButtonIndex = MouseButton.Left, Pressed = true, Position = npcTarget.GetGlobalRect().GetCenter(),
+            };
+            if (!workstation.HandleSupplyInput(click)
+                || workstation.Inventory.GetQuantity(StableIds.Ingredients.Egg) != eggBefore + 1)
+                throw new InvalidOperationException("叫货 NPC 截图未能补充一枚鸡蛋。");
+            // Freeze a reproducible airborne frame before waiting for the renderer.
+            foreach (Tween tween in GetTree().GetProcessedTweens())
+            {
+                tween.Pause();
+                tween.CustomStep(args.Contains("--capture-supply-landed") ? .4 : .18);
+            }
+            var npcArt = (TextureRect)workstation.FindChild("SupplyHelper", true, false);
+            if (!npcArt.IsVisibleInTree() || npcArt.Modulate.A < .9f)
+                throw new InvalidOperationException("叫货 NPC 截图时角色不可见。");
+        }
+        await ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
         Image image = GetViewport().GetTexture().GetImage();
         string sizeSuffix = capture720 ? "_720" : string.Empty;
         string? outputArg = args.FirstOrDefault(arg => arg.StartsWith("--capture-output=", StringComparison.Ordinal));

@@ -127,10 +127,8 @@ public partial class StageFourSelfTest
             stroke.RefreshVisualState();
             Check(stroke.SauceMeterVisible && stroke.ResolveSauceAmount!() == amount, "固定酱量指示器读取实际酱量");
             int stock = station.Inventory.GetQuantity(StableIds.Ingredients.Sauce);
-            Check(finish.Visible && !finish.Disabled, $"{amount:P0} 可提前收刷");
-            if (amount == 1)
-                Check(station.TryInvokeProductionShortcut(Key.F), "F可收刷");
-            else finish.EmitSignal(Button.SignalName.Pressed);
+            Check(!finish.Visible && !finish.IsVisibleInTree(), $"{amount:P0} 天津不显示收刷按钮");
+            Check(station.TryInvokeProductionShortcut(Key.F), $"{amount:P0} 无按钮时F仍可收刷");
             Check(!stroke.SauceMeterVisible, "提前收刷后隐藏酱量指示器");
             Check(station.Machine.Runtime.State == PancakeState.Sauced && station.Machine.Runtime.SauceCoverage == amount
                 && station.Inventory.GetQuantity(StableIds.Ingredients.Sauce) == stock && stroke.IsToolHeld?.Invoke() == false,
@@ -156,7 +154,7 @@ public partial class StageFourSelfTest
         using (var motion = new InputEventMouseMotion { Position = sweepStart, ButtonMask = MouseButtonMask.Left }) stroke._GuiInput(motion);
         Check(station.Machine.Runtime.SauceCoverage == fastSweepAmount, "沿原路重复刷不增加酱量");
         using (var release = new InputEventMouseButton { ButtonIndex = MouseButton.Left, Position = sweepStart }) stroke._GuiInput(release);
-        finish.EmitSignal(Button.SignalName.Pressed);
+        Check(station.TryInvokeProductionShortcut(Key.F), "F可收刷");
         Check(station.Machine.Runtime.State == PancakeState.Sauced && stroke.SauceCompletionVisible
             && station.Machine.Runtime.SauceCoverage == fastSweepAmount, "主动收刷保留少酱并展示完成反馈");
         stroke._Process(1.2);
@@ -189,7 +187,7 @@ public partial class StageFourSelfTest
         DeliveryEvaluation mismatch = controller.TryDeliverPreparedPancakeTo(lightCustomer.Id, wrong, catalog, () => true);
         Check(mismatch.ItemAccepted && lightCustomer.Progress.HasSauceMismatch && lightCustomer.WaitSeconds == wait,
             "错酱量成品可接收但不恢复耐心");
-        PrepareSauce(); station.Machine.SetSauceCoverage(1.25); finish.EmitSignal(Button.SignalName.Pressed);
+        PrepareSauce(); station.Machine.SetSauceCoverage(1.25); Check(station.TryInvokeProductionShortcut(Key.F), "F可收刷");
         station.Machine.TryExecute(PancakeCommand.Fold); station.Machine.TryExecute(PancakeCommand.Bag); station.Tick(.3);
         CustomerRuntime extraCustomer = controller.CustomerQueue.Slots[2];
         extraCustomer.WaitSeconds = 20;
@@ -214,7 +212,7 @@ public partial class StageFourSelfTest
                 Check(GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath(path)) == Error.Ok,
                     $"保存酱量画面 {path}");
             }
-            finish.EmitSignal(Button.SignalName.Pressed);
+            Check(station.TryInvokeProductionShortcut(Key.F), "F可收刷");
             await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
             await ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
             Check(GetViewport().GetTexture().GetImage().SavePng(ProjectSettings.GlobalizePath("user://sauce-complete.png")) == Error.Ok,

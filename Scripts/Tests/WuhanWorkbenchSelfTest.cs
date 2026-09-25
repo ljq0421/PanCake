@@ -23,11 +23,11 @@ public partial class WuhanWorkbenchSelfTest : Node
         {
             var catalog = GetNode<DataCatalog>("/root/DataCatalog");
             var settings = GetNode<JourneySettings>("/root/JourneySettings");
-            settings.UsePathForTests($"res://.tmp/wuhan-menu-settings-{Guid.NewGuid():N}.cfg");
+            settings.UsePathForTests($"user://wuhan-menu-settings-{Guid.NewGuid():N}.cfg");
             InterfaceLessons.MarkAllSeen(settings);
             var save = new SaveService();
             AddChild(save);
-            string path = $"res://.tmp/wuhan-workbench-{Guid.NewGuid():N}.json";
+            string path = $"user://wuhan-workbench-{Guid.NewGuid():N}.json";
             if (ExperienceProfile.IsDemo)
             {
                 save.UseDemoPathForTests(ProjectSettings.GlobalizePath(path));
@@ -47,6 +47,8 @@ public partial class WuhanWorkbenchSelfTest : Node
             // production states without advancing cooking time, to isolate all real order routes.
             for (int day = 1; day <= 12; day++)
             {
+                if (day >= 4 && save.Data.Wuhan.EquipmentLevels.GetValueOrDefault("doupi_griddle") == 0)
+                    save.Data.Wuhan.EquipmentLevels["doupi_griddle"] = 1;
                 Check(screen.Initialize(catalog, save, controller, day), $"Day {day}: initializes");
                 screen.BeginDay();
                 screen._Notification((int)NotificationApplicationFocusIn);
@@ -54,6 +56,8 @@ public partial class WuhanWorkbenchSelfTest : Node
                 Check(!controller.TutorialActive, $"Day {day}: tests normal business after tutorial");
                 screen._Notification((int)NotificationApplicationFocusIn);
                 screen._Process(3.1);
+                if (controller.State == DayState.Preparing)
+                    Check(controller.TryStartDay(out _), $"Day {day}: starts business after unlock presentation");
                 string[] recipes = controller.CurrentConfig!.AvailableRecipeIds.ToArray();
                 Check(recipes.Length == (day == 1 ? 3 : day == 2 ? 4 : 6), $"Day {day}: correct menu size");
                 Check(recipes.Contains("hot_dry_noodles_scallion_chili") == (day >= 2), $"Day {day}: double topping unlock");
@@ -71,10 +75,16 @@ public partial class WuhanWorkbenchSelfTest : Node
                 screen.Workstation._GuiInput(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true,
                     Position = screen.Workstation.IngredientCenter(3) });
                 Check(screen.Bowl.Toppings.Contains(StableIds.Ingredients.WuhanBraisedBeef) == (day >= 3),
-                    $"Day {day}: beef action and click respect the unlock");
+                    $"Day {day}: beef action and click respect the unlock (state={controller.State}, stock={screen.Ingredients.Count(StableIds.Ingredients.WuhanBraisedBeef)}, canUse={screen.Ingredients.CanUse(StableIds.Ingredients.WuhanBraisedBeef)}, bowl={screen.Bowl.State})");
                 screen.Workstation.CancelAnimations(); screen.Bowl.Reset();
                 Check((screen.Doupi is not null) == (day >= 4), $"Day {day}: original doupi unlock");
                 Check(screen.Workstation.Descendants<EquipmentProgressView>().All(view => !view.ShowCaption), $"Day {day}: progress bars have no text captions");
+                void EnsureIngredient(string id)
+                {
+                    if (screen.Ingredients.CanUse(id)) return;
+                    Check(screen.Ingredients.TryRefillOne(id), $"Day {day}: {id} can be replenished when empty");
+                    Check(screen.Ingredients.CanUse(id), $"Day {day}: {id} can be used after replenishment");
+                }
                 if (day < 4)
                 {
                     screen.PourDoupiBatter();
@@ -97,6 +107,7 @@ public partial class WuhanWorkbenchSelfTest : Node
                                     Check(screen.Bowl.TryAddNoodles(NoodleQuality.Optimal), "new bowl accepts noodles");
                                     // Exercise the visible sesame bowl, including duplicate protection.
                                     Vector2 source = screen.Workstation.IngredientCenter(0);
+                                    EnsureIngredient(StableIds.Ingredients.WuhanBaseSeasoning);
                                     screen.Workstation._GuiInput(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true, Position = source });
                                     screen.Workstation.CancelAnimations();
                                     screen.Workstation._GuiInput(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true, Position = screen.Workstation.IngredientCenter(0) });
@@ -104,11 +115,13 @@ public partial class WuhanWorkbenchSelfTest : Node
                                     var toppings = catalog.RecipesById[line.DefinitionId].ExtraIngredients;
                                     foreach (string ingredient in toppings.Where(id => id != StableIds.Ingredients.WuhanBraisedBeef))
                                     {
+                                        EnsureIngredient(ingredient);
                                         screen.IngredientAction(ingredient); screen.Workstation.CancelAnimations();
                                     }
                                     screen.Bowl.AddMixDistance(1000);
                                     if (toppings.Contains(StableIds.Ingredients.WuhanBraisedBeef))
                                     {
+                                        EnsureIngredient(StableIds.Ingredients.WuhanBraisedBeef);
                                         screen.IngredientAction(StableIds.Ingredients.WuhanBraisedBeef);
                                         screen.Workstation.CancelAnimations();
                                     }

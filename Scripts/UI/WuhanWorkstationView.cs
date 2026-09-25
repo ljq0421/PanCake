@@ -76,7 +76,7 @@ public partial class WuhanWorkstationView : Control
         ClearTrashSource();
         RefreshDeliverySources(); QueueRedraw();
     }
-    public void CancelInput() { CancelAutoCutHold(); CancelTrashPress(); _drag?.CancelDrag(); CancelGesture(); EndMix(); ResetFoodMotion(); _cooker?.CancelPendingPour(); }
+    public void CancelInput() { CancelSupplySelection(); CancelAutoCutHold(); CancelTrashPress(); _drag?.CancelDrag(); CancelGesture(); EndMix(); ResetFoodMotion(); _cooker?.CancelPendingPour(); }
 
     public void RefreshDeliverySources()
     {
@@ -226,6 +226,7 @@ public partial class WuhanWorkstationView : Control
         }
         _cookingAudio = new WuhanCookingAudio(this);
         _actionAudio = new WuhanActionAudio(this);
+        BuildSupplyCall();
         MouseExited += () => { _hover = ""; _pointer = new Vector2(-1000, -1000); QueueRedraw(); };
     }
 
@@ -239,6 +240,7 @@ public partial class WuhanWorkstationView : Control
         _layout = WuhanWorkbenchLayout.ForStage(doupi is not null);
         ConfigureEquipmentProgress();
         PendingDoupiDemand = 0; _ingredients = ingredients;
+        LayoutSupplyCall();
         _bounds.Clear(); _phase=0; _pointer = new Vector2(-1000, -1000); TooltipText = "";
         MouseDefaultCursorShape = CursorShape.Arrow;
         RememberStates(); BindRefillControls(); RefreshRefillControls(); RefreshDeliverySources(); QueueRedraw();
@@ -258,6 +260,7 @@ public partial class WuhanWorkstationView : Control
     {
         _cookingAudio?.Stop();
         _actionAudio?.Stop();
+        StopSupplyNpc();
         CancelInput();
         foreach (Motion m in _motions) m.Tween.Kill();
         _motions.Clear(); EndMix(); ResetFoodMotion(); ResetLoopFeedback(); _hover = ""; QueueRedraw();
@@ -358,6 +361,7 @@ public partial class WuhanWorkstationView : Control
     public void Tick(double delta)
     {
         if (_cooker is null || delta <= 0) return;
+        TickSupply(delta);
         TickMixProgress(delta);
         TickLoopFeedback(delta);
         TickFoodMotion(delta);
@@ -480,7 +484,7 @@ public partial class WuhanWorkstationView : Control
         DrawCounterForeground();
         // The cooker front must still occlude the submerged part of a basket's contour.
         DrawEquipmentHighlights(basketsOnly: true);
-        DrawCooker(); DrawMixStation(); DrawDoupi();
+        DrawCooker(); DrawMixStation(); DrawDoupi(); DrawIngredientStock();
         DrawEquipmentHighlights();
         DrawTransfers(); DrawBowlFront();
         // Restoring the painted front must not erase the bowl's interaction contour.

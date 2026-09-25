@@ -82,6 +82,7 @@ public partial class WuhanDayScreen : Control
         Workstation.AutoCutRequested = CutDoupiAutomatically;
         Workstation.BasketPressed += BasketAction;
         Workstation.IngredientPressed += IngredientAction;
+        Workstation.SupplyRequested = RequestIngredientSupply;
         Workstation.BatterRequested = PourDoupiBatter;
         Workstation.EggRequested = AddDoupiEgg;
         Workstation.FillingRequested = AddDoupiFilling;
@@ -282,7 +283,12 @@ public partial class WuhanDayScreen : Control
     }
     internal void IngredientAction(string id)
     {
-        if(!CanInteract||Workstation.Busy("bowl")||!_ingredients.IsUnlimited(id)||Workstation.AllowedIngredients is { } allowed && !allowed.Contains(id))return;
+        if(!CanInteract||Workstation.Busy("bowl")||!_ingredients.IsSupported(id)||Workstation.AllowedIngredients is { } allowed && !allowed.Contains(id))return;
+        if (!_ingredients.CanUse(id))
+        {
+            Feedback("这份小料用完了，点铃叫出伙计，再点伙计补货。", false);
+            Render(); return;
+        }
         bool ok=id==StableIds.Ingredients.WuhanBaseSeasoning?_bowl.TryAddBaseSeasoning():_bowl.TryAddTopping(id);
         if(ok){LearnTeachingAction("take:" + id);_ingredients.TryConsume(id);Workstation.PlayIngredient(id);}
         else
@@ -295,6 +301,13 @@ public partial class WuhanDayScreen : Control
             Feedback(message,true);
         }
         Render();
+    }
+    private bool RequestIngredientSupply(string id)
+    {
+        if (!CanInteract || Workstation.AllowedIngredients is { } allowed && !allowed.Contains(id)
+            || !_ingredients.TryRefillOne(id)) return false;
+        Render();
+        return true;
     }
     internal bool DeliverToCustomer(string customerId, ProductKind kind)
     {

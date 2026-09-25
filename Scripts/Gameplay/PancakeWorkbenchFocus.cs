@@ -32,6 +32,13 @@ public partial class PancakeWorkstation
     internal TutorialFocusStep? ResolveFocus(IReadOnlyList<TutorialOrder> orders, Func<ProductKind, string?, TutorialFocusTarget[]> recipients)
     {
         if (!_initialized || !CanInteract || !IsTianjinWorkbench) return null;
+        if (NeedsSupplyIntroduction && FocusPayload.Length == 0)
+        {
+            if (SupplyNpcCalled && SupplyNpcFocusTarget is Control helper)
+                return new(SupplyIntroductionAction, "点击左侧送货员，每次补充一份食材；满库存时送货员会离开。", new[] { TutorialFocusTarget.Control(helper) });
+            if (SupplyBellFocusTarget is Control bell)
+                return new(SupplyIntroductionAction, "点击右侧桌面的铃叫来送货员，再点击送货员补充食材。", new[] { TutorialFocusTarget.Control(bell) });
+        }
         var r = Machine.Runtime;
         string? FinishedRecipe() => PancakeTray.Selected is { } food ? orders.FirstOrDefault(o => o.Kind == ProductKind.Pancake && food.ExtraIngredients.SetEquals(o.Toppings))?.DefinitionId ?? "unmatched" : null;
         TutorialFocusTarget Surface() => TutorialFocusTarget.Ellipse(this, TianjinWorkbenchLayout.EmbeddedSurface);
@@ -49,7 +56,10 @@ public partial class PancakeWorkstation
             NeedsTeaching(action) ? new(action, text, targets) : null;
         TutorialFocusStep? RefillFocus(string id) => Step("refill:" + id,
             Inventory.IsRefilling(id) ? $"{IngredientName(id)}补货中，等待补满。"
-                : $"左键长按{IngredientName(id)}料盒 0.45 秒补货。", Ingredient(id));
+                : SupplyNpcCalled ? $"继续点击左侧送货员，每次补一份{IngredientName(id)}。"
+                : "点击煎饼炉左上方的叫货铃，叫来送货员。",
+            SupplyNpcCalled && SupplyNpcFocusTarget is Control npc ? TutorialFocusTarget.Control(npc)
+                : SupplyBellFocusTarget is Control bell ? TutorialFocusTarget.Control(bell) : Ingredient(id));
         TutorialFocusStep? Take(string id, string text)
         {
             if (!Inventory.HasAvailable(id))
@@ -95,9 +105,12 @@ public partial class PancakeWorkstation
         {
             foreach (string id in _ingredientSlots.Keys.Where(_enabledIngredients.Contains).OrderBy(id => id, StringComparer.Ordinal))
                 if (!(id == StableIds.Ingredients.Egg && _deferEggRefillToRecipe)
-                    && NeedsTeaching("refill:" + id) && Inventory.GetStatus(id) is IngredientStockStatus.Low or IngredientStockStatus.Empty or IngredientStockStatus.Refilling)
+                    && NeedsTeaching("refill:" + id)
+                    && (Inventory.GetStatus(id) is IngredientStockStatus.Low or IngredientStockStatus.Empty or IngredientStockStatus.Refilling
+                        || SupplyNpcCalled && NextMissingSupply() == id))
                     return RefillFocus(id);
-            if (SoyMilkTray is { IsTaking: false } soy && NeedsTeaching("refill:soy_milk") && (soy.Quantity <= 2 || soy.IsRefilling))
+            if (SoyMilkTray is { IsTaking: false } soy && NeedsTeaching("refill:soy_milk")
+                && (soy.Quantity <= 2 || soy.IsRefilling || SupplyNpcCalled && NextMissingSupply() == "soy_milk"))
                 return SoyRefillFocus();
         }
         TutorialOrder? order = orders.FirstOrDefault(o => o.Kind == ProductKind.Pancake && r.ExtraIngredients.All(o.Toppings.Contains));
@@ -154,7 +167,11 @@ public partial class PancakeWorkstation
         return null;
 
         TutorialFocusStep? SoyRefillFocus() => Step("refill:soy_milk", SoyMilkTray!.IsRefilling
-            ? "豆浆补货中，等待补满。" : "左键长按豆浆托盘 0.45 秒补货。", Painted(TianjinPaintedObject.SoyTray));
+            ? "豆浆补货中，等待补满。"
+            : SupplyNpcCalled ? "继续点击左侧送货员，每次补一杯豆浆。"
+            : "点击煎饼炉左上方的叫货铃，叫来送货员。",
+            SupplyNpcCalled && SupplyNpcFocusTarget is Control npc ? TutorialFocusTarget.Control(npc)
+                : SupplyBellFocusTarget is Control bell ? TutorialFocusTarget.Control(bell) : Painted(TianjinPaintedObject.SoyTray));
 
         TutorialFocusStep? FryerFocus()
         {

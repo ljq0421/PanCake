@@ -96,25 +96,38 @@ public partial class StageFourSelfTest
             await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
             Click((Control)station.FindChild("PancakeBagAction", true, false));
             Check(machine.Runtime.State == PancakeState.Bagged && station.PancakeTray.Count == 0, $"Lv{level} 装袋按钮将成品留在炉面");
+            station.ResetForDay();
+            Click((Control)station.FindChild("SupplyBell", true, false));
+            Check(station.SupplyNpcCalled && ((Control)station.FindChild("SupplyHelperClick", true, false)).Visible,
+                $"Lv{level} 满库存时真实输入点铃仍叫出 NPC");
+            station.CancelInput();
             foreach (string id in TianjinWorkbenchLayout.IngredientOrder)
             {
-                while (station.Inventory.GetQuantity(id) > 1) station.Inventory.TryConsume(id);
+                station.Inventory.TryConsume(id, 2);
                 station.RefreshForCapture();
                 await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
                 var slot = (IngredientStockSlotView)station.FindChild($"IngredientSlot_{id}", true, false);
                 var gesture = (StockGesture)station.FindChild($"StockGesture_{id}", true, false);
                 AuditSlot(slot, gesture, $"Lv{level} {id} 少量库存");
-                Check(gesture.GetGlobalRect().End.X <= 1920 * screen.Scale.X && !slot.RefillButton.Visible,
-                    $"Lv{level} {id} 长按区域位于画面内且没有独立加号");
+                Check(gesture.GetGlobalRect().End.X <= 1920 * screen.Scale.X && !slot.RefillButton.Visible
+                    && !gesture.EnableHold, $"Lv{level} {id} 原料热区位于画面内且不再启用长按补货");
                 Vector2 point = gesture.GetGlobalRect().GetCenter();
                 using (var press = new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true, Position = point }) GetViewport().PushInput(press, true);
                 station.Tick(.45);
                 using (var release = new InputEventMouseButton { ButtonIndex = MouseButton.Left, Position = point }) GetViewport().PushInput(release, true);
-                Check(station.Inventory.IsUnlimited(id)
-                        ? station.Inventory.GetStatus(id) == IngredientStockStatus.Normal && !station.Inventory.CanRefill(id)
-                            && slot.LiquidTier == 3 && !slot.StockBar.Visible
-                        : station.Inventory.GetStatus(id) == IngredientStockStatus.Refilling,
-                    $"Lv{level} {id} 原地长按按有限/无限库存规则响应");
+                Check(!station.Inventory.IsRefilling(id), $"Lv{level} {id} 原地长按不再开始补货");
+                if (station.Inventory.IsUnlimited(id)) continue;
+                Click((Control)station.FindChild("SupplyBell", true, false));
+                Check(station.SupplyNpcCalled, $"Lv{level} {id} 真实输入点铃唤出 NPC");
+                Control npc = (Control)station.FindChild("SupplyHelperClick", true, false);
+                int before = station.Inventory.GetQuantity(id);
+                Click(npc);
+                Check(station.Inventory.GetQuantity(id) == before + 1 && !station.Inventory.IsRefilling(id),
+                    $"Lv{level} {id} 真实输入点 NPC 只补一份");
+                Click(npc);
+                Check(station.Inventory.GetQuantity(id) == before + 2,
+                    $"Lv{level} {id} 再点一次 NPC 补满该料盒");
+                station.CancelInput();
             }
         }
         screen.Free(); controller.Free(); save.Free();

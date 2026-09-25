@@ -9,6 +9,9 @@ namespace ProjectCake.Gameplay;
 
 public partial class PancakeWorkstation
 {
+    internal const string SupplyIntroductionAction = "supply_intro_20260924";
+    internal bool LessonSupplyActive { get; private set; }
+    private bool NeedsSupplyIntroduction => _tutorialMemory && (!Tutorial.IsActive || LessonSupplyActive) && NeedsTeaching(SupplyIntroductionAction);
     internal const string RefillLessonAction = "refill";
     private readonly HashSet<string> _learnedActions = new(StringComparer.Ordinal);
     private readonly HashSet<string> _pendingRefillLessons = new(StringComparer.Ordinal);
@@ -21,12 +24,13 @@ public partial class PancakeWorkstation
     internal static readonly string[] AllWorkbenchActions = {
         "take:batter", "take:egg", "take:sauce", "take:crispy", "take:ham", "take:scallion", "take:youtiao", "take:soy_milk",
         "spread", "flip", "sauce", "fold", "bag", "discard", "fryer:load", "fryer:lower", "fryer:raise",
-        RefillLessonAction,
+        RefillLessonAction, SupplyIntroductionAction,
         "deliver:finished_pancake", "deliver:stored_youtiao", "deliver:soy_milk_cup"
     };
 
     public void ConfigureTutorial(IEnumerable<string>? learned)
     {
+        LessonSupplyActive = false;
         _focusLastChannel = "pancake";
         _tutorialMemory = true;
         _learnedActions.Clear();
@@ -51,11 +55,17 @@ public partial class PancakeWorkstation
 
     internal void ConfigureFirstPancakeEggLesson(int quantity)
     {
-        // The first egg belongs to the guided pancake; teach refilling when the next recipe needs it.
+        // Reserve one egg for the guided pancake; its supply lesson follows delivery, before opening.
         _deferEggRefillToRecipe = true;
         int excess = Inventory.GetQuantity(StableIds.Ingredients.Egg) - quantity;
         if (excess > 0) Inventory.TryConsume(StableIds.Ingredients.Egg, excess);
         Render();
+    }
+
+    internal void BeginLessonSupply()
+    {
+        LessonSupplyActive = true;
+        _deferEggRefillToRecipe = false;
     }
 
     private void TrackRefillLesson(string id)

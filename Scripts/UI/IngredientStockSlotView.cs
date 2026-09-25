@@ -204,6 +204,8 @@ public partial class IngredientStockSlotView : WorkstationSlotView
         tween.Finished += () => _feedbackTween = null;
     }
 
+    public void PlaySupplyUnitFeedback() => PlayRefillCompleteFeedback();
+
     private void PlayRefillCompleteFeedback()
     {
         _feedbackTween?.Kill();

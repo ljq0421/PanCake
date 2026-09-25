@@ -35,14 +35,10 @@ internal static class SaveSlotChecks
         string blocked = Path.Combine(root, "slot-1.json");
         Directory.CreateDirectory(blocked);
         await Click("NewGame");
-        Check(screen.ModalOpen && !save.CanContinue, "new journey first selects an empty journal");
-        await capture("slots-new-selection");
-        await Click("CreateSlot1");
         Check(screen.Page == JourneyPage.Home && !save.CanContinue && Find<Label>("Status").Text.Length > 0,
             "failed creation stays on home and exposes error");
         Directory.Delete(blocked);
         await Click("NewGame");
-        await Click("CreateSlot1");
         await Frames();
         Check(save.ActiveSlotId == 1 && screen.Page == JourneyPage.NewJourneyMap && save.GetSlots().Count(s => s.Exists) == 1,
             "new journey creates the chosen empty slot and opens first-station animation");
@@ -55,28 +51,42 @@ internal static class SaveSlotChecks
         save.Data.Coins = 654; save.Data.Tianjin.HighestUnlockedDay = 6; Check(save.TrySave(out _), "save second journey");
         save.TryLoadSlot(1, out _);
         screen.PresentHome(); await Click("JourneyArchives");
-        Check(Enumerable.Range(1, SaveService.SlotCount).All(id => Find<Control>("ArchiveCard" + id) is not null),
-            "home archives lists all five slots");
-        Check(Find<Control>("ArchiveCard1").Position.Y == 283
-            && Find<Control>("ArchiveCard2").Position.Y == 299
-            && Find<TextureRect>("ArchiveUpperRoute") is not null
-            && Find<TextureRect>("ArchiveLowerRoute") is not null,
-            "right page uses raised cards and travel decorations");
-        Check(Find<Label>("ArchiveProgress1").Text.Contains("天津 · 第 4 天")
-            && Find<Label>("ArchiveProgress2").Text.Contains("天津 · 第 6 天"),
-            "archive shows each journey's city and current day");
-        Check(Find<TextureRect>("ArchiveBreakfastMap1") is not null
-            && Find<TextureRect>("ArchiveBreakfastMap2") is not null,
-            "Tianjin journeys show their breakfast map");
-        Check(Find<TextureRect>("ArchiveJourneyLine") is not null
-            && Find<TextureRect>("ArchiveJourneyStart") is not null
-            && Find<TextureRect>("ArchiveJourneyEnd") is not null
-            && Mathf.Abs(Find<TextureRect>("FeaturedArchiveCover").RotationDegrees + 4) < .01f,
-            "featured journey shows a drawn travel route");
+        Check(screen.FindChild("ArchiveCard1", true, false) is null
+            && Enumerable.Range(2, 4).All(id => Find<Control>("ArchiveCard" + id) is not null),
+            "featured journey has no frame and all four other slots remain visible");
+        Check(Find<Label>("CurrentArchiveCaption").Text == "旅途中·" + save.GetSlots()[0].Name
+            && screen.FindChild("ArchiveName1", true, false) is null
+            && Find<TextureRect>("ArchiveCitySticker1").Position.X > 700
+            && Find<TextureRect>("ArchiveCitySticker1").Size == new Vector2(150, 150),
+            "featured name is merged into the note and city icon is at top right");
+        Check(Find<TextureRect>("CurrentArchiveFlag").Texture is AtlasTexture banner
+            && banner.Atlas.ResourcePath.EndsWith("今日手记便签底板.png")
+            && screen.FindChild("ArchiveBreakfastMap1", true, false) is not null
+            && Find<TextureRect>("CurrentArchiveFlag").StretchMode == TextureRect.StretchModeEnum.KeepAspectCentered
+            && screen.FindChild("ArchiveJourneyLine", true, false) is null
+            && screen.FindChild("ArchiveJourneyStart", true, false) is null
+            && screen.FindChild("ArchiveJourneyEnd", true, false) is null,
+            "featured note keeps its aspect ratio, skyline returns without route");
+        Check(Find<Label>("ArchivePostcardCity").Text == "天津"
+            && Find<TextureRect>("ArchivePostcardPin") is not null
+            && screen.FindChild("FeaturedArchiveCover", true, false) is null,
+            "featured city postcard replaces the book and includes a location label");
+        Check(Find<Label>("ArchiveProgress2").Text == "天津 · 第 6 天"
+            && Find<Label>("ArchiveCoins2").Text == "654"
+            && Find<TextureRect>("ArchiveCoinIcon2").Position.Y > Find<Label>("ArchiveProgress2").Position.Y
+            && Find<Button>("ArchiveSelect2").TooltipText == "",
+            "other journey shows coins on a separate icon row with no tooltip");
+        Check(Find<Button>("DeleteSlot1").Text == "删除",
+            "delete action is explicitly labeled");
         await capture("slots-archives-two");
         await Click("ArchiveSelect2");
         Check(save.ActiveSlotId == 1 && Find<Button>("ArchiveSlot2").Text == "选择这段旅程",
             "selecting a small journal reveals its action without switching saves");
+        Check(Find<Button>("RenameSlot1").Size == Find<Button>("RenameSlot2").Size
+            && Find<Button>("DeleteSlot1").Size == Find<Button>("DeleteSlot2").Size
+            && Find<Button>("RenameSlot1").Position.Y == Find<Button>("DeleteSlot1").Position.Y
+            && Find<Button>("ArchiveSlot1").Position.Y == Find<Button>("RenameSlot1").Position.Y,
+            "both pages use matching rename and delete controls");
         await capture("slots-archives-selected");
         await Click("ArchiveSlot2");
         Check(save.ActiveSlotId == 2 && save.Data.Coins == 654 && screen.Page == JourneyPage.Map && !screen.ModalOpen,
@@ -101,7 +111,7 @@ internal static class SaveSlotChecks
         await Click("RenameSlot2");
         Find<LineEdit>("ArchiveRename").Text = "清晨武汉";
         await Click("SaveArchiveName");
-        Check(save.GetSlots()[1].Name == "清晨武汉" && Find<Label>("ArchiveName2").Text == "清晨武汉",
+        Check(save.GetSlots()[1].Name == "清晨武汉" && Find<Label>("CurrentArchiveCaption").Text == "旅途中·清晨武汉",
             "archive renames a journey without changing its progress");
         await Click("CloseArchives");
         var settings = host.GetNode<JourneySettings>("/root/JourneySettings");
@@ -113,9 +123,9 @@ internal static class SaveSlotChecks
         await Click("CloseArchives"); settings.SetLanguage("zh_CN"); screen.PresentHome();
         for (int id = 3; id <= 5; id++) Check(save.TryCreateSlot(id, out _), "fill slot " + id);
         save.TryLoadSlot(2, out _); screen.PresentHome(); await Click("NewGame");
-        Check(screen.ModalOpen && Find<Label>("ArchivesHint").Text.Contains("写满") && save.ActiveSlotId == 2,
+        Check(screen.ModalOpen && Find<Label>("ArchivesFullMessage").Text.Contains("旅程档案") && save.ActiveSlotId == 2,
             "full slots show archive recovery without replacing current journey");
-        await Click("CloseArchives");
+        await Click("CloseArchivesFull");
         File.WriteAllText(Path.Combine(root, "slot-3.json"), "broken");
         screen.PresentHome(); await Click("JourneyArchives");
         Check(Find<Label>("ArchiveName3").Text.Contains("无法读取") && Find<Button>("ArchiveSlot2") is not null,
@@ -153,17 +163,27 @@ internal static class SaveSlotChecks
             "another unlocked city remains selectable from the journey map");
         if (!save.Data.UnlockedCityIds.Contains(StableIds.Cities.Wuhan))
             save.Data.UnlockedCityIds.Add(StableIds.Cities.Wuhan);
+        if (!ExperienceProfile.IsDemo)
+        {
+            save.Data.LastVisitedCityId = StableIds.Cities.Xian;
+            Check(save.TrySave(out _), "save Xian postcard preview");
+            screen.PresentHome(); await Click("JourneyArchives");
+            Check(Find<Label>("ArchivePostcardCity").Text == "西安", "Xian uses its own postcard label");
+            await capture("slots-archives-xian");
+            await Click("CloseArchives");
+        }
         save.Data.LastVisitedCityId = StableIds.Cities.Wuhan;
         save.Data.Wuhan.HighestUnlockedDay = 2;
         Check(save.TrySave(out _), "save Wuhan as the current archive city");
         screen.PresentHome(); await Click("JourneyArchives");
-        Check(Find<TextureRect>("ArchiveBreakfastMap2").Texture is AtlasTexture wuhanMap
-            && wuhanMap.Atlas.ResourcePath.EndsWith("早餐地图-武汉.png"),
-            "Wuhan journey shows its own breakfast map");
+        Check(Find<TextureRect>("ArchiveCitySticker2").Texture is AtlasTexture wuhanStamp
+            && wuhanStamp.Atlas.ResourcePath.Contains("武汉"),
+            "Wuhan journey shows its city icon at top right");
         await capture("slots-archives-wuhan");
-        await Click("ArchiveSelect1"); await Click("ArchiveMore1"); await Click("DeleteSlot1");
+        await Click("ArchiveSelect1"); await Click("DeleteSlot1");
         Check(screen.ConfirmationOpen && save.GetSlots()[0].Exists, "archive asks before deleting another journey");
-        Check(Find<Button>("Home").FocusMode == Control.FocusModeEnum.None,
+        Check(screen.FindChildren("Home", "Button", true, false).OfType<Button>()
+            .All(button => !button.IsVisibleInTree() || button.FocusMode == Control.FocusModeEnum.None),
             "delete confirmation keeps archive navigation out of keyboard focus");
         await Click("CancelDeleteSave");
         Check(screen.ModalOpen && save.GetSlots()[0].Exists && Find<Button>("DeleteSlot1").HasFocus(),
@@ -171,7 +191,7 @@ internal static class SaveSlotChecks
         await Click("DeleteSlot1"); await Click("ConfirmDeleteSave");
         Check(!save.GetSlots()[0].Exists && save.ActiveSlotId == 2,
             "deleting another journey preserves the active journey");
-        await Click("ArchiveMore2"); await Click("DeleteSlot2"); await Click("ConfirmDeleteSave");
+        await Click("DeleteSlot2"); await Click("ConfirmDeleteSave");
         Check(save.ActiveSlotId is null && !save.CanContinue, "deleting current journey clears continuation");
         GD.Print($"SAVE_SLOTS_TEST_RESULT passed={_checks} failed=0");
 
@@ -188,6 +208,8 @@ internal static class SaveSlotChecks
             host.GetViewport().PushInput(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true, Position = at, GlobalPosition = at }, true);
             await Frames();
             host.GetViewport().PushInput(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Position = at, GlobalPosition = at }, true);
+            if (name.StartsWith("ArchiveSelect", StringComparison.Ordinal))
+                Check(!JourneyTransition.For(host).Active, "selecting an archive does not replay a book transition");
             await Frames();
         }
     }

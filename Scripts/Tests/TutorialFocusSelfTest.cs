@@ -69,7 +69,8 @@ public partial class TutorialFocusSelfTest : Node
             var catalog = GetNode<DataCatalog>("/root/DataCatalog");
             string savePath = Path.Combine(_directory, Guid.NewGuid() + ".json");
             var save = new SaveService(); save.UsePathForTests(savePath); AddChild(save);
-            if (OS.GetCmdlineUserArgs().Contains("--bag-only")) await TianjinBag(catalog, save);
+            if (OS.GetCmdlineUserArgs().Contains("--preopen-supply-only")) await TianjinPreopenSupply(catalog, save, savePath);
+            else if (OS.GetCmdlineUserArgs().Contains("--bag-only")) await TianjinBag(catalog, save);
             else if (OS.GetCmdlineUserArgs().Contains("--sesame-only")) await WuhanSesame(catalog, save);
             else if (OS.GetCmdlineUserArgs().Contains("--order-paper-only")) await OrderPaper(catalog, save);
             else if (OS.GetCmdlineUserArgs().Contains("--sauce-only")) await TianjinSauce(catalog, save);
@@ -78,7 +79,9 @@ public partial class TutorialFocusSelfTest : Node
             else
             {
                 await TianjinMaintenance(catalog, save);
-                if (!OS.GetCmdlineUserArgs().Contains("--maintenance-only")) { await Tianjin(catalog, save); await Wuhan(catalog, save, savePath); }
+                if (!OS.GetCmdlineUserArgs().Contains("--maintenance-only")
+                    && !OS.GetCmdlineUserArgs().Contains("--supply-lesson-only"))
+                    { await Tianjin(catalog, save); await Wuhan(catalog, save, savePath); }
             }
             Check(save.TrySave(out _), "learned operations persist");
             var reloaded = new SaveService(); reloaded.UsePathForTests(savePath); AddChild(reloaded);

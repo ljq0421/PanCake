@@ -97,7 +97,7 @@ public partial class TianjinDayScreen : Control
             Control slot = _customerSlots[i];
             slot.Position = new Vector2(TianjinWorkbenchLayout.CustomerCenters[i]
                 - slot.GetParent<Control>().Position.X - slot.Size.X * .5f, slot.Position.Y);
-            _customerDropZones[i].FixedHitRect = new Rect2(18, 0, 304, CustomerStripHeight);
+            _customerDropZones[i].FixedHitRect = new Rect2(30, 0, 280, CustomerStripHeight);
             OrderBubbleView card = _orderCards[i];
             card.Resized += () => AlignOrderCard(card);
             AlignOrderCard(card);
@@ -255,7 +255,8 @@ public partial class TianjinDayScreen : Control
 
     private void SyncRefillTeachingClock()
     {
-        bool teachingRefill = TeachingFocus?.CurrentAction?.StartsWith("refill:", StringComparison.Ordinal) == true;
+        bool teachingRefill = TeachingFocus?.CurrentAction == PancakeWorkstation.SupplyIntroductionAction
+            || TeachingFocus?.CurrentAction?.StartsWith("refill:", StringComparison.Ordinal) == true;
         _controller?.SetBusinessClockFrozen("tianjin-refill-teaching", teachingRefill);
     }
 
@@ -282,7 +283,7 @@ public partial class TianjinDayScreen : Control
             || _controller?.State is not (DayState.Running or DayState.Closing)
             || _manualPaused || _focusPaused || _detailsPaused || _pausePanel.Visible || _results.Visible) return;
         // Handle before GUI controls consume the click, including while brushing on the pancake.
-        if (_workstation.HandleDirectFoodInput(@event) || _workstation.HandleFoldInput(@event) || _workstation.HandleRightFoodInput(@event))
+        if (_workstation.HandleSupplyInput(@event) || _workstation.HandleDirectFoodInput(@event) || _workstation.HandleFoldInput(@event) || _workstation.HandleRightFoodInput(@event))
             GetViewport().SetInputAsHandled();
     }
 

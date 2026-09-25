@@ -147,6 +147,9 @@ public partial class PancakeWorkstation : Control
         if (!ProductionShortcutsEnabled || !_initialized || !IsVisibleInTree()
             || !CanInteract || _drag.IsDragging || _foldHeld || DirectBusy) return false;
 
+        if (key == Key.F && Machine.Runtime.State == PancakeState.Saucing)
+            return Execute(PancakeCommand.CompleteSauce);
+
         if (key == Key.F && !IsFlipping)
         {
             if (Machine.Runtime.State is PancakeState.SideAReady or PancakeState.SideAOverdone)
@@ -244,6 +247,7 @@ public partial class PancakeWorkstation : Control
             if (key.StartsWith("IngredientSlot_", StringComparison.Ordinal))
                 _ingredientSlots[key["IngredientSlot_".Length..]] = slot;
         }
+        if (IsTianjinWorkbench) BuildSupplyCall();
 
         _drag.Configure(this);
         _drag.ImmediateAcceptance = IsTianjinWorkbench;
@@ -291,11 +295,13 @@ public partial class PancakeWorkstation : Control
                 };
             }
             slot.RefillRequested += () => Refill(id);
+            if (IsTianjinWorkbench) slot.ShowTextHints = false;
             StockGesture? gesture = _stockGestures.FirstOrDefault(candidate => candidate.Name == $"StockGesture_{id}");
             if (gesture is null) continue;
+            gesture.EnableHold = !IsTianjinWorkbench;
             gesture.CanInteract = () => _initialized && CanInteract && !_drag.IsDragging && IsVisibleInTree();
             gesture.Contains = point => slot.ClickBounds.HasPoint(point + gesture.Position);
-            gesture.CanRefill = () => CanInteract && _enabledIngredients.Contains(id) && Inventory.CanRefill(id);
+            gesture.CanRefill = () => !IsTianjinWorkbench && CanInteract && _enabledIngredients.Contains(id) && Inventory.CanRefill(id);
             gesture.Refill = () => Refill(id);
             gesture.Progress = slot.RenderHoldProgress;
             gesture.Tap = () =>
@@ -357,8 +363,9 @@ public partial class PancakeWorkstation : Control
         StockGesture? soyGesture = _stockGestures.FirstOrDefault(candidate => candidate.Name == "StockGesture_soy_milk");
         if (soyGesture is not null)
         {
+            soyGesture.EnableHold = !IsTianjinWorkbench;
             soyGesture.CanInteract = () => _initialized && CanInteract && !_drag.IsDragging && IsVisibleInTree();
-            soyGesture.CanRefill = () => CanInteract && SoyMilkTray is { IsTaking: false, IsRefilling: false } soy && soy.Quantity < soy.Capacity;
+            soyGesture.CanRefill = () => !IsTianjinWorkbench && CanInteract && SoyMilkTray is { IsTaking: false, IsRefilling: false } soy && soy.Quantity < soy.Capacity;
             soyGesture.Refill = RefillSoyMilk;
             soyGesture.Drag = () => { if (SoyMilkTray?.Quantity == 0) Inform("豆浆已经用完。", false); else _soyCup.TryBeginDrag(); };
             soyGesture.Tap = () => { if (SoyMilkTray?.Quantity == 0) Inform("豆浆已经用完。", false); };
@@ -442,6 +449,7 @@ public partial class PancakeWorkstation : Control
         if (IsTianjinWorkbench) SyncLoopGeneration();
         if (Paused || !InteractionEnabled)
         {
+            DismissSupplyNpc();
             _canvas.TickLivingMotion(0, false, false);
             foreach (StockGesture gesture in _stockGestures) gesture.Cancel();
             _rawYoutiaoInput?.Cancel();
@@ -471,6 +479,7 @@ public partial class PancakeWorkstation : Control
 
     public void CancelInput()
     {
+        DismissSupplyNpc();
         _spatulaCursor?.ReleaseCursor();
         CancelDirectGesture();
         CancelFold();
@@ -611,7 +620,7 @@ public partial class PancakeWorkstation : Control
         _stroke.RefreshVisualState();
         if (Tutorial.IsActive && NeedsTeaching("sauce"))
             Inform(ProductionShortcutsEnabled
-                ? "按住左键刷酱，达到所需酱量后短按右键、按 F 或点击收刷。"
+                ? "按住左键刷酱，达到所需酱量后短按右键或按 F。"
                 : "按住左键刷酱，达到所需酱量后点击收刷。", false);
     }
     private EllipseGeometry ResolveSpreadGeometry()
@@ -947,13 +956,15 @@ public partial class PancakeWorkstation : Control
             {
                 if (_lowStockNotified.Add(id))
                 {
-                    string message = status == IngredientStockStatus.Empty
-                        ? $"{IngredientName(id)}已经用完，{(IsTianjinWorkbench ? "长按" : "点击 + ")}补货。"
-                        : IsTianjinWorkbench ? $"{IngredientName(id)}快用完了，长按补货。"
-                        : $"{IngredientName(id)}只剩 {quantity} 份，可以点击 + 补货。";
-                    if (IsTianjinWorkbench || _tutorialMemory && !NeedsTeaching($"refill:{id}"))
-                        message = status == IngredientStockStatus.Empty ? $"{IngredientName(id)}已用完。" : $"{IngredientName(id)}余量不足。";
-                    if (!IsTianjinWorkbench) Inform(message, false);
+                    if (!IsTianjinWorkbench)
+                    {
+                        string message = status == IngredientStockStatus.Empty
+                            ? $"{IngredientName(id)}已经用完，点击 + 补货。"
+                            : $"{IngredientName(id)}只剩 {quantity} 份，可以点击 + 补货。";
+                        if (_tutorialMemory && !NeedsTeaching($"refill:{id}"))
+                            message = status == IngredientStockStatus.Empty ? $"{IngredientName(id)}已用完。" : $"{IngredientName(id)}余量不足。";
+                        Inform(message, false);
+                    }
                 }
             }
             else if (status == IngredientStockStatus.Normal)
@@ -963,7 +974,7 @@ public partial class PancakeWorkstation : Control
         }
         UpdateBagPresentation(state);
         SetContextAction(_flip, !IsTianjinWorkbench && state is PancakeState.SideAReady or PancakeState.SideAOverdone);
-        SetContextAction(_finishSauce, state == PancakeState.Saucing);
+        SetContextAction(_finishSauce, !IsTianjinWorkbench && state == PancakeState.Saucing);
         SetContextAction(_fold, !IsTianjinWorkbench && state is PancakeState.Sauced or PancakeState.Toppings);
         SetContextAction(_bag, !IsTianjinWorkbench && state == PancakeState.Folded);
         SetContextAction(_discard, !IsTianjinWorkbench && state == PancakeState.Burnt);
@@ -1238,6 +1249,7 @@ public partial class PancakeWorkstation : Control
         StableIds.Ingredients.Crispy => "薄脆",
         StableIds.Ingredients.Scallion => "香葱",
         StableIds.Ingredients.Ham => "火腿",
+        "soy_milk" => "豆浆",
         StableIds.Ingredients.Youtiao => "油条",
         _ => "食材",
     };

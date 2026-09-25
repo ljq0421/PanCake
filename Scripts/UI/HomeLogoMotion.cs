@@ -141,5 +141,10 @@ public partial class HomeLogoMotion : Node
         else if (what == NotificationApplicationFocusIn) _focused = true;
     }
 
-    public override void _ExitTree() => Logo.Resized -= RefreshArtwork;
+    public override void _ExitTree()
+    {
+        // The journey opening reparents the outgoing home before freeing it.
+        if (Logo.IsConnected(Control.SignalName.Resized, Callable.From(RefreshArtwork)))
+            Logo.Resized -= RefreshArtwork;
+    }
 }

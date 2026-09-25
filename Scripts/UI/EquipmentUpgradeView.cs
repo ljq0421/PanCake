@@ -27,13 +27,15 @@ public partial class EquipmentUpgradeView : Control
         _items = items; _purchase = purchase; _selection = selection; _cityId = cityId;
         _continueCaption = continueCaption; _continueBusiness = continueBusiness;
         LabelAt(this, "EquipmentListTitle", "设备一览", new(0, 0, 280, 62), 43);
-        if (items.Length <= 3)
+        bool prioritizeUnlocks = items.Any(i => i.Id is "pancake_stove" or "noodle_cooker");
+        bool grid = prioritizeUnlocks && items.Length > 3;
+        if (!grid && items.Length <= 3)
             LabelAt(this, "EquipmentListHint", "好的设备，是美味的开始！", new(275, 12, 300, 45), 22, Muted);
         for (int i = 0; i < items.Length; i++)
         {
             var item = items[i];
-            bool compact = i >= 3;
-            var card = MakeButton(this, "Select_" + item.Id, "", compact ? new(280, 0, 285, 64) : new(0, 84 + i * 180, 565, 167));
+            bool compact = !grid && i >= 3;
+            var card = MakeButton(this, "Select_" + item.Id, "", grid ? new((i % 2) * 290, 84 + (i / 2) * 265, 275, 250) : compact ? new(280, 0, 285, 64) : new(0, 84 + i * 180, 565, 167));
             _cards.Add(card);
             foreach (string stateName in new[] { "normal", "hover", "pressed", "disabled" })
                 card.AddThemeStyleboxOverride(stateName, new StyleBoxEmpty());
@@ -54,20 +56,20 @@ public partial class EquipmentUpgradeView : Control
                 continue;
             }
             if (item.Art == "res://resource/art/TianJin/升级小料.png")
-                Sprite(card, "EquipmentPicture", item.Art, new(18, 20, 263, 127));
-            else if (item.Art is not null) Picture(card, item.Art, new(18, 15, 263, 135));
+                Sprite(card, "EquipmentPicture", item.Art, grid ? new(18, 12, 239, 108) : new(18, 20, 263, 127));
+            else if (item.Art is not null) Picture(card, item.Art, grid ? new(18, 12, 239, 108) : new(18, 15, 263, 135));
             else LabelAt(card, "EquipmentWordmark", item.Name, new(24, 25, 240, 130), 34, Muted, true);
-            var equipmentName = LabelAt(card, "EquipmentName", item.Name, new(306, 17, 240, 48), 32);
+            var equipmentName = LabelAt(card, "EquipmentName", item.Name, grid ? new(18, 119, 239, 42) : new(306, 17, 240, 48), 32);
             {
                 int size = 32;
                 while (size > 24 && equipmentName.GetThemeFont("font").GetStringSize(equipmentName.Tr(item.Name), fontSize: size).X > 240) size--;
                 equipmentName.AddThemeFontSizeOverride("font_size", size);
             }
-            LabelAt(card, "EquipmentLevel", item.Presentation?.Fixed == true ? "生面无限供应" : item.Level > 0 ? $"Lv{item.Level}" : item.TargetLevel == 1 ? "待安装" : "未开放", new(308, 65, 225, 36), 26);
+            LabelAt(card, "EquipmentLevel", item.Presentation?.Fixed == true ? "生面无限供应" : item.Level > 0 ? $"Lv{item.Level}" : item.TargetLevel == 1 ? "待安装" : "未开放", grid ? new(20, 159, 235, 32) : new(308, 65, 225, 36), grid ? 23 : 26);
             string state = item.CanBuy ? item.Level == 0 ? "可购买" : "可升级" : item.Level >= 3 ? "已满级" : item.Level == 0 ? "未开放"
                 : item.Notice.Contains("金币不足") ? "金币不足" : item.Notice.StartsWith("完成第") ? "待解锁" : item.Notice;
             state = item.Presentation?.State(item) ?? state;
-            var chip = new Panel { Position = new(303, 103), Size = new(214, 52), MouseFilter = MouseFilterEnum.Ignore };
+            var chip = new Panel { Position = grid ? new(30, 193) : new(303, 103), Size = new(214, 52), MouseFilter = MouseFilterEnum.Ignore };
             chip.AddThemeStyleboxOverride("panel", item.CanBuy ? new StyleBoxEmpty() : Box(new("#EDDFCD"), new("#C8A681"), 2)); card.AddChild(chip);
             if (item.CanBuy)
             {
@@ -80,7 +82,11 @@ public partial class EquipmentUpgradeView : Control
         _detail = new Control { Name = "EquipmentDetail", Position = new(700, 0), Size = new(560, 620), MouseFilter = MouseFilterEnum.Ignore };
         AddChild(_detail);
         if (items.Length == 0) { LabelAt(this, "EmptyEquipment", "暂无设备", new(0, 120, 560, 100), 30); return; }
-        string defaultId = items.FirstOrDefault(i => i.CanBuy)?.Id ?? items[0].Id;
+        string defaultId = items.FirstOrDefault(i => i.CanBuy)?.Id
+            ?? (prioritizeUnlocks ? items.Where(i => i.TargetLevel.HasValue)
+                .OrderBy(i => i.UnlockDayReached ? 0 : 1)
+                .ThenBy(i => i.UnlockDayReached ? i.Price : i.AvailableOnDay)
+                .FirstOrDefault()?.Id : null) ?? items[0].Id;
         Select(items.Any(i => i.Id == selected) ? selected! : defaultId, false);
     }
 

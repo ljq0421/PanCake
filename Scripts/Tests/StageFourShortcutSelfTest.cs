@@ -47,40 +47,45 @@ public partial class StageFourSelfTest
             Check(machine.Runtime.State == PancakeState.SideBReady, "未拿刷时右键不开始刷酱");
             machine.TryExecute(PancakeCommand.BeginSauce);
             screen.RefreshForCapture(true);
-            RightClick(pressed: false);
-            Check(machine.Runtime.State == PancakeState.Saucing, "右键松开不收刷");
-            Send(Key.Escape); RightClick();
-            Check(machine.Runtime.State == PancakeState.Saucing, "暂停时右键不收刷");
+            OutsideClick(pressed: false);
+            Check(machine.Runtime.State == PancakeState.Saucing, "饼外左键松开不收刷");
+            Send(Key.Escape); OutsideClick();
+            Check(machine.Runtime.State == PancakeState.Saucing, "暂停时饼外左键不收刷");
             Send(Key.Escape);
-            screen._Notification((int)NotificationApplicationFocusOut); RightClick();
-            Check(machine.Runtime.State == PancakeState.Saucing, "失焦时右键不收刷");
+            screen._Notification((int)NotificationApplicationFocusOut); OutsideClick();
+            Check(machine.Runtime.State == PancakeState.Saucing, "失焦时饼外左键不收刷");
             screen._Notification((int)NotificationApplicationFocusIn);
-            screen.Hide(); RightClick(); screen.Show();
-            Check(machine.Runtime.State == PancakeState.Saucing, "隐藏天津界面时右键不收刷");
+            screen.Hide(); OutsideClick(); screen.Show();
+            Check(machine.Runtime.State == PancakeState.Saucing, "隐藏天津界面时饼外左键不收刷");
             var sauceDialog = screen.GetChildren().OfType<ConfirmationDialog>().Single();
             sauceDialog.Show();
-            using (var mouse = new InputEventMouseButton { ButtonIndex = MouseButton.Right, Pressed = true }) screen._Input(mouse);
+            using (var mouse = new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true }) screen._Input(mouse);
             sauceDialog.Hide();
-            Check(machine.Runtime.State == PancakeState.Saucing, "确认弹窗时右键不收刷");
+            Check(machine.Runtime.State == PancakeState.Saucing, "确认弹窗时饼外左键不收刷");
             drag.BeginDrag(station, "stored_youtiao", "熟油条", Colors.White);
-            RightClick();
-            Check(machine.Runtime.State == PancakeState.Saucing && drag.IsDragging, "拖拽期间右键不收刷或取消物品");
+            OutsideClick(pressed: true, release: false);
+            Check(machine.Runtime.State == PancakeState.Saucing && drag.IsDragging, "拖拽期间饼外左键按下不收刷或取消物品");
             drag.CancelDrag();
             var stroke = (StrokeInteractor)station.FindChild("PancakeStrokeInput", true, false);
-            Vector2 brushPoint = stroke.GetGlobalRect().GetCenter();
+            var canvas = (PancakeCanvas)station.FindChild("PancakeCanvas", true, false);
+            Vector2 brushPoint = canvas.GetGlobalTransformWithCanvas() * canvas.GetSurfaceRect().GetCenter();
             using (var press = new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true, Position = brushPoint })
-                GetViewport().PushInput(press);
+                GetViewport().PushInput(press, true);
             machine.SetSauceCoverage(0.35);
+            Check(machine.Runtime.State == PancakeState.Saucing, "左键点击饼面不收刷");
             RightClick();
+            Check(machine.Runtime.State == PancakeState.Saucing, "短按右键不再收刷");
+            OutsideClick();
             Check(machine.Runtime.State == PancakeState.Sauced && Close(machine.Runtime.SauceCoverage, 0.35)
-                && Input.MouseMode == Input.MouseModeEnum.Visible, "饼面按住左键时短按右键收刷，保留少酱量并恢复鼠标");
+                && Input.MouseMode == Input.MouseModeEnum.Visible, "左键点击煎饼外收刷，保留少酱量并恢复鼠标");
             using (var motion = new InputEventMouseMotion { Position = brushPoint + new Vector2(40, 0), ButtonMask = MouseButtonMask.Left })
-                GetViewport().PushInput(motion);
+                GetViewport().PushInput(motion, true);
             using (var release = new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = false, Position = brushPoint })
-                GetViewport().PushInput(release);
+                GetViewport().PushInput(release, true);
             RightClick();
             Check(machine.Runtime.State == PancakeState.Sauced && Close(machine.Runtime.SauceCoverage, 0.35),
                 "收刷后移动、松开左键和重复右键不继续刷酱或折叠");
+            if (OS.GetCmdlineUserArgs().Contains("--brush-input-only", StringComparer.Ordinal)) return;
             Send(Key.F);
             Check(machine.Runtime.State == PancakeState.Folded, "一次 F 只折叠，不连带装袋");
             Send(Key.F, echo: true);
@@ -173,7 +178,22 @@ public partial class StageFourSelfTest
         void Send(Key code, bool pressed = true, bool echo = false, bool ctrl = false)
         {
             using var input = new InputEventKey { Keycode = code, Pressed = pressed, Echo = echo, CtrlPressed = ctrl };
-            GetViewport().PushInput(input);
+            GetViewport().PushInput(input, true);
+        }
+        void OutsideClick(bool pressed = true, bool release = true)
+        {
+            var stroke = (Control)station.FindChild("PancakeStrokeInput", true, false);
+            // Inside the control rectangle, outside the pancake ellipse.
+            Vector2 point = stroke.GetGlobalRect().Position + Vector2.One;
+            using var input = new InputEventMouseButton { ButtonIndex = MouseButton.Left,
+                Pressed = pressed, Position = point };
+            GetViewport().PushInput(input, true);
+            if (pressed && release)
+            {
+                using var up = new InputEventMouseButton { ButtonIndex = MouseButton.Left,
+                    Pressed = false, Position = point };
+                GetViewport().PushInput(up, true);
+            }
         }
         void RightClick(bool pressed = true)
         {
@@ -182,11 +202,11 @@ public partial class StageFourSelfTest
             {
                 ButtonIndex = MouseButton.Right, Pressed = pressed, Position = stroke.GetGlobalRect().GetCenter(),
             };
-            GetViewport().PushInput(input);
+            GetViewport().PushInput(input, true);
             if (pressed)
             {
                 using var release = new InputEventMouseButton { ButtonIndex = MouseButton.Right, Pressed = false, Position = input.Position };
-                GetViewport().PushInput(release);
+                GetViewport().PushInput(release, true);
             }
         }
     }

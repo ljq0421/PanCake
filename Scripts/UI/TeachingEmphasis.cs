@@ -23,7 +23,7 @@ internal partial class TeachingEmphasis : RichTextLabel
     private static readonly (string Chinese, string English)[] Phrases =
     {
         ("无需再次搅拌", "No more stirring"), ("再加牛肉", "then add beef"),
-        ("短按右键收刷", "Tap right mouse"),
+        ("左键点击煎饼外收刷", "Left-click outside the pancake"),
         ("长按右键 0.45 秒", "Hold right mouse"), ("右键长按 0.45 秒", "Hold right-click for 0.45 s"),
         ("左键长按", "Hold left mouse"), ("横划一次、竖划一次", "once across and once down"),
         ("点击右下方小刀", "Click the knife at bottom right"),

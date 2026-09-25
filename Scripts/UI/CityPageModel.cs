@@ -22,6 +22,7 @@ public sealed partial class CityPageModel(DataCatalog? catalog, SaveService save
     public bool Reconcile(out string error)
     { error = ""; return catalog is null || save.ReconcileEngagementUnlocks(catalog, out error); }
     public DailyChallenge? Challenge(string city, int day) => catalog is not null && catalog.TryGetDay(city, day, out var config) ? DailyChallenge.Create(config) : null;
+    public int RevenueTarget(string city, int day) => catalog is null ? 0 : BusinessRevenueGoal.Preview(catalog, city, day, save.Data.GetCity(city));
     private DataCatalog Catalog => catalog ?? throw new InvalidOperationException("该城市缺少设备配置。");
     private YangzhouCatalog Yangzhou => yangzhou ?? throw new InvalidOperationException("扬州缺少设备配置。");
     public string[] LedgerArt(string city, int day)

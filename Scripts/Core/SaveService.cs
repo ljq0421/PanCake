@@ -9,6 +9,8 @@ namespace ProjectCake.Core;
 
 public sealed class DayBestRecord
 {
+    // Missing in older saves: their completed days remain completed.
+    public bool RevenueGoalPassed { get; set; } = true;
     public int PerfectGansi { get; set; }
     public int TotalRevenue { get; set; }
     public int CompletedCustomers { get; set; }
@@ -242,12 +244,19 @@ public partial class SaveService : Node
             city.ClaimedChallenges.Add(result.Day, challenge);
             Data.Coins += challengeGain;
         }
-        Data.Coins += gain; if (newBest) city.DayBestRecords[result.Day] = ToRecord(result);
+        bool goalPassed = gain + challengeGain >= BusinessRevenueGoal.Target(config, plan);
+        bool previouslyPassed = hadBest && best!.RevenueGoalPassed;
+        Data.Coins += gain;
+        if (newBest) city.DayBestRecords[result.Day] = ToRecord(result);
+        city.DayBestRecords[result.Day].RevenueGoalPassed = previouslyPassed || goalPassed;
         int chapterDays = ChapterDays(config.CityId);
-        city.HighestUnlockedDay = Math.Max(city.HighestUnlockedDay, checked(result.Day + 1));
-        foreach (string unlock in config.CompletionUnlocks) if (!city.UnlockedContentIds.Contains(unlock, StringComparer.Ordinal)) city.UnlockedContentIds.Add(unlock);
+        if (goalPassed)
+        {
+            city.HighestUnlockedDay = Math.Max(city.HighestUnlockedDay, checked(result.Day + 1));
+            foreach (string unlock in config.CompletionUnlocks) if (!city.UnlockedContentIds.Contains(unlock, StringComparer.Ordinal)) city.UnlockedContentIds.Add(unlock);
+        }
         city.UnlockedContentIds.Sort(StringComparer.Ordinal); city.LastDayPlan = plan;
-        int stars = EvaluateStars(result, config); bool newlyCompleted = false;
+        int stars = goalPassed ? EvaluateStars(result, config) : 0; bool newlyCompleted = false;
         if (stars > city.BestStars) city.BestStars = stars;
         if (result.Day >= chapterDays && stars >= 1 && !city.Completed) { city.Completed = true; newlyCompleted = true; }
         if (config.CityId == StableIds.Cities.Wuhan && city.Completed)
@@ -464,7 +473,8 @@ public partial class SaveService : Node
             int max = ChapterDays(id);
             if (city.HighestUnlockedDay is < 1 || city.BestStars is < 0 or > 3 || city.Completed && city.BestStars < 1) throw new InvalidDataException($"{id} 存档进度无效。");
             // Old saves capped the next day at the chapter milestone, even after settlement.
-            if (city.HighestUnlockedDay == max && city.DayBestRecords.ContainsKey(max)) city.HighestUnlockedDay = max + 1;
+            if (city.HighestUnlockedDay == max && city.DayBestRecords.TryGetValue(max, out var finalRecord)
+                && finalRecord.RevenueGoalPassed) city.HighestUnlockedDay = max + 1;
         }
     }
     private void SetCorruptError(string absolute, Exception exception)

@@ -34,6 +34,9 @@ public static class IllustratedCityDialogTheme
             VerticalAlignment = VerticalAlignment.Center, MouseFilter = Control.MouseFilterEnum.Ignore,
         }).ToArray();
         foreach (Label label in labels) content.AddChild(label);
+        // QueueFree alone leaves the old container's minimum size active until frame end.
+        // Detach it before sizing the replacement, or wrapped text can keep the panel stretched.
+        panel.RemoveChild(oldLayout);
         oldLayout.QueueFree();
         panel.AddThemeStyleboxOverride("panel", PanelFrame(cityId));
         panel.Position = new(360, 225); panel.Size = PanelSize;

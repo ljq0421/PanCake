@@ -167,7 +167,9 @@ public partial class StartScreen
         ContinueSummaryRow(note, "Coins", "当前金币", (overview?.Coins ?? _save.Data.Coins).ToString(), 0);
         var unlockRow = ContinueSummaryRow(note, "LatestUnlock", "最新解锁", "", 76);
         DrawLatestUnlocks(unlockRow, overview?.LatestUnlocks ?? Array.Empty<CityUnlockView>());
-        ContinueSummaryRow(note, "Goal", "下一目标", overview?.Goal ?? JourneyModel.Goal(_save, city), 152, true);
+        ContinueSummaryRow(note, "Goal", embeddedChallenge ? "营业额目标" : "下一目标",
+            embeddedChallenge ? $"{_cityModel?.RevenueTarget(_city, day) ?? 0} 金币 · 含小费及挑战奖金"
+                : overview?.Goal ?? JourneyModel.Goal(_save, city), 152, true, icon: "下一目标");
         string challengeValue = challenge is null ? "第2天起开放"
             : p.ClaimedChallenges.ContainsKey(day) ? $"{challenge.Requirement} · 奖励已领取"
             : $"{challenge.Requirement} · 奖励 {challenge.Reward}金币";
@@ -334,7 +336,7 @@ public partial class StartScreen
                 { RefreshCityPage(); ShowError("设备状态已变化，请查看最新升级信息。"); return; }
                 _purchasedEquipment = e;
                 _busy = true; UpgradeRequested?.Invoke(_city, e.PurchaseId);
-            }, HostedByBook && _bookUpgradeSource?.SupportsContinue == true ? $"开始第 {_bookUpgradeSource.NextDay} 天" : null,
+            }, HostedByBook && _bookUpgradeSource?.SupportsContinue == true ? _bookUpgradeSource.ContinueCaption : null,
             HostedByBook && _bookUpgradeSource?.SupportsContinue == true ? _bookUpgradeContinue : null);
         Focus("Select_" + view.SelectedId);
     }

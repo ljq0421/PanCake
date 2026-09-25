@@ -25,7 +25,8 @@ public static class BaseEquipmentPurchases
             || progress.UnlockedContentIds.Contains("product:soy_milk") && !progress.EquipmentLevels.ContainsKey("soy_milk_tray");
         bool doupi = progress.EquipmentLevels.GetValueOrDefault("doupi_griddle") > 0;
         var config = original.ForBusinessDay(original.Day);
-        bool Allowed(string id) => !(!fryer && id.Contains("youtiao", StringComparison.OrdinalIgnoreCase))
+        bool Allowed(string id) => !(id == "full_combo" && (!fryer || !soy))
+            && !(!fryer && id.Contains("youtiao", StringComparison.OrdinalIgnoreCase))
             && !(!soy && (id.Contains("soy_milk", StringComparison.OrdinalIgnoreCase) || id.Contains("soyMilk", StringComparison.OrdinalIgnoreCase)))
             && !(!doupi && id.Contains("doupi", StringComparison.OrdinalIgnoreCase));
         config.OrderTypeWeights = original.OrderTypeWeights.Where(pair => Allowed(pair.Key)).ToDictionary(pair => pair.Key, pair => pair.Value);

@@ -38,6 +38,9 @@ public sealed class BusinessBookModel
     public BookUpgradeSource? Upgrades { get; set; }
     public DailyChallenge? Challenge { get; set; }
     public int ChallengeReward { get; set; }
+    public int RevenueTarget { get; set; }
+    public bool RevenueGoalPassed => Result.TotalRevenue + ChallengeReward >= RevenueTarget;
+    public bool MustReplayDay => RevenueTarget > 0 && !RevenueGoalPassed && Upgrades?.NextDay == Result.Day;
     public bool ChallengeClaimed { get; set; }
     public string ChallengeCaption => Challenge is null ? "" :
         !Challenge.Achieved(Result) ? $"挑战未达成：{Challenge.Requirement}"

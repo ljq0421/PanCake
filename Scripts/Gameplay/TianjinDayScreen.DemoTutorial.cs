@@ -162,7 +162,9 @@ public partial class TianjinDayScreen
     private void RestDemoLesson()
     {
         // Context/completion cards must not inherit a previous operation's placement.
-        _demoLesson!.Position = new(40, Mathf.Min(635, 1080 - _demoLesson.Size.Y - 24));
+        _demoLesson!.Position = _demoLessonComplete || DemoLessonFailed
+            ? (GetViewportRect().Size - _demoLesson.Size) / 2
+            : new(40, Mathf.Min(635, 1080 - _demoLesson.Size.Y - 24));
     }
 
     private void LayoutDemoLesson()

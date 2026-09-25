@@ -21,7 +21,7 @@ public partial class SaveService
             {
                 if (!catalog.TryGetDay(id, day, out var config)) continue;
                 var unlocks = config.StartUnlocks.AsEnumerable();
-                if (day < city.HighestUnlockedDay || city.DayBestRecords.ContainsKey(day))
+                if (day < city.HighestUnlockedDay || city.DayBestRecords.TryGetValue(day, out var record) && record.RevenueGoalPassed)
                     unlocks = unlocks.Concat(config.CompletionUnlocks);
                 foreach (string unlock in unlocks)
                 {

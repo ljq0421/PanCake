@@ -49,7 +49,8 @@ public partial class StageFourSelfTest : Node
                 GetTree().Quit(_failed == 0 ? 0 : 1);
                 return;
             }
-            if (OS.GetCmdlineUserArgs().Contains("--shortcuts-only", StringComparer.Ordinal))
+            if (OS.GetCmdlineUserArgs().Contains("--shortcuts-only", StringComparer.Ordinal)
+                || OS.GetCmdlineUserArgs().Contains("--brush-input-only", StringComparer.Ordinal))
             {
                 await TestProductionShortcuts(catalog);
                 GD.Print($"天津快捷键自测：{_passed} 通过，{_failed} 失败。");

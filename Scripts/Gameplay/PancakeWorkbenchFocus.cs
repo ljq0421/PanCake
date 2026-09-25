@@ -144,7 +144,7 @@ public partial class PancakeWorkstation
             PancakeState.SideAReady or PancakeState.SideAOverdone => Step("flip", "点击饼皮翻面；也可按 F。", Surface()),
             PancakeState.SideBCooking => Step("take:sauce", "等第二面成熟，再拿刷子刷酱。", Surface()),
             PancakeState.SideBReady => Take("sauce", "点击酱碗拿刷子。"),
-            PancakeState.Saucing => Step("sauce", "在饼面刷酱；达到订单酱量后短按右键收刷，或按 F。", Surface()),
+            PancakeState.Saucing => Step("sauce", "在饼面刷酱；达到订单酱量后左键点击煎饼外收刷，或按 F。", Surface()),
             PancakeState.Sauced or PancakeState.Toppings => Step("fold", "配料已齐，用小铲子从左侧或右侧推向对侧后松手；也可按 F。", Surface()),
             PancakeState.Folded => Step("bag", _directGesture == DirectGesture.Bag ? "用小铲子把纸袋推到煎饼上，松手套袋。" : "用小铲子取左侧纸袋，推到煎饼上套袋；也可按 F。", _directGesture == DirectGesture.Bag ? new[] { Surface() } : new[] { Painted(TianjinPaintedObject.BagStack) }),
             PancakeState.Bagged => Deliver("finished_pancake", ProductKind.Pancake, _finished, "装袋的煎饼", FinishedRecipe()),

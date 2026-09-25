@@ -16,9 +16,9 @@ public partial class EngagementSelfTest : Node
     private bool _capture;
     private void Check(bool ok, string message) { if (!ok) throw new InvalidOperationException(message); _checks++; }
     private async Task Frames(int n = 4) { for (int i = 0; i < n; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame); }
-    private static DayResult Win(DayConfig c) => new() { Day = c.Day, PlannedCustomers = c.CustomerCount,
+    private static DayResult Win(DayConfig c, int revenue = 100) => new() { Day = c.Day, PlannedCustomers = c.CustomerCount,
         CompletedCustomers = c.CustomerCount, PerfectOrders = c.CustomerCount, HighestCorrectStreak = c.CustomerCount,
-        Satisfaction = 100, SaleRevenue = 100 };
+        Satisfaction = 100, SaleRevenue = revenue };
     private DayPlan Generate(DataCatalog c, DayConfig day) => new OrderGenerator().Generate(day, c.RecipesById, c.ProductsById, c.CustomersById);
     public override async void _Ready()
     {
@@ -33,7 +33,8 @@ public partial class EngagementSelfTest : Node
             var settings = GetNode<JourneySettings>("/root/JourneySettings");
             settings.UsePathForTests(Path.Combine(_dir, "settings.cfg")); settings.SetLanguage(locale); InterfaceLessons.MarkAllSeen(settings);
             var c = GetNode<DataCatalog>("/root/DataCatalog"); Check(c.IsValid, "catalog valid");
-            CheckPlans(c); CheckChallenges(c); CheckMigration(c); CheckBasePurchases(c); CheckEconomy(c);
+            if (!args.Contains("--goals-ui-only"))
+            { CheckPlans(c); CheckChallenges(c); CheckMigration(c); CheckBasePurchases(c); CheckEconomy(c); CheckRevenueGoals(c); }
             if (!args.Contains("--logic-only")) await CheckUi(c);
             GD.Print($"ENGAGEMENT_SELF_TEST_OK checks={_checks} locale={locale} demo={ExperienceProfile.IsDemo}");
             GetTree().Quit();
@@ -141,6 +142,28 @@ public partial class EngagementSelfTest : Node
     }
     private void CheckBasePurchases(DataCatalog c)
     {
+        foreach (string cityId in new[] { StableIds.Cities.Tianjin, StableIds.Cities.Wuhan })
+        foreach (int owned in Enumerable.Range(0, cityId == StableIds.Cities.Tianjin ? 4 : 2))
+        foreach (int day in Enumerable.Range(1, SaveService.ChapterDays(cityId)).Concat(new[] { 100 }))
+        {
+            var ownership = new CityProgressData();
+            ownership.EquipmentLevels["fryer"] = owned & 1;
+            ownership.EquipmentLevels["soy_milk_tray"] = (owned >> 1) & 1;
+            ownership.EquipmentLevels["doupi_griddle"] = owned & 1;
+            c.TryGetDay(cityId, day, out var original);
+            var available = BaseEquipmentPurchases.ForOwnedEquipment(original, ownership);
+            foreach (int seed in Enumerable.Range(1, 12))
+            {
+                available.RandomSeed = seed;
+                var orders = Generate(c, available);
+                Check(orders.Customers.Count == original.CustomerCount, "ownership filtering preserves customer count");
+                Check(orders.Customers.SelectMany(p => p.Order.Lines).All(line =>
+                    available.AvailableProductKinds.Contains(line.ProductKind)
+                    && (line.ProductKind is not (ProductKind.Pancake or ProductKind.HotDryNoodles)
+                        || available.AvailableRecipeIds.Contains(line.DefinitionId))),
+                    $"owned equipment only: {cityId} day={day} owned={owned} seed={seed}");
+            }
+        }
         using var save = new SaveService();
         string path = Path.Combine(_dir, "base-purchases.json");
         save.UsePathForTests(path); Check(save.ResetProgress(out _), "fresh base purchase save");
@@ -187,6 +210,77 @@ public partial class EngagementSelfTest : Node
         Check(soyOnly.StartUnlocks.Contains("product:soy_milk") && !soyOnly.AvailableProductKinds.Contains(ProductKind.Youtiao)
             && soyOnly.AvailableProductKinds.Contains(ProductKind.SoyMilk),
             "late soy purchase introduces its lesson without requiring the fryer");
+    }
+
+    private void CheckRevenueGoals(DataCatalog c)
+    {
+        foreach (string cityId in new[] { StableIds.Cities.Tianjin, StableIds.Cities.Wuhan })
+        foreach (int day in new[] { 1, 2, 7, SaveService.ChapterDays(cityId), 100 })
+        {
+            using var save = new SaveService();
+            string path = Path.Combine(_dir, $"goal-{cityId[5..]}-{day}.json");
+            save.UsePathForTests(path); Check(save.ResetProgress(out _), "goal isolated save");
+            if (!save.Data.UnlockedCityIds.Contains(cityId)) save.Data.UnlockedCityIds.Add(cityId);
+            save.Data.GetCity(cityId).HighestUnlockedDay = day;
+            c.TryGetDay(cityId, day, out var original);
+            var config = BaseEquipmentPurchases.ForOwnedEquipment(original, save.Data.GetCity(cityId));
+            var plan = Generate(c, config);
+            int target = BusinessRevenueGoal.Target(config, plan);
+            plan.PendingCustomerVisits["young_woman"] = 1;
+            Check(target == (int)Math.Ceiling(plan.Customers.Sum(p => p.Order.BasePrice) * .7m)
+                && target == BusinessRevenueGoal.Preview(c, cityId, day, save.Data.GetCity(cityId)), "preview matches real available order goal");
+            var failed = new DayResult { Day = day, SaleRevenue = target - 1 };
+            save.CommitDay(failed, plan, config);
+            Check(save.Data.Coins == target - 1 && save.Data.GetCity(cityId).HighestUnlockedDay == day
+                && !save.Data.GetCity(cityId).DayBestRecords[day].RevenueGoalPassed, "one short keeps revenue but locks next day");
+            save.Load();
+            Check(save.Data.CustomerRecords.GetValueOrDefault("young_woman")?.Served == 1, "failed goal retains collection progress");
+            Check(save.ReconcileEngagementUnlocks(c, out _) && save.Data.GetCity(cityId).HighestUnlockedDay == day
+                && !save.Data.GetCity(cityId).DayBestRecords[day].RevenueGoalPassed, "reload and migration cannot pass failed day");
+            if (cityId == StableIds.Cities.Tianjin && day == 7)
+            {
+                int coins = save.Data.Coins; save.Data.Coins = 600;
+                Check(!save.CanDepartForWuhan, "failed day seven does not open Wuhan"); save.Data.Coins = coins;
+            }
+            var pass = new DayResult { Day = day, SaleRevenue = target - 1, Tips = 1 };
+            var retry = Generate(c, config);
+            int before = save.Data.Coins;
+            using (var locked = new FileStream(path + ".tmp", FileMode.OpenOrCreate, System.IO.FileAccess.ReadWrite, FileShare.None))
+            {
+                bool threw = false; try { save.CommitDay(pass, retry, config); } catch (IOException) { threw = true; }
+                Check(threw && save.Data.Coins == before && save.Data.GetCity(cityId).HighestUnlockedDay == day
+                    && !save.Data.GetCity(cityId).DayBestRecords[day].RevenueGoalPassed, "failed write rolls back pass and income");
+            }
+            save.CommitDay(pass, retry, config);
+            Check(save.Data.GetCity(cityId).HighestUnlockedDay == day + 1 && save.Data.GetCity(cityId).DayBestRecords[day].RevenueGoalPassed
+                && save.Data.Coins == before + target, "single run at target includes tips and advances");
+            save.CommitDay(failed, Generate(c, config), config); save.Load();
+            Check(save.Data.GetCity(cityId).HighestUnlockedDay == day + 1 && save.Data.GetCity(cityId).DayBestRecords[day].RevenueGoalPassed,
+                "failed replay never relocks passed history");
+        }
+        foreach (string cityId in new[] { StableIds.Cities.Tianjin, StableIds.Cities.Wuhan })
+        {
+            using var save = new SaveService();
+            save.UsePathForTests(Path.Combine(_dir, $"goal-bonus-{cityId[5..]}.json")); save.ResetProgress(out _);
+            if (!save.Data.UnlockedCityIds.Contains(cityId)) save.Data.UnlockedCityIds.Add(cityId);
+            save.Data.GetCity(cityId).HighestUnlockedDay = 2;
+            c.TryGetDay(cityId, 2, out var config); var plan = Generate(c, config);
+            int target = BusinessRevenueGoal.Target(config, plan), bonus = plan.Challenge!.Reward;
+            var failed = new DayResult { Day = 2, SaleRevenue = target - bonus - 1, CorrectOrders = config.CustomerCount };
+            var commit = save.CommitDay(failed, plan, config);
+            Check(commit.ChallengeCoinGain == bonus && save.Data.Coins == target - 1
+                && save.Data.GetCity(cityId).HighestUnlockedDay == 2, "failed goal retains earned bonus and claim");
+            save.Load();
+            var almost = new DayResult { Day = 2, SaleRevenue = target - bonus, CorrectOrders = config.CustomerCount };
+            commit = save.CommitDay(almost, Generate(c, config), config);
+            Check(commit.ChallengeCoinGain == 0 && save.Data.GetCity(cityId).HighestUnlockedDay == 2,
+                "previously claimed bonus and accumulated wallet cannot satisfy new run");
+            save.ResetProgress(out _);
+            if (!save.Data.UnlockedCityIds.Contains(cityId)) save.Data.UnlockedCityIds.Add(cityId);
+            save.Data.GetCity(cityId).HighestUnlockedDay = 2;
+            save.CommitDay(almost, Generate(c, config), config);
+            Check(save.Data.GetCity(cityId).HighestUnlockedDay == 3, "newly earned bonus can reach exact target");
+        }
     }
 
     private void CheckEconomy(DataCatalog c)
@@ -245,6 +339,17 @@ public partial class EngagementSelfTest : Node
             controller.CustomerQueue!.Tick(controller.CurrentConfig!.DurationSeconds-25,.5,true);
             screen.Call("_Process",0d); await Shot(city[5..]+"-business",screen);
             var book=screen is TianjinDayScreen t?t.BusinessDetails:((WuhanDayScreen)screen).BusinessDetails;
+            int target = BusinessRevenueGoal.Target(controller.CurrentConfig!, controller.CurrentPlan!);
+            var failedModel = BusinessBookModel.From(city, new DayResult { Day = day, SaleRevenue = target - 1 }, Array.Empty<BusinessOrderRecord>(), c);
+            BusinessBookSettlement.Commit(failedModel, save, controller.CurrentPlan!, controller.CurrentConfig!, c);
+            book.Open(failedModel); book.FinishAnimation();
+            Check(failedModel.MustReplayDay && book.CloseButton.Text.Contains("重玩") && !book.CloseButton.Disabled,
+                "failed target offers retry on settlement");
+            await Shot(city[5..] + "-goal-failed", screen);
+            book.CloseButton.EmitSignal(Button.SignalName.Pressed); await Frames();
+            Check(controller.CurrentConfig!.Day == day && save.Data.GetCity(city).HighestUnlockedDay == day,
+                "failed settlement restarts same day through real continuation");
+            controller.SetProcess(false); screen.SetProcess(false);
             var model=BusinessBookModel.From(city,Win(controller.CurrentConfig!),Array.Empty<BusinessOrderRecord>(),c);
             using(var locked=new FileStream(Path.Combine(_dir,"ui.json.tmp"),FileMode.OpenOrCreate,System.IO.FileAccess.ReadWrite,FileShare.None))
             {
@@ -279,6 +384,7 @@ public partial class EngagementSelfTest : Node
             Check(controller.CurrentConfig!.Day==day+1 && controller.CurrentConfig.CityId==city && !book.Visible,"direct next day uses current city and next date");
             controller.AbandonDay();screen.Hide();start.Show();
         }
+        if (OS.GetCmdlineUserArgs().Contains("--goals-ui-only")) { main.QueueFree(); await Frames(); return; }
         foreach(string city in new[]{StableIds.Cities.Tianjin,StableIds.Cities.Wuhan})
         {
             int day=SaveService.ChapterDays(city);save.Data.GetCity(city).HighestUnlockedDay=day;save.TrySave(out _);
@@ -286,7 +392,7 @@ public partial class EngagementSelfTest : Node
             var controller=main.GetNode<DayController>("DayController");controller.SetProcess(false);
             var screen=main.GetNode<Control>(city==StableIds.Cities.Tianjin?"UI/TianjinDayScreen":"UI/WuhanDayScreen");screen.SetProcess(false);
             var book=screen is TianjinDayScreen t?t.BusinessDetails:((WuhanDayScreen)screen).BusinessDetails;
-            var model=BusinessBookModel.From(city,Win(controller.CurrentConfig!),Array.Empty<BusinessOrderRecord>(),c);
+            var model=BusinessBookModel.From(city,Win(controller.CurrentConfig!, BusinessRevenueGoal.Target(controller.CurrentConfig!, controller.CurrentPlan!)),Array.Empty<BusinessOrderRecord>(),c);
             BusinessBookSettlement.Commit(model,save,controller.CurrentPlan!,controller.CurrentConfig!,c);controller.AbandonDay();
             book.Open(model);book.FinishAnimation();book.CloseButton.EmitSignal(Button.SignalName.Pressed);
             await ToSignal(GetTree().CreateTimer(2.3),SceneTreeTimer.SignalName.Timeout);await Frames();

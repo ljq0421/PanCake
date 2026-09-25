@@ -16,7 +16,24 @@ public partial class PancakeWorkstation
     private double _rightHeldSeconds;
     private Vector2 _rightOrigin;
     private Action? _beginHeldTrash;
-    private Func<bool>? _canTapSauce;
+
+    internal bool HandleSauceDismissInput(InputEvent input)
+    {
+        if (input is not InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: true } mouse
+            || !IsTianjinWorkbench || !_initialized || !CanInteract || !IsVisibleInTree()
+            || _drag.IsDragging || Machine.Runtime.State != PancakeState.Saucing) return false;
+
+        var geometry = ResolveSpreadGeometry();
+        Vector2 point = _stroke.GetGlobalTransformWithCanvas().AffineInverse() * mouse.Position;
+        Vector2 normalized = new((point.X - geometry.Center.X) / Math.Max(1, geometry.Radii.X),
+            (point.Y - geometry.Center.Y) / Math.Max(1, geometry.Radii.Y));
+        if (normalized.LengthSquared() <= 1) return false;
+
+        CancelRightFoodPress();
+        _stroke.CancelStroke();
+        Execute(PancakeCommand.CompleteSauce);
+        return true;
+    }
 
     internal bool HandleRightFoodInput(InputEvent input)
     {
@@ -34,23 +51,16 @@ public partial class PancakeWorkstation
         if (mouse.Pressed)
         {
             if (_rightPressed || _drag.IsDragging || !_initialized || !CanInteract || !IsVisibleInTree()) return false;
-            var machine = Machine;
-            long generation = machine.Runtime.Generation;
-            bool sauce = machine.Runtime.State == PancakeState.Saucing;
             bool food = TryBeginTrashDrag(mouse.Position, prepareOnly: true);
-            if (!food && !sauce) return false;
+            if (!food) return false;
             _rightPressed = true;
             _rightHeldSeconds = 0;
             _rightOrigin = mouse.Position;
-            _canTapSauce = () => sauce && ReferenceEquals(Machine, machine)
-                && machine.Runtime.Generation == generation && machine.Runtime.State == PancakeState.Saucing;
             _stroke.CancelStroke();
             return true;
         }
         if (!_rightPressed) return false; // The drag service owns a long press's release.
-        bool finishSauce = _rightHeldSeconds < PressRepeatGesture.HoldSeconds && _canTapSauce?.Invoke() == true;
         CancelRightFoodPress();
-        if (finishSauce && CanInteract && !_drag.IsDragging) Execute(PancakeCommand.CompleteSauce);
         return true;
     }
 
@@ -68,7 +78,6 @@ public partial class PancakeWorkstation
         Action? begin = _beginHeldTrash;
         _rightPressed = false;
         _beginHeldTrash = null;
-        _canTapSauce = null;
         begin?.Invoke();
     }
 
@@ -76,7 +85,6 @@ public partial class PancakeWorkstation
     {
         _rightPressed = false;
         _beginHeldTrash = null;
-        _canTapSauce = null;
         if (!_drag.IsDragging) { _trashSourceValid = null; _trashCommit = null; }
     }
 

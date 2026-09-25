@@ -53,6 +53,7 @@ public static class BusinessBookSettlement
         model.CustomerMilestones = Array.Empty<string>();
         model.NewCustomerIds = Array.Empty<string>();
         model.Challenge = plan.Challenge; model.ChallengeReward = 0; model.ChallengeClaimed = false;
+        model.RevenueTarget = BusinessRevenueGoal.Target(config, plan);
         var before = save.Data.GetCity(config.CityId).UnlockedContentIds.ToHashSet(StringComparer.Ordinal);
         var collected = save.CollectedBreakfastIds.ToHashSet();
         var customersBefore = save.Data.CustomerRecords.ToDictionary(p => p.Key, p => p.Value.Served);

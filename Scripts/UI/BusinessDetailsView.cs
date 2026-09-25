@@ -96,7 +96,9 @@ public partial class BusinessDetailsView : Control
         _save.Text = model.SaveMessage;
         _save.Visible = _save.Text.Length > 0 && !(UsesTravelBook && _save.Text.Contains("已入账", StringComparison.Ordinal));
         _retry.Visible = model.CanRetry; CloseButton.Visible = true; CloseButton.Disabled = !model.CanClose;
-        CloseButton.Text = CanContinueBusiness ? $"开始第 {_model.Upgrades!.NextDay} 天" : "收好账本";
+        CloseButton.Text = CanContinueBusiness
+            ? _model.MustReplayDay ? $"重玩第 {_model.Result.Day} 天" : $"开始第 {_model.Upgrades!.NextDay} 天"
+            : "收好账本";
         BuildSummary(); RefreshRows(); SelectPage(false, false); Show();
         (model.CanClose ? CloseButton : _retry).GrabFocus(); StartAnimation();
         if (model.CityId == "tianjin" && model.Result.Day == 1 && model.Closing)

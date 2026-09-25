@@ -378,11 +378,15 @@ public sealed partial class OrderGenerator
         DeterministicRandom random)
     {
         if (profile == CustomerOrderProfile.RegularSignature)
-            return Build(customerTypeId, new[] { PancakeLine(StableIds.Recipes.ScallionCrispy), SoyMilkLine() }, recipes, products);
+            return Build(customerTypeId, config.AvailableProductKinds.Contains(ProductKind.SoyMilk)
+                ? new[] { PancakeLine(StableIds.Recipes.ScallionCrispy), SoyMilkLine() }
+                : new[] { PancakeLine(StableIds.Recipes.ScallionCrispy) }, recipes, products);
 
         if (profile == CustomerOrderProfile.BigOrder)
         {
-            if (random.NextDouble() < 0.5)
+            if (random.NextDouble() < 0.5
+                || !config.AvailableProductKinds.Contains(ProductKind.Youtiao)
+                || !config.AvailableProductKinds.Contains(ProductKind.SoyMilk))
             {
                 string first = PickWeighted(config.RecipeWeights, random);
                 string second = PickWeighted(config.RecipeWeights, random);

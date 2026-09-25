@@ -283,7 +283,7 @@ public partial class TianjinDayScreen : Control
             || _controller?.State is not (DayState.Running or DayState.Closing)
             || _manualPaused || _focusPaused || _detailsPaused || _pausePanel.Visible || _results.Visible) return;
         // Handle before GUI controls consume the click, including while brushing on the pancake.
-        if (_workstation.HandleSupplyInput(@event) || _workstation.HandleDirectFoodInput(@event) || _workstation.HandleFoldInput(@event) || _workstation.HandleRightFoodInput(@event))
+        if (_workstation.HandleSauceDismissInput(@event) || _workstation.HandleSupplyInput(@event) || _workstation.HandleDirectFoodInput(@event) || _workstation.HandleFoldInput(@event) || _workstation.HandleRightFoodInput(@event))
             GetViewport().SetInputAsHandled();
     }
 

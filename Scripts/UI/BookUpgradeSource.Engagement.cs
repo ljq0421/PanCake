@@ -8,6 +8,8 @@ public sealed partial class BookUpgradeSource
     public BookUpgradeOffer? LastPurchased { get; private set; }
     public int NextDay => _save.Data.GetCity(_city).HighestUnlockedDay;
     public bool SupportsContinue => _city is StableIds.Cities.Tianjin or StableIds.Cities.Wuhan;
+    public string ContinueCaption => _save.Data.GetCity(_city).DayBestRecords.TryGetValue(NextDay, out var record)
+        && !record.RevenueGoalPassed ? $"重玩第 {NextDay} 天" : $"开始第 {NextDay} 天";
     public string NextGoal
     {
         get

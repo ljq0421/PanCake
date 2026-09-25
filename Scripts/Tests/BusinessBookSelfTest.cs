@@ -21,6 +21,7 @@ public partial class BusinessBookSelfTest : Node
     {
         try
         {
+            bool closingOnly = OS.GetCmdlineUserArgs().Contains("--closing-only");
             GetWindow().Position = new(-10000,-10000);
             var settings = GetNode<JourneySettings>("/root/JourneySettings");
             settings.UsePathForTests("res://.tmp/book-tests/interface-settings.cfg");
@@ -80,6 +81,11 @@ public partial class BusinessBookSelfTest : Node
             var yzUnlock=YangzhouBusinessBook.Commit(ys,yc,save);
             Check(yzUnlock.Stickers.Any(t=>t.Contains("新设备"))&&yzUnlock.Stickers.Any(t=>t.Contains("新菜品")),"Yangzhou only announces actual new equipment and menu");
             foreach(var id in new[]{StableIds.Cities.Tianjin,StableIds.Cities.Wuhan,StableIds.Cities.Xian,StableIds.Cities.Guangzhou,YangzhouCatalog.CityId}) save.Data.GetCity(id).HighestUnlockedDay=15;
+            // This fixture exercises normal closing; independent unlock lessons freeze the clock.
+            save.Data.Tianjin.LearnedWorkbenchActions.UnionWith(PancakeWorkstation.AllWorkbenchActions);
+            foreach (string id in new[] { StableIds.Cities.Tianjin, StableIds.Cities.Wuhan })
+                if (catalog.TryGetDay(id, 2, out var businessDay) && TutorialOrders.UnlockFor(businessDay) is { } lesson)
+                    save.Data.GetCity(id).LearnedWorkbenchActions.UnionWith(lesson.Actions);
             foreach(string city in new[]{"Tianjin","Wuhan","Xian","Guangzhou","Yangzhou"})
             {
                 var controller=new DayController();AddChild(controller);controller.SetProcess(false);
@@ -94,7 +100,14 @@ public partial class BusinessBookSelfTest : Node
                     case YangzhouDayScreen s: Check(s.Initialize(yc,save,2),"Yangzhou initialize");s.Session.Tick(5.1);s._Process(0);view=s.BusinessDetails;entry=s.FindChild("OpenBusinessBook",true,false) as Button ?? throw new Exception();break;
                     default:throw new Exception();
                 }
-                if (screen is GuangzhouDayScreen gz)
+                if (city is "Tianjin" or "Wuhan")
+                {
+                    for (int wait = 0; wait < 100 && controller.State == DayState.Preparing; wait++)
+                        await ToSignal(GetTree().CreateTimer(.05), SceneTreeTimer.SignalName.Timeout);
+                    controller.Tick(3.1);
+                    Check(controller.State == DayState.Running && !controller.TutorialActive, city + " normal business ready");
+                }
+                if (!closingOnly && screen is GuangzhouDayScreen gz)
                 {
                     controller.CustomerQueue!.Tick(1000,.4,true);gz._Process(0);await Frames();
                     var cards=gz.Descendants<GuangzhouCustomerCard>().OrderBy(c=>c.Position.X).ToArray();
@@ -102,7 +115,7 @@ public partial class BusinessBookSelfTest : Node
                     Click(cards[4]);Check(controller.CustomerQueue.SelectedCustomerId==controller.CustomerQueue.CustomerAtSlot(4)!.Id,"fifth Guangzhou customer selectable");
                     if(Capture)await Shot("Guangzhou-five-customers");
                 }
-                if (screen is YangzhouDayScreen yzFive)
+                if (!closingOnly && screen is YangzhouDayScreen yzFive)
                 {
                     var planned=(List<YangzhouPlannedOrder>)yzFive.Session.Plan;
                     for(int i=0;i<planned.Count;i++)planned[i]=planned[i] with { Arrival=0 };
@@ -123,8 +136,9 @@ public partial class BusinessBookSelfTest : Node
                 // Actual closing path must commit once and replace its old modal.
                 if(screen is YangzhouDayScreen y) { y.Session.Tick(1000);y._Process(0); }
                 else {controller.Tick(1000);controller.Tick(1000);}
-                await Frames();Check(view.Visible && view.Model.Closing,city+" real closing uses shared book");
+                await Frames();Check(view.Visible && view.Model.Closing,city+$" real closing uses shared book state={controller.State} paused={controller.IsPaused} tutorial={controller.TutorialActive} elapsed={controller.DayElapsedSeconds}");
                 int coins=save.Data.Coins;view.SelectPage(true, false);view.SelectPage(false, false);Check(save.Data.Coins==coins,"tabs cannot settle twice");
+                if (closingOnly) { screen.QueueFree(); controller.QueueFree(); await Frames(); continue; }
                 bool returned=false;
                 switch(screen) {case TianjinDayScreen s:s.HubRequested+=()=>returned=true;break;case WuhanDayScreen s:s.HubRequested+=()=>returned=true;break;case XianDayScreen s:s.HubRequested+=()=>returned=true;break;case GuangzhouDayScreen s:s.HubRequested+=()=>returned=true;break;case YangzhouDayScreen s:s.HubRequested+=()=>returned=true;break;}
                 if(city is "Tianjin" or "Wuhan" or "Xian")
@@ -150,6 +164,8 @@ public partial class BusinessBookSelfTest : Node
                 Click(view.CloseButton);await Frames();Check(returned,city+" close book returns home");
                 screen.QueueFree();controller.QueueFree();await Frames();
             }
+            if (closingOnly)
+            { GD.Print($"BUSINESS_BOOK_CLOSING_TEST_RESULT passed={_checks} failed=0"); GetTree().Quit(); return; }
             GetWindow().Size=CaptureSizes[0];await Frames(5);
             foreach(string city in new[]{"tianjin","wuhan","xian"})await CheckArtEdges(city);
             // Save failure and retry use the same snapshot and prevent an Esc bypass.

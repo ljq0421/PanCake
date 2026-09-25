@@ -86,7 +86,7 @@ public partial class TeachingEmphasisSelfTest : Node
             var text = new Label { AutowrapMode = TextServer.AutowrapMode.WordSmart }; host.AddChild(text);
             TeachingEmphasis.Attach(text);
             string[] operations = {
-                "按住左键在面糊上划动，摊成一张饼。", "在饼面刷酱；达到订单酱量后短按右键收刷，或按 F。",
+                "按住左键在面糊上划动，摊成一张饼。", "在饼面刷酱；达到订单酱量后左键点击煎饼外收刷，或按 F。",
                 "在焦饼上长按右键 0.45 秒，再拖入垃圾桶。", "把漏勺拖到空碗，沥干后自动倒入。",
                 "按住左键在碗里划动，碗口进度环填满变绿后，再加牛肉。", "面已拌匀，点击牛肉加入碗中，无需再次搅拌。",
                 "沿虚线横划一次、竖划一次，切好后自动入盘。", "拖入垃圾桶，松手丢弃。", "松手交给亮起的顾客。"

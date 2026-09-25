@@ -14,6 +14,19 @@ public partial class CityDialogVerification : Node
     {
         try
         {
+            // Reproduce a tall wrapped legacy layout still waiting for deferred deletion.
+            var fixture = new PanelContainer();
+            var legacy = new VBoxContainer { CustomMinimumSize = new(560, 1000) };
+            fixture.AddChild(legacy);
+            legacy.AddChild(new Label { Text = "营业暂停" });
+            legacy.AddChild(new Label { Text = "计时、顾客耐心和工作台都已暂停。" });
+            legacy.AddChild(new Button { Text = "继续营业" });
+            legacy.AddChild(new Button { Text = "放弃本日" });
+            AddChild(fixture);
+            IllustratedCityDialogTheme.BuildPause(fixture, StableIds.Cities.Tianjin);
+            Require(fixture.Size.IsEqualApprox(new Vector2(1200, 630)), "replacement ignores legacy layout minimum before deferred deletion");
+            fixture.QueueFree();
+            await Frames();
             Directory.CreateDirectory(ProjectSettings.GlobalizePath(Output));
             var save = GetNode<SaveService>("/root/SaveService");
             save.UsePathForTests(Output + "/fixture.json");
@@ -37,6 +50,7 @@ public partial class CityDialogVerification : Node
                 foreach (var (city, id, day) in new[] { ("Tianjin", StableIds.Cities.Tianjin, 15),
                     ("Wuhan", StableIds.Cities.Wuhan, 12), ("Xian", StableIds.Cities.Xian, 12) })
                 {
+                    if (OS.GetCmdlineUserArgs().Contains("--pause-layout") && city == "Xian") continue;
                     Require(main.StartCityBusiness(id, day), city + " real main navigation starts business");
                     var screen = main.GetNode<Control>("UI/" + city + "DayScreen"); screen.SetProcess(false);
                     screen._Notification((int)NotificationApplicationFocusIn);
@@ -49,6 +63,15 @@ public partial class CityDialogVerification : Node
                     double before = controller.DayElapsedSeconds; controller.Tick(2);
                     Require(controller.IsPaused && controller.DayElapsedSeconds == before, city + " pause freezes business");
                     await Shot(viewport, $"{city}-{width}-pause");
+                    if (city is "Tianjin" or "Wuhan")
+                    {
+                        var pausePanel = (Control)screen.FindChild(city == "Tianjin" ? "PausePanel" : "HudPausePanel", true, false);
+                        Require(pausePanel.Size.IsEqualApprox(new Vector2(1200, 630)),
+                            $"{city} pause keeps designed size after layout, actual={pausePanel.Size}");
+                        Require(new Rect2(0, 0, 1920, 1080).Encloses(pausePanel.GetGlobalRect()), city + " pause fits viewport");
+                        foreach (var child in pausePanel.Descendants<Control>().Where(c => c is Button or Label))
+                            Require(pausePanel.GetGlobalRect().Encloses(child.GetGlobalRect()), city + " pause content fits frame");
+                    }
                     if (city == "Xian")
                     {
                         var panel = screen.GetNode<Panel>("Workbench/PauseMenu/Panel");
@@ -114,6 +137,7 @@ public partial class CityDialogVerification : Node
                     screen._Notification((int)NotificationApplicationFocusIn);
                     Click(viewport, resume); await Frames();
                     Require(!controller.IsPaused, city + " resume restores time");
+                    if (OS.GetCmdlineUserArgs().Contains("--pause-layout")) continue;
                     Click(viewport, hud.PauseButton); await Frames(); Click(viewport, abandon); await Frames();
                     Click(dialog, dialog.GetOkButton()); await Frames();
                     Require(!screen.Visible && controller.State == DayState.Preparing, city + " confirm returns to hub");
@@ -161,7 +185,12 @@ public partial class CityDialogVerification : Node
         foreach (bool pressed in new[] { true, false })
             viewport.PushInput(new InputEventKey { Keycode = key, Pressed = pressed }, true);
     }
-    private async Task Frames() { for (int i = 0; i < 4; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame); }
+    private async Task Frames()
+    {
+        for (int i = 0; i < 4; i++) await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+        // Exercise the controls after transitions release their temporary input blocker.
+        foreach (var transition in GetTree().Root.GetChildren().OfType<JourneyTransition>()) transition.Finish();
+    }
     private async Task Shot(SubViewport viewport, string name)
     {
         await Frames();

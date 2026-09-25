@@ -7,7 +7,7 @@ public partial class SaveService
     public const int WuhanDepartureCoins = 600;
     public bool CanDepartForWuhan => CanContinue && IsCityAvailable(StableIds.Cities.Wuhan)
         && !Data.UnlockedCityIds.Contains(StableIds.Cities.Wuhan)
-        && Data.Tianjin.DayBestRecords.ContainsKey(WuhanUnlockDay)
+        && Data.Tianjin.DayBestRecords.TryGetValue(WuhanUnlockDay, out var record) && record.RevenueGoalPassed
         && Data.Coins >= WuhanDepartureCoins;
 
     public bool TryDepartForWuhan(out string error)

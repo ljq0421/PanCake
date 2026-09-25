@@ -21,6 +21,7 @@ public partial class BusinessHud : Control
     public Func<Vector2>? ChallengeCoinTarget { set => _challenge.CoinTargetGlobal = value; }
     private Tween? _incomeTween;
     private readonly DailyChallengePendant _challenge;
+    private readonly Label _revenueGoal = TianjinUi.Label("", 21, alignment: HorizontalAlignment.Center);
 
     public void EmphasizeIncome()
     {
@@ -73,6 +74,11 @@ public partial class BusinessHud : Control
         PauseButton.Position = new(1812, 28); PauseButton.Size = new(84, 84);
         AddChild(PauseButton);
         AddChild(_challenge);
+        _revenueGoal.Name = "RevenueGoal";
+        var goalStyle = TianjinUi.Box(new Color("#FFF0D2"), 8, 1, false);
+        _revenueGoal.AddThemeStyleboxOverride("normal", goalStyle);
+        Place(this, _revenueGoal, new(0, 112, 440, 32));
+        _revenueGoal.Hide();
         Resized += LayoutSigns;
         LayoutSigns();
     }
@@ -82,6 +88,7 @@ public partial class BusinessHud : Control
         _sign.Position = new((Size.X - _sign.Size.X) / 2, 6);
         PauseButton.Position = new(Size.X - 108, 28);
         _challenge.Position = new(24, 6);
+        _revenueGoal.Position = new((Size.X - 440) / 2, 112);
     }
 
     public void Render(DayController controller, bool allowPause)
@@ -96,6 +103,17 @@ public partial class BusinessHud : Control
         PauseButton.Disabled = !allowPause;
         bool claimed = GetNodeOrNull<SaveService>("/root/SaveService")?.Data.GetCity(config.CityId).ClaimedChallenges.ContainsKey(config.Day) == true;
         _challenge.Render(controller, allowPause, claimed);
+        _revenueGoal.Visible = BusinessRevenueGoal.Applies(config.CityId) && !controller.TutorialActive;
+        if (_revenueGoal.Visible && controller.CurrentPlan is { } plan && controller.Ledger is { } ledger)
+        {
+            var result = ledger.Build();
+            int target = BusinessRevenueGoal.Target(config, plan);
+            int bonus = !claimed && plan.Challenge?.Achieved(result) == true ? plan.Challenge.Reward : 0;
+            int income = result.TotalRevenue + bonus;
+            bool english = TranslationServer.GetLocale().StartsWith("en");
+            _revenueGoal.Text = english ? $"Revenue goal  {income} / {target}" : $"营业额目标  {income} / {target}";
+            if (income >= target) _revenueGoal.Text += english ? " · Met" : " · 已达标";
+        }
         OfferChallengeTeaching(controller, allowPause);
         if (_city is "天津" or "武汉" or "西安") OfferInterfaceTeaching(controller, allowPause);
     }

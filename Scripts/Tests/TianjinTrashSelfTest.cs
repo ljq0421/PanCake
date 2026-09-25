@@ -112,8 +112,8 @@ public partial class StageFourSelfTest
             Right(true);
             Check(!drag.IsDragging && station.Machine.Runtime.State == PancakeState.Saucing, "右键按下等待区分短按和长按");
             station.Tick(.1); Right(false);
-            Check(!drag.IsDragging && station.Machine.Runtime.State == PancakeState.Sauced
-                && Close(station.Machine.Runtime.SauceCoverage, .35), "短按右键只收刷并保留酱量");
+            Check(!drag.IsDragging && station.Machine.Runtime.State == PancakeState.Saucing
+                && Close(station.Machine.Runtime.SauceCoverage, .35), "短按右键不再收刷并保留酱量");
             station.Machine.Runtime.State = PancakeState.Saucing;
             Right(true); station.Tick(.44);
             Check(!drag.IsDragging && station.Machine.Runtime.State == PancakeState.Saucing, "0.45秒前不拾取也不收刷");

@@ -110,6 +110,14 @@ public partial class BusinessDetailsView
             bonus.Name = "ChallengeRewardAmount";
         });
 
+        if (_model.RevenueTarget > 0)
+        {
+            bool english = TranslationServer.GetLocale().StartsWith("en");
+            string state = _model.RevenueGoalPassed ? (english ? "Met" : "已达标") : (english ? "Not met" : "未达标");
+            string caption = english ? $"Goal ¥{_model.RevenueTarget} · {state}"
+                : $"目标 ¥{_model.RevenueTarget} · {state}";
+            TravelValue(_summary, caption, new(905, 44, 300, 32), 21).Name = "RevenueGoalResult";
+        }
         TravelPanel(_summary, new(890, 276, 560, 200));
         TravelHeading(_summary, "挑战结果", new(905, 258, 245, 51));
         CaptureTravelMotion(TravelMotionGroup.Challenge, _summary, () =>

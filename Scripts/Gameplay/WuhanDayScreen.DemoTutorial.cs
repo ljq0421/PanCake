@@ -156,6 +156,8 @@ public partial class WuhanDayScreen
             _demoLessonLayout = content;
             TeachingCardLayout.Lesson(_demoLesson!, _demoLessonTitle!, _demoLessonHint, _demoLessonAction!, 510);
         }
-        if (step is null) _demoLesson!.Position = new(38, 1035 - _demoLesson.Size.Y);
+        if (_demoLessonComplete || DemoLessonFailed)
+            _demoLesson!.Position = (GetViewportRect().Size - _demoLesson.Size) / 2;
+        else if (step is null) _demoLesson!.Position = new(38, 1035 - _demoLesson.Size.Y);
     }
 }

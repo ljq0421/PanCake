@@ -111,7 +111,10 @@ public partial class InterfaceTeachingSelfTest : Node
             // Keep a cooking focus visible to verify the interface lesson waits its turn.
             tianjin.TeachingFocus.SetProcess(false); tianjin.TeachingFocus.Show();
             await Frames(); Check(Guide(tianjin) is null, "business teaching waits for cooking focus");
-            tianjin.TeachingFocus.Hide(); await Frames(10);
+            tianjin.TeachingFocus.Hide();
+            if (controller.TutorialActive)
+                Find<Button>(tianjin, "SkipLesson").EmitSignal(Button.SignalName.Pressed);
+            tianjin.RefreshForCapture(true); await Frames(10);
             guide = Guide(tianjin); Check(guide is not null && guide.LessonKey == InterfaceLessons.BusinessKey, "HUD first-use teaching");
             double before = controller.DayElapsedSeconds; controller.Tick(12);
             Check(controller.IsPaused && controller.DayElapsedSeconds == before, "teaching freezes business time");
@@ -123,7 +126,17 @@ public partial class InterfaceTeachingSelfTest : Node
             Click(Find<Button>(guide, "PreviousTeaching")); await Frames(); Check(guide.StepIndex == 0, "previous teaching step");
             await Finish(guide); Check(!controller.IsPaused, "completion releases its pause");
             tianjin.RefreshForCapture(true); await Frames(); guide = Guide(tianjin);
-            Check(guide?.LessonKey == InterfaceLessons.PendantKey, "pendant first-use teaching follows HUD");
+            Check(guide?.LessonKey == InterfaceLessons.RevenueGoalKey, "revenue goal teaching follows HUD on Tianjin Day 1");
+            Check(Find<Label>(guide!, "TeachingText").Text.Contains("0/130"), "goal teaching explains HUD ratio");
+            await Shot("04-revenue-goal-teaching");
+            _viewport.Size = new(1280, 720); await Shot("04-revenue-goal-teaching-1280");
+            _viewport.Size = new(1920, 1080); await Frames();
+            await Finish(guide!);
+            Check(_settings.HasSeenInterfaceLesson(InterfaceLessons.RevenueGoalKey), "revenue goal teaching is acknowledged once");
+            if (OS.GetCmdlineUserArgs().Contains("--revenue-goal-only"))
+            { GD.Print($"REVENUE_GOAL_TEACHING_PASS checks={_checks}"); GetTree().Quit(); return; }
+            tianjin.RefreshForCapture(true); await Frames(); guide = Guide(tianjin);
+            Check(guide?.LessonKey == InterfaceLessons.PendantKey, "pendant first-use teaching follows revenue goal");
             await Shot("05-pendant-teaching"); await Finish(guide!);
             var hud = Find<BusinessHud>(tianjin, "BusinessHud");
             Check(!hud.Descendants<Control>().Any(c => c.TooltipText.Length > 0), "HUD has no text tooltips");
@@ -240,7 +253,7 @@ public partial class InterfaceTeachingSelfTest : Node
         {
             string path = Output + "/challenge-" + Guid.NewGuid().ToString("N") + ".cfg";
             _settings.UsePathForTests(path);
-            foreach (string key in InterfaceLessons.Keys.Append(InterfaceLessons.PendantKey)) _settings.MarkInterfaceLessonSeen(key);
+            foreach (string key in InterfaceLessons.Keys.Append(InterfaceLessons.PendantKey).Append(InterfaceLessons.RevenueGoalKey)) _settings.MarkInterfaceLessonSeen(key);
             var screen = city == StableIds.Cities.Tianjin
                 ? (Control)_main.GetNode<TianjinDayScreen>("UI/TianjinDayScreen")
                 : _main.GetNode<WuhanDayScreen>("UI/WuhanDayScreen");

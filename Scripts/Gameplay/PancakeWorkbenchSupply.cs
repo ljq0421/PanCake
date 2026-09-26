@@ -31,15 +31,15 @@ public partial class PancakeWorkstation
 
     private void BuildSupplyCall()
     {
-        Texture2D bell = GD.Load<Texture2D>("res://resource/art/TianJin/SupplyCall/supply_bell.png");
+        Texture2D bell = GD.Load<Texture2D>("res://resource/art/TianJin/SupplyCall/supply_bell_bold.png");
         Texture2D npc = GD.Load<Texture2D>("res://resource/art/TianJin/SupplyCall/supply_helper.png");
 
         _supplyBell = new Button
         {
             Name = "SupplyBell",
-            Position = new Vector2(548, 570),
-            Size = new Vector2(104, 100),
-            PivotOffset = new Vector2(52, 50),
+            Position = new Vector2(537.6f, 560),
+            Size = new Vector2(124.8f, 120),
+            PivotOffset = new Vector2(62.4f, 60),
             ZIndex = 35,
             Flat = true,
             FocusMode = FocusModeEnum.None,
@@ -53,7 +53,7 @@ public partial class PancakeWorkstation
             StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
             Texture = bell,
             Position = Vector2.Zero,
-            Size = new Vector2(104, 100),
+            Size = new Vector2(124.8f, 120),
             MouseFilter = MouseFilterEnum.Ignore,
         };
         _supplyBell.AddChild(art);

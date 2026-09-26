@@ -25,6 +25,7 @@ public partial class TianjinDayScreen : Control
 
 
     public event Action? HubRequested;
+    public event Action? AbandonRequested;
 
     private readonly Control[] _customerSlots = new Control[5];
     private readonly DropZone[] _customerDropZones = new DropZone[5];
@@ -137,7 +138,7 @@ public partial class TianjinDayScreen : Control
             _controller.AbandonDay();
             _workstation.ResetForDay();
             SetManualPaused(false);
-            HubRequested?.Invoke();
+            AbandonRequested?.Invoke();
         };
         _abandonDialog.Canceled += () =>
         {
@@ -376,7 +377,7 @@ public partial class TianjinDayScreen : Control
 
     private void StyleAbandonDialog()
     {
-        CityDialogChrome.ApplyConfirmation(_abandonDialog, StableIds.Cities.Tianjin);
+        CityDialogChrome.ApplyConfirmation(_abandonDialog, StableIds.Cities.Tianjin, compact: true);
     }
 
     private void RequestAbandon()

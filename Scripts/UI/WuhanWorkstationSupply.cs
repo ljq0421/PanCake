@@ -24,17 +24,17 @@ public partial class WuhanWorkstationView
     {
         _supplyBell = new Button
         {
-            Name = "SupplyBell", Position = new Vector2(554, 556), Size = new Vector2(70, 70),
-            PivotOffset = new Vector2(35, 35), ZIndex = 35, Flat = true,
+            Name = "SupplyBell", Position = new Vector2(526.6f, 506), Size = new Vector2(124.8f, 120),
+            PivotOffset = new Vector2(62.4f, 60), ZIndex = 35, Flat = true,
             FocusMode = FocusModeEnum.None, MouseDefaultCursorShape = CursorShape.PointingHand,
         };
         AddChild(_supplyBell);
-        Texture2D bellArt = GD.Load<Texture2D>("res://resource/art/TianJin/SupplyCall/supply_bell.png");
+        Texture2D bellArt = GD.Load<Texture2D>("res://resource/art/TianJin/SupplyCall/supply_bell_bold.png");
         _supplyBell.AddChild(new Sprite2D
         {
             Name = "BellArtwork", Texture = bellArt,
-            Position = Vector2.Zero, Centered = false,
-            Scale = Vector2.One * (70f / bellArt.GetWidth()),
+            Position = new Vector2(2.4f, 0), Centered = false,
+            Scale = new Vector2(120f / bellArt.GetWidth(), 120f / bellArt.GetHeight()),
         });
         _supplyBell.Pressed += OpenSupplySelection;
 

@@ -11,12 +11,13 @@ public static class IllustratedCityDialogTheme
     private static Texture2D? _primary;
     private static Texture2D? _secondary;
     public static readonly Vector2 PanelSize = new(1200, 630);
+    public const float BusinessPauseScale = 0.7f;
 
     public static StyleBoxTexture PanelFrame(string cityId, float top = 0, float bottom = 0) => new()
     {
         Texture = GD.Load<Texture2D>(cityId == StableIds.Cities.Wuhan
             ? "res://resource/art/Wuhan/DialogUI/dialog-panel-v1.png" : ArtRoot + "dialog-panel-v1.png"),
-        ContentMarginLeft = top > 0 ? 100 : 0, ContentMarginRight = top > 0 ? 100 : 0,
+        ContentMarginLeft = top > 0 ? 100 * top / 192 : 0, ContentMarginRight = top > 0 ? 100 * top / 192 : 0,
         ContentMarginTop = top, ContentMarginBottom = bottom,
     };
 
@@ -40,6 +41,8 @@ public static class IllustratedCityDialogTheme
         oldLayout.QueueFree();
         panel.AddThemeStyleboxOverride("panel", PanelFrame(cityId));
         panel.Position = new(360, 225); panel.Size = PanelSize;
+        panel.PivotOffset = PanelSize / 2;
+        panel.Scale = Vector2.One * BusinessPauseScale;
 
         Label title = labels[0];
         SetBounds(title, new(245, 17, 700, 114));
@@ -93,21 +96,32 @@ public static class IllustratedCityDialogTheme
         LayoutActions();
     }
 
-    public static void ApplyConfirmation(AcceptDialog dialog, string cityId)
+    public static void ApplyConfirmation(AcceptDialog dialog, string cityId, bool compact = false)
     {
-        dialog.MinSize = new(1200, 630);
-        dialog.Size = new(1200, 630);
-        dialog.Theme.SetStylebox("panel", "AcceptDialog", PanelFrame(cityId, 192, 85));
-        dialog.Theme.SetConstant("buttons_separation", "AcceptDialog", 68);
-        dialog.Theme.SetConstant("buttons_min_height", "AcceptDialog", 104);
-        dialog.Theme.SetConstant("buttons_min_width", "AcceptDialog", 410);
+        float scale = compact ? BusinessPauseScale : 1f;
+        dialog.MinSize = new Vector2I(Mathf.RoundToInt(1200 * scale), Mathf.RoundToInt(630 * scale));
+        dialog.Size = dialog.MinSize;
+        dialog.Theme.SetStylebox("panel", "AcceptDialog", PanelFrame(cityId, 192 * scale, 85 * scale));
+        dialog.Theme.SetConstant("buttons_separation", "AcceptDialog", Mathf.RoundToInt(68 * scale));
+        dialog.Theme.SetConstant("buttons_min_height", "AcceptDialog", Mathf.RoundToInt(104 * scale));
+        dialog.Theme.SetConstant("buttons_min_width", "AcceptDialog", Mathf.RoundToInt(410 * scale));
         var label = dialog.GetLabel();
-        label.CustomMinimumSize = new(920, 180);
+        label.CustomMinimumSize = new(920 * scale, 180 * scale);
         label.AddThemeStyleboxOverride("normal", new StyleBoxEmpty());
-        label.AddThemeConstantOverride("line_spacing", 14);
-        TextStyle(label, 40, cityId);
+        label.AddThemeConstantOverride("line_spacing", Mathf.RoundToInt(14 * scale));
+        TextStyle(label, Mathf.RoundToInt(40 * scale), cityId);
         StyleAction(dialog.GetOkButton(), dialog is not ConfirmationDialog, cityId);
         if (dialog is ConfirmationDialog confirmation) StyleAction(confirmation.GetCancelButton(), true, cityId);
+        if (compact)
+        {
+            foreach (Button button in dialog is ConfirmationDialog confirmationDialog
+                         ? new[] { dialog.GetOkButton(), confirmationDialog.GetCancelButton() }
+                         : new[] { dialog.GetOkButton() })
+            {
+                button.CustomMinimumSize = new(410 * scale, 104 * scale);
+                button.AddThemeFontSizeOverride("font_size", Mathf.RoundToInt(40 * scale));
+            }
+        }
         if (dialog.Name == "NavigationError" && dialog.GetParent().GetNodeOrNull<CanvasLayer>("IllustratedDialogShade") is null)
         {
             var shade = new CanvasLayer { Name = "IllustratedDialogShade", Layer = 99, Visible = false };
@@ -129,7 +143,7 @@ public static class IllustratedCityDialogTheme
         var title = artwork.GetNode<Label>("Title");
         title.Text = dialog.Title;
         SetBounds(title, new(size.X * .265f, size.Y * .027f, size.X * .47f, size.Y * .18f));
-        TextStyle(title, 60, cityId, true);
+        TextStyle(title, Mathf.RoundToInt(60 * size.X / PanelSize.X), cityId, true);
         FitHeading(title);
         // Keep the translated message intact; a Chinese comma is its natural line break.
         string message = System.Text.RegularExpressions.Regex.Replace(dialog.Tr(dialog.DialogText).ToString(), "，\\n*", "，\n");
@@ -196,7 +210,7 @@ public static class IllustratedCityDialogTheme
         title.AutowrapMode = TextServer.AutowrapMode.Off;
         var font = title.GetThemeFont("font");
         string text = title.Tr(title.Text).ToString();
-        int size = 60;
+        int size = title.GetThemeFontSize("font_size");
         while (size > 28 && font.GetStringSize(text, HorizontalAlignment.Left, -1, size).X > title.Size.X - 24) size--;
         title.AddThemeFontSizeOverride("font_size", size);
     }

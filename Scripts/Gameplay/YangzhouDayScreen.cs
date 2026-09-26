@@ -8,6 +8,7 @@ namespace ProjectCake.Gameplay;
 public partial class YangzhouDayScreen : Control
 {
     public event Action? HubRequested;
+    public event Action? AbandonRequested;
     public YangzhouSession Session { get; private set; } = null!;
     private SaveService _save = null!;
     private YangzhouCatalog _catalog = null!;
@@ -118,7 +119,7 @@ public partial class YangzhouDayScreen : Control
             }
             button.Pressed += () => Act(() => Session.Refill(id), "库存已满或正在补给。");
         }
-        _leave.Confirmed += () => { _leave.Hide(); Session.Pause(true); HubRequested?.Invoke(); };
+        _leave.Confirmed += () => { _leave.Hide(); Session.Pause(true); AbandonRequested?.Invoke(); };
         _leave.Canceled += () => Session.Pause(_pausedBeforeLeave);
         _return.Pressed += ReturnAfterResult;
         foreach (var button in _workButtons.Concat(_refills.Values)) ButtonContourHighlight.Attach(button);

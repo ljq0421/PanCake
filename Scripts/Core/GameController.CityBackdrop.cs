@@ -12,8 +12,15 @@ public partial class GameController
     private Control.FocusBehaviorRecursiveEnum _backdropFocus;
     private int _startScreenZ;
 
-    private void ReturnFromBusiness(string city, bool showCompletion = true)
+    private void ReturnFromBusiness(string city, bool showCompletion = true, bool retainWorkbench = true)
     {
+        if (!retainWorkbench)
+        {
+            ShowOnly(_startScreen);
+            _startScreen.PresentHome();
+            _startScreen.PresentCity(city, fromHome: true);
+            return;
+        }
         string path = city switch
         {
             StableIds.Cities.Tianjin => "UI/TianjinDayScreen",

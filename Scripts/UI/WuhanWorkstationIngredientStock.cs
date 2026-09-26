@@ -213,15 +213,14 @@ public partial class WuhanWorkstationView
                     // Use clean tabletop below the tray, and local background
                     // interpolation where the spoon overlaps the tray/shadow.
                     Color color = table.GetPixel(1200, globalY);
-                    if (globalY >= 760)
+                    if (globalY >= 800)
                     {
-                        int globalX = region.Position.X + fill;
-                        Color painted = original.GetPixel(globalX, globalY);
-                        bool inside = Geometry2D.IsPointInPolygon(new Vector2(globalX, globalY), outline);
                         // Keep the original painted cast shadow. Where the new bowl
                         // is narrower, extend that same shadow up to its silhouette.
-                        color = !inside && painted.R > .35f ? painted
-                            : original.GetPixel((int)bowlBounds.GetCenter().X, (int)bowlBounds.End.Y + 7);
+                        // Do not copy pixels from the old bowl's antialiased edge.
+                        Color left = original.GetPixel(region.Position.X + start - 3, globalY);
+                        Color right = original.GetPixel(region.Position.X + end + 3, globalY);
+                        color = left.Lerp(right, (fill - start + 3f) / (end - start + 6f));
                     }
                     if (globalY < 720)
                     {

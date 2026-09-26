@@ -8,7 +8,7 @@ namespace ProjectCake.Tests;
 
 public partial class CityDialogVerification : Node
 {
-    private const string Output = "res://.tmp/tianjin-dialog-art/verification";
+    private const string Output = "res://codex-city-dialog-verification";
     private int _checks;
     public override async void _Ready()
     {
@@ -66,8 +66,8 @@ public partial class CityDialogVerification : Node
                     if (city is "Tianjin" or "Wuhan")
                     {
                         var pausePanel = (Control)screen.FindChild(city == "Tianjin" ? "PausePanel" : "HudPausePanel", true, false);
-                        Require(pausePanel.Size.IsEqualApprox(new Vector2(1200, 630)),
-                            $"{city} pause keeps designed size after layout, actual={pausePanel.Size}");
+                        Require(pausePanel.GetGlobalRect().Size.IsEqualApprox(new Vector2(840, 441)),
+                            $"{city} pause is 70% of designed size after layout, actual={pausePanel.GetGlobalRect().Size}");
                         Require(new Rect2(0, 0, 1920, 1080).Encloses(pausePanel.GetGlobalRect()), city + " pause fits viewport");
                         foreach (var child in pausePanel.Descendants<Control>().Where(c => c is Button or Label))
                             Require(pausePanel.GetGlobalRect().Encloses(child.GetGlobalRect()), city + " pause content fits frame");
@@ -105,7 +105,12 @@ public partial class CityDialogVerification : Node
                     var coveredPanel = city == "Tianjin" ? menu : menu.GetNode<Control>(city == "Wuhan" ? "HudPausePanel" : "Panel");
                     Require(!coveredPanel.Visible, city + " underlying pause panel hidden");
                     Require(dialog.GetThemeStylebox("panel", "AcceptDialog") is StyleBoxTexture, city + " confirmation uses artwork");
-                    if (city is "Tianjin" or "Wuhan" or "Xian")
+                    if (city is "Tianjin" or "Wuhan")
+                    {
+                        Require(dialog.Size == new Vector2I(840, 441), city + $" confirmation is 70% of designed size after layout, actual={dialog.Size}");
+                        Require(!dialog.GetLabel().Text.Contains("\n\n"), city + " line breaks remain stable across resize callbacks");
+                    }
+                    else if (city == "Xian")
                     {
                         Require(dialog.Size == new Vector2I(1200, 630), city + " confirmation keeps its designed size after layout");
                         Require(!dialog.GetLabel().Text.Contains("\n\n"), city + " line breaks remain stable across resize callbacks");

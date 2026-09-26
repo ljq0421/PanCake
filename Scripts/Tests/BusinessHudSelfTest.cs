@@ -65,6 +65,14 @@ public partial class BusinessHudSelfTest : Node
                 var hud = screen.FindChild("BusinessHud", true, false) as BusinessHud ?? throw new Exception("HUD absent");
                 Require(hud.IsVisibleInTree(), "HUD visible");
                 CheckArtwork(hud);
+                if (city is "Tianjin" or "Wuhan")
+                {
+                    int target = BusinessRevenueGoal.Target(controller.CurrentConfig!, controller.CurrentPlan!);
+                    Require(hud.GetNode<Label>("HudArtwork/IncomeSign").Text == $"0/{target}",
+                        "coin column shows current revenue over this run's goal");
+                    Require(hud.FindChild("RevenueGoal", true, false) is null,
+                        "goal does not create a separate strip below the HUD");
+                }
                 if (hudOnly)
                 {
                     if (capture) await Shot(viewport, $"{city}-{width}-running");

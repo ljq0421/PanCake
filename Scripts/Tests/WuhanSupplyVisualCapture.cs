@@ -35,7 +35,8 @@ public partial class WuhanSupplyVisualCapture : Node
             var npcView = screen.Workstation.GetNode<Sprite2D>("SupplyHelper");
             GD.Print($"WUHAN_SUPPLY_GEOMETRY bell={bellView.Size} artScale={bellView.GetNode<Sprite2D>("BellArtwork").Scale} npcScale={npcView.Scale} source={npcView.Texture.GetSize()}");
             bool npcOnly = OS.GetCmdlineUserArgs().Contains("--npc-only");
-            string directory = ProjectSettings.GlobalizePath(npcOnly
+            string? outputDirectory = OS.GetCmdlineUserArgs().FirstOrDefault(arg => arg.StartsWith("--output-dir=", StringComparison.Ordinal));
+            string directory = outputDirectory is not null ? outputDirectory["--output-dir=".Length..] : ProjectSettings.GlobalizePath(npcOnly
                 ? "res://wuhan-supply-check/npc-align-capture" : "res://wuhan-supply-check/continuous-capture");
             Directory.CreateDirectory(directory);
             async Task Shot(string name)
@@ -51,7 +52,8 @@ public partial class WuhanSupplyVisualCapture : Node
                 float scale = viewport.GetWidth() / 1920f;
                 using Image detail = viewport.GetRegion(new Rect2I((int)(480 * scale), (int)(790 * scale),
                     (int)(710 * scale), (int)(215 * scale)));
-                detail.SavePng(Path.Combine(directory, $"{(small ? 720 : 1080)}-{(basic ? "basic" : "doupi")}-{name}-detail.png"));
+                string detailPath = Path.Combine(directory, $"{(small ? 720 : 1080)}-{(basic ? "basic" : "doupi")}-{name}-detail.png");
+                if (detail.SavePng(detailPath) != Error.Ok) throw new IOException($"Detail capture failed: {detailPath}");
                 GD.Print($"WUHAN_SUPPLY_CAPTURE {path}");
             }
             if (npcOnly)

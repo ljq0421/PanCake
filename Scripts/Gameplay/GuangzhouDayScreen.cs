@@ -11,6 +11,7 @@ namespace ProjectCake.Gameplay;
 public partial class GuangzhouDayScreen : Control
 {
     public event Action? HubRequested;
+    public event Action? AbandonRequested;
     public GuangzhouSession Session { get; private set; } = null!;
     public IReadOnlyList<GuangzhouTrayView> TrayViews => _trays;
     private DataCatalog _catalog = null!;
@@ -136,7 +137,7 @@ public partial class GuangzhouDayScreen : Control
         _teaCup.CanDrag = () => CanInteract && Session.Tea?.HasCup == true;
         _teaCup.Pressed += () => DeliverPayload("tea", SelectedCustomerId);
         _refillTea.Pressed += () => { if (CanInteract) Session.Tea?.Stock.TryRefill(); };
-        _abandon.Confirmed += () => { _controller.AbandonDay(); _controller.IsPaused = false; HubRequested?.Invoke(); };
+        _abandon.Confirmed += () => { _controller.AbandonDay(); _controller.IsPaused = false; AbandonRequested?.Invoke(); };
         _back.Pressed += () => HubRequested?.Invoke();
         _retry.Pressed += CommitResult;
         foreach (var button in _cuts.Concat(_discards).Concat(_deliverRolls).Concat(_baskets)

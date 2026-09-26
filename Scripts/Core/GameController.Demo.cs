@@ -24,7 +24,9 @@ public partial class GameController
         ConnectCustomerCollection(screen.BusinessDetails);
         ConnectCustomerCollection(wuhan.BusinessDetails);
         screen.HubRequested += () => ReturnFromBusiness(StableIds.Cities.Tianjin);
+        screen.AbandonRequested += () => ReturnFromBusiness(StableIds.Cities.Tianjin, retainWorkbench: false);
         wuhan.HubRequested += () => ReturnFromBusiness(StableIds.Cities.Wuhan);
+        wuhan.AbandonRequested += () => ReturnFromBusiness(StableIds.Cities.Wuhan, retainWorkbench: false);
         _startScreen.Initialize(_save);
         _startScreen.WuhanDepartureRequested += DepartForWuhan;
         _startScreen.ConfigureCities(catalog, null);

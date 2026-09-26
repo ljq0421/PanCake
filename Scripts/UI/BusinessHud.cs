@@ -10,7 +10,7 @@ public partial class BusinessHud : Control
     public const string ArtworkPath = "res://resource/art/Global/PanelUI/HUD.png";
     // Current HUD.png (1916 x 821): exclude near-transparent export specks as well as padding.
     private static readonly Rect2 ArtworkRegion = new(97, 177, 1723, 396);
-    private const float ArtworkScale = 440f / 1723;
+    private const float ArtworkScale = 460f / 1723;
     private readonly Label _day = TianjinUi.Label("1", 25, alignment: HorizontalAlignment.Center);
     private readonly Label _time = TianjinUi.Label("00:00", 25, alignment: HorizontalAlignment.Center);
     private readonly Label _income = TianjinUi.Label("0", 25, alignment: HorizontalAlignment.Center);
@@ -21,7 +21,6 @@ public partial class BusinessHud : Control
     public Func<Vector2>? ChallengeCoinTarget { set => _challenge.CoinTargetGlobal = value; }
     private Tween? _incomeTween;
     private readonly DailyChallengePendant _challenge;
-    private readonly Label _revenueGoal = TianjinUi.Label("", 21, alignment: HorizontalAlignment.Center);
 
     public void EmphasizeIncome()
     {
@@ -67,28 +66,22 @@ public partial class BusinessHud : Control
         _day.ClipText = _time.ClipText = _income.ClipText = true;
         PlaceOnArtwork(_day, new(530, 355, 173, 110));
         PlaceOnArtwork(_time, new(956, 355, 212, 110));
-        PlaceOnArtwork(_income, new(1410, 355, 255, 110));
+        PlaceOnArtwork(_income, new(1400, 355, 275, 110));
         PlaceOnArtwork(IncomeCoin, new(1254, 340, 145, 145));
         if (_city is "天津" or "武汉" or "西安") StyleIconButton(PauseButton, LoadArt("暂停铜扣"));
         else PauseButton.Hide(); // Guangzhou and Yangzhou keep their existing pause/resume controls.
         PauseButton.Position = new(1812, 28); PauseButton.Size = new(84, 84);
         AddChild(PauseButton);
         AddChild(_challenge);
-        _revenueGoal.Name = "RevenueGoal";
-        var goalStyle = TianjinUi.Box(new Color("#FFF0D2"), 8, 1, false);
-        _revenueGoal.AddThemeStyleboxOverride("normal", goalStyle);
-        Place(this, _revenueGoal, new(0, 112, 440, 32));
-        _revenueGoal.Hide();
         Resized += LayoutSigns;
         LayoutSigns();
     }
 
     private void LayoutSigns()
     {
-        _sign.Position = new((Size.X - _sign.Size.X) / 2, 6);
+        _sign.Position = new((Size.X - _sign.Size.X) / 2, 2);
         PauseButton.Position = new(Size.X - 108, 28);
         _challenge.Position = new(24, 6);
-        _revenueGoal.Position = new((Size.X - 440) / 2, 112);
     }
 
     public void Render(DayController controller, bool allowPause)
@@ -103,16 +96,15 @@ public partial class BusinessHud : Control
         PauseButton.Disabled = !allowPause;
         bool claimed = GetNodeOrNull<SaveService>("/root/SaveService")?.Data.GetCity(config.CityId).ClaimedChallenges.ContainsKey(config.Day) == true;
         _challenge.Render(controller, allowPause, claimed);
-        _revenueGoal.Visible = BusinessRevenueGoal.Applies(config.CityId) && !controller.TutorialActive;
-        if (_revenueGoal.Visible && controller.CurrentPlan is { } plan && controller.Ledger is { } ledger)
+        if (BusinessRevenueGoal.Applies(config.CityId) && !controller.TutorialActive
+            && controller.CurrentPlan is { } plan && controller.Ledger is { } ledger)
         {
             var result = ledger.Build();
             int target = BusinessRevenueGoal.Target(config, plan);
             int bonus = !claimed && plan.Challenge?.Achieved(result) == true ? plan.Challenge.Reward : 0;
             int income = result.TotalRevenue + bonus;
-            bool english = TranslationServer.GetLocale().StartsWith("en");
-            _revenueGoal.Text = english ? $"Revenue goal  {income} / {target}" : $"营业额目标  {income} / {target}";
-            if (income >= target) _revenueGoal.Text += english ? " · Met" : " · 已达标";
+            _income.Text = $"{income}/{target}";
+            FitNumber(_income);
         }
         OfferChallengeTeaching(controller, allowPause);
         if (_city is "天津" or "武汉" or "西安") OfferInterfaceTeaching(controller, allowPause);
@@ -164,7 +156,9 @@ public partial class BusinessHud : Control
         var settings = GetNode<JourneySettings>("/root/JourneySettings");
         if (!settings.HasSeenInterfaceLesson(InterfaceLessons.BusinessKey))
             InterfaceTeaching.Offer(owner, InterfaceLessons.BusinessKey, InterfaceLessons.Business, Eligible, Pause);
-        else if (_city is "天津" or "武汉")
+        else if (!settings.HasSeenInterfaceLesson(InterfaceLessons.RevenueGoalKey))
+            InterfaceTeaching.Offer(owner, InterfaceLessons.RevenueGoalKey, InterfaceLessons.RevenueGoal, Eligible, Pause);
+        else
             InterfaceTeaching.Offer(owner, InterfaceLessons.PendantKey, InterfaceLessons.Pendant, Eligible, Pause);
     }
 

@@ -11,6 +11,7 @@ namespace ProjectCake.Gameplay;
 public partial class XianDayScreen : Control
 {
     public event Action? HubRequested;
+    public event Action? AbandonRequested;
     public XianSession Session { get; private set; } = null!;
     public IReadOnlyDictionary<string, XianSurface> Surfaces => _surfaces;
     public bool CanInteract => Session is not null && IsVisibleInTree() && _focused && !_exitDialog.Visible && !_results.Visible
@@ -97,7 +98,7 @@ public partial class XianDayScreen : Control
         soup.Pressed = ServeSoup;
         soup.DragToken = () => Session.Soup?.HasBowl == true ? "soup" : "";
         _surfaces["soup_bowl"].DragToken = soup.DragToken;
-        _exitDialog.Confirmed += () => { _controller.AbandonDay(); _controller.IsPaused = false; CancelGestures(); HubRequested?.Invoke(); };
+        _exitDialog.Confirmed += () => { _controller.AbandonDay(); _controller.IsPaused = false; CancelGestures(); AbandonRequested?.Invoke(); };
         BuildBusinessBook();
         BuildBusinessHud();
     }

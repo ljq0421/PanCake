@@ -5,7 +5,7 @@ namespace ProjectCake.UI;
 /// <summary>Shared blocking prompts using the approved illustrated panel and native dialog input.</summary>
 public static class CityDialogChrome
 {
-    public static void ApplyConfirmation(AcceptDialog dialog, string cityId)
+    public static void ApplyConfirmation(AcceptDialog dialog, string cityId, bool compact = false)
     {
         ButtonHoverFeedback.Attach(dialog.GetOkButton());
         if (dialog is ConfirmationDialog confirmation)
@@ -45,7 +45,7 @@ public static class CityDialogChrome
             dialog.SizeChanged += Layout;
             dialog.AboutToPopup += Layout;
         }
-        IllustratedCityDialogTheme.ApplyConfirmation(dialog, cityId);
+        IllustratedCityDialogTheme.ApplyConfirmation(dialog, cityId, compact);
         IllustratedCityDialogTheme.LayoutHeader(header.GetNode<Control>("Artwork"), dialog, cityId);
     }
 }

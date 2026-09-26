@@ -55,7 +55,9 @@ public partial class EquipmentUpgradeView : Control
                 card.Pressed += () => { if (!_submitted && card.IsVisibleInTree()) Select(item.Id, true); };
                 continue;
             }
-            if (item.Art == "res://resource/art/TianJin/升级小料.png")
+            if (item.Id == "soy_milk_tray")
+                Sprite(card, "EquipmentPicture", item.Art!, grid ? new(18, 17, 239, 100) : new(18, 20, 263, 125));
+            else if (item.Art == "res://resource/art/TianJin/升级小料.png")
                 Sprite(card, "EquipmentPicture", item.Art, grid ? new(18, 12, 239, 108) : new(18, 20, 263, 127));
             else if (item.Art is not null) Picture(card, item.Art, grid ? new(18, 12, 239, 108) : new(18, 15, 263, 135));
             else LabelAt(card, "EquipmentWordmark", item.Name, new(24, 25, 240, 130), 34, Muted, true);
@@ -115,7 +117,8 @@ public partial class EquipmentUpgradeView : Control
             : e.TargetLevel is int next ? $"Lv{e.Level}  →  Lv{next}" : e.Level == 0 ? "设备尚未开放" : $"Lv{e.Level} · {(e.Id == "soy_milk_tray" ? "已安装" : e.Level >= 3 || e.Notice == "已升至最高等级" ? "已满级" : "固定设备")}", new(0, 62, 560, 44), 27, Muted);
         var doodle = Sprite(_detail, "EquipmentDoodle", ArtRoot + "设备涂鸦背景-v1.png", new(0, 138, 274, 292));
         CityPageArtSkin.Apply(doodle, _cityId, true);
-        if (e.Art is not null) Picture(_detail, e.Art, new(0, hasBenefit ? 198 : 140, 270, hasBenefit ? 222 : 280));
+        if (e.Id == "soy_milk_tray") Sprite(_detail, "EquipmentPicture", e.Art!, new(35, 170, 200, 235));
+        else if (e.Art is not null) Picture(_detail, e.Art, new(0, hasBenefit ? 198 : 140, 270, hasBenefit ? 222 : 280));
         else LabelAt(_detail, "EquipmentWordmark", e.Name, new(0, 170, 266, 260), 40, Muted, true);
         // The comparison viewport shares the equipment image's vertical centre (y = 280).
         // Short comparisons centre as a group; longer ones retain scrolling above the price.

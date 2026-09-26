@@ -140,8 +140,8 @@ public partial class BusinessFeedbackSelfTest : Node
         var owner = new Node(); AddChild(owner); var source = new BusinessFeedback();
         var audio = BusinessFeedbackAudio.Attach(owner, source, () => active); audio.Clock = () => clock;
         var played = new List<BusinessFeedbackEvent>(); audio.Played += played.Add;
-        source.Reject(); source.Reject(); clock += 399; source.Reject();
-        Check(played.Count == 1, "error throttled for 400ms"); clock++; source.Reject(); Check(played.Count == 2, "error allowed at 400ms");
+        source.Reject(); source.Reject(); clock += 1499; source.Reject();
+        Check(played.Count == 1, "repeated errors stay quiet for 1.5 seconds"); clock++; source.Reject(); Check(played.Count == 2, "error can sound again after 1.5 seconds");
         played.Clear(); source.Warn("a"); source.Warn("b"); clock += 500; source.Warn("c"); source.Warn("a");
         Check(played.Count == 2, "warnings throttled globally and deduplicated by customer");
         var warning = audio.GetNode<AudioStreamPlayer>("LowPatience");

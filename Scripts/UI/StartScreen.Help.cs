@@ -34,7 +34,7 @@ public partial class StartScreen
         HomeArt(content, "设置图标", new(1000, 103, 80, 80));
         HelpPanel(content, "ControlsUnderline", new(1100, 177, 310, 16), "#FFD16A", "#FFD16A", 8, 0);
         HelpText(content, "HelpControlsTitle", "操作小抄", new(1100, 99, 325, 78), 59);
-        var motto = HelpText(content, "HelpMotto", "慢慢来，做好每份早餐", new(1440, 116, 328, 60), 27, true);
+        var motto = HelpText(content, "HelpMotto", "慢慢来，做好每份早餐", new(1300, 116, 290, 60), 27, true);
         motto.AddThemeColorOverride("font_color", new Color("#966642"));
 
         HelpOperation(content, "Click", "点击", "选择 / 加料", new(1000, 250, 375, 164), "#FFEBD0", "#F2CBA0", 0);

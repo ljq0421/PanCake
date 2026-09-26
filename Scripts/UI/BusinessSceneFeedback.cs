@@ -9,6 +9,9 @@ public partial class BusinessSceneFeedback : Control
     private readonly string _city;
     private readonly Func<bool> _active;
     private readonly List<(Control View, Tween? Tween, double Left)> _items = new();
+    private ulong? _lastErrorAt;
+    internal Func<ulong> Clock { get; set; } = Time.GetTicksMsec;
+    internal const ulong ErrorIntervalMs = 1500;
     public BusinessSceneFeedback(string city, Func<bool> active) { _city = city; _active = active; Name = "SceneFeedback"; }
     public override void _Ready()
     {
@@ -30,6 +33,7 @@ public partial class BusinessSceneFeedback : Control
     {
         foreach (var item in _items) { item.Tween?.Kill(); item.View.QueueFree(); }
         _items.Clear();
+        _lastErrorAt = null;
     }
     public void Delivery(DeliveryEvaluation result, Control target)
     {
@@ -54,6 +58,12 @@ public partial class BusinessSceneFeedback : Control
     private void Show(string art, Vector2 globalPosition, string? text = null)
     {
         if (!IsVisibleInTree() || !_active()) return;
+        if (art == "错误反馈叉")
+        {
+            ulong now = Clock();
+            if (_lastErrorAt is ulong last && now - last < ErrorIntervalMs) return;
+            _lastErrorAt = now;
+        }
         if (_items.Count >= 4)
         {
             _items[0].Tween?.Kill(); _items[0].View.QueueFree(); _items.RemoveAt(0);

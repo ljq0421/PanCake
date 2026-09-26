@@ -30,6 +30,8 @@ public partial class PancakeAudio : Node
     private AudioStreamPlayer _spreadPlayer = null!;
     private AudioStreamPlayer _supplyPlayer = null!;
     private bool _paused;
+    private ulong? _lastErrorAt;
+    internal Func<ulong> Clock { get; set; } = Time.GetTicksMsec;
 
     public override void _Ready()
     {
@@ -85,6 +87,12 @@ public partial class PancakeAudio : Node
         {
             return;
         }
+        if (sound == PancakeSound.Error)
+        {
+            ulong now = Clock();
+            if (_lastErrorAt is ulong last && now - last < 1500) return;
+            _lastErrorAt = now;
+        }
 
         _player.StreamPaused = false;
         _player.VolumeDb = sound == PancakeSound.Stroke ? -8 : sound == PancakeSound.Error ? -6
@@ -93,7 +101,7 @@ public partial class PancakeAudio : Node
         _player.Play();
     }
 
-    public void SetPaused(bool paused) { _paused = paused; if (paused) Stop(); }
+    public void SetPaused(bool paused) { _paused = paused; if (paused) { Stop(); _lastErrorAt = null; } }
     public void Stop()
     {
         _player?.Stop();

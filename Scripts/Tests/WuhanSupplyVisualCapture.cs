@@ -17,7 +17,7 @@ public partial class WuhanSupplyVisualCapture : Node
             GetWindow().Size = small ? new Vector2I(1280, 720) : new Vector2I(1920, 1080);
             var catalog = GetNode<DataCatalog>("/root/DataCatalog");
             var save = new SaveService();
-            save.UsePathForTests($"user://wuhan-supply-capture-{Guid.NewGuid():N}.json");
+            save.UsePathForTests($"res://wuhan-supply-check/capture-{Guid.NewGuid():N}.json");
             AddChild(save);
             save.Data.Wuhan.HighestUnlockedDay = 12;
             if (!basic) save.Data.Wuhan.EquipmentLevels["doupi_griddle"] = 1;

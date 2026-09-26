@@ -20,7 +20,6 @@ public partial class StartScreen
             CloseModal(); _previousFocus = GetViewport().GuiGetFocusOwner(); _modalKind = kind;
         }
         Clear(_modal); _modalControls.Clear();
-        SetHomeUtilitiesVisible(false);
         // The captured settings/help frame already includes the modal dimmer.
         // VisibilityChanged starts the spread synchronously; keep that backdrop unchanged.
         _preserveModalBackdrop = switchingUtilityBook;
@@ -54,12 +53,6 @@ public partial class StartScreen
             }
         }
         foreach (var button in _buttons) button.FocusMode = FocusModeEnum.None;
-    }
-    private void SetHomeUtilitiesVisible(bool visible)
-    {
-        if (HostedByBook || !_homeBookPalette) return;
-        foreach (string name in new[] { "Home", "Settings", "Help", "Quit" })
-            if (_homeBody.GetNodeOrNull<Button>(name) is { } button) button.Visible = visible;
     }
     private static void ApplyHomeBookBackground(TextureRect book)
         => book.Material = new ShaderMaterial { Shader = GD.Load<Shader>("res://resource/shaders/settings_book_decor.gdshader") };
@@ -106,7 +99,6 @@ public partial class StartScreen
         _settingsMessage = null; _archiveMessage = null; _countdown = null; _displayConfirmation = null;
         foreach (var button in _buttons) if (GodotObject.IsInstanceValid(button)) button.FocusMode = FocusModeEnum.All;
         if (restoreHomeBody) RestoreHomeBody();
-        SetHomeUtilitiesVisible(true);
         if (GodotObject.IsInstanceValid(_previousFocus) && _previousFocus!.IsInsideTree() && _previousFocus.IsVisibleInTree()) _previousFocus.GrabFocus();
         _previousFocus = null;
     }

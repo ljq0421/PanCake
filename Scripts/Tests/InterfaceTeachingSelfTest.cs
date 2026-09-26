@@ -128,6 +128,10 @@ public partial class InterfaceTeachingSelfTest : Node
             tianjin.RefreshForCapture(true); await Frames(); guide = Guide(tianjin);
             Check(guide?.LessonKey == InterfaceLessons.RevenueGoalKey, "revenue goal teaching follows HUD on Tianjin Day 1");
             Check(Find<Label>(guide!, "TeachingText").Text.Contains("0/130"), "goal teaching explains HUD ratio");
+            var goalCard = Find<Panel>(guide!, "TeachingCard");
+            var goalHud = Find<Control>(tianjin, "HudArtwork");
+            float goalGap = goalCard.GetGlobalRect().Position.Y - goalHud.GetGlobalRect().End.Y;
+            Check(goalGap >= 8 && goalGap <= 24, $"goal card sits beside top HUD (gap={goalGap:0.#})");
             await Shot("04-revenue-goal-teaching");
             _viewport.Size = new(1280, 720); await Shot("04-revenue-goal-teaching-1280");
             _viewport.Size = new(1920, 1080); await Frames();

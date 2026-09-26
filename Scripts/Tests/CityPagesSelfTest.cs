@@ -163,15 +163,12 @@ public partial class CityPagesSelfTest : Node
                 Click("UpgradeTab"); await Frames();
                 Check(Find<TextureRect>("SharedBook").GetGlobalRect() == rect, "upgrade book geometry matches " + city.Name);
                 CheckBookTheme(city.Id);
-                Check(_screen.FindChildren("Select_*", "Button", true, false).Count == (city.Id == StableIds.Cities.Yangzhou ? 2 : 3), "equipment count " + city.Name);
+                Check(_screen.FindChildren("Select_*", "Button", true, false).Count == (city.Id is StableIds.Cities.Yangzhou or StableIds.Cities.Wuhan ? 2 : 3), "equipment count " + city.Name);
                 Check(_screen.FindChildren("UpgradeEquipment", "Button", true, false).Count == 1, "single purchase action " + city.Name);
                 var equipment = model.Equipment(city.Id);
                 Check(equipment.All(e => e.Effects.Count > 0), "structured effects exist " + city.Name);
-                if (city.Id == StableIds.Cities.Wuhan) {
-                    Click("Select_ingredient_station");
-                    Check(Find<Button>("UpgradeEquipment").Disabled && equipment.Last().TargetLevel is null, "fixed Wuhan station cannot upgrade");
-                    await Capture("wuhan-fixed-station"); Click("Select_noodle_cooker");
-                }
+                if (city.Id == StableIds.Cities.Wuhan)
+                    Check(!_screen.Descendants<Button>().Any(b => b.Name == "Select_ingredient_station"), "fixed Wuhan station omitted from upgrades");
                 foreach (var label in _screen.FindChild("UpgradeView", true, false).Descendants<Label>().Where(l => l.GetParent() is not Container))
                     Check(label.Position.Y + label.Size.Y <= ((Control)label.GetParent()).Size.Y + 1, "fixed label fits " + city.Name + "/" + label.Name);
                 await Capture(city.Name + "-upgrades");

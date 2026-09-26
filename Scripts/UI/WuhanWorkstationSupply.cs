@@ -24,18 +24,36 @@ public partial class WuhanWorkstationView
     {
         _supplyBell = new Button
         {
-            Name = "SupplyBell", Position = new Vector2(526.6f, 506), Size = new Vector2(124.8f, 120),
-            PivotOffset = new Vector2(62.4f, 60), ZIndex = 35, Flat = true,
+            Name = "SupplyBell", Position = new Vector2(552, 510), Size = new Vector2(84, 98),
+            PivotOffset = new Vector2(42, 49), ZIndex = 35, Flat = true,
             FocusMode = FocusModeEnum.None, MouseDefaultCursorShape = CursorShape.PointingHand,
         };
         AddChild(_supplyBell);
         Texture2D bellArt = GD.Load<Texture2D>("res://resource/art/TianJin/SupplyCall/supply_bell_bold.png");
-        _supplyBell.AddChild(new Sprite2D
+        var bellArtwork = new Sprite2D
         {
             Name = "BellArtwork", Texture = bellArt,
-            Position = new Vector2(2.4f, 0), Centered = false,
+            Position = new Vector2(-23, -4), Centered = false,
             Scale = new Vector2(120f / bellArt.GetWidth(), 120f / bellArt.GetHeight()),
-        });
+        };
+        // The pot handle and wooden tray are baked into the workbench sheet.
+        // Hide only the portions of the bell that fall behind their silhouettes.
+        bellArtwork.Material = new ShaderMaterial
+        {
+            Shader = new Shader { Code = """
+                shader_type canvas_item;
+                void fragment() {
+                    vec2 p = vec2(529.0, 506.0) + UV * vec2(120.0);
+                    float pot = (1.0 - smoothstep(550.0, 552.0, p.x))
+                        * smoothstep(552.0, 554.0, p.y);
+                    float tray_edge = 644.0 - (p.y - 580.0) * 0.62;
+                    float tray = smoothstep(579.0, 581.0, p.y)
+                        * smoothstep(tray_edge - 2.0, tray_edge, p.x);
+                    COLOR.a *= 1.0 - max(pot, tray);
+                }
+                """ },
+        };
+        _supplyBell.AddChild(bellArtwork);
         _supplyBell.Pressed += OpenSupplySelection;
 
         Texture2D npcArt = GD.Load<Texture2D>("res://resource/art/Wuhan/SupplyCall/supply_helper.png");

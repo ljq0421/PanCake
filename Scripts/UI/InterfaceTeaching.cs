@@ -97,8 +97,10 @@ public partial class InterfaceTeaching : CanvasLayer
             rect = new Rect2(start, end - start).Grow(10);
         }
         _shade.Spotlight = rect;
-        _card.Position = new((1920 - _card.Size.X) / 2,
-            rect?.GetCenter().Y > 540 ? 110 : Math.Min(640, 1000 - _card.Size.Y));
+        float cardY = rect?.GetCenter().Y > 540 ? 110 : Math.Min(640, 1000 - _card.Size.Y);
+        if (_key == InterfaceLessons.RevenueGoalKey && !_replay && rect is { } goalRect)
+            cardY = Mathf.Min(goalRect.End.Y + 32, 1080 - _card.Size.Y);
+        _card.Position = new((1920 - _card.Size.X) / 2, cardY);
         if (_replay) _card.Position = (new Vector2(1920, 1080) - _card.Size) / 2;
         _shade.QueueRedraw();
     }

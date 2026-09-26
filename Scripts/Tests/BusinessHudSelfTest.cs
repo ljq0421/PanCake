@@ -120,6 +120,17 @@ public partial class BusinessHudSelfTest : Node
                 Require(feedback.Descendants<TextureRect>().Any(c => c.Texture?.ResourcePath.Contains("Perfect 小星章") == true), "perfect delivery retains star");
                 feedback.Report("这份餐品不符合订单，请检查配料。", true, screen.GetGlobalTransform() * new Vector2(1300, 620));
                 if (capture) await Shot(viewport, $"{city}-{width}-feedback");
+                ulong feedbackClock = 1000;
+                feedback.Clock = () => feedbackClock;
+                feedback.Clear();
+                await Frames();
+                feedback.Report("请先完成餐品。", true, new Vector2(960, 620));
+                feedback.Report("请先完成餐品。", true, new Vector2(960, 620));
+                Require(feedback.GetChildCount() == 1, "repeated mistakes show only one cross");
+                feedbackClock += BusinessSceneFeedback.ErrorIntervalMs;
+                feedback.Report("请先完成餐品。", true, new Vector2(960, 620));
+                Require(feedback.GetChildCount() == 2, "cross can reappear after cooldown");
+                feedback.Clock = Time.GetTicksMsec;
                 Require(feedback.GetChildren().OfType<Control>().All(c => c.MouseFilter == Control.MouseFilterEnum.Ignore), "feedback does not intercept input");
                 Require(feedback.Descendants<TextureRect>().All(c => c.Size.X <= 64 && c.Size.Y <= 64), "large source artwork stays within feedback icon bounds");
                 double remaining = controller.DayRemainingSeconds;

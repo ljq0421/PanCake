@@ -72,7 +72,7 @@ public sealed partial class CityPageModel(DataCatalog? catalog, SaveService save
         string[] ids = city switch
         {
             StableIds.Cities.Tianjin => new[] { "pancake_stove", "fryer", "ingredient_station", "soy_milk_tray" },
-            StableIds.Cities.Wuhan => new[] { "noodle_cooker", "doupi_griddle", "ingredient_station" },
+            StableIds.Cities.Wuhan => new[] { "noodle_cooker", "doupi_griddle" },
             StableIds.Cities.Xian => new[] { XianRules.Oven, XianRules.Board, XianRules.Soup },
             StableIds.Cities.Guangzhou => GuangzhouRules.Equipment,
             _ => new[] { YangzhouCatalog.BoardId, YangzhouCatalog.SteamerId },
@@ -95,7 +95,7 @@ public sealed partial class CityPageModel(DataCatalog? catalog, SaveService save
             case StableIds.Cities.Tianjin:
                 if (id == "pancake_stove") { var d = Catalog.StovesByLevel[target]; name = "煎饼炉"; price = d.UpgradePrice; detail = $"{(d.CanBurn ? "手动控温" : "恒温不焦")}\n正面 {d.SideAReadySeconds:0.##} 秒成熟"; art = root + "TianJin/BusinessSign/stove.png"; }
                 else if (id == "fryer") { var d = Catalog.FryersByLevel[target]; name = "油条锅"; price = d.UpgradePrice; detail = $"容量 {d.Capacity} 根\n{(d.AutoRaise ? "自动抬篮" : "手动抬篮")}"; art = root + "TianJin/BusinessSign/fryer.png"; }
-                else if (id == "soy_milk_tray") { name = "豆浆"; detail = "新增豆浆供应\n可以与主食搭配售卖"; art = root + "TianJin/豆浆托盘-v1.png"; }
+                else if (id == "soy_milk_tray") { name = "豆浆"; detail = "新增豆浆供应\n可以与主食搭配售卖"; art = root + "TianJin/成品豆浆杯.png"; }
                 else { var d = Catalog.IngredientStationsByLevel[target]; name = "配料台"; price = d.UpgradePrice; detail = $"鸡蛋 {d.EggCapacity} · 薄脆 {d.CrispyCapacity}\n香葱 {d.ScallionCapacity} · 火腿 {d.HamCapacity}"; art = root + "TianJin/升级小料.png"; }
                 break;
             case StableIds.Cities.Wuhan:

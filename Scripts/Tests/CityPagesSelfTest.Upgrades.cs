@@ -26,15 +26,21 @@ public partial class CityPagesSelfTest
             var view = _screen.Descendants<EquipmentUpgradeView>().Single();
             Check(view.SelectedId == (city == StableIds.Cities.Tianjin ? "ingredient_station" : primary), "earliest unlock selected " + city);
             var cards = view.Buttons.Where(b => b.Name.ToString().StartsWith("Select_")).ToArray();
-            Check(cards.Length == (city == StableIds.Cities.Tianjin ? 4 : 3), "all devices visible " + city);
+            Check(cards.Length == (city == StableIds.Cities.Tianjin ? 4 : 2), "only upgradeable devices visible " + city);
             if (city == StableIds.Cities.Tianjin)
                 Check(cards[0].Position.Y == cards[1].Position.Y && cards[2].Position.X == cards[0].Position.X && cards[2].Position.Y > cards[0].Position.Y, "two-column grid " + city);
             else
-                Check(cards.All(c => c.Position.X == cards[0].Position.X) && cards[0].Position.Y < cards[1].Position.Y && cards[1].Position.Y < cards[2].Position.Y, "single column with three rows " + city);
+                Check(cards.All(c => c.Position.X == cards[0].Position.X) && cards[0].Position.Y < cards[1].Position.Y, "single column with two rows " + city);
             Check(!Find<Control>("UpgradeWallet").GetGlobalRect().Intersects(Find<Control>("BookCloseArt").GetGlobalRect()), "wallet clears close artwork " + city);
             if (city == StableIds.Cities.Tianjin)
                 Check(Find<Button>("Select_soy_milk_tray").GetNode<Label>("EquipmentName").Text == "豆浆", "soy milk label");
             await Capture(city.Replace(':', '-') + "-grid-locked");
+            if (city == StableIds.Cities.Tianjin)
+            {
+                Click("Select_soy_milk_tray"); await Frames();
+                Check(view.SelectedId == "soy_milk_tray", "soy milk detail opens");
+                await Capture("tianjin-soy-milk-upgrade");
+            }
             progress.HighestUnlockedDay = 12;
             for (int day = 1; day <= 12; day++) progress.DayBestRecords[day] = new();
             progress.UnlockedContentIds = catalog.GetDays(city).Values.SelectMany(d => d.StartUnlocks.Concat(d.CompletionUnlocks)).Distinct().ToList();
@@ -91,8 +97,8 @@ public partial class CityPagesSelfTest
                 var equipment = model.Equipment(city.Id);
                 Check(equipment.Single(e => e.Id == "noodle_cooker").Presentation is { Highlights.Count: > 0 }
                     && equipment.Single(e => e.Id == "doupi_griddle").Presentation is not null
-                    && equipment.Single(e => e.Id == "ingredient_station").Presentation?.Fixed == true,
-                    "Wuhan upgrades have structured functional comparisons and a fixed station");
+                    && equipment.All(e => e.Id != "ingredient_station"),
+                    "Wuhan upgrades show only the cooker and griddle");
             }
             else if (city.Id == StableIds.Cities.Xian)
             {

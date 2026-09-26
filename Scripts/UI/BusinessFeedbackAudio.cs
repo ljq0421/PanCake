@@ -49,7 +49,7 @@ public partial class BusinessFeedbackAudio : Node
     {
         if (!IsInsideTree() || _canPlay?.Invoke() != true) return;
         ulong now = Clock();
-        ulong interval = feedback.Cue == BusinessCue.DeliveryError ? 400UL
+        ulong interval = feedback.Cue == BusinessCue.DeliveryError ? 1500UL
             : feedback.Cue is BusinessCue.LowPatience or BusinessCue.CustomerLeft ? 500UL : 0;
         if (_last.TryGetValue(feedback.Cue, out ulong last) && now - last < interval) return;
         _last[feedback.Cue] = now;

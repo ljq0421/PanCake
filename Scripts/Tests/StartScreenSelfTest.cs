@@ -523,9 +523,12 @@ public partial class StartScreenSelfTest : Node
             _screen.PresentHome(); await Frames();
             await Click(Find<Button>(entry));
             Check(_screen.ModalOpen, entry + " opens a home modal");
-            foreach (string name in new[] { "Home", "Settings", "Help", "Quit" })
-                Check(!_screen.Descendants<Button>().Any(b => b.Name == name && b.IsVisibleInTree()),
-                    entry + " hides " + name + " above and behind the modal");
+            var backdrop = Find<ColorRect>("ModalBackdrop");
+            Check(backdrop.Color.A > 0 && backdrop.GetParent() == _screen.GetNode<Control>("Canvas/Modal"),
+                entry + " dims the home page beneath the modal");
+            foreach (string name in new[] { "Settings", "Help", "Quit" })
+                Check(_screen.GetNode<Button>("Canvas/Page/" + name).IsVisibleInTree(),
+                    entry + " keeps " + name + " visible beneath the dimmer");
             await Capture("modal-utilities-" + entry);
             KeyPress(Key.Escape); await Frames();
             Check(!_screen.ModalOpen && _screen.Page == JourneyPage.Home, entry + " closes back to home");
@@ -533,9 +536,6 @@ public partial class StartScreenSelfTest : Node
                 Check(Find<Button>(name).IsVisibleInTree(), entry + " restores " + name + " on home");
         }
         await Capture("modal-utilities-closed");
-        _screen.PresentCity(StableIds.Cities.Wuhan); await Frames();
-        await Click(Find<Button>("Settings"));
-        Check(_screen.GetNodeOrNull<Control>("Canvas/Modal/ModalUtilities") is null, "city settings retain their existing navigation");
     }
     private void CheckHomeBookUtilitiesHidden(string state)
     {

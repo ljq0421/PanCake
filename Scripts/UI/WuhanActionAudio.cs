@@ -24,7 +24,7 @@ internal sealed class WuhanActionAudio
         if (_paused || !_owner.IsInsideTree()) return false;
         ulong now = Time.GetTicksMsec();
         ulong interval = sound is WuhanSound.Mix or WuhanSound.Spread ? 240UL
-            : sound is WuhanSound.Error or WuhanSound.Overdone ? 400UL : 80UL;
+            : sound == WuhanSound.Error ? 1500UL : sound == WuhanSound.Overdone ? 400UL : 80UL;
         if (_last.TryGetValue(sound, out ulong last) && now - last < interval) return false;
         if (!_players.TryGetValue(sound, out var player))
         {
